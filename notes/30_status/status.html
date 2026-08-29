@@ -36,7 +36,7 @@
 	<ol>
 		<li class="ch01"><a href="#ch01">進捗</a></li>
 		<li class="ch02"><a href="#ch02">動作確認の状況</a></li>
-		<li class="ch03"><a href="#ch03">残っていること</a></li>
+		<li class="ch03"><a href="#ch03">課題</a></li>
 	</ol>
 </section>
 
@@ -104,6 +104,8 @@
 			<tr><th class="nowrap">ファイル</th><th>役割</th></tr>
 		</thead>
 		<tbody>
+			<tr><td class="nowrap"><code>src/server/main.mjs</code></td><td>起動口。メンテナンスの印が消えるのを待ってから server を読み込む</td></tr>
+			<tr><td class="nowrap"><code>src/server/maintenance.mjs</code></td><td><code>_data\MAINTENANCE</code> を見張る。DB を触る間の起動を止める</td></tr>
 			<tr><td class="nowrap"><code>src/server/config.mjs</code></td><td>ポート・待ち受けアドレス・DB パス・各種上限。起動ログ用の整形も持つ</td></tr>
 			<tr><td class="nowrap"><code>src/server/time.mjs</code></td><td>JST の固定長文字列を作る</td></tr>
 			<tr><td class="nowrap"><code>src/server/log.mjs</code></td><td>日時とレベルを付けて標準出力へ。ファイルには書かない</td></tr>
@@ -137,9 +139,10 @@
 			<tr><td class="nowrap"><code>config.test.mjs</code></td><td class="num">10</td><td>既定値・環境変数の上書き・カレント非依存・起動ログ</td></tr>
 			<tr><td class="nowrap"><code>store.test.mjs</code></td><td class="num">24</td><td>採番・取得・接続数・CHECK 制約・WAL・インデックス利用</td></tr>
 			<tr><td class="nowrap"><code>presence.test.mjs</code></td><td class="num">15</td><td>3 状態の判定・猶予の境界・一覧の並び順</td></tr>
+			<tr><td class="nowrap"><code>maintenance.test.mjs</code></td><td class="num">6</td><td>印があれば待つ・消えたら進む・理由を読む</td></tr>
 			<tr><td class="nowrap"><code>markdown.test.mjs</code></td><td class="num">16</td><td>生 HTML の無害化・<code>javascript:</code> を通さない・記法の描画</td></tr>
-			<tr><td class="nowrap"><code>server.test.mjs</code></td><td class="num">27</td><td>API 一式・long-poll の待機と起床・SSE・入力の検証・<code>admin/exit</code></td></tr>
-			<tr><td class="nowrap">合計</td><td class="num"><strong>97</strong></td><td><span class="badge b-ok">全件通過</span></td></tr>
+			<tr><td class="nowrap"><code>server.test.mjs</code></td><td class="num">37</td><td>API 一式・long-poll・SSE・読んだ位置の記録・オフライン通知・<code>admin/exit</code></td></tr>
+			<tr><td class="nowrap">合計</td><td class="num"><strong>113</strong></td><td><span class="badge b-ok">全件通過</span></td></tr>
 		</tbody>
 	</table>
 	</div>
@@ -211,6 +214,14 @@ npm run test:projects -- ai-chat-lite</code></pre>
 				<td>「1 回目」「2 回目」「それ以降」の 3 段階。3 つ書けば打ち止めにならない。<code>resetfailure</code> は 60 秒</td>
 			</tr>
 			<tr>
+				<td class="nowrap">読んだ位置</td>
+				<td>サーバーが <code>cursors</code> に覚える。<code>since</code> を省略しても続きから届き、実行するフォルダを変えても位置が保たれる</td>
+			</tr>
+			<tr>
+				<td class="nowrap">メンテナンスの印</td>
+				<td><code>_data\MAINTENANCE</code> があると起動を保留する。<strong>待機中は DB を掴んでいない</strong>（リネームできることを確認）。印を消してから <strong>0.8 秒</strong>で起動した</td>
+			</tr>
+			<tr>
 				<td class="nowrap"><code>logpath</code> の落とし穴</td>
 				<td><strong>相対パスはサービスのカレント（<code>C:\Windows\System32</code>）基準で解決される。</strong><code>%BASE%\logs</code> と書く必要がある</td>
 			</tr>
@@ -238,41 +249,11 @@ npm run test:projects -- ai-chat-lite</code></pre>
 
 <!-- ================= 03 ================= -->
 <section class="ch03" id="ch03">
-	<h1>残っていること</h1>
+	<h1>課題</h1>
 
-	<div class="tablewrap">
-	<table>
-		<thead>
-			<tr><th class="nowrap">項目</th><th>内容</th></tr>
-		</thead>
-		<tbody>
-			<tr>
-				<td class="nowrap">WinSW 関係の置き場</td>
-				<td>いま実行ファイルと XML がルート直下にある。フォルダ規約では <code>deploy/</code> が正しい置き場。移すなら XML の <code>arguments</code> と <code>logpath</code> に <code>..</code> が入り、<strong>サービスの再登録が要る</strong>（ImagePath が変わるため）</td>
-			</tr>
-			<tr>
-				<td class="nowrap">PlayWright 側のコミット</td>
-				<td><code>N:\2026\PlayWright\projects\ai-chat-lite\</code> の spec は別リポジトリ。共有環境の規約では commit が必要</td>
-			</tr>
-			<tr>
-				<td class="nowrap">日付での絞り込み</td>
-				<td>必要になった時点で <code>(room_id, sent_at)</code> のインデックスを追加する。現状は <code>msg_seq</code> だけで足りている</td>
-			</tr>
-			<tr>
-				<td class="nowrap">サービス回復の段数</td>
-				<td>いまは 3 段とも再起動。運用が固まったら段数と delay を見直す</td>
-			</tr>
-			<tr>
-				<td class="nowrap">オフラインへ落ちた通知</td>
-				<td>参加と離脱はログに残るが、猶予を過ぎて <code>offline</code> になったことはメッセージにならない。待受け中の AI には在席の変化が届かない</td>
-			</tr>
-			<tr>
-				<td class="nowrap">ルームの追加</td>
-				<td>列と API は用意済み。画面はまだ <code>public</code> 固定</td>
-			</tr>
-		</tbody>
-	</table>
-	</div>
+	<p>これから解決することは<a href="../40_issues/issues.html">課題</a>に移した。状態（未・着手・済）を持たせ、片付いたものも残してある。</p>
+
+	<p>この資料は「いまどうなっているか」を書く。「これから何をするか」は課題側にある。</p>
 </section>
 
 </div>
