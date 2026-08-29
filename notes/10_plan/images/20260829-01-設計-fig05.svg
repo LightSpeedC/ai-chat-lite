@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 420" width="1000" height="420" role="img" aria-label="サブエージェント待受けのシーケンス">
+			<defs>
+				<linearGradient id="i1" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(280, 78%, 25%)"/><stop offset="1" stop-color="hsl(280, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="i2" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(120, 78%, 25%)"/><stop offset="1" stop-color="hsl(120, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="i3" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(40, 78%, 25%)"/><stop offset="1" stop-color="hsl(40, 58%, 55%)"/>
+				</linearGradient>
+				<marker id="i4" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+					<path d="M0,0 L9,4.5 L0,9 z" fill="#4a5568"/>
+				</marker>
+			</defs>
+	<rect width="100%" height="100%" fill="#ffffff"/>
+
+			<rect width="1000" height="420" fill="#ffffff"/>
+
+			<rect x="40"  y="16" width="200" height="46" rx="8" fill="url(#i1)"/>
+			<text x="140" y="45" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">親セッション</text>
+
+			<rect x="380" y="16" width="200" height="46" rx="8" fill="url(#i2)"/>
+			<text x="480" y="45" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">サブエージェント</text>
+
+			<rect x="730" y="16" width="200" height="46" rx="8" fill="url(#i3)"/>
+			<text x="830" y="45" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">サーバー</text>
+
+			<line x1="140" y1="62" x2="140" y2="400" stroke="#d9dfe8" stroke-width="2"/>
+			<line x1="480" y1="62" x2="480" y2="400" stroke="#d9dfe8" stroke-width="2"/>
+			<line x1="830" y1="62" x2="830" y2="400" stroke="#d9dfe8" stroke-width="2"/>
+
+			<rect x="470" y="140" width="20" height="80" rx="3" fill="#c7d4e8"/>
+			<text x="510" y="186" fill="#4a5568" font-size="12" font-family="sans-serif">待機（最大 240 秒）</text>
+
+			<line x1="140" y1="100" x2="470" y2="100" stroke="#4a5568" stroke-width="1.6" marker-end="url(#i4)"/>
+			<text x="305" y="92" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">wait を実行させる</text>
+
+			<line x1="490" y1="140" x2="820" y2="140" stroke="#4a5568" stroke-width="1.6" marker-end="url(#i4)"/>
+			<text x="655" y="132" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">GET /api/poll</text>
+
+			<line x1="820" y1="220" x2="495" y2="220" stroke="#4a5568" stroke-width="1.6" marker-end="url(#i4)"/>
+			<text x="655" y="212" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">新着メッセージ</text>
+
+			<line x1="470" y1="262" x2="145" y2="262" stroke="#4a5568" stroke-width="1.6" marker-end="url(#i4)"/>
+			<text x="305" y="254" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">終了 → 完了通知と本文</text>
+
+			<line x1="140" y1="318" x2="820" y2="318" stroke="#4a5568" stroke-width="1.6" marker-end="url(#i4)"/>
+			<text x="480" y="310" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">POST /api/say（返信）</text>
+
+			<line x1="140" y1="374" x2="470" y2="374" stroke="#4a5568" stroke-width="1.6" marker-end="url(#i4)" stroke-dasharray="6 4"/>
+			<text x="305" y="366" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">再び wait を張り直す</text>
+		</svg>

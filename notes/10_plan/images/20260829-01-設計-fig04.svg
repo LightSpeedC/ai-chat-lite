@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 250" width="1000" height="250" role="img" aria-label="オンライン判定のタイムライン">
+			<defs>
+				<linearGradient id="i1" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="#1d7a3c"/><stop offset="1" stop-color="#45b56c"/>
+				</linearGradient>
+				<linearGradient id="i2" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="#b8620a"/><stop offset="1" stop-color="#f0a548"/>
+				</linearGradient>
+				<linearGradient id="i3" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="#5a6472"/><stop offset="1" stop-color="#97a1ae"/>
+				</linearGradient>
+			</defs>
+	<rect width="100%" height="100%" fill="#ffffff"/>
+
+			<rect width="1000" height="250" fill="#ffffff"/>
+
+			<rect x="40"  y="96" width="380" height="52" rx="6" fill="url(#i1)"/>
+			<text x="230" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">online（接続中）</text>
+
+			<rect x="420" y="96" width="230" height="52" rx="6" fill="url(#i2)"/>
+			<text x="535" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">grace（一時切断）</text>
+
+			<rect x="650" y="96" width="310" height="52" rx="6" fill="url(#i3)"/>
+			<text x="805" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">offline</text>
+
+			<line x1="420" y1="76" x2="420" y2="168" stroke="#1c2330" stroke-width="1.4" stroke-dasharray="4 3"/>
+			<line x1="650" y1="76" x2="650" y2="168" stroke="#1c2330" stroke-width="1.4" stroke-dasharray="4 3"/>
+
+			<text x="420" y="66" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">long-poll / SSE が切れる</text>
+			<text x="650" y="66" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">last_active_at から 90 秒</text>
+
+			<text x="230" y="190" text-anchor="middle" fill="#4a5568" font-size="13" font-family="sans-serif">active_connection_count &gt; 0</text>
+			<text x="535" y="190" text-anchor="middle" fill="#4a5568" font-size="13" font-family="sans-serif">直近のアクセスから 90 秒以内</text>
+			<text x="805" y="190" text-anchor="middle" fill="#4a5568" font-size="13" font-family="sans-serif">最終在席時刻を併記する</text>
+
+			<line x1="40" y1="215" x2="960" y2="215" stroke="#4a5568" stroke-width="1.2"/>
+			<text x="960" y="235" text-anchor="end" fill="#4a5568" font-size="12" font-family="sans-serif">時間</text>
+		</svg>

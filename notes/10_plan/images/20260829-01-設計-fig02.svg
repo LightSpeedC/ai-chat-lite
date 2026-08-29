@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 450" width="1000" height="450" role="img" aria-label="rollback journal と WAL の違い">
+			<defs>
+				<linearGradient id="i1" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(0, 78%, 25%)"/><stop offset="1" stop-color="hsl(0, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="i2" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(200, 78%, 25%)"/><stop offset="1" stop-color="hsl(200, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="i3" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(40, 78%, 25%)"/><stop offset="1" stop-color="hsl(40, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="i4" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(120, 78%, 25%)"/><stop offset="1" stop-color="hsl(120, 58%, 55%)"/>
+				</linearGradient>
+				<marker id="i5" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+					<path d="M0,0 L9,4.5 L0,9 z" fill="#4a5568"/>
+				</marker>
+				<marker id="i6" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+					<path d="M0,0 L9,4.5 L0,9 z" fill="#a51f22"/>
+				</marker>
+			</defs>
+	<rect width="100%" height="100%" fill="#ffffff"/>
+
+			<rect width="1000" height="450" fill="#ffffff"/>
+
+			<text x="20" y="34" fill="#1c2330" font-size="16" font-family="sans-serif" font-weight="bold">既定（rollback journal）</text>
+
+			<rect x="40" y="56" width="130" height="54" rx="8" fill="url(#i1)"/>
+			<text x="105" y="89" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">writer</text>
+
+			<rect x="330" y="56" width="200" height="54" rx="8" fill="url(#i2)"/>
+			<text x="430" y="89" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">本体 chat.db</text>
+
+			<rect x="330" y="140" width="200" height="54" rx="8" fill="url(#i3)"/>
+			<text x="430" y="173" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">chat.db-journal</text>
+
+			<rect x="800" y="56" width="130" height="54" rx="8" fill="url(#i1)"/>
+			<text x="865" y="89" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">reader</text>
+
+			<line x1="172" y1="83" x2="323" y2="83" stroke="#4a5568" stroke-width="1.6" marker-end="url(#i5)"/>
+			<text x="247" y="74" text-anchor="middle" fill="#1c2330" font-size="12.5" font-family="sans-serif">直接書き換える</text>
+
+			<line x1="430" y1="112" x2="430" y2="136" stroke="#4a5568" stroke-width="1.6" marker-end="url(#i5)"/>
+			<text x="550" y="132" fill="#1c2330" font-size="12.5" font-family="sans-serif">変更前の姿を退避しておく</text>
+
+			<line x1="795" y1="83" x2="538" y2="83" stroke="#a51f22" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#i6)"/>
+			<text x="666" y="74" text-anchor="middle" fill="#a51f22" font-size="12.5" font-family="sans-serif">ロックが解けるまで待たされる</text>
+
+			<line x1="20" y1="215" x2="980" y2="215" stroke="#d9dfe8" stroke-width="1.5"/>
+
+			<text x="20" y="252" fill="#1c2330" font-size="16" font-family="sans-serif" font-weight="bold">WAL（Write-Ahead Logging）</text>
+
+			<rect x="40" y="278" width="130" height="54" rx="8" fill="url(#i4)"/>
+			<text x="105" y="311" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">writer</text>
+
+			<rect x="330" y="278" width="200" height="54" rx="8" fill="url(#i3)"/>
+			<text x="430" y="311" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">chat.db-wal</text>
+
+			<rect x="330" y="362" width="200" height="54" rx="8" fill="url(#i2)"/>
+			<text x="430" y="395" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">本体 chat.db</text>
+
+			<rect x="800" y="320" width="130" height="54" rx="8" fill="url(#i4)"/>
+			<text x="865" y="353" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">reader</text>
+
+			<line x1="172" y1="305" x2="323" y2="305" stroke="#4a5568" stroke-width="1.6" marker-end="url(#i5)"/>
+			<text x="247" y="296" text-anchor="middle" fill="#1c2330" font-size="12.5" font-family="sans-serif">追記するだけ</text>
+
+			<line x1="795" y1="337" x2="538" y2="311" stroke="#1d7a3c" stroke-width="1.6" marker-end="url(#i5)"/>
+			<line x1="795" y1="352" x2="538" y2="384" stroke="#1d7a3c" stroke-width="1.6" marker-end="url(#i5)"/>
+			<text x="666" y="437" text-anchor="middle" fill="#1d7a3c" font-size="12.5" font-family="sans-serif">待たずに 本体 + WAL を合成して読む</text>
+		</svg>

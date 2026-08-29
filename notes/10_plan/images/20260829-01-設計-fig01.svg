@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 360" width="1000" height="360" role="img" aria-label="全体構成図">
+			<defs>
+				<linearGradient id="i1" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(280, 78%, 25%)"/><stop offset="1" stop-color="hsl(280, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="i2" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(240, 78%, 25%)"/><stop offset="1" stop-color="hsl(240, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="i3" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(160, 78%, 25%)"/><stop offset="1" stop-color="hsl(160, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="i4" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(80, 78%, 25%)"/><stop offset="1" stop-color="hsl(80, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="i5" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(40, 78%, 25%)"/><stop offset="1" stop-color="hsl(40, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="i6" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(0, 78%, 25%)"/><stop offset="1" stop-color="hsl(0, 58%, 55%)"/>
+				</linearGradient>
+				<marker id="i7" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+					<path d="M0,0 L9,4.5 L0,9 z" fill="#4a5568"/>
+				</marker>
+			</defs>
+	<rect width="100%" height="100%" fill="#ffffff"/>
+
+			<rect width="1000" height="360" fill="#ffffff"/>
+
+			<rect x="20" y="24" width="215" height="52" rx="8" fill="url(#i1)"/>
+			<text x="127" y="55" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">AI セッション A</text>
+
+			<rect x="20" y="94" width="215" height="52" rx="8" fill="url(#i2)"/>
+			<text x="127" y="125" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">AI セッション B</text>
+
+			<rect x="20" y="164" width="215" height="52" rx="8" fill="url(#i3)"/>
+			<text x="127" y="195" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">人間（ブラウザ）</text>
+
+			<rect x="20" y="234" width="215" height="52" rx="8" fill="url(#i4)"/>
+			<text x="127" y="258" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">CLI</text>
+			<text x="127" y="276" text-anchor="middle" fill="#e8f0d8" font-size="12" font-family="sans-serif">（後から追加）</text>
+
+			<line x1="235" y1="50"  x2="425" y2="136" stroke="#4a5568" stroke-width="1.6" marker-end="url(#i7)"/>
+			<line x1="235" y1="120" x2="425" y2="158" stroke="#4a5568" stroke-width="1.6" marker-end="url(#i7)"/>
+			<line x1="235" y1="190" x2="425" y2="182" stroke="#4a5568" stroke-width="1.6" marker-end="url(#i7)"/>
+			<line x1="235" y1="260" x2="425" y2="204" stroke="#4a5568" stroke-width="1.6" marker-end="url(#i7)"/>
+
+			<text x="330" y="80"  text-anchor="middle" fill="#4a5568" font-size="12" font-family="sans-serif">long-poll</text>
+			<text x="330" y="132" text-anchor="middle" fill="#4a5568" font-size="12" font-family="sans-serif">long-poll</text>
+			<text x="330" y="180" text-anchor="middle" fill="#4a5568" font-size="12" font-family="sans-serif">SSE</text>
+			<text x="330" y="246" text-anchor="middle" fill="#4a5568" font-size="12" font-family="sans-serif">long-poll</text>
+
+			<rect x="430" y="110" width="250" height="120" rx="10" fill="url(#i5)"/>
+			<text x="555" y="152" text-anchor="middle" fill="#fff" font-size="16" font-family="sans-serif">ai-chat-lite サーバー</text>
+			<text x="555" y="177" text-anchor="middle" fill="#fdf0dc" font-size="13" font-family="sans-serif">node（依存パッケージなし）</text>
+			<text x="555" y="199" text-anchor="middle" fill="#fdf0dc" font-size="13" font-family="sans-serif">localhost:8787</text>
+
+			<line x1="680" y1="170" x2="765" y2="170" stroke="#4a5568" stroke-width="1.6" marker-end="url(#i7)"/>
+
+			<rect x="770" y="132" width="210" height="76" rx="10" fill="url(#i6)"/>
+			<text x="875" y="163" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">_data/chat.db</text>
+			<text x="875" y="185" text-anchor="middle" fill="#fbe0e0" font-size="13" font-family="sans-serif">node:sqlite（WAL）</text>
+
+			<text x="500" y="320" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">localhost のみで待ち受けるため、同じ PC 以外からは接続できない</text>
+		</svg>
