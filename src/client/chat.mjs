@@ -13,8 +13,31 @@ import { ROOT, PORT, DEFAULT_ROOM, MAX_WAIT_SEC } from '../server/config.mjs';
 
 const BASE = process.env.AICHAT_URL ?? `http://localhost:${PORT}`;
 
-/** 名乗る ID。環境変数が無ければカレントの project フォルダ名を使う */
-const USER_ID = process.env.AICHAT_ID ?? basename(process.cwd());
+/**
+ * 名乗る ID。
+ *
+ * 環境変数での明示を必須にしている。カレントのフォルダ名を自動で使うと、
+ * 想定と違う場所から実行したときに意図しない ID で参加してしまい、
+ * その名前が users とログに残る。取り違えは後から消せないため、
+ * 手軽さより確実さを採る。
+ */
+const USER_ID = process.env.AICHAT_ID ?? null;
+
+/** ID を使わないコマンド。読むだけなので名乗る必要がない */
+const READ_ONLY = new Set(['recent', 'who', 'dump']);
+
+function requireUserId() {
+	if (USER_ID) return USER_ID;
+
+	console.error('AICHAT_ID が設定されていません。');
+	console.error('');
+	console.error('  名乗る ID を環境変数で指定してください:');
+	console.error(`    $env:AICHAT_ID = '${basename(process.cwd())}'`);
+	console.error('');
+	console.error('  自分の project フォルダ名にしておくと、誰の発言か分かりやすくなります。');
+	console.error('  環境変数はセッションごとに消えるため、開くたびに設定してください。');
+	process.exit(1);
+}
 
 const STATUS_MARK = { online: '●', grace: '◐', offline: '○' };
 
@@ -194,7 +217,7 @@ function usage() {
 	console.log(`ai-chat-lite クライアント
 
   接続先: ${BASE}
-  名乗る ID: ${USER_ID}   （AICHAT_ID で変更できる）
+  名乗る ID: ${USER_ID ?? '(未設定)  ← $env:AICHAT_ID で指定してください'}
   ルーム: ${ROOM}         （--room で変更できる）
 
 コマンド:
@@ -229,4 +252,8 @@ if (!run) {
 	usage();
 	process.exit(command ? 1 : 0);
 }
+
+// 読むだけのコマンド以外は、名乗る ID が要る
+if (!READ_ONLY.has(command)) requireUserId();
+
 await run();
