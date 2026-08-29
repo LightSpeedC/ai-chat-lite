@@ -105,6 +105,7 @@ const stmt = {
 	`),
 	selectUsers: db.prepare('SELECT * FROM users ORDER BY last_active_at DESC'),
 	selectUser: db.prepare('SELECT * FROM users WHERE user_id = ?'),
+	setLastActiveAt: db.prepare('UPDATE users SET last_active_at = ? WHERE user_id = ?'),
 };
 
 /** 取得件数を 1〜上限に収める */
@@ -197,7 +198,15 @@ export function closeDb() {
 	db.close();
 }
 
-// --- 診断用。設定が意図どおりに効いているかを外から確かめる ---
+// --- 診断用。設定や状態が意図どおりかを外から確かめる ---
+
+/**
+ * 最終アクセス時刻を明示的に書き換える。
+ * オンライン判定が猶予をまたぐ様子を、時間を待たずに確かめるために使う。
+ */
+export function setLastActiveAt(userId, at) {
+	stmt.setLastActiveAt.run(at, userId);
+}
 
 /** 現在のジャーナルモード。WAL に切り替わっていることの確認に使う */
 export function getJournalMode() {

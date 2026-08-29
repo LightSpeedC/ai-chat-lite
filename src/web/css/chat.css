@@ -1,0 +1,509 @@
+@charset "UTF-8";
+
+/* ===================================================================
+   ai-chat-lite チャット画面
+   背景は淡い色に保ち、濃い色はタイトルバーと見出しの箱だけに使う
+   =================================================================== */
+
+:root {
+	--navy1: #12224d;
+	--navy2: #2f5fbf;
+	--ink: #1c2330;
+	--ink-soft: #4a5568;
+	--line: #d9dfe8;
+	--code-bg: #f4f6fa;
+	--link: #1a4fa0;
+
+	/* 在席の状態。presence.mjs の STATUS と対応する */
+	--online1: #1d7a3c;
+	--online2: #45b56c;
+	--grace1: #b8620a;
+	--grace2: #f0a548;
+	--offline1: #5a6472;
+	--offline2: #97a1ae;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html, body {
+	height: 100%;
+}
+
+body {
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	background: #fdfdfe;
+	color: var(--ink, #1c2330);
+	font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+	font-size: 15px;
+	line-height: 1.7;
+}
+
+/* ---------- タイトルバー ---------- */
+
+.titlebar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+	padding: 12px 22px;
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+}
+
+.titlebar-main {
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+}
+
+.titlebar h1 {
+	margin: 0;
+	font-size: 1.2em;
+	color: #fff;
+	background: transparent;
+}
+
+.titlebar .room {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	padding: 1px 10px;
+	border-radius: 11px;
+	font-size: 0.85em;
+}
+
+.titlebar-me {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	color: #d7e2f7;
+	font-size: 0.9em;
+}
+
+.titlebar button {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	border-radius: 6px;
+	padding: 3px 10px;
+	font-size: 0.9em;
+	cursor: pointer;
+}
+
+.titlebar button:hover {
+	background: rgba(255, 255, 255, 0.28);
+	color: #fff;
+}
+
+/* ---------- 全体の骨組み ---------- */
+
+.layout {
+	flex: 1;
+	display: flex;
+	min-height: 0;
+}
+
+/* ---------- 参加者 ---------- */
+
+.users {
+	width: 260px;
+	flex-shrink: 0;
+	background: #f2f5fb;
+	color: var(--ink, #1c2330);
+	border-right: 1px solid var(--line, #d9dfe8);
+	padding: 14px 16px;
+	overflow-y: auto;
+}
+
+.users h2 {
+	margin: 0 0 10px;
+	font-size: 0.95em;
+	color: var(--navy1, #12224d);
+	background: transparent;
+}
+
+.users .count {
+	display: inline-block;
+	min-width: 22px;
+	padding: 0 7px;
+	border-radius: 11px;
+	background: linear-gradient(100deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	font-size: 0.85em;
+	text-align: center;
+}
+
+.users ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.users li {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 5px 0;
+	border-bottom: 1px solid #e4e9f2;
+	background: transparent;
+	color: var(--ink, #1c2330);
+}
+
+.users .name {
+	font-weight: 700;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.users .role {
+	color: var(--ink-soft, #4a5568);
+	background: transparent;
+	font-size: 0.8em;
+	margin-left: auto;
+	white-space: nowrap;
+}
+
+/* 状態を表す丸。色は状態名から決める */
+.mark {
+	width: 11px;
+	height: 11px;
+	flex-shrink: 0;
+	border-radius: 50%;
+	display: inline-block;
+}
+
+.mark.online {
+	background: linear-gradient(100deg, var(--online1, #1d7a3c), var(--online2, #45b56c));
+}
+
+.mark.grace {
+	background: linear-gradient(100deg, var(--grace1, #b8620a), var(--grace2, #f0a548));
+}
+
+.mark.offline {
+	background: linear-gradient(100deg, var(--offline1, #5a6472), var(--offline2, #97a1ae));
+}
+
+.users li.offline .name {
+	color: var(--ink-soft, #4a5568);
+	background: transparent;
+	font-weight: 400;
+}
+
+.legend {
+	margin: 14px 0 0;
+	color: var(--ink-soft, #4a5568);
+	background: transparent;
+	font-size: 0.78em;
+	line-height: 2;
+}
+
+.legend .mark {
+	margin: 0 5px 0 0;
+	vertical-align: -1px;
+}
+
+/* ---------- メッセージ ---------- */
+
+.messages {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.log {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px 22px;
+	background: #fdfdfe;
+	color: var(--ink, #1c2330);
+}
+
+.more {
+	text-align: center;
+	margin: 0 0 12px;
+}
+
+.more button {
+	background: #eef2f9;
+	color: var(--link, #1a4fa0);
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 14px;
+	padding: 2px 16px;
+	font-size: 0.85em;
+	cursor: pointer;
+}
+
+.msg {
+	margin: 0 0 12px;
+	max-width: 78%;
+}
+
+.msg .meta {
+	color: var(--ink-soft, #4a5568);
+	background: transparent;
+	font-size: 0.78em;
+	margin-bottom: 2px;
+}
+
+.msg .body {
+	background: #fff;
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 4px 12px 12px 12px;
+	padding: 8px 14px;
+	overflow-wrap: anywhere;
+}
+
+/* 自分の発言は右に寄せる */
+.msg.mine {
+	margin-left: auto;
+}
+
+.msg.mine .meta {
+	text-align: right;
+}
+
+.msg.mine .body {
+	background: #eaf1fd;
+	color: var(--ink, #1c2330);
+	border-color: #c7d9f5;
+	border-radius: 12px 4px 12px 12px;
+}
+
+/* 自分宛ての名指しは目立たせる */
+.msg.to-me .body {
+	border-left: 4px solid var(--grace1, #b8620a);
+	background: #fff8ef;
+	color: var(--ink, #1c2330);
+}
+
+.msg .to {
+	color: var(--link, #1a4fa0);
+	background: transparent;
+	font-weight: 700;
+}
+
+/* 入退室 */
+.msg.system {
+	max-width: 100%;
+	text-align: center;
+	margin: 14px 0;
+}
+
+.msg.system .body {
+	display: inline-block;
+	background: #f2f5fb;
+	color: var(--ink-soft, #4a5568);
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 12px;
+	padding: 2px 16px;
+	font-size: 0.85em;
+}
+
+/* 本文の中の Markdown */
+.msg .body code {
+	background: var(--code-bg, #f4f6fa);
+	color: #17335f;
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 4px;
+	padding: 1px 5px;
+	font-family: "Consolas", "Cascadia Mono", monospace;
+	font-size: 0.92em;
+}
+
+.msg .body pre {
+	background: #f4f6fa;
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 4px solid var(--navy2, #2f5fbf);
+	border-radius: 0 6px 6px 0;
+	padding: 10px 13px;
+	margin: 8px 0;
+	overflow-x: auto;
+}
+
+.msg .body pre code {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	border: none;
+	padding: 0;
+}
+
+.msg .body a {
+	color: var(--link, #1a4fa0);
+	background: transparent;
+}
+
+.msg .body strong {
+	color: var(--navy1, #12224d);
+	background: transparent;
+}
+
+/* ---------- 入力欄 ---------- */
+
+.composer {
+	display: flex;
+	gap: 12px;
+	align-items: stretch;
+	padding: 12px 22px;
+	background: #f2f5fb;
+	border-top: 1px solid var(--line, #d9dfe8);
+}
+
+.composer textarea {
+	flex: 1;
+	resize: vertical;
+	min-height: 46px;
+	padding: 8px 12px;
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 8px;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	font-family: inherit;
+	font-size: 1em;
+	line-height: 1.6;
+}
+
+.composer-side {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	justify-content: space-between;
+}
+
+.composer .to {
+	color: var(--ink-soft, #4a5568);
+	background: transparent;
+	font-size: 0.8em;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.composer .to input {
+	padding: 3px 8px;
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 6px;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	font-family: inherit;
+}
+
+.composer button {
+	background: linear-gradient(100deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	border: none;
+	border-radius: 8px;
+	padding: 6px 26px;
+	font-size: 0.95em;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.composer button:disabled {
+	background: linear-gradient(100deg, var(--offline1, #5a6472), var(--offline2, #97a1ae));
+	color: #fff;
+	cursor: default;
+}
+
+/* ---------- 通信が切れたときの帯 ---------- */
+
+.banner {
+	position: fixed;
+	left: 50%;
+	bottom: 22px;
+	transform: translateX(-50%);
+	background: linear-gradient(100deg, var(--grace1, #b8620a), var(--grace2, #f0a548));
+	color: #fff;
+	padding: 6px 22px;
+	border-radius: 16px;
+	font-size: 0.88em;
+	box-shadow: 0 3px 12px rgba(20, 34, 70, 0.28);
+}
+
+.banner[hidden] {
+	display: none;
+}
+
+/* ---------- ID を尋ねるダイアログ ---------- */
+
+dialog {
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 12px;
+	padding: 22px 26px;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	box-shadow: 0 6px 26px rgba(20, 34, 70, 0.28);
+}
+
+dialog::backdrop {
+	background: rgba(18, 34, 77, 0.35);
+}
+
+dialog h2 {
+	margin: 0 0 8px;
+	color: var(--navy1, #12224d);
+	background: transparent;
+	font-size: 1.1em;
+}
+
+dialog p {
+	margin: 0 0 12px;
+	color: var(--ink-soft, #4a5568);
+	background: transparent;
+	font-size: 0.9em;
+}
+
+dialog input {
+	width: 100%;
+	padding: 7px 12px;
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 8px;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	font-family: inherit;
+	font-size: 1em;
+}
+
+dialog menu {
+	display: flex;
+	justify-content: flex-end;
+	margin: 16px 0 0;
+	padding: 0;
+}
+
+dialog button {
+	background: linear-gradient(100deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	border: none;
+	border-radius: 8px;
+	padding: 6px 24px;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+/* ---------- 狭い画面 ---------- */
+
+@media (max-width: 720px) {
+	.layout {
+		flex-direction: column;
+	}
+
+	.users {
+		width: auto;
+		max-height: 30vh;
+		border-right: none;
+		border-bottom: 1px solid var(--line, #d9dfe8);
+	}
+
+	.msg {
+		max-width: 92%;
+	}
+}

@@ -1,0 +1,59 @@
+<service>
+  <id>node-ai-chat-lite</id>
+  <name>ai-chat-lite チャットサーバー</name>
+  <description>ローカル PC 内で AI セッションと人間が同席する簡易チャットのサーバー</description>
+
+  <!--
+    パスは書かない。WinSW は相対パスを自分の実行ファイルがある場所から解決するため、
+    このファイルをプロジェクトのルートに置いてあれば絶対パスは要らない。
+
+    ただし install だけは実体のフォルダ（C:\...）で行う。N: は subst の仮想ドライブで
+    サービスからは見えず、ImagePath に N:\... が記録されると起動に失敗する。
+  -->
+  <executable>node-ai-chat-lite.exe</executable>
+  <arguments>src\server\server.mjs</arguments>
+
+  <!-- 既定値のままで動く。ここで指定しているのは、外から見て分かるようにするため -->
+  <env name="AICHAT_PORT" value="8787"/>
+
+  <!-- サービス経由で動いていることを、サーバー自身が知るための目印 -->
+  <env name="AICHAT_MANAGED" value="winsw"/>
+
+  <!--
+    logpath の相対パスは、この XML の場所ではなく「サービスのカレントディレクトリ」
+    を基準に解決される。サービスのカレントは C:\Windows\System32 なので、
+    単に logs と書くと C:\Windows\System32\Logs に出てしまう。
+    %BASE% は WinSW の実行ファイルがあるフォルダを指すため、これを前に付ける。
+  -->
+  <logpath>%BASE%\logs</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold>
+    <keepFiles>8</keepFiles>
+  </log>
+
+  <!--
+    異常終了（終了コード 0 以外）したら 10 秒後に立ち上げ直す。
+    終了コード 0 は正常終了とみなされ、再起動されない。
+
+    この性質を利用して、ソースを直したあとの反映を管理者権限なしで行える。
+      POST /api/admin/exit {"exit_code": 1}  … 10 秒後に新しいコードで起動する
+      POST /api/admin/exit {"exit_code": 0}  … 停止したまま
+  -->
+  <!--
+    Windows のサービス回復は「1 回目」「2 回目」「それ以降」の 3 段階を持つ。
+    3 つ書けば 3 段目まで埋まり、何度落としても再起動される。
+    開発中は入れ替えを繰り返すため、当面この形にしておく。
+    運用が固まったら段数と delay を見直す。
+  -->
+  <onfailure action="restart" delay="10 sec"/>
+  <onfailure action="restart" delay="10 sec"/>
+  <onfailure action="restart" delay="10 sec"/>
+
+  <!-- 1 分間動き続けたら失敗の回数を数え直す -->
+  <resetfailure>1 min</resetfailure>
+
+  <startmode>Automatic</startmode>
+
+  <!-- 停止のときは Ctrl+C 相当を送る。サーバー側で待機中の接続を畳んでから終わる -->
+  <stopparentprocessfirst>true</stopparentprocessfirst>
+</service>

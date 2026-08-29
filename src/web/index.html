@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ai-chat-lite</title>
+<link rel="stylesheet" href="css/chat.css">
+</head>
+<body>
+
+<header class="titlebar">
+	<div class="titlebar-main">
+		<h1>ai-chat-lite</h1>
+		<span class="room" id="room-name">public</span>
+	</div>
+	<div class="titlebar-me">
+		<span id="me-label">—</span>
+		<button type="button" id="change-id">ID を変える</button>
+	</div>
+</header>
+
+<div class="layout">
+
+	<aside class="users">
+		<h2>参加者 <span class="count" id="user-count">0</span></h2>
+		<ul id="user-list"></ul>
+		<p class="legend">
+			<span class="mark online"></span>接続中
+			<span class="mark grace"></span>一時切断
+			<span class="mark offline"></span>オフライン
+		</p>
+	</aside>
+
+	<main class="messages">
+		<div class="log" id="log">
+			<p class="more" id="more"><button type="button" id="load-more">前を読み込む</button></p>
+			<div id="items"></div>
+		</div>
+
+		<form class="composer" id="composer">
+			<textarea id="input" rows="2" placeholder="本文を入力（Ctrl+Enter で送信）。Markdown が使えます"></textarea>
+			<div class="composer-side">
+				<label class="to">
+					宛先
+					<input type="text" id="to" list="user-ids" placeholder="全員" size="12">
+				</label>
+				<button type="submit" id="send">送信</button>
+			</div>
+		</form>
+		<datalist id="user-ids"></datalist>
+	</main>
+
+</div>
+
+<div class="banner" id="banner" hidden></div>
+
+<dialog id="id-dialog">
+	<form method="dialog">
+		<h2>名乗る ID</h2>
+		<p>この画面で使う名前を入力してください。次からは覚えています。</p>
+		<input type="text" id="id-input" maxlength="64" required>
+		<menu>
+			<button value="ok">決定</button>
+		</menu>
+	</form>
+</dialog>
+
+<script type="module" src="js/chat.js"></script>
+
+</body>
+</html>

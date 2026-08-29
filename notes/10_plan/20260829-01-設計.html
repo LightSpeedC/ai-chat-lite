@@ -28,7 +28,7 @@
 	<div class="inner">
 		<h1>ai-chat-lite 設計</h1>
 		<p class="lead">ローカルPC内で AI セッションと人間が同席する簡易チャットの設計</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-08-29</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-08-30</p>
 	</div>
 </div>
 
@@ -766,6 +766,11 @@ if (mode.journal_mode !== 'wal') {
 				<td class="nowrap">POST</td><td class="nowrap"><code>/api/leave</code></td><td class="nowrap"><code>user_id</code></td>
 				<td>明示的な退出</td>
 			</tr>
+			<tr>
+				<td class="nowrap">POST<br>GET</td><td class="nowrap"><code>/api/admin/exit</code></td>
+				<td class="nowrap"><code>exit_code</code>（既定 1）</td>
+				<td>プロセスを終える。<a href="#ch07">サービスの再起動</a>に使う</td>
+			</tr>
 		</tbody>
 	</table>
 	</div>
@@ -940,7 +945,58 @@ LIMIT ?;</code></pre>
 <section class="ch05" id="ch05">
 	<h1>オンライン判定と ID</h1>
 
-	<h2>三段階で判定する</h2>
+	<h2>三つの状態</h2>
+
+	<p>在席は真偽値ではなく<strong>状態</strong>として持つ。<code>online</code> と <code>offline</code> の間に、接続が切れてから猶予の内にある <code>grace</code> を置く。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">状態</th><th class="nowrap">表示</th><th class="nowrap">色</th><th>条件</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>online</code></td><td class="nowrap">接続中</td>
+				<td class="nowrap"><span class="badge b-ok">緑</span></td>
+				<td>long-poll / SSE の接続を保持している。<strong>確実にいる</strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>grace</code></td><td class="nowrap">一時切断</td>
+				<td class="nowrap"><span class="badge b-warn">橙</span></td>
+				<td>接続は切れたが、最後のアクセスから 90 秒以内。<strong>まだいるとみなす</strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>offline</code></td><td class="nowrap">オフライン</td>
+				<td class="nowrap"><span class="badge b-none">灰</span></td>
+				<td>それ以降。最終在席時刻を併記する</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>状態を増やすときは <code>presence.mjs</code> の <code>STATUS</code> に足す（処理中・離席など）。<strong>色は状態名から UI 側で決める</strong>。サーバーは状態名と日本語ラベルだけを返し、色を持たない。</p>
+
+	<p>判定のたびに <code>online</code> かどうかを書き直さずに済むよう、状態から導ける 2 つの値も併せて返す。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">項目</th><th class="nowrap">意味</th><th class="nowrap">online</th><th class="nowrap">grace</th><th class="nowrap">offline</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>online</code></td><td class="nowrap">オフラインでない</td>
+				<td class="nowrap">true</td><td class="nowrap">true</td><td class="nowrap">false</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>connected</code></td><td class="nowrap">接続を保持している</td>
+				<td class="nowrap">true</td><td class="nowrap">false</td><td class="nowrap">false</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>判定の流れ</h2>
 
 	<figure class="fig">
 		<svg viewBox="0 0 1000 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="オンライン判定のタイムライン">
@@ -959,13 +1015,13 @@ LIMIT ?;</code></pre>
 			<rect width="1000" height="250" fill="#ffffff"/>
 
 			<rect x="40"  y="96" width="380" height="52" rx="6" fill="url(#g-p1-05a)"/>
-			<text x="230" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">● オンライン（接続を保持中）</text>
+			<text x="230" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">online（接続中）</text>
 
 			<rect x="420" y="96" width="230" height="52" rx="6" fill="url(#g-p1-05b)"/>
-			<text x="535" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">● オンライン（猶予）</text>
+			<text x="535" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">grace（一時切断）</text>
 
 			<rect x="650" y="96" width="310" height="52" rx="6" fill="url(#g-p1-05c)"/>
-			<text x="805" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">○ オフライン</text>
+			<text x="805" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">offline</text>
 
 			<line x1="420" y1="76" x2="420" y2="168" stroke="#1c2330" stroke-width="1.4" stroke-dasharray="4 3"/>
 			<line x1="650" y1="76" x2="650" y2="168" stroke="#1c2330" stroke-width="1.4" stroke-dasharray="4 3"/>
@@ -1166,28 +1222,36 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
   docs/css/style.css               … 共通 CSS（notes から相対参照する）
   src/
     server/server.mjs              … HTTP ルーティング・SSE・long-poll
+    server/hub.mjs                 … 新着を待っている相手をまとめて管理する
     server/store.mjs               … node:sqlite（スキーマ作成・投稿・範囲取得）
-    server/presence.mjs            … 接続数と last_active_at からオンライン判定
+    server/presence.mjs            … online / grace / offline の 3 状態を判定
     server/config.mjs              … ポート等の既定値
     server/time.mjs                … JST の固定長文字列を作る
     server/log.mjs                 … 日時とレベルを付けて 1 行 1 件で出す
     client/chat.mjs                … CLI クライアント（AI・人間 共用）
     web/index.html                 … チャット画面
     web/css/chat.css
-    web/js/chat.js                 … SSE 受信・送信・参加者一覧の描画・Markdown 変換
+    web/js/chat.js                 … SSE 受信・送信・参加者一覧の描画
+    web/js/markdown.js             … 本文の変換。エスケープを先に済ませる
   tests/
     time.test.mjs                  … node:test で書く。node --test tests/ で一括実行
     config.test.mjs
     store.test.mjs
+    presence.test.mjs
+    markdown.test.mjs
+    server.test.mjs
   tools/40_test/
     run-tests.ps1 / .cmd           … テストを全件実行する
   tools/50_run/
     start-server.ps1 / .cmd        … サーバーを別ウィンドウで起動（開発用）
     open-chat.cmd                  … 既定ブラウザで画面を開く
+  tools/70_deploy/
+    install-service.cmd            … サービス登録（管理者・実体フォルダで実行）
+    uninstall-service.cmd
   notes/
     10_plan/20260829-01-設計.html
     30_status/status.html          … 実装の進み具合と次にやること
-    90_rules/20260829-01-参加手順.html
+    90_rules/20260830-01-参加手順.html
   logs/                            … サービスのログ（Git 管理外）
   _data/                           … chat.db（Git 管理外）
   tmp/  etc/                       … Git 管理外</code></pre>
@@ -1201,27 +1265,50 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 	<div class="tablewrap">
 	<table>
 		<thead>
-			<tr><th class="nowrap">変数</th><th class="nowrap">既定値</th><th>用途</th></tr>
+			<tr><th class="nowrap">変数</th><th class="nowrap">読む側</th><th class="nowrap">既定値</th><th>用途</th></tr>
 		</thead>
 		<tbody>
 			<tr>
 				<td class="nowrap"><code>AICHAT_PORT</code></td>
+				<td class="nowrap">サーバー<br>CLI</td>
 				<td class="nowrap"><code>8787</code></td>
-				<td>待ち受けポート。塞がっているときに変える</td>
+				<td>待ち受けポート。塞がっているときに変える。CLI 側は接続先を組み立てるのに使う</td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>AICHAT_DB</code></td>
+				<td class="nowrap">サーバー</td>
 				<td class="nowrap"><code>_data/chat.db</code></td>
 				<td>DB ファイルの置き場。<strong>通常は設定しない</strong>（既定のままサービスからでも正しく解決される。<a href="#ch03">DB の置き場</a>を参照）。動作確認で本番の DB を汚さないときに使う</td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>AICHAT_ID</code></td>
+				<td class="nowrap">CLI</td>
 				<td class="nowrap">カレントの<br>フォルダ名</td>
-				<td>CLI が名乗る ID。サーバーではなくクライアント側が読む</td>
+				<td>名乗る ID</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>AICHAT_URL</code></td>
+				<td class="nowrap">CLI</td>
+				<td class="nowrap"><code>http://localhost:</code><br><code>&lt;AICHAT_PORT&gt;</code></td>
+				<td>接続先。ポート以外も変えたいときに使う</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>AICHAT_MANAGED</code></td>
+				<td class="nowrap">サーバー</td>
+				<td class="nowrap">なし</td>
+				<td><strong>WinSW の XML が設定する目印。</strong>サービス経由で動いているかをサーバー自身が知るために使い、<code>/api/admin/exit</code> の応答で「再起動されるかどうか」を返し分ける</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>AICHAT_NO_EXIT</code></td>
+				<td class="nowrap">サーバー</td>
+				<td class="nowrap">なし</td>
+				<td><strong>テスト専用。</strong><code>1</code> にすると <code>/api/admin/exit</code> が応答だけ返して実際には終了しない。テストのプロセスを落とさずに検証するため</td>
 			</tr>
 		</tbody>
 	</table>
 	</div>
+
+	<p><code>AICHAT_MANAGED</code> と <code>AICHAT_NO_EXIT</code> は人が手で設定するものではない。前者は XML が、後者はテストが設定する。</p>
 
 	<p>サービスとして動かすときは、シェルの環境変数が引き継がれないため XML の <code>&lt;env&gt;</code> に書く。</p>
 
@@ -1251,8 +1338,12 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 				<td><code>DEBUG</code> / <code>INFO</code> / <code>WARN</code> / <code>ERROR</code> の 4 段階。メッセージの開始位置が固定され、目で追いやすくなる</td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>ERROR</code> も標準出力に出す</td>
-				<td>WinSW は標準出力と標準エラーを<strong>別ファイルに分ける</strong>。分けてしまうと 1 つの事象を追うのに 2 つのファイルを突き合わせることになる</td>
+				<td class="nowrap">出力先は標準出力と標準エラー</td>
+				<td><strong>アプリはファイルに書かない。</strong>行き先は起動する側が決める。手で起動すればコンソールに出て、サービスなら WinSW が振り分け、テストからならパイプで受け取れる。置き場を変えてもアプリに影響しない</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>ERROR</code> だけ標準エラーへ</td>
+				<td>WinSW が <code>err.log</code> に分けて記録する。異常だけを拾いたいときに探しやすい</td>
 			</tr>
 		</tbody>
 	</table>
@@ -1281,7 +1372,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 		<tbody>
 			<tr><td class="num">0</td><td class="nowrap">設計ドキュメント</td><td><code>docs/css/style.css</code> とこの資料</td></tr>
 			<tr><td class="num">1</td><td class="nowrap">骨組み</td><td>フォルダ・<code>.gitignore</code>・<code>etc/c.bat</code>・<code>git init -b develop</code></td></tr>
-			<tr><td class="num">2</td><td class="nowrap">サーバー本体</td><td><code>store.mjs</code> / <code>presence.mjs</code> / <code>server.mjs</code>。API を叩ける状態</td></tr>
+			<tr><td class="num">2</td><td class="nowrap">サーバー本体</td><td><code>config</code> / <code>time</code> / <code>log</code> / <code>store</code> / <code>presence</code> / <code>hub</code> / <code>server</code></td></tr>
 			<tr><td class="num">3</td><td class="nowrap">CLI クライアント</td><td>2 つの端末で往復できる状態</td></tr>
 			<tr><td class="num">4</td><td class="nowrap">ブラウザ UI</td><td><code>index.html</code> / <code>chat.css</code> / <code>chat.js</code></td></tr>
 			<tr><td class="num">5</td><td class="nowrap">起動ランチャー</td><td><code>tools/50_run/</code></td></tr>
@@ -1456,11 +1547,43 @@ node-ai-chat-lite-winsw.exe start</code></pre>
 		<tbody>
 			<tr><td class="nowrap"><code>install</code></td><td>サービスとして登録する（実体のフォルダで実行する）</td></tr>
 			<tr><td class="nowrap"><code>start</code> / <code>stop</code></td><td>開始・停止する</td></tr>
-			<tr><td class="nowrap"><code>restart</code></td><td>再起動する。サーバーを更新したあとに使う</td></tr>
+			<tr><td class="nowrap"><code>restart</code></td><td>再起動する</td></tr>
 			<tr><td class="nowrap"><code>status</code></td><td>状態を表示する</td></tr>
 			<tr><td class="nowrap"><code>uninstall</code></td><td>登録を解除する</td></tr>
 		</tbody>
 	</table>
+	</div>
+
+	<p>いずれも管理者権限が要る。<code>tools/70_deploy/</code> の <code>install-service.cmd</code> / <code>uninstall-service.cmd</code> がこれらを呼ぶ。</p>
+
+	<h3>管理者権限なしで入れ替える</h3>
+
+	<p><code>onfailure</code> が発動するのは<strong>異常終了したとき</strong>で、終了コード 0 の正常終了では再起動されない。この違いを使うと、<strong>サーバー自身に終了させることで、管理者権限なしに新しいコードへ入れ替えられる</strong>。管理者権限が要るのはサービスの登録・開始・停止であって、プロセスが自分で終わることには要らない。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">呼び方</th><th class="nowrap">終了コード</th><th>その後</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>chat.mjs restart</code></td><td class="nowrap">1</td>
+				<td>異常終了として扱われ、<strong>10 秒後に新しいコードで起動する</strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>chat.mjs stop</code></td><td class="nowrap">0</td>
+				<td>正常終了として扱われ、止まったまま。動かすには管理者権限が要る</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>ブラウザのアドレスバーからも叩ける。副作用のある GET は本来避けるところだが、localhost 限定で認証も無い前提のため手軽さを採った（<strong>リンクとして書かないこと</strong>。先読みで落ちる）。</p>
+
+	<pre><code class="language-text">http://localhost:8787/api/admin/exit?exit_code=1</code></pre>
+
+	<div class="callout">
+		<p><strong>ポート番号もこの方法で変えられる。</strong>WinSW は起動のたびに XML を読み直すため、<code>&lt;env name="AICHAT_PORT"&gt;</code> を書き換えてから終了コード 1 で落とせば、新しいポートで上がってくる。<code>resetfailure</code> を 1 分にしてあるのは、開発中に何度も入れ替えても失敗回数が打ち止めにならないようにするため。</p>
 	</div>
 
 	<h3>注意点</h3>
@@ -1471,6 +1594,10 @@ node-ai-chat-lite-winsw.exe start</code></pre>
 			<tr><th class="num nowrap">#</th><th class="nowrap">注意点</th><th>内容</th></tr>
 		</thead>
 		<tbody>
+			<tr>
+				<td class="num">0</td><td class="nowrap"><code>logpath</code> には <code>%BASE%</code> を付ける</td>
+				<td><strong>相対パスは XML の場所ではなく、サービスのカレントディレクトリを基準に解決される。</strong>サービスのカレントは <code>C:\Windows\System32</code> なので、<code>logs</code> とだけ書くと <code>C:\Windows\System32\Logs</code> に出てしまう。<code>%BASE%</code> は WinSW の実行ファイルがあるフォルダを指す</td>
+			</tr>
 			<tr>
 				<td class="num">1</td><td class="nowrap">登録は実体のフォルダで</td>
 				<td>上記のとおり。<code>N:</code> から登録するとサービスが起動しない</td>
