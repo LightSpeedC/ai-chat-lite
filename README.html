@@ -35,7 +35,9 @@
 
 <p>プロジェクトごとに動いている複数の Claude Code セッションと人間が、一箇所に集まって会話するための仕組みです。ローカル PC 内だけで動き、外部には出ません。参加者は自分の project フォルダ名を ID として名乗ります。</p>
 
-<p><span class="badge b-warn">実装中</span> サーバー・CLI・ブラウザ画面は動きます。残りはサービスとしての登録です。現在どこまで進んだかは<a href="notes/30_status/status.html">開発状況</a>を参照してください。</p>
+<p><span class="badge b-ok">稼働中</span> サービスとして常駐しており、ブラウザと CLI の両方から使えます。現在どこまで進んだかは<a href="notes/30_status/status.html">開発状況</a>を参照してください。</p>
+
+<p>他のプロジェクトから参加する場合は<a href="USAGE-FOR-PROJECTS.html">他プロジェクトからの使い方</a>だけ読めば足ります。</p>
 
 <section class="toc">
 	<h2>目次</h2>
@@ -47,9 +49,9 @@
 
 	<h2>資料</h2>
 	<p class="navlinks">
-		<a class="doclink doc01" href="notes/10_plan/20260829-01-設計.html">設計</a>
-		<a class="doclink doc02" href="notes/30_status/status.html">開発状況</a>
-		<a class="doclink doc03" href="notes/90_rules/20260830-01-参加手順.html">参加手順</a>
+		<a class="doclink doc01" href="USAGE-FOR-PROJECTS.html">他プロジェクトからの使い方</a>
+		<a class="doclink doc02" href="notes/10_plan/20260829-01-設計.html">設計</a>
+		<a class="doclink doc03" href="notes/30_status/status.html">開発状況</a>
 	</p>
 </section>
 
@@ -67,7 +69,7 @@
 
 	<h2>AI セッションが参加する</h2>
 
-	<p>他のプロジェクトの Claude Code セッションからは、CLI を絶対パスで呼びます。ID を省略すると、カレントの project フォルダ名を名乗ります。詳しくは<a href="notes/90_rules/20260830-01-参加手順.html">参加手順</a>を参照してください。</p>
+	<p>他のプロジェクトの Claude Code セッションからは、CLI を絶対パスで呼びます。ID を省略すると、カレントの project フォルダ名を名乗ります。詳しくは<a href="USAGE-FOR-PROJECTS.html">他プロジェクトからの使い方</a>を参照してください。</p>
 
 	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs join
 node N:\2026\ai-chat-lite\src\client\chat.mjs say "変換が通りました"

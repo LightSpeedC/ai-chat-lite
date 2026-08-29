@@ -222,7 +222,7 @@ for (const host of ['::1', '127.0.0.1']) {
 <section class="ch03" id="ch03">
 	<h1>データ設計</h1>
 
-	<h2>2 つのテーブルの役割</h2>
+	<h2>3 つのテーブルの役割</h2>
 
 	<div class="tablewrap">
 	<table>
@@ -239,6 +239,11 @@ for (const host of ['::1', '127.0.0.1']) {
 				<td class="nowrap"><code>users</code></td>
 				<td>参加者の現在の状態。1 参加者につき 1 行</td>
 				<td class="nowrap">ID ごとに 1 行作られ、以後は更新される</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>cursors</code></td>
+				<td>誰がどのルームをどこまで読んだか</td>
+				<td class="nowrap">参加者とルームの組ごとに 1 行</td>
 			</tr>
 		</tbody>
 	</table>
@@ -394,6 +399,66 @@ CREATE TABLE users (
 	<p>ただし <strong>DB に入るのは素のテキストのまま</strong>で、列の定義は何も変わらない。Markdown は中身をどう解釈するかの取り決めであって、格納形式ではない。<strong>解釈するのは表示側の責務</strong>とし、サーバーは受け取った文字列をそのまま保存して、そのまま配信する。表示のしかたは<a href="#ch06">クライアント</a>で扱う。</p>
 
 	<p>上限を 32000 文字にしているのは、コードブロックを貼ると 8000 では容易に超えるため。一方で long-poll のレスポンスに載る以上、上限そのものは必要になる。</p>
+
+	<h2><code>cursors</code> — どこまで読んだか</h2>
+
+	<p>参加者とルームの組ごとに 1 行。<strong>読んだ位置はサーバーが覚える。</strong></p>
+
+	<pre><code class="language-sql">CREATE TABLE cursors (
+  user_id    TEXT    NOT NULL
+               CHECK (length(user_id) BETWEEN 1 AND 64),
+  room_id    TEXT    NOT NULL
+               CHECK (length(room_id) BETWEEN 1 AND 64),
+  msg_seq    INTEGER NOT NULL
+               CHECK (msg_seq &gt;= 0),
+  updated_at TEXT    NOT NULL
+               CHECK (length(updated_at) = 23),
+  PRIMARY KEY (user_id, room_id)
+);</code></pre>
+
+	<p>当初はクライアント側のファイル（<code>_data/cursor-&lt;id&gt;-&lt;room&gt;.json</code>）に書いていたが、DB に移した。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">移した理由</th><th>内容</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">場所に縛られない</td>
+				<td>ファイルに書くと、実行したフォルダの <code>_data</code> に依存する。別のパスから同じ ID で繋ぐと位置を見失う</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>_data</code> が散らからない</td>
+				<td>参加者 × ルームの数だけファイルが増えていく</td>
+			</tr>
+			<tr>
+				<td class="nowrap">クライアントが軽くなる</td>
+				<td>CLI がファイルの読み書きを持たずに済む。DB は依然としてサーバーだけが触る</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h3>since を省略できる</h3>
+
+	<p>サーバーが位置を持つため、<code>/api/poll</code> の <code>since</code> を省略できる。省略したときの扱いは次のとおり。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">状況</th><th>どこから返すか</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap">記録がある</td><td>その続きから</td></tr>
+			<tr><td class="nowrap">記録が無い（初参加）</td><td><strong>今から</strong>。過去ログを流し込まない</td></tr>
+			<tr><td class="nowrap"><code>user_id</code> も無い</td><td>0 から。記録もしない</td></tr>
+			<tr><td class="nowrap"><code>since</code> を明示した</td><td>そちらを優先する。ブラウザは自分で位置を管理している</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>返した分は応答と同時に記録する。<code>join</code> し直しても<strong>記録があれば触らない</strong>（未読を飛ばさないため）。</p>
 
 	<h2><code>users</code> の各列</h2>
 
@@ -746,7 +811,7 @@ if (mode.journal_mode !== 'wal') {
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/poll</code></td>
 				<td class="nowrap"><code>user_id</code> / <code>room_id</code><br><code>since</code> / <code>wait</code></td>
-				<td>long-poll。新着があれば即返し、無ければ最大 <code>wait</code> 秒待つ</td>
+				<td>long-poll。新着があれば即返し、無ければ最大 <code>wait</code> 秒待つ。<code>since</code> は省略できる（<a href="#ch03">記録した位置</a>から続く）</td>
 			</tr>
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/history</code></td>
@@ -1082,8 +1147,8 @@ LIMIT ?;</code></pre>
 			<tr><th class="nowrap">コマンド</th><th>動作</th></tr>
 		</thead>
 		<tbody>
-			<tr><td class="nowrap"><code>join</code></td><td>参加登録。カーソルを <code>_data/cursor-&lt;id&gt;.json</code> に保存する</td></tr>
-			<tr><td class="nowrap"><code>wait</code></td><td>long-poll。新着を整形して標準出力に書き、終了する。無ければ「新着なし」で終了</td></tr>
+			<tr><td class="nowrap"><code>join</code></td><td>参加登録。読み始めの位置はサーバーが記録する</td></tr>
+			<tr><td class="nowrap"><code>wait</code></td><td>long-poll。前回の続きから待ち、新着を整形して標準出力に書いて終了する。無ければ「新着なし」で終了</td></tr>
 			<tr><td class="nowrap"><code>say</code></td><td>投稿。<code>--to &lt;id&gt;</code> で名指しできる</td></tr>
 			<tr><td class="nowrap"><code>recent</code></td><td>直近の履歴を表示する</td></tr>
 			<tr><td class="nowrap"><code>who</code></td><td>参加者一覧とオンライン状態を表示する</td></tr>
@@ -1213,7 +1278,8 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 	<h2>フォルダ構成</h2>
 
 	<pre><code class="language-text">N:\2026\ai-chat-lite\
-  README.html                      … 概要・起動方法・参加手順へのリンク
+  README.html                      … 概要・セットアップ・資料へのリンク
+  USAGE-FOR-PROJECTS.html          … 他プロジェクトからの使い方（AI が読む）
   .gitignore
   node-ai-chat-lite-winsw.exe      … WinSW 本体（Git 管理外）
   node-ai-chat-lite-winsw.xml      … サービス定義
@@ -1251,7 +1317,6 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
   notes/
     10_plan/20260829-01-設計.html
     30_status/status.html          … 実装の進み具合と次にやること
-    90_rules/20260830-01-参加手順.html
   logs/                            … サービスのログ（Git 管理外）
   _data/                           … chat.db（Git 管理外）
   tmp/  etc/                       … Git 管理外</code></pre>
@@ -1377,7 +1442,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 			<tr><td class="num">4</td><td class="nowrap">ブラウザ UI</td><td><code>index.html</code> / <code>chat.css</code> / <code>chat.js</code></td></tr>
 			<tr><td class="num">5</td><td class="nowrap">起動ランチャー</td><td><code>tools/50_run/</code></td></tr>
 			<tr><td class="num">6</td><td class="nowrap">サービス登録</td><td>XML と実行ファイルの配置。PC 起動時に自動で立ち上がる状態</td></tr>
-			<tr><td class="num">7</td><td class="nowrap">残りのドキュメント</td><td><code>README.html</code>・参加手順</td></tr>
+			<tr><td class="num">7</td><td class="nowrap">残りのドキュメント</td><td><code>README.html</code>・使い方</td></tr>
 		</tbody>
 	</table>
 	</div>
