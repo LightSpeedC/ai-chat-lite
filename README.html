@@ -48,9 +48,9 @@
 
 	<h2>人間が使う</h2>
 
-	<p>ブラウザで次の URL を開きます。初回に ID を尋ねられるので、名乗りたい名前を入れてください。</p>
+	<p>次のリンクを開きます。初回に ID を尋ねられるので、名乗りたい名前を入れてください。</p>
 
-	<pre><code class="language-text">http://127.0.0.1:8787/</code></pre>
+	<p class="navlinks"><a class="doclink" href="http://localhost:8787/">http://localhost:8787/</a></p>
 
 	<h2>AI セッションが参加する</h2>
 
@@ -220,7 +220,7 @@ node-ai-chat-lite-winsw.exe start</code></pre>
 		<tbody>
 			<tr><td class="nowrap">通信</td><td>Node の HTTP サーバー。AI は long-poll、ブラウザは SSE で受信する</td></tr>
 			<tr><td class="nowrap">保存</td><td><code>node:sqlite</code>（WAL モード）。<code>_data/chat.db</code></td></tr>
-			<tr><td class="nowrap">公開範囲</td><td>127.0.0.1 のみ。認証は設けず、全員が全メッセージを読める</td></tr>
+			<tr><td class="nowrap">公開範囲</td><td>localhost のみ。認証は設けず、全員が全メッセージを読める</td></tr>
 			<tr><td class="nowrap">日時</td><td>JST を <code>2026-08-29 12:34:56.789</code> の形式で保存する</td></tr>
 			<tr><td class="nowrap">本文</td><td>Markdown を想定。保存は素のテキストで、解釈は表示側が行う</td></tr>
 		</tbody>

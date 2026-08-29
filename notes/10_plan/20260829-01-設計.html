@@ -175,7 +175,7 @@
 			<rect x="430" y="110" width="250" height="120" rx="10" fill="url(#g-p1-02e)"/>
 			<text x="555" y="152" text-anchor="middle" fill="#fff" font-size="16" font-family="sans-serif">ai-chat-lite サーバー</text>
 			<text x="555" y="177" text-anchor="middle" fill="#fdf0dc" font-size="13" font-family="sans-serif">node（依存パッケージなし）</text>
-			<text x="555" y="199" text-anchor="middle" fill="#fdf0dc" font-size="13" font-family="sans-serif">127.0.0.1:8787</text>
+			<text x="555" y="199" text-anchor="middle" fill="#fdf0dc" font-size="13" font-family="sans-serif">localhost:8787</text>
 
 			<line x1="680" y1="170" x2="765" y2="170" stroke="#4a5568" stroke-width="1.6" marker-end="url(#m-p1-02)"/>
 
@@ -183,10 +183,35 @@
 			<text x="875" y="163" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">_data/chat.db</text>
 			<text x="875" y="185" text-anchor="middle" fill="#fbe0e0" font-size="13" font-family="sans-serif">node:sqlite（WAL）</text>
 
-			<text x="500" y="320" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">127.0.0.1 のみで待ち受けるため、同じ PC 以外からは接続できない</text>
+			<text x="500" y="320" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">localhost のみで待ち受けるため、同じ PC 以外からは接続できない</text>
 		</svg>
 		<figcaption>参加者はすべて HTTP でサーバーに繋がり、履歴は 1 つの SQLite ファイルに集約される</figcaption>
 	</figure>
+
+	<h2>待ち受けアドレス</h2>
+
+	<p><code>localhost</code> は名前そのものではなく、名前解決を経て <strong><code>::1</code>（IPv6）または <code>127.0.0.1</code>（IPv4）</strong>になる。Windows では通常 <code>::1</code> が優先される。</p>
+
+	<p>そのため、次のように書くと片方にしか結び付かない。</p>
+
+	<pre><code class="language-javascript">server.listen(PORT, 'localhost');   // 解決結果の片方だけに bind される</code></pre>
+
+	<p>Node 17 以降は OS の解決順をそのまま使うため、Windows では <code>::1</code> だけで待ち受ける状態になり、<strong><code>127.0.0.1</code> で来た接続は拒否される</strong>。CLI クライアントが <code>127.0.0.1</code> を指していると繋がらない。</p>
+
+	<h3>両方で待ち受ける</h3>
+
+	<p>アドレスを明示して 2 回 <code>listen</code> する。どちらで来ても繋がり、ループバック以外からは届かない状態は保たれる。</p>
+
+	<pre><code class="language-javascript">// localhost は ::1 と 127.0.0.1 の両方を指すため、両方で待ち受ける
+for (const host of ['::1', '127.0.0.1']) {
+	createServer(handler).listen(PORT, host);
+}</code></pre>
+
+	<div class="callout">
+		<p><strong>状態はプロセスで 1 つ。</strong>待ち受けは 2 つになるが、long-poll の待機リストや SSE の接続一覧はモジュールスコープに置いて共有する。ここを待ち受けごとに分けると、<code>::1</code> で繋いだブラウザに <code>127.0.0.1</code> から投稿したメッセージが届かなくなる。</p>
+	</div>
+
+	<p><code>0.0.0.0</code> には bind しない。すべてのネットワークインターフェースで待ち受けることになり、同じ LAN の他のマシンから接続できてしまう。</p>
 
 	<h2>サーバーを落としたとき</h2>
 
@@ -939,7 +964,7 @@ LIMIT ?;</code></pre>
 			</tr>
 			<tr>
 				<td class="nowrap">認証</td>
-				<td>設けない。代わりに 127.0.0.1 でのみ待ち受け、外部ホストからの接続を遮断する</td>
+				<td>設けない。代わりに localhost でのみ待ち受け、外部ホストからの接続を遮断する</td>
 			</tr>
 		</tbody>
 	</table>
@@ -1368,7 +1393,7 @@ node-ai-chat-lite-winsw.exe start</code></pre>
 			<tr><td class="num">8</td><td>実際にサブエージェントを 1 つ張り、親セッションとの往復が成立する</td></tr>
 			<tr><td class="num">9</td><td><strong>実体のフォルダで</strong> <code>install</code> → <code>start</code> し、<code>logs/</code> にログが出る</td></tr>
 			<tr><td class="num">10</td><td>タスクマネージャーに <code>node-ai-chat-lite.exe</code> として現れ、名前で判別できる</td></tr>
-			<tr><td class="num">11</td><td><strong>PC を再起動しても</strong>、何もせずに <code>http://127.0.0.1:8787/</code> が開く</td></tr>
+			<tr><td class="num">11</td><td><strong>PC を再起動しても</strong>、何もせずに <a href="http://localhost:8787/">http://localhost:8787/</a> が開く</td></tr>
 		</tbody>
 	</table>
 	</div>
