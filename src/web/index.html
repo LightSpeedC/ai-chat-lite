@@ -11,9 +11,11 @@
 <header class="titlebar">
 	<div class="titlebar-main">
 		<h1>ai-chat-lite</h1>
-		<span class="room" id="room-name">public</span>
+		<select class="room" id="room-select" title="ルームを選ぶ"></select>
+		<button type="button" id="new-room" title="ルームを作る">＋</button>
 	</div>
 	<div class="titlebar-me">
+		<span class="version" id="version" title="サーバーの版。起動した時刻">—</span>
 		<span id="me-label">—</span>
 		<button type="button" id="change-id">ID を変える</button>
 	</div>
@@ -60,6 +62,18 @@
 		<p>この画面で使う名前を入力してください。次からは覚えています。</p>
 		<input type="text" id="id-input" maxlength="64" required>
 		<menu>
+			<button value="ok">決定</button>
+		</menu>
+	</form>
+</dialog>
+
+<dialog id="room-dialog">
+	<form method="dialog">
+		<h2>新しいルーム</h2>
+		<p>ルーム名を入れてください。最初の発言があった時点で一覧に並びます。</p>
+		<input type="text" id="room-input" maxlength="64" required>
+		<menu>
+			<button value="cancel" formnovalue>やめる</button>
 			<button value="ok">決定</button>
 		</menu>
 	</form>

@@ -1,7 +1,22 @@
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
+import { nowJst } from './time.mjs';
+
 const here = dirname(fileURLToPath(import.meta.url));
+
+/** 起動した時刻。ログや /api/version で使う */
+export const STARTED_AT = nowJst();
+
+/**
+ * サーバーの版。起動した時刻を yyyymmdd-hhmm で表す。
+ *
+ * ソースを直して入れ替えると必ず起動し直すため、この値が変わったかどうかで
+ * 「中身が入れ替わったか」を判断できる。ブラウザはこれを見て自分を読み直す。
+ */
+export const VERSION =
+	STARTED_AT.slice(0, 4) + STARTED_AT.slice(5, 7) + STARTED_AT.slice(8, 10) +
+	'-' + STARTED_AT.slice(11, 13) + STARTED_AT.slice(14, 16);
 
 /** プロジェクトのルート（src/server から 2 つ上） */
 export const ROOT = join(here, '..', '..');
@@ -27,6 +42,12 @@ export const DEFAULT_ROOM = 'public';
 
 /** 接続が切れてからオンライン扱いを続ける猶予（ミリ秒） */
 export const ONLINE_GRACE_MS = 90 * 1000;
+
+/**
+ * オフラインへ落ちた人を見つけるために在席を確かめる間隔（ミリ秒）。
+ * 猶予より短くしておく。この間隔の分だけ通知が遅れる。
+ */
+export const OFFLINE_CHECK_MS = 30 * 1000;
 
 /** long-poll の待ち時間の上限（秒）。PowerShell ツールの 600 秒制限の内側に収める */
 export const MAX_WAIT_SEC = 240;

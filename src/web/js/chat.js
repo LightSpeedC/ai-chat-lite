@@ -10,11 +10,16 @@
 
 import { renderBody, escapeText } from './markdown.js';
 
-const ROOM = 'public';
 const HISTORY_LIMIT = 50;
 
+/** いま見ているルーム。切り替えたら覚えておく */
+let room = localStorage.getItem('aichat.room') || 'public';
+
 const el = {
-	room: document.getElementById('room-name'),
+	roomSelect: document.getElementById('room-select'),
+	newRoom: document.getElementById('new-room'),
+	roomDialog: document.getElementById('room-dialog'),
+	roomInput: document.getElementById('room-input'),
 	me: document.getElementById('me-label'),
 	changeId: document.getElementById('change-id'),
 	userList: document.getElementById('user-list'),
@@ -28,6 +33,7 @@ const el = {
 	input: document.getElementById('input'),
 	to: document.getElementById('to'),
 	send: document.getElementById('send'),
+	version: document.getElementById('version'),
 	banner: document.getElementById('banner'),
 	dialog: document.getElementById('id-dialog'),
 	idInput: document.getElementById('id-input'),
@@ -37,6 +43,7 @@ let userId = '';
 let cursor = 0;        // ここまで受け取った msg_seq
 let oldestSeq = null;  // 画面に出ている中で最も古い msg_seq
 let source = null;     // EventSource
+let serverVersion = null; // 最後に受け取ったサーバーの版
 
 // --- 本文の描画 ---
 
@@ -134,14 +141,35 @@ function hideBanner() {
 	el.banner.hidden = true;
 }
 
+/**
+ * サーバーの版を確かめる。
+ *
+ * サーバーは起動するたびに版が変わる。SSE は切れると自動で繋ぎ直すため、
+ * 入れ替えのあとは新しい版がここへ届く。前と違っていれば画面も古いので読み直す。
+ */
+function checkVersion({ version }) {
+	el.version.textContent = version;
+
+	if (serverVersion === null) {
+		serverVersion = version;
+		return;
+	}
+	if (serverVersion === version) return;
+
+	showBanner(`サーバーが新しくなりました（${version}）。読み直します…`);
+	// 帯を読める間だけ待ってから読み直す
+	setTimeout(() => location.reload(), 1500);
+}
+
 function connectEvents() {
 	if (source) source.close();
 	source = new EventSource(
-		`/api/events?user_id=${encodeURIComponent(userId)}&room_id=${encodeURIComponent(ROOM)}&since=${cursor}`
+		`/api/events?user_id=${encodeURIComponent(userId)}&room_id=${encodeURIComponent(room)}&since=${cursor}`
 	);
 
 	source.addEventListener('message', (e) => appendMessages([JSON.parse(e.data)]));
 	source.addEventListener('presence', (e) => renderUsers(JSON.parse(e.data)));
+	source.addEventListener('version', (e) => checkVersion(JSON.parse(e.data)));
 	source.addEventListener('open', hideBanner);
 	source.addEventListener('error', () => {
 		// EventSource は自動で繋ぎ直す。繋がるまでは帯を出しておく
@@ -149,18 +177,52 @@ function connectEvents() {
 	});
 }
 
+/** ルームの一覧を読み直して、選択欄に並べる */
+async function loadRooms() {
+	const { rooms } = await api('/api/rooms');
+	el.roomSelect.textContent = '';
+
+	for (const r of rooms) {
+		const option = document.createElement('option');
+		option.value = r.room_id;
+		option.textContent = r.msg_count > 0 ? `${r.room_id} (${r.msg_count})` : r.room_id;
+		el.roomSelect.appendChild(option);
+	}
+
+	// まだ発言が無いルームは一覧に現れないため、選んでいる分を足しておく
+	if (![...el.roomSelect.options].some((o) => o.value === room)) {
+		const option = document.createElement('option');
+		option.value = room;
+		option.textContent = room;
+		el.roomSelect.appendChild(option);
+	}
+	el.roomSelect.value = room;
+}
+
+/** ルームを切り替える。表示を空にしてから読み直す */
+async function switchRoom(next) {
+	if (!next || next === room) return;
+	room = next;
+	localStorage.setItem('aichat.room', room);
+
+	el.items.textContent = '';
+	cursor = 0;
+	oldestSeq = null;
+	el.more.hidden = false;
+	await start();
+}
+
 async function start() {
-	el.room.textContent = ROOM;
 	el.me.textContent = userId;
 
 	const joined = await api('/api/join', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ user_id: userId, user_role: 'human', room_id: ROOM }),
+		body: JSON.stringify({ user_id: userId, user_role: 'human', room_id: room }),
 	});
 	renderUsers(joined.users);
 
-	const history = await api(`/api/history?room_id=${encodeURIComponent(ROOM)}&limit=${HISTORY_LIMIT}`);
+	const history = await api(`/api/history?room_id=${encodeURIComponent(room)}&limit=${HISTORY_LIMIT}`);
 	if (history.messages.length > 0) {
 		oldestSeq = history.messages[0].msg_seq;
 		cursor = history.messages[history.messages.length - 1].msg_seq;
@@ -171,6 +233,7 @@ async function start() {
 		el.more.hidden = true;
 	}
 
+	await loadRooms();
 	connectEvents();
 }
 
@@ -188,7 +251,7 @@ el.form.addEventListener('submit', async (e) => {
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
 				from_user_id: userId,
-				room_id: ROOM,
+				room_id: room,
 				to_user_id: el.to.value.trim() || null,
 				msg_body: body,
 			}),
@@ -215,7 +278,7 @@ el.loadMore.addEventListener('click', async () => {
 	el.loadMore.disabled = true;
 	try {
 		const past = await api(
-			`/api/history?room_id=${encodeURIComponent(ROOM)}&before=${oldestSeq}&limit=${HISTORY_LIMIT}`
+			`/api/history?room_id=${encodeURIComponent(room)}&before=${oldestSeq}&limit=${HISTORY_LIMIT}`
 		);
 		prependMessages(past.messages);
 	} finally {
@@ -225,11 +288,24 @@ el.loadMore.addEventListener('click', async () => {
 
 el.changeId.addEventListener('click', () => askId(true));
 
+el.roomSelect.addEventListener('change', () => switchRoom(el.roomSelect.value));
+
+el.newRoom.addEventListener('click', () => {
+	el.roomInput.value = '';
+	el.roomDialog.showModal();
+});
+
+el.roomDialog.addEventListener('close', () => {
+	if (el.roomDialog.returnValue !== 'ok') return;
+	const name = el.roomInput.value.trim();
+	if (name) switchRoom(name);
+});
+
 // 画面を閉じるときに離脱を伝える。届かなくても猶予の後にオフラインになる
 window.addEventListener('pagehide', () => {
 	navigator.sendBeacon?.(
 		'/api/leave',
-		new Blob([JSON.stringify({ user_id: userId, room_id: ROOM })], { type: 'application/json' })
+		new Blob([JSON.stringify({ user_id: userId, room_id: room })], { type: 'application/json' })
 	);
 });
 

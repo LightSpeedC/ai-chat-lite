@@ -20,17 +20,17 @@ const store = await import('../src/server/store.mjs');
 
 // --- 準備。以降のテストはこの状態を検証する ---
 store.joinUser('html2md', 'ai');
-store.joinUser('test-project', 'human');
+store.joinUser('human', 'human');
 
 const m1 = store.addMessage({ roomId: 'public', fromUserId: 'html2md', body: '1 件目' });
-const m2 = store.addMessage({ roomId: 'public', fromUserId: 'test-project', body: '2 件目' });
-const m3 = store.addMessage({ roomId: 'public', fromUserId: 'html2md', toUserId: 'test-project', body: '3 件目（名指し）' });
+const m2 = store.addMessage({ roomId: 'public', fromUserId: 'human', body: '2 件目' });
+const m3 = store.addMessage({ roomId: 'public', fromUserId: 'html2md', toUserId: 'human', body: '3 件目（名指し）' });
 const other = store.addMessage({ roomId: 'other', fromUserId: 'html2md', body: '別ルーム' });
 
 test('参加登録すると users に行ができる', () => {
 	assert.equal(store.listUsers().length, 2);
 	assert.equal(store.getUser('html2md').user_role, 'ai');
-	assert.equal(store.getUser('test-project').user_role, 'human');
+	assert.equal(store.getUser('human').user_role, 'human');
 });
 
 test('接続数の初期値は 0', () => {
@@ -48,7 +48,7 @@ test('省略した項目に既定が入る', () => {
 });
 
 test('名指しの宛先が入る', () => {
-	assert.equal(m3.to_user_id, 'test-project');
+	assert.equal(m3.to_user_id, 'human');
 });
 
 test('連番はルームを跨ぐ', () => {

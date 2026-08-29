@@ -12,8 +12,10 @@ process.env.AICHAT_DB = TEST_DB;
 process.env.AICHAT_NO_EXIT = '1';
 for (const suffix of ['', '-wal', '-shm']) rmSync(TEST_DB + suffix, { force: true });
 
-const { startServers, stopServers } = await import('../src/server/server.mjs');
+const { startServers, stopServers, sweepOffline } = await import('../src/server/server.mjs');
 const hub = await import('../src/server/hub.mjs');
+const store = await import('../src/server/store.mjs');
+const { jstBefore } = await import('../src/server/time.mjs');
 
 let servers;
 let base;
@@ -80,10 +82,10 @@ test('say で投稿できる', async () => {
 test('名指しできる', async () => {
 	const { json } = await post('/api/say', {
 		from_user_id: 'html2md',
-		to_user_id: 'test-project',
+		to_user_id: 'human',
 		msg_body: '確認をお願いします',
 	});
-	assert.equal(json.to_user_id, 'test-project');
+	assert.equal(json.to_user_id, 'human');
 });
 
 test('poll は新着があれば待たずに返る', async () => {
@@ -306,4 +308,106 @@ test('wait を省略しても即座に返らない（既定が効いている）
 test('web の外は参照できない', async () => {
 	const res = await fetch(base + '/../../src/server/store.mjs');
 	assert.ok(res.status === 403 || res.status === 404, `status=${res.status}`);
+});
+
+// --- どこまで読んだかをサーバーが覚える ---
+
+test('since を省略すると、参加した時点から待つ', async () => {
+	// 過去ログを流し込まないようにするため、初参加は「今から」になる
+	await post('/api/join', { user_id: 'reader', user_role: 'ai' });
+	const { json } = await get('/api/poll?user_id=reader&wait=0');
+	assert.deepEqual(json.messages, [], '過去のぶんは返らない');
+});
+
+test('受け取ったら位置が進み、次は続きから届く', async () => {
+	await post('/api/say', { from_user_id: 'html2md', msg_body: 'カーソルの確認 1' });
+
+	const first = await get('/api/poll?user_id=reader&wait=0');
+	assert.equal(first.json.messages.length, 1);
+	assert.equal(first.json.messages[0].msg_body, 'カーソルの確認 1');
+
+	// 同じ呼び方でも、もう一度は返らない
+	const again = await get('/api/poll?user_id=reader&wait=0');
+	assert.deepEqual(again.json.messages, [], '受け取った分が繰り返し返っている');
+
+	await post('/api/say', { from_user_id: 'html2md', msg_body: 'カーソルの確認 2' });
+	const next = await get('/api/poll?user_id=reader&wait=0');
+	assert.equal(next.json.messages.length, 1);
+	assert.equal(next.json.messages[0].msg_body, 'カーソルの確認 2');
+});
+
+test('位置はルームごとに別々', async () => {
+	await post('/api/say', { room_id: 'dev', from_user_id: 'html2md', msg_body: 'dev の発言' });
+
+	// public 側の位置は進んでいるが、dev は初めてなので参加時点から
+	const dev = await get('/api/poll?user_id=reader&room_id=dev&wait=0');
+	assert.deepEqual(dev.json.messages, [], 'dev は初めてなので今から');
+
+	await post('/api/say', { room_id: 'dev', from_user_id: 'html2md', msg_body: 'dev の 2 つ目' });
+	const devNext = await get('/api/poll?user_id=reader&room_id=dev&wait=0');
+	assert.equal(devNext.json.messages.length, 1);
+	assert.equal(devNext.json.messages[0].msg_body, 'dev の 2 つ目');
+});
+
+test('since を明示すれば、そちらが優先される', async () => {
+	// ブラウザは自分で位置を持っているため、記録に左右されない
+	const { json } = await get('/api/poll?user_id=reader&since=0&wait=0');
+	assert.ok(json.messages.length > 1, '記録を無視して 0 から返るはず');
+});
+
+test('user_id が無ければ記録しない', async () => {
+	const a = await get('/api/poll?since=0&wait=0');
+	const b = await get('/api/poll?since=0&wait=0');
+	assert.equal(a.json.messages.length, b.json.messages.length, '毎回同じ結果になる');
+});
+
+test('再び join しても位置は巻き戻らない', async () => {
+	// 未読を飛ばさないため、すでに記録があれば触らない
+	await post('/api/say', { from_user_id: 'html2md', msg_body: '再 join の前' });
+	await post('/api/join', { user_id: 'reader', user_role: 'ai' });
+
+	const { json } = await get('/api/poll?user_id=reader&wait=0');
+	assert.equal(json.messages.length, 1);
+	assert.equal(json.messages[0].msg_body, '再 join の前', '未読が飛ばされている');
+});
+
+// --- オフラインへ落ちたことの通知 ---
+
+test('初めて見る相手には離脱を流さない', async () => {
+	// 起動直後に、もともと居なかった全員分の離脱が流れるのを防ぐため
+	store.joinUser('ghost', 'ai');
+	store.setLastActiveAt('ghost', jstBefore(300 * 1000));
+
+	const gone = sweepOffline();
+	assert.ok(!gone.includes('ghost'), '初回は対象外のはず');
+});
+
+test('オンラインから落ちた相手の離脱をログに積む', async () => {
+	store.joinUser('vanisher', 'ai');
+	sweepOffline(); // ここで grace として覚える
+
+	// 猶予を過ぎた状態にする
+	store.setLastActiveAt('vanisher', jstBefore(300 * 1000));
+
+	const gone = sweepOffline();
+	assert.deepEqual(gone, ['vanisher']);
+
+	const { json } = await get('/api/history?limit=1');
+	assert.equal(json.messages[0].msg_kind, 'leave');
+	assert.equal(json.messages[0].msg_body, 'vanisher がオフラインになりました');
+});
+
+test('落ちたままの相手を何度も流さない', async () => {
+	// 状態が変わった瞬間だけを拾う。毎回流すとログが埋まる
+	const gone = sweepOffline();
+	assert.deepEqual(gone, []);
+});
+
+test('戻ってきてまた落ちれば、もう一度流す', async () => {
+	store.setLastActiveAt('vanisher', jstBefore(0));
+	sweepOffline(); // grace として覚え直す
+
+	store.setLastActiveAt('vanisher', jstBefore(300 * 1000));
+	const gone = sweepOffline();
+	assert.deepEqual(gone, ['vanisher']);
 });

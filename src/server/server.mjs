@@ -4,14 +4,15 @@ import { extname, join, normalize } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import {
-	PORT, HOSTS, WEB_DIR, DEFAULT_ROOM, MAX_WAIT_SEC,
+	PORT, HOSTS, WEB_DIR, DEFAULT_ROOM, MAX_WAIT_SEC, OFFLINE_CHECK_MS,
 	MAX_ID_LENGTH, MAX_BODY_LENGTH, DEFAULT_HISTORY_LIMIT,
-	describeEnv, describeListen,
+	describeEnv, describeListen, VERSION, STARTED_AT,
 } from './config.mjs';
 import { log } from './log.mjs';
 import {
 	addMessage, getSince, getLatest, getBefore, getMaxSeq,
-	joinUser, touchUser, addConnection, removeConnection,
+	joinUser, touchUser, addConnection, removeConnection, listRooms,
+	getCursor, setCursor,
 } from './store.mjs';
 import { listPresence, getPresence, STATUS } from './presence.mjs';
 import {
@@ -114,6 +115,40 @@ function postSystemMessage(roomId, userId, kind, body) {
 	return message;
 }
 
+/**
+ * 直前に見たときの在席。offline へ落ちた瞬間を見つけるために覚えておく。
+ * サーバーを起動し直すと空になるが、そのときは全員 offline から始まるので
+ * 落ちたことにはならない（誤って離脱を流さない）。
+ */
+const knownStatus = new Map();
+
+/**
+ * 猶予を過ぎてオフラインになった人を見つけ、離脱をログに積む。
+ *
+ * 明示的な leave は本人が知らせてくれるが、待受けを張ったまま消えた場合や
+ * 画面を閉じ損ねた場合は誰も知らせない。待受け中の AI はメッセージしか見て
+ * いないため、ここで積まないと相手が居なくなったことに気づけない。
+ */
+export function sweepOffline() {
+	const gone = [];
+	for (const user of listPresence()) {
+		const before = knownStatus.get(user.user_id);
+		knownStatus.set(user.user_id, user.status);
+		// 初めて見る相手は対象外。起動直後に全員分の離脱が流れるのを防ぐ
+		if (before && before !== STATUS.OFFLINE && user.status === STATUS.OFFLINE) {
+			gone.push(user.user_id);
+		}
+	}
+
+	for (const userId of gone) {
+		log.info(`${userId} がオフラインになりました`);
+		// ルームごとの在席は持っていないため、既定のルームに積む
+		postSystemMessage(DEFAULT_ROOM, userId, 'leave', `${userId} がオフラインになりました`);
+	}
+	if (gone.length > 0) broadcastPresence();
+	return gone;
+}
+
 // --- 各エンドポイント ---
 
 async function handleJoin(req, res) {
@@ -129,6 +164,10 @@ async function handleJoin(req, res) {
 	if (!before || before.status === STATUS.OFFLINE) {
 		postSystemMessage(roomId, userId, 'join', `${userId} が参加しました`);
 	}
+	// 初めてのときだけ、参加した時点を読み始めの位置にする。
+	// すでに読んでいる位置があれば触らない（未読を飛ばさないため）
+	if (getCursor(userId, roomId) === null) setCursor(userId, roomId, getMaxSeq(roomId));
+
 	broadcastPresence();
 
 	sendJson(res, 200, {
@@ -157,8 +196,20 @@ async function handleSay(req, res) {
 async function handlePoll(req, res, url) {
 	const userId = optionalId(url.searchParams.get('user_id'), 'user_id');
 	const roomId = roomOf(url.searchParams.get('room_id'));
-	const since = numberOf(url.searchParams.get('since'), 0);
 	const waitSec = Math.min(Math.max(numberOf(url.searchParams.get('wait'), MAX_WAIT_SEC), 0), MAX_WAIT_SEC);
+
+	/*
+	 * since を省略したら、サーバーが覚えている位置から続ける。
+	 * クライアントが自分で位置を管理しなくて済み、実行した場所にも縛られない。
+	 * 明示的に渡された場合はそちらを優先する（ブラウザは自分で管理している）。
+	 */
+	const sinceParam = url.searchParams.get('since');
+	const since =
+		sinceParam !== null && sinceParam !== ''
+			? numberOf(sinceParam, 0)
+			: userId
+				? (getCursor(userId, roomId) ?? getMaxSeq(roomId))
+				: 0;
 
 	// 待っている間も在席とみなす。接続を保持しているので確実にいる
 	if (userId) {
@@ -173,12 +224,12 @@ async function handlePoll(req, res, url) {
 	try {
 		const messages = await waitForMessages(roomId, since, waitSec * 1000);
 		if (closed) return;
-		sendJson(res, 200, {
-			room_id: roomId,
-			since,
-			msg_seq: messages.length > 0 ? messages[messages.length - 1].msg_seq : since,
-			messages,
-		});
+
+		const msgSeq = messages.length > 0 ? messages[messages.length - 1].msg_seq : since;
+		// 返した分まで読んだものとして記録する。次は since を省略しても続きから受け取れる
+		if (userId) setCursor(userId, roomId, msgSeq);
+
+		sendJson(res, 200, { room_id: roomId, since, msg_seq: msgSeq, messages });
 	} finally {
 		if (userId) {
 			removeConnection(userId);
@@ -201,6 +252,18 @@ function handleHistory(res, url) {
 
 function handleUsers(res) {
 	sendJson(res, 200, { users: listPresence() });
+}
+
+function handleRooms(res) {
+	sendJson(res, 200, { rooms: listRooms(), default_room: DEFAULT_ROOM });
+}
+
+/**
+ * サーバーの版。起動するたびに変わる。
+ * ブラウザはこれを見て、中身が入れ替わったら自分を読み直す。
+ */
+function handleVersion(res) {
+	sendJson(res, 200, { version: VERSION, started_at: STARTED_AT });
 }
 
 async function handleLeave(req, res) {
@@ -312,6 +375,8 @@ function handleEvents(req, res, url) {
 	if (since !== null) {
 		for (const message of getSince(roomId, since)) client.send('message', message);
 	}
+	// 版を先に伝える。前と違えばブラウザ側が読み直す
+	client.send('version', { version: VERSION, started_at: STARTED_AT });
 	client.send('presence', listPresence());
 	broadcastPresence();
 
@@ -378,6 +443,8 @@ export async function handleRequest(req, res) {
 			if (path === '/api/poll') return await handlePoll(req, res, url);
 			if (path === '/api/history') return handleHistory(res, url);
 			if (path === '/api/users') return handleUsers(res);
+			if (path === '/api/rooms') return handleRooms(res);
+			if (path === '/api/version') return handleVersion(res);
 			if (path === '/api/events') return handleEvents(req, res, url);
 			// ブラウザのアドレスバーから叩けるよう GET も受ける
 			if (path === '/api/admin/exit') return await handleExit(req, res, url);
@@ -407,8 +474,8 @@ export async function handleRequest(req, res) {
  * localhost は ::1 と 127.0.0.1 の両方を指すため、両方で listen する。
  * 片方だけに bind すると、もう一方から来た接続が拒否される。
  */
-export function startServers(port = PORT, hosts = HOSTS) {
-	return Promise.all(
+export async function startServers(port = PORT, hosts = HOSTS) {
+	const servers = await Promise.all(
 		hosts.map(
 			(host) =>
 				new Promise((resolve, reject) => {
@@ -418,9 +485,21 @@ export function startServers(port = PORT, hosts = HOSTS) {
 				})
 		)
 	);
+
+	// オフラインへ落ちた人を定期的に見つける
+	offlineTimer = setInterval(sweepOffline, OFFLINE_CHECK_MS);
+	offlineTimer.unref?.();
+
+	return servers;
 }
 
+let offlineTimer = null;
+
 export function stopServers(servers) {
+	if (offlineTimer) {
+		clearInterval(offlineTimer);
+		offlineTimer = null;
+	}
 	releaseAll();
 	return Promise.all(servers.map((s) => new Promise((resolve) => s.close(resolve))));
 }
@@ -429,7 +508,7 @@ export function stopServers(servers) {
 // Windows のパスを file:// に手で組み立てるとドライブレターが host 扱いになるため、
 // pathToFileURL に任せる。
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-	log.info('ai-chat-lite サーバーを起動しました');
+	log.info(`ai-chat-lite サーバーを起動しました（版 ${VERSION}）`);
 	for (const line of describeEnv()) log.info(line);
 	log.info(describeListen());
 

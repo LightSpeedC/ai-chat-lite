@@ -1,5 +1,5 @@
 import { basename, join } from 'node:path';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync } from 'node:fs';
 
 import { ROOT, PORT, DEFAULT_ROOM, MAX_WAIT_SEC } from '../server/config.mjs';
 
@@ -73,26 +73,6 @@ const postJson = (path, body) =>
 		body: JSON.stringify(body),
 	});
 
-// --- カーソル（どこまで読んだか） ---
-
-function cursorPath() {
-	const safe = (s) => s.replace(/[^A-Za-z0-9._-]/g, '_');
-	return join(ROOT, '_data', `cursor-${safe(USER_ID)}-${safe(ROOM)}.json`);
-}
-
-function readCursor() {
-	try {
-		return JSON.parse(readFileSync(cursorPath(), 'utf8')).msg_seq ?? 0;
-	} catch {
-		return null; // まだ一度も読んでいない
-	}
-}
-
-function writeCursor(msgSeq) {
-	mkdirSync(join(ROOT, '_data'), { recursive: true });
-	writeFileSync(cursorPath(), JSON.stringify({ msg_seq: msgSeq }, null, '\t'), 'utf8');
-}
-
 // --- 表示 ---
 
 function formatMessage(m) {
@@ -110,7 +90,6 @@ function printMessages(messages) {
 async function cmdJoin() {
 	const role = option('role', 'ai');
 	const result = await postJson('/api/join', { user_id: USER_ID, user_role: role, room_id: ROOM });
-	writeCursor(result.msg_seq);
 	console.log(`${USER_ID} として ${result.room_id} に参加しました（現在位置 ${result.msg_seq}）`);
 	console.log(`参加者 ${result.users.length} 人:`);
 	for (const u of result.users) {
@@ -136,16 +115,13 @@ async function cmdSay() {
 async function cmdWait() {
 	const timeout = Math.min(Number(option('timeout', MAX_WAIT_SEC)) || MAX_WAIT_SEC, MAX_WAIT_SEC);
 
-	let since = readCursor();
-	if (since === null) {
-		// 一度も読んでいない場合は、参加した時点から待つ。過去ログは recent で取る
-		const joined = await postJson('/api/join', { user_id: USER_ID, user_role: 'ai', room_id: ROOM });
-		since = joined.msg_seq;
-		writeCursor(since);
-	}
-
+	/*
+	 * since は渡さない。どこまで読んだかはサーバーが覚えている。
+	 * 一度も読んでいなければ、参加した時点から待つ扱いになる（過去ログは recent で取る）。
+	 * 受け取った分は返答と同時に記録されるので、次はその続きから届く。
+	 */
 	const result = await call(
-		`/api/poll?user_id=${encodeURIComponent(USER_ID)}&room_id=${encodeURIComponent(ROOM)}&since=${since}&wait=${timeout}`
+		`/api/poll?user_id=${encodeURIComponent(USER_ID)}&room_id=${encodeURIComponent(ROOM)}&wait=${timeout}`
 	);
 
 	if (result.messages.length === 0) {
@@ -154,7 +130,6 @@ async function cmdWait() {
 	}
 	console.log(`新着 ${result.messages.length} 件:`);
 	printMessages(result.messages);
-	writeCursor(result.msg_seq);
 }
 
 async function cmdRecent() {
