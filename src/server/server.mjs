@@ -1,12 +1,11 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
-import { pathToFileURL } from 'node:url';
 
 import {
 	PORT, HOSTS, WEB_DIR, DEFAULT_ROOM, MAX_WAIT_SEC, OFFLINE_CHECK_MS,
 	MAX_ID_LENGTH, MAX_BODY_LENGTH, DEFAULT_HISTORY_LIMIT,
-	describeEnv, describeListen, VERSION, STARTED_AT,
+	VERSION, STARTED_AT,
 } from './config.mjs';
 import { log } from './log.mjs';
 import {
@@ -502,24 +501,4 @@ export function stopServers(servers) {
 	}
 	releaseAll();
 	return Promise.all(servers.map((s) => new Promise((resolve) => s.close(resolve))));
-}
-
-// 直接実行されたときだけ起動する（テストから読み込むときは起動しない）。
-// Windows のパスを file:// に手で組み立てるとドライブレターが host 扱いになるため、
-// pathToFileURL に任せる。
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-	log.info(`ai-chat-lite サーバーを起動しました（版 ${VERSION}）`);
-	for (const line of describeEnv()) log.info(line);
-	log.info(describeListen());
-
-	const servers = await startServers();
-	log.info(`待ち受けを開始しました（${servers.length} 個のアドレス）`);
-
-	for (const signal of ['SIGINT', 'SIGTERM']) {
-		process.on(signal, async () => {
-			log.info(`${signal} を受け取りました。終了します`);
-			await stopServers(servers);
-			process.exit(0);
-		});
-	}
 }

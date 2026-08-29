@@ -13,4 +13,4 @@ Write-Output "=== ai-chat-lite サーバー（開発用） ==="
 Write-Output "終了するには Ctrl+C を押してください"
 Write-Output ''
 
-node src\server\server.mjs
+node src\server\main.mjs

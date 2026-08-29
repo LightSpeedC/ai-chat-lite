@@ -11,7 +11,7 @@
     サービスからは見えず、ImagePath に N:\... が記録されると起動に失敗する。
   -->
   <executable>node-ai-chat-lite.exe</executable>
-  <arguments>src\server\server.mjs</arguments>
+  <arguments>src\server\main.mjs</arguments>
 
   <!-- 既定値のままで動く。ここで指定しているのは、外から見て分かるようにするため -->
   <env name="AICHAT_PORT" value="8787"/>
