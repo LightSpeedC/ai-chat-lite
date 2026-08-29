@@ -1,0 +1,27 @@
+# 一時ファイル・セッションログ
+tmp/
+etc/
+
+# 先頭 _ のフォルダは全階層で管理外（_data/ の DB もここで除外される）
+_*/
+**/_*/
+
+# ビルド出力
+dist/
+
+# Node
+node_modules/
+
+# サービス用にコピーした実行ファイル（node.exe のコピーと WinSW 本体）
+node-ai-chat-lite.exe
+node-ai-chat-lite-winsw.exe
+
+# サービスのログ
+logs/
+
+# Claude Code（チームで共有するものだけ名指しで許可する）
+.claude/*
+!.claude/settings.json
+!.claude/commands/
+!.claude/agents/
+!.claude/skills/

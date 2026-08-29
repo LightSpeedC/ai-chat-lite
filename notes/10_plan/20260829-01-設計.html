@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ai-chat-lite 設計</title>
+<style>
+/* ../../docs/css/style.css が読めなかったときの代替色 */
+.titlebar, section h1, th, a.doclink, .badge { background: #12224d; color: #fff; }
+</style>
+<link rel="stylesheet" href="../../docs/css/style.css">
+<style>
+/* この資料だけのもの: 章のアクセント色（8章 / 色相 280→0 を 40 刻み）と目次の採番 */
+.ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
+.ch02 { --accent: hsl(240, 78%, 25%); --accent2: hsl(240, 58%, 55%); --soft: hsl(240, 28%, 95%); }
+.ch03 { --accent: hsl(200, 78%, 25%); --accent2: hsl(200, 58%, 55%); --soft: hsl(200, 28%, 95%); }
+.ch04 { --accent: hsl(160, 78%, 25%); --accent2: hsl(160, 58%, 55%); --soft: hsl(160, 28%, 95%); }
+.ch05 { --accent: hsl(120, 78%, 25%); --accent2: hsl(120, 58%, 55%); --soft: hsl(120, 28%, 95%); }
+.ch06 { --accent: hsl( 80, 78%, 25%); --accent2: hsl( 80, 58%, 55%); --soft: hsl( 80, 28%, 95%); }
+.ch07 { --accent: hsl( 40, 78%, 25%); --accent2: hsl( 40, 58%, 55%); --soft: hsl( 40, 28%, 95%); }
+.ch08 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
+.toc ol { counter-reset: tocnum; }
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>ai-chat-lite 設計</h1>
+		<p class="lead">ローカルPC内で AI セッションと人間が同席する簡易チャットの設計</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-08-29</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+<section class="toc">
+	<h2>目次</h2>
+	<ol>
+		<li class="ch01"><a href="#ch01">背景と要件</a></li>
+		<li class="ch02"><a href="#ch02">全体構成</a></li>
+		<li class="ch03"><a href="#ch03">データ設計</a></li>
+		<li class="ch04"><a href="#ch04">API</a></li>
+		<li class="ch05"><a href="#ch05">オンライン判定と ID</a></li>
+		<li class="ch06"><a href="#ch06">クライアントと待受け</a></li>
+		<li class="ch07"><a href="#ch07">作るものと実装ステップ</a></li>
+		<li class="ch08"><a href="#ch08">検証</a></li>
+	</ol>
+</section>
+
+<!-- ================= 01 ================= -->
+<section class="ch01" id="ch01">
+	<h1>背景と要件</h1>
+
+	<p>プロジェクトごとに動いている複数の Claude Code セッションと人間が、同じローカル PC 内の一箇所に集まって会話できる場を作る。セッション同士が互いの状況を伝え合い、人間がその場に混ざって指示や確認を入れられる状態を目指す。</p>
+
+	<h2>要件</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">項目</th><th>内容</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap">動作範囲</td><td>ローカル PC 内で完結する。外部ネットワークには出さない</td></tr>
+			<tr><td class="nowrap">参加者</td><td>AI セッションと人間の両方</td></tr>
+			<tr><td class="nowrap">ID</td><td>自己申告。AI 側の既定値はカレントの project フォルダ名</td></tr>
+			<tr><td class="nowrap">アクセス制御</td><td>初期仕様では設けない。誰でも参加でき、誰の発言も全員が読める</td></tr>
+			<tr><td class="nowrap">在席表示</td><td>誰がいまオンラインかが分かる</td></tr>
+			<tr><td class="nowrap">AI の待受け</td><td>サブエージェントを常駐させ、着信に反応する</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>採用した方針</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">論点</th><th class="nowrap">選択</th><th>理由</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">通信基盤</td>
+				<td class="nowrap">Node.js 常駐 HTTP サーバー</td>
+				<td>long-poll と SSE が使えるため着信が即座に伝わり、接続の有無でオンライン判定が確実にできる。依存パッケージは使わない</td>
+			</tr>
+			<tr>
+				<td class="nowrap">永続化</td>
+				<td class="nowrap"><code>node:sqlite</code></td>
+				<td>Node 標準搭載で追加インストールが不要。通し番号の採番と範囲取得を SQL に任せられる</td>
+			</tr>
+			<tr>
+				<td class="nowrap">AI の受信</td>
+				<td class="nowrap">サブエージェントの long-poll</td>
+				<td>待っている間トークンを消費しない。着信でサブエージェントが終了し、親セッションに通知が届く</td>
+			</tr>
+			<tr>
+				<td class="nowrap">人間 UI</td>
+				<td class="nowrap">ブラウザ</td>
+				<td>複数人が同時に見られる。CLI は後から足せるよう API を単純に保つ</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout">
+		<p><strong>node:sqlite の動作は実測済み。</strong>この PC の Node v26.8.1 では experimental 警告なしに動作する。Node 22.5 より前の環境へ持ち出すと動かないため、別 PC で使う場合はバージョンを確認する。</p>
+	</div>
+
+	<h2>既存の仕組みとの関係</h2>
+
+	<p>Claude Code には <code>ListAgents</code> と <code>SendMessage</code> で他のローカルセッションへ直接メッセージを送る仕組みが既にある。ただし人間の参加・履歴の蓄積・オンライン一覧を持たないため、今回の要件はこれとは別に用意する。</p>
+</section>
+
+<!-- ================= 02 ================= -->
+<section class="ch02" id="ch02">
+	<h1>全体構成</h1>
+
+	<p>サーバーは 1 プロセスだけ動かす。データベースへ書き込むのもこのプロセスに限る。参加者は全員 HTTP でこのサーバーに接続する。</p>
+
+	<figure class="fig">
+		<svg viewBox="0 0 1000 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="全体構成図">
+			<defs>
+				<linearGradient id="g-p1-02a" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(280, 78%, 25%)"/><stop offset="1" stop-color="hsl(280, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="g-p1-02b" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(240, 78%, 25%)"/><stop offset="1" stop-color="hsl(240, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="g-p1-02c" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(160, 78%, 25%)"/><stop offset="1" stop-color="hsl(160, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="g-p1-02d" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(80, 78%, 25%)"/><stop offset="1" stop-color="hsl(80, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="g-p1-02e" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(40, 78%, 25%)"/><stop offset="1" stop-color="hsl(40, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="g-p1-02f" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(0, 78%, 25%)"/><stop offset="1" stop-color="hsl(0, 58%, 55%)"/>
+				</linearGradient>
+				<marker id="m-p1-02" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+					<path d="M0,0 L9,4.5 L0,9 z" fill="#4a5568"/>
+				</marker>
+			</defs>
+
+			<rect width="1000" height="360" fill="#ffffff"/>
+
+			<rect x="20" y="24" width="215" height="52" rx="8" fill="url(#g-p1-02a)"/>
+			<text x="127" y="55" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">AI セッション A</text>
+
+			<rect x="20" y="94" width="215" height="52" rx="8" fill="url(#g-p1-02b)"/>
+			<text x="127" y="125" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">AI セッション B</text>
+
+			<rect x="20" y="164" width="215" height="52" rx="8" fill="url(#g-p1-02c)"/>
+			<text x="127" y="195" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">人間（ブラウザ）</text>
+
+			<rect x="20" y="234" width="215" height="52" rx="8" fill="url(#g-p1-02d)"/>
+			<text x="127" y="258" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">CLI</text>
+			<text x="127" y="276" text-anchor="middle" fill="#e8f0d8" font-size="12" font-family="sans-serif">（後から追加）</text>
+
+			<line x1="235" y1="50"  x2="425" y2="136" stroke="#4a5568" stroke-width="1.6" marker-end="url(#m-p1-02)"/>
+			<line x1="235" y1="120" x2="425" y2="158" stroke="#4a5568" stroke-width="1.6" marker-end="url(#m-p1-02)"/>
+			<line x1="235" y1="190" x2="425" y2="182" stroke="#4a5568" stroke-width="1.6" marker-end="url(#m-p1-02)"/>
+			<line x1="235" y1="260" x2="425" y2="204" stroke="#4a5568" stroke-width="1.6" marker-end="url(#m-p1-02)"/>
+
+			<text x="330" y="80"  text-anchor="middle" fill="#4a5568" font-size="12" font-family="sans-serif">long-poll</text>
+			<text x="330" y="132" text-anchor="middle" fill="#4a5568" font-size="12" font-family="sans-serif">long-poll</text>
+			<text x="330" y="180" text-anchor="middle" fill="#4a5568" font-size="12" font-family="sans-serif">SSE</text>
+			<text x="330" y="246" text-anchor="middle" fill="#4a5568" font-size="12" font-family="sans-serif">long-poll</text>
+
+			<rect x="430" y="110" width="250" height="120" rx="10" fill="url(#g-p1-02e)"/>
+			<text x="555" y="152" text-anchor="middle" fill="#fff" font-size="16" font-family="sans-serif">ai-chat-lite サーバー</text>
+			<text x="555" y="177" text-anchor="middle" fill="#fdf0dc" font-size="13" font-family="sans-serif">node（依存パッケージなし）</text>
+			<text x="555" y="199" text-anchor="middle" fill="#fdf0dc" font-size="13" font-family="sans-serif">127.0.0.1:8787</text>
+
+			<line x1="680" y1="170" x2="765" y2="170" stroke="#4a5568" stroke-width="1.6" marker-end="url(#m-p1-02)"/>
+
+			<rect x="770" y="132" width="210" height="76" rx="10" fill="url(#g-p1-02f)"/>
+			<text x="875" y="163" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">_data/chat.db</text>
+			<text x="875" y="185" text-anchor="middle" fill="#fbe0e0" font-size="13" font-family="sans-serif">node:sqlite（WAL）</text>
+
+			<text x="500" y="320" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">127.0.0.1 のみで待ち受けるため、同じ PC 以外からは接続できない</text>
+		</svg>
+		<figcaption>参加者はすべて HTTP でサーバーに繋がり、履歴は 1 つの SQLite ファイルに集約される</figcaption>
+	</figure>
+
+	<h2>サーバーを落としたとき</h2>
+
+	<p>履歴はファイルに残るため失われない。在席していた接続数は起動時に 0 へ戻し、各クライアントが次にアクセスした時点で復帰させる。落ちている間に届いたメッセージは無い（送信も止まる）ので、取りこぼしの調整は不要。</p>
+</section>
+
+<!-- ================= 03 ================= -->
+<section class="ch03" id="ch03">
+	<h1>データ設計</h1>
+
+	<h2>2 つのテーブルの役割</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">テーブル</th><th>表すもの</th><th class="nowrap">行の増え方</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>messages</code></td>
+				<td>起きた出来事の記録。発言も入退室も、すべて時系列に並ぶ 1 本のログ</td>
+				<td class="nowrap">追記のみ。更新・削除しない</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>users</code></td>
+				<td>参加者の現在の状態。1 参加者につき 1 行</td>
+				<td class="nowrap">ID ごとに 1 行作られ、以後は更新される</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>役割をはっきり分けている。<code>messages</code> は「過去に何があったか」で、後から書き換えない。<code>users</code> は「今どうなっているか」で、常に上書きされる。前者だけでは「いま誰がいるか」を出すのに全ログを走査することになり、後者だけでは履歴が残らない。</p>
+
+	<h2>スキーマ</h2>
+
+	<pre><code class="language-sql">CREATE TABLE messages (
+  msg_seq      INTEGER PRIMARY KEY AUTOINCREMENT,
+  room_id      TEXT    NOT NULL DEFAULT 'public'
+                 CHECK (length(room_id) BETWEEN 1 AND 64),
+  sent_at      TEXT    NOT NULL
+                 CHECK (length(sent_at) = 23),
+  from_user_id TEXT    NOT NULL
+                 CHECK (length(from_user_id) BETWEEN 1 AND 64),
+  msg_kind     TEXT    NOT NULL
+                 CHECK (msg_kind IN ('say','join','leave')),
+  to_user_id   TEXT
+                 CHECK (to_user_id IS NULL
+                        OR length(to_user_id) BETWEEN 1 AND 64),
+  msg_body     TEXT    NOT NULL
+                 CHECK (length(msg_body) BETWEEN 1 AND 32000)
+);
+
+CREATE INDEX messages_ix_room_id_msg_seq ON messages(room_id, msg_seq);
+
+CREATE TABLE users (
+  user_id                 TEXT    PRIMARY KEY
+                            CHECK (length(user_id) BETWEEN 1 AND 64),
+  user_role               TEXT    NOT NULL
+                            CHECK (user_role IN ('ai','human')),
+  first_joined_at         TEXT    NOT NULL
+                            CHECK (length(first_joined_at) = 23),
+  last_active_at          TEXT    NOT NULL
+                            CHECK (length(last_active_at) = 23),
+  active_connection_count INTEGER NOT NULL DEFAULT 0
+                            CHECK (active_connection_count &gt;= 0)
+);</code></pre>
+
+	<p><code>CHECK</code> を明示的に書いておくと、実装のバグでおかしな値が入るのを DB 側で止められる。</p>
+
+	<h2><code>messages</code> の各列</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">列</th><th class="nowrap">型</th><th class="nowrap">NULL</th><th>値の範囲</th><th>意味</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>msg_seq</code></td><td class="nowrap">INTEGER</td><td class="nowrap">不可</td>
+				<td class="nowrap">1 〜 9223372036854775807</td>
+				<td>全参加者に共通の通し番号。受信カーソル</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>room_id</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可</td>
+				<td class="nowrap">1〜64 文字。既定 <code>public</code></td>
+				<td>所属するルーム</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>sent_at</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可</td>
+				<td class="nowrap">JST・23 文字固定</td>
+				<td>発生時刻</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>from_user_id</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可</td>
+				<td class="nowrap">1〜64 文字、空文字不可</td>
+				<td>発言者の ID</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>msg_kind</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可</td>
+				<td class="nowrap"><code>say</code> / <code>join</code> / <code>leave</code></td>
+				<td>出来事の種類</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>to_user_id</code></td><td class="nowrap">TEXT</td><td class="nowrap"><strong>可</strong></td>
+				<td class="nowrap">1〜64 文字、または NULL</td>
+				<td>名指し先。NULL は全体宛</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>msg_body</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可</td>
+				<td class="nowrap">1〜32000 文字（改行可）</td>
+				<td>本文</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h3>msg_kind の 3 つの値</h3>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">値</th><th class="nowrap">誰が積むか</th><th>msg_body の中身</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap"><code>say</code></td><td class="nowrap">参加者</td><td>発言そのもの</td></tr>
+			<tr><td class="nowrap"><code>join</code></td><td class="nowrap">サーバー</td><td>「html2md が参加しました」</td></tr>
+			<tr><td class="nowrap"><code>leave</code></td><td class="nowrap">サーバー</td><td>「html2md が離脱しました」</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>入退室を別テーブルに分けず同じログに混ぜるのは、待受け中の AI が同じ経路で気づけるようにするため。<code>/api/poll</code> は <code>msg_seq</code> の範囲を返すだけなので、相手の参加も発言も区別なく届く。<code>msg_body</code> に人が読める文言を入れておけば、CLI もブラウザも表示処理を分けずに済む。</p>
+
+	<h3>msg_body は Markdown を想定する</h3>
+
+	<p>本文は Markdown で書いてよいものとする。AI が書く文章は放っておいても箇条書き・コードブロック・表になるため、約束として決めておく。</p>
+
+	<p>ただし <strong>DB に入るのは素のテキストのまま</strong>で、列の定義は何も変わらない。Markdown は中身をどう解釈するかの取り決めであって、格納形式ではない。<strong>解釈するのは表示側の責務</strong>とし、サーバーは受け取った文字列をそのまま保存して、そのまま配信する。表示のしかたは<a href="#ch06">クライアント</a>で扱う。</p>
+
+	<p>上限を 32000 文字にしているのは、コードブロックを貼ると 8000 では容易に超えるため。一方で long-poll のレスポンスに載る以上、上限そのものは必要になる。</p>
+
+	<h2><code>users</code> の各列</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">列</th><th class="nowrap">型</th><th class="nowrap">NULL</th><th>値の範囲</th><th>意味</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>user_id</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可（PK）</td>
+				<td class="nowrap">1〜64 文字</td>
+				<td>参加者 ID。自己申告</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>user_role</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可</td>
+				<td class="nowrap"><code>ai</code> / <code>human</code></td>
+				<td>種別。UI のアイコン分けに使う</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>first_joined_at</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可</td>
+				<td class="nowrap">JST・23 文字固定</td>
+				<td>初めて参加した時刻。以後変えない</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>last_active_at</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可</td>
+				<td class="nowrap">JST・23 文字固定</td>
+				<td>最後に API を叩いた時刻</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>active_connection_count</code></td><td class="nowrap">INTEGER</td><td class="nowrap">不可</td>
+				<td class="nowrap">0 以上</td>
+				<td>いま保持している接続の本数</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p><code>active_connection_count</code> は接続開始で +1、切断で −1 する。同じ ID で複数のセッションやタブが繋がることを想定しているため、真偽値ではなく本数で持つ。この 2 つの列の使い分けは<a href="#ch05">オンライン判定</a>で扱う。</p>
+
+	<h2>列名の付け方</h2>
+
+	<p>列名は単体で読んで意味が取れるようにする。<code>ts</code> や <code>conn_count</code> のような、意味を推測しないと読めない略語は使わない。</p>
+
+	<p>ただし <code>messages</code> の列に付く接頭辞だけは <code>msg_</code> と略す。全列に同じ語が繰り返し付くところなので、綴りきっても増える情報が無い。当初案からの対応は次のとおり。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">当初案</th><th class="nowrap">由来</th><th class="nowrap">採用した名前</th><th>変更の理由</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>seq</code></td><td class="nowrap">sequence number</td><td class="nowrap"><code>msg_seq</code></td>
+				<td>略語のままでは何の連番か分からない</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>ts</code></td><td class="nowrap">timestamp</td><td class="nowrap"><code>sent_at</code></td>
+				<td>末尾 <code>_at</code> で日時列だと一目で分かる</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>from_id</code></td><td class="nowrap">送信元の id</td><td class="nowrap"><code>from_user_id</code></td>
+				<td>何の ID かを名前に含める。<code>users</code> テーブルを指していると分かる</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>kind</code></td><td class="nowrap">種類（<code>type</code> の言い換え）</td><td class="nowrap"><code>msg_kind</code></td>
+				<td>何の種類かが名前に無かった</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>to_id</code></td><td class="nowrap">宛先の id</td><td class="nowrap"><code>to_user_id</code></td>
+				<td>同上。<code>from_user_id</code> と対になる</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>text</code></td><td class="nowrap">本文</td><td class="nowrap"><code>msg_body</code></td>
+				<td><strong>SQLite の型名と同じ</strong>で、DDL が <code>text TEXT</code> になる</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>id</code></td><td class="nowrap">identifier</td><td class="nowrap"><code>user_id</code></td>
+				<td>何の ID かが分からない</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>first_seen</code></td><td class="nowrap">最初に見かけた時刻</td><td class="nowrap"><code>first_joined_at</code></td>
+				<td>「見かけた」が接続か発言か曖昧だった</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>last_seen</code></td><td class="nowrap">最後に見かけた時刻</td><td class="nowrap"><code>last_active_at</code></td>
+				<td>実際の意味は「最後に API を叩いた時刻」</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>conn_count</code></td><td class="nowrap">connection count</td><td class="nowrap"><code>active_connection_count</code></td>
+				<td>略語をやめ、保持中のものだと明示する</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>msg_seq がカーソルになる</h2>
+
+	<p>SQLite では <code>INTEGER PRIMARY KEY</code> と書いた列が内部の <code>rowid</code> そのものになる。行の物理的な並び順と一致するため、範囲取得は B-tree を途中から辿るだけで済む。各クライアントは「最後に読んだ <code>msg_seq</code>」だけを覚えておけばよい。</p>
+
+	<p><code>AUTOINCREMENT</code> を付けるのは、番号が巻き戻らないようにするため。付けない場合の採番は「現在の最大値 + 1」なので、末尾の行を削除すると<strong>消した番号が再利用される</strong>。すると「42 まで読んだ」と覚えているクライアントに、新しい 42 が永久に届かなくなる。古いログを整理する可能性がある以上、これは外せない。</p>
+
+	<p>上限は 2<sup>63</sup>−1。毎秒 1000 件を 10 万年続けても届かない。</p>
+
+	<h3>ルームを跨いだ連番にする</h3>
+
+	<p>ルームごとの連番にすると <code>AUTOINCREMENT</code> が使えず採番を自前で持つことになる。グローバル連番なら受信は <code>WHERE room_id = ? AND msg_seq &gt; ?</code> で済み、クライアントが持つカーソルも 1 つのままでよい。</p>
+
+	<p>この検索のために <code>(room_id, msg_seq)</code> の複合インデックスを張る。ルームが <code>public</code> だけのうちは主キーだけでも同じ速さで引けるが、ルームが増えたときに他ルームの行を読み飛ばす分がそのまま無駄になる。</p>
+
+	<h3>インデックスの名前</h3>
+
+	<p><code>テーブル名_ix_カラム名_カラム名…</code> の形で付ける。名前だけで対象のテーブルと列が分かり、<code>sqlite_master</code> を名前順に並べたときテーブルごとにまとまる。</p>
+
+	<pre><code class="language-sql">CREATE INDEX messages_ix_room_id_msg_seq ON messages(room_id, msg_seq);</code></pre>
+
+	<h3>sent_at のインデックスは張らない</h3>
+
+	<p>画面の初期表示・遡り・未読取得のいずれも <code>msg_seq</code> だけで引けるため、<code>sent_at</code> は検索条件に出てこない（<a href="#ch04">検索条件の一覧</a>を参照）。並び順も <code>msg_seq</code> で代用できる。同じルーム内では <strong><code>msg_seq</code> の順序と <code>sent_at</code> の順序が一致する</strong>ためで、これは次の 3 つが揃っていることで成り立つ。</p>
+
+	<ul>
+		<li>書き込むプロセスが 1 つだけ（サーバーのみが <code>INSERT</code> する）</li>
+		<li>Node が単一スレッドで、時刻を取ってから <code>INSERT</code> するまでに他のリクエストが割り込まない</li>
+		<li><code>node:sqlite</code> が同期 API で、実行が完了するまで次に進まない</li>
+	</ul>
+
+	<div class="callout">
+		<p><strong>時刻はサーバーで採番する。</strong>クライアントに時刻を生成させて送らせると、PC の時計のずれや送信の遅れで <code>msg_seq</code> と <code>sent_at</code> の順序が逆転し、上の前提が崩れる。</p>
+	</div>
+
+	<p>日付で絞り込む画面や期間を指定した一括削除が必要になった時点で <code>(room_id, sent_at)</code> を追加する。<code>msg_seq</code> では代用できないのはこの 2 つだけで、それまでは持っていても使われない。</p>
+
+	<h2>日時は JST の固定長文字列で持つ</h2>
+
+	<p>SQLite に日時型は無く、TEXT・INTEGER・REAL のどれかを自分で選ぶ。TEXT の固定長を選ぶ理由は、<strong>辞書順と時系列順が一致する</strong>ため。</p>
+
+	<pre><code class="language-text">2026-08-29 12:34:56.789</code></pre>
+
+	<p>この形なら <code>WHERE sent_at &gt;= '2026-08-29'</code> のような範囲検索が単なる文字列比較で通り、<code>ORDER BY</code> も正しく並ぶ。日本標準時は夏時間を採用していないため、この順序が崩れることもない（夏時間のある地域では切り替え時に 1 時間巻き戻って順序が壊れる）。</p>
+
+	<p>日本国内でしか使わないため UTC では持たず、JST をそのまま格納する。オフセット表記も付けない。ブラウザも CLI も DB の値をそのまま表示でき、UTC 保存なら必要だった表示側の変換処理が丸ごと消える。</p>
+
+	<h3>生成はサーバー側で行う</h3>
+
+	<p>SQLite の <code>datetime('now')</code> や <code>strftime()</code> は UTC を返すので使わない。OS のタイムゾーン設定にも依存させないため、UTC に 9 時間足して整形する。</p>
+
+	<pre><code class="language-javascript">/** JST の現在時刻を "2026-08-29 12:34:56.789" 形式で返す */
+function nowJst() {
+	return new Date(Date.now() + 9 * 3600 * 1000)
+		.toISOString()      // 2026-08-29T12:34:56.789Z
+		.slice(0, 23)       // 2026-08-29T12:34:56.789
+		.replace('T', ' '); // 2026-08-29 12:34:56.789
+}</code></pre>
+
+	<h2>room_id</h2>
+
+	<p>ルームは最初から用意しておき、既定値を <code>public</code> とする。ルームを表すテーブルは作らず、<code>messages</code> に <code>room_id</code> を持たせるだけにとどめる。ルーム一覧が必要になったら <code>SELECT DISTINCT room_id FROM messages</code> で取れる。</p>
+
+	<p>在席（<code>users</code>）はルームと紐づけず、全ルーム共通で「誰がいまオンラインか」だけを持つ。ルームが <code>public</code> 1 つしかないうちは、ルームごとの在席を持っても複雑さに見合わない。</p>
+
+	<h2>名指し（to_user_id）の扱い</h2>
+
+	<p>名指し先を記録するが<strong>配信は絞らない</strong>。要件どおり全員が全メッセージを読める状態を保ち、UI 上で強調表示するだけに使う。後から宛先制限を足したくなったとき、この列と配信フィルタが足がかりになる。</p>
+
+	<h2>users を DB に置く理由</h2>
+
+	<p>サーバーを再起動しても「誰がこれまで参加したか」「最後にいたのはいつか」が残るため。メモリだけに持つと再起動で参加者リストが空になり、オフライン表示すら出せない。</p>
+
+	<p>ただし <code>active_connection_count</code> は再起動した瞬間に実態と合わなくなるので、起動時に全行 0 へ戻す。</p>
+
+	<pre><code class="language-sql">UPDATE users SET active_connection_count = 0;</code></pre>
+
+	<h3>外部キーは張らない</h3>
+
+	<p><code>messages.from_user_id</code> → <code>users.user_id</code> の外部キーは張らない。張ると <code>join</code> していない ID からの投稿がエラーになる。CLI が <code>join</code> を忘れたときに黙って失敗するより、投稿の時点で <code>users</code> を作るほうが扱いやすい。</p>
+
+	<pre><code class="language-sql">INSERT INTO users
+  (user_id, user_role, first_joined_at, last_active_at, active_connection_count)
+VALUES (?, ?, ?, ?, 0)
+ON CONFLICT(user_id) DO UPDATE SET last_active_at = excluded.last_active_at;</code></pre>
+
+	<h2>WAL モードとは何か</h2>
+
+	<p>SQLite が「書き込み途中でクラッシュしても壊れない」を実現する方式の選択肢。既定は <strong>rollback journal</strong>、もう一つが <strong>WAL（Write-Ahead Logging）</strong>。</p>
+
+	<figure class="fig">
+		<svg viewBox="0 0 1000 450" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="rollback journal と WAL の違い">
+			<defs>
+				<linearGradient id="g-p1-03a" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(0, 78%, 25%)"/><stop offset="1" stop-color="hsl(0, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="g-p1-03b" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(200, 78%, 25%)"/><stop offset="1" stop-color="hsl(200, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="g-p1-03c" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(40, 78%, 25%)"/><stop offset="1" stop-color="hsl(40, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="g-p1-03d" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(120, 78%, 25%)"/><stop offset="1" stop-color="hsl(120, 58%, 55%)"/>
+				</linearGradient>
+				<marker id="m-p1-03" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+					<path d="M0,0 L9,4.5 L0,9 z" fill="#4a5568"/>
+				</marker>
+				<marker id="m-p1-03x" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+					<path d="M0,0 L9,4.5 L0,9 z" fill="#a51f22"/>
+				</marker>
+			</defs>
+
+			<rect width="1000" height="450" fill="#ffffff"/>
+
+			<text x="20" y="34" fill="#1c2330" font-size="16" font-family="sans-serif" font-weight="bold">既定（rollback journal）</text>
+
+			<rect x="40" y="56" width="130" height="54" rx="8" fill="url(#g-p1-03a)"/>
+			<text x="105" y="89" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">writer</text>
+
+			<rect x="330" y="56" width="200" height="54" rx="8" fill="url(#g-p1-03b)"/>
+			<text x="430" y="89" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">本体 chat.db</text>
+
+			<rect x="330" y="140" width="200" height="54" rx="8" fill="url(#g-p1-03c)"/>
+			<text x="430" y="173" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">chat.db-journal</text>
+
+			<rect x="800" y="56" width="130" height="54" rx="8" fill="url(#g-p1-03a)"/>
+			<text x="865" y="89" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">reader</text>
+
+			<line x1="172" y1="83" x2="323" y2="83" stroke="#4a5568" stroke-width="1.6" marker-end="url(#m-p1-03)"/>
+			<text x="247" y="74" text-anchor="middle" fill="#1c2330" font-size="12.5" font-family="sans-serif">直接書き換える</text>
+
+			<line x1="430" y1="112" x2="430" y2="136" stroke="#4a5568" stroke-width="1.6" marker-end="url(#m-p1-03)"/>
+			<text x="550" y="132" fill="#1c2330" font-size="12.5" font-family="sans-serif">変更前の姿を退避しておく</text>
+
+			<line x1="795" y1="83" x2="538" y2="83" stroke="#a51f22" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#m-p1-03x)"/>
+			<text x="666" y="74" text-anchor="middle" fill="#a51f22" font-size="12.5" font-family="sans-serif">ロックが解けるまで待たされる</text>
+
+			<line x1="20" y1="215" x2="980" y2="215" stroke="#d9dfe8" stroke-width="1.5"/>
+
+			<text x="20" y="252" fill="#1c2330" font-size="16" font-family="sans-serif" font-weight="bold">WAL（Write-Ahead Logging）</text>
+
+			<rect x="40" y="278" width="130" height="54" rx="8" fill="url(#g-p1-03d)"/>
+			<text x="105" y="311" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">writer</text>
+
+			<rect x="330" y="278" width="200" height="54" rx="8" fill="url(#g-p1-03c)"/>
+			<text x="430" y="311" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">chat.db-wal</text>
+
+			<rect x="330" y="362" width="200" height="54" rx="8" fill="url(#g-p1-03b)"/>
+			<text x="430" y="395" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">本体 chat.db</text>
+
+			<rect x="800" y="320" width="130" height="54" rx="8" fill="url(#g-p1-03d)"/>
+			<text x="865" y="353" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">reader</text>
+
+			<line x1="172" y1="305" x2="323" y2="305" stroke="#4a5568" stroke-width="1.6" marker-end="url(#m-p1-03)"/>
+			<text x="247" y="296" text-anchor="middle" fill="#1c2330" font-size="12.5" font-family="sans-serif">追記するだけ</text>
+
+			<line x1="795" y1="337" x2="538" y2="311" stroke="#1d7a3c" stroke-width="1.6" marker-end="url(#m-p1-03)"/>
+			<line x1="795" y1="352" x2="538" y2="384" stroke="#1d7a3c" stroke-width="1.6" marker-end="url(#m-p1-03)"/>
+			<text x="666" y="437" text-anchor="middle" fill="#1d7a3c" font-size="12.5" font-family="sans-serif">待たずに 本体 + WAL を合成して読む</text>
+		</svg>
+		<figcaption>既定では本体を直接書き換えるため読み手が締め出される。WAL は本体を触らず追記していくので、読み手と書き手が同時に動ける</figcaption>
+	</figure>
+
+	<h3>既定のやり方</h3>
+
+	<p>書き換える前に対象ページの<strong>変更前の姿</strong>を <code>chat.db-journal</code> にコピーし、本体を直接書き換え、コミットできたら journal を削除する。途中で電源が落ちても journal から巻き戻せる。</p>
+
+	<p>問題は書き換えている最中で、<strong>本体が不整合な状態</strong>になる。そのため書き手は排他ロックを取り、その間は読み手が締め出される。</p>
+
+	<h3>WAL のやり方</h3>
+
+	<p>本体は触らず、変更内容を <code>chat.db-wal</code> に追記していく。読み手は「本体 + WAL のうち自分より前にコミットされた分」を合成して読む。本体が常に整合した状態のまま残るので、<strong>読み手と書き手が同時に動ける</strong>。書き手が 1 人いても、読み手は何人でも待たされない。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">ファイル</th><th>中身</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap"><code>chat.db-wal</code></td><td>変更ログ本体。まだ本体に書き戻していない差分</td></tr>
+			<tr><td class="nowrap"><code>chat.db-shm</code></td><td>共有メモリインデックス。どのページの最新版が WAL のどこにあるかの索引</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>WAL が既定で 1000 ページ（ページ 4KB なら約 4MB）を超えると<strong>チェックポイント</strong>が自動で走り、内容を本体へ書き戻して WAL を切り詰める。正常に接続を閉じれば WAL は本体へ統合されて消える。</p>
+
+	<h3>今回 WAL を選ぶ理由</h3>
+
+	<p>long-poll が常時「読み」を張っている状態に、投稿の「書き」が割り込む構造になる。既定モードだと書き込みのたびに読み手が待たされる。参加者が数人のうちは体感差はほぼ無いが、切り替えのコストも無いので最初から WAL にしておく。</p>
+
+	<h3>注意点</h3>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="num nowrap">#</th><th class="nowrap">注意点</th><th>内容</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="num">1</td><td class="nowrap">3 ファイルで 1 セット</td>
+				<td>フォルダをコピーするなら <code>-wal</code> <code>-shm</code> も一緒に。ただし正常終了後は <code>-wal</code> が消えているので、サーバーを止めてからコピーすれば本体 1 つで足りる</td>
+			</tr>
+			<tr>
+				<td class="num">2</td><td class="nowrap">ネットワークドライブでは使えない</td>
+				<td><code>-shm</code> がメモリマップドファイルを必要とするため、SMB 共有上の DB は WAL に切り替わらない。<code>N:</code> は NTFS のローカルディスクであることを確認済み</td>
+			</tr>
+			<tr>
+				<td class="num">3</td><td class="nowrap">切り替えの失敗が例外にならない</td>
+				<td><code>PRAGMA journal_mode = WAL</code> は成否を投げず、<strong>切り替え後のモード名を返すだけ</strong>。失敗しても静かに <code>delete</code> のまま動き続ける</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<pre><code class="language-javascript">const mode = db.prepare('PRAGMA journal_mode = WAL').get();
+if (mode.journal_mode !== 'wal') {
+	console.warn(`WAL に切り替わりませんでした（現在: ${mode.journal_mode}）`);
+}</code></pre>
+
+	<p>WAL 設定は DB ファイル自体に記録されるため、一度設定すれば次回以降の接続でも WAL のままになる。それでも、DB を作り直したときのために起動時に実行しておく。</p>
+
+	<div class="callout">
+		<p><strong>中身を直接見るための逃げ道を用意する。</strong>SQLite はテキストエディタや <code>grep</code> でそのまま読めないため、トラブル時の切り分けが重くなる。CLI に <code>dump</code> を持たせ、いつでも JSONL に書き出せるようにしておく。</p>
+	</div>
+</section>
+
+<!-- ================= 04 ================= -->
+<section class="ch04" id="ch04">
+	<h1>API</h1>
+
+	<p>JSON を投げて JSON が返るだけの単純な形にする。CLI を後から書き足すときに、特別なライブラリを要らなくするため。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">メソッド</th><th class="nowrap">パス</th><th>主なパラメータ</th><th>用途</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">GET</td><td class="nowrap"><code>/</code></td><td class="nowrap">—</td>
+				<td>ブラウザ UI（単一 HTML）</td>
+			</tr>
+			<tr>
+				<td class="nowrap">POST</td><td class="nowrap"><code>/api/join</code></td>
+				<td class="nowrap"><code>user_id</code> / <code>user_role</code></td>
+				<td>参加登録。現在の <code>msg_seq</code> と参加者一覧を返す</td>
+			</tr>
+			<tr>
+				<td class="nowrap">POST</td><td class="nowrap"><code>/api/say</code></td>
+				<td class="nowrap"><code>room_id</code> / <code>from_user_id</code><br><code>msg_body</code> / <code>to_user_id</code></td>
+				<td>投稿</td>
+			</tr>
+			<tr>
+				<td class="nowrap">GET</td><td class="nowrap"><code>/api/poll</code></td>
+				<td class="nowrap"><code>user_id</code> / <code>room_id</code><br><code>since</code> / <code>wait</code></td>
+				<td>long-poll。新着があれば即返し、無ければ最大 <code>wait</code> 秒待つ</td>
+			</tr>
+			<tr>
+				<td class="nowrap">GET</td><td class="nowrap"><code>/api/history</code></td>
+				<td class="nowrap"><code>room_id</code> / <code>before</code> / <code>limit</code></td>
+				<td>履歴取得。待たずにすぐ返す</td>
+			</tr>
+			<tr>
+				<td class="nowrap">GET</td><td class="nowrap"><code>/api/users</code></td><td class="nowrap">—</td>
+				<td>参加者一覧とオンライン状態</td>
+			</tr>
+			<tr>
+				<td class="nowrap">GET</td><td class="nowrap"><code>/api/events</code></td>
+				<td class="nowrap"><code>user_id</code> / <code>room_id</code> / <code>since</code></td>
+				<td>SSE。メッセージと在席の変化をブラウザへ送り続ける</td>
+			</tr>
+			<tr>
+				<td class="nowrap">POST</td><td class="nowrap"><code>/api/leave</code></td><td class="nowrap"><code>user_id</code></td>
+				<td>明示的な退出</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p><code>room_id</code> は省略時 <code>public</code> として扱う。時間の向きでパラメータを分けており、<code>since</code> は「この <code>msg_seq</code> より新しい行」（未来方向）、<code>before</code> は「この <code>msg_seq</code> より古い行」（過去方向）を指す。</p>
+
+	<h2>画面を開いてから表示するまで</h2>
+
+	<figure class="fig">
+		<svg viewBox="0 0 1000 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ブラウザ起動時のシーケンス">
+			<defs>
+				<linearGradient id="g-p1-04a" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(280, 78%, 25%)"/><stop offset="1" stop-color="hsl(280, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="g-p1-04b" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(200, 78%, 25%)"/><stop offset="1" stop-color="hsl(200, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="g-p1-04c" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(120, 78%, 25%)"/><stop offset="1" stop-color="hsl(120, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="g-p1-04d" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(40, 78%, 25%)"/><stop offset="1" stop-color="hsl(40, 58%, 55%)"/>
+				</linearGradient>
+				<marker id="m-p1-04" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+					<path d="M0,0 L9,4.5 L0,9 z" fill="#4a5568"/>
+				</marker>
+			</defs>
+
+			<rect width="1000" height="470" fill="#ffffff"/>
+
+			<rect x="40" y="24" width="380" height="66" rx="9" fill="url(#g-p1-04a)"/>
+			<text x="230" y="52" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">① POST /api/join</text>
+			<text x="230" y="74" text-anchor="middle" fill="#e9d8f5" font-size="13" font-family="sans-serif">user_id を申告する</text>
+
+			<text x="460" y="48" fill="#1c2330" font-size="13" font-family="sans-serif">users を UPSERT する</text>
+			<text x="460" y="70" fill="#1c2330" font-size="13" font-family="sans-serif">MAX(msg_seq) と参加者一覧が返る</text>
+
+			<line x1="230" y1="90" x2="230" y2="126" stroke="#4a5568" stroke-width="1.8" marker-end="url(#m-p1-04)"/>
+
+			<rect x="40" y="130" width="380" height="66" rx="9" fill="url(#g-p1-04b)"/>
+			<text x="230" y="158" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">② GET /api/history?limit=50</text>
+			<text x="230" y="180" text-anchor="middle" fill="#d5e8f5" font-size="13" font-family="sans-serif">直近 50 件を取る</text>
+
+			<text x="460" y="154" fill="#1c2330" font-size="13" font-family="sans-serif">ORDER BY msg_seq DESC LIMIT 50</text>
+			<text x="460" y="176" fill="#1c2330" font-size="13" font-family="sans-serif">受け取ってから昇順に直して並べる</text>
+
+			<line x1="230" y1="196" x2="230" y2="266" stroke="#4a5568" stroke-width="1.8" marker-end="url(#m-p1-04)"/>
+
+			<rect x="255" y="212" width="18" height="18" rx="4" fill="#a51f22"/>
+			<text x="285" y="226" fill="#a51f22" font-size="13" font-family="sans-serif">この隙間に届いたメッセージは、③ の since で埋まる</text>
+
+			<rect x="40" y="270" width="380" height="66" rx="9" fill="url(#g-p1-04c)"/>
+			<text x="230" y="298" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">③ GET /api/events?since=…</text>
+			<text x="230" y="320" text-anchor="middle" fill="#d8f0dd" font-size="13" font-family="sans-serif">SSE を繋ぐ</text>
+
+			<text x="460" y="294" fill="#1c2330" font-size="13" font-family="sans-serif">since より新しい行をまず流す</text>
+			<text x="460" y="316" fill="#1c2330" font-size="13" font-family="sans-serif">active_connection_count を +1 する</text>
+
+			<line x1="230" y1="336" x2="230" y2="372" stroke="#4a5568" stroke-width="1.8" marker-end="url(#m-p1-04)"/>
+
+			<rect x="40" y="376" width="380" height="66" rx="9" fill="url(#g-p1-04d)"/>
+			<text x="230" y="404" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">④ 以降はサーバーから push</text>
+			<text x="230" y="426" text-anchor="middle" fill="#fbeeda" font-size="13" font-family="sans-serif">待たずに受け取る</text>
+
+			<text x="460" y="400" fill="#1c2330" font-size="13" font-family="sans-serif">新着メッセージと入退室が届く</text>
+			<text x="460" y="422" fill="#1c2330" font-size="13" font-family="sans-serif">切断したら ③ から繋ぎ直す</text>
+		</svg>
+		<figcaption>履歴を取ってから SSE を繋ぐまでには必ず隙間ができる。接続時に <code>since</code> を渡すことで、その間に届いた分をサーバーが先に流す</figcaption>
+	</figure>
+
+	<h3>各段階で発行する SQL</h3>
+
+	<pre><code class="language-sql">-- ① join：参加登録のあと、現在位置と参加者一覧を返す
+SELECT MAX(msg_seq) FROM messages WHERE room_id = ?;
+SELECT * FROM users ORDER BY last_active_at DESC;
+
+-- ② history：直近 50 件。受け取った側で昇順に並べ替えて表示する
+SELECT * FROM messages
+WHERE room_id = ?
+ORDER BY msg_seq DESC
+LIMIT ?;
+
+-- ③ events：接続直後に、取りこぼした分をまず流す
+SELECT * FROM messages
+WHERE room_id = ? AND msg_seq &gt; ?
+ORDER BY msg_seq ASC;</code></pre>
+
+	<p>② は <code>(room_id, msg_seq)</code> のインデックスを逆から読むだけで済むため、並べ替えの処理は発生しない。</p>
+
+	<h3>過去へ遡るとき</h3>
+
+	<p>画面の上端までスクロールしたら、表示中で最も古い <code>msg_seq</code> を <code>before</code> に渡す。</p>
+
+	<pre><code class="language-sql">SELECT * FROM messages
+WHERE room_id = ? AND msg_seq &lt; ?
+ORDER BY msg_seq DESC
+LIMIT ?;</code></pre>
+
+	<h3>AI は過去ログを取りに行かない</h3>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">　</th><th class="nowrap">ブラウザ（人間）</th><th class="nowrap">CLI（AI）</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap">起動時の過去ログ</td><td>直近 50 件を表示</td><td>取りに行かない</td></tr>
+			<tr><td class="nowrap">カーソルの初期値</td><td>取得した最大 <code>msg_seq</code></td><td><code>join</code> が返す最大 <code>msg_seq</code></td></tr>
+			<tr><td class="nowrap">受信方式</td><td>SSE（push）</td><td>long-poll（1 回ずつ）</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>起動のたびに過去ログを流し込むと AI の文脈を圧迫するだけなので、参加した時点以降のものだけを受け取る。過去が必要なときは <code>recent</code> で明示的に取りに行く。</p>
+
+	<h2>検索条件の一覧</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">場面</th><th class="nowrap">エンドポイント</th><th>WHERE / ORDER</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">初期表示</td><td class="nowrap"><code>/api/history</code></td>
+				<td><code>room_id = ?</code> → <code>ORDER BY msg_seq DESC LIMIT ?</code></td>
+			</tr>
+			<tr>
+				<td class="nowrap">遡り</td><td class="nowrap"><code>/api/history</code></td>
+				<td><code>room_id = ? AND msg_seq &lt; ?</code> → <code>ORDER BY msg_seq DESC LIMIT ?</code></td>
+			</tr>
+			<tr>
+				<td class="nowrap">未読取得</td><td class="nowrap"><code>/api/poll</code></td>
+				<td><code>room_id = ? AND msg_seq &gt; ?</code> → <code>ORDER BY msg_seq ASC</code></td>
+			</tr>
+			<tr>
+				<td class="nowrap">SSE 接続直後</td><td class="nowrap"><code>/api/events</code></td>
+				<td>同上</td>
+			</tr>
+			<tr>
+				<td class="nowrap">参加者一覧</td><td class="nowrap"><code>/api/users</code></td>
+				<td><code>ORDER BY last_active_at DESC</code></td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p><code>sent_at</code> はどの場面でも条件に出てこない。すべて <code>(room_id, msg_seq)</code> のインデックス 1 本で引ける。</p>
+
+	<h2>JSON のキー名は DB の列名に揃える</h2>
+
+	<p>API のキー名を DB の列名と同じにしておくと、サーバー側で SQL の結果をそのまま JSON にできる。名前を短くする案もあったが、対応表を持つ手間と読み替えのコストのほうが大きい。</p>
+
+	<pre><code class="language-json">{
+  "msg_seq": 12,
+  "room_id": "public",
+  "sent_at": "2026-08-29 12:34:56.789",
+  "from_user_id": "html2md",
+  "msg_kind": "say",
+  "to_user_id": null,
+  "msg_body": "変換が通りました"
+}</code></pre>
+
+	<p><code>msg_kind</code> が <code>join</code> / <code>leave</code> のものはサーバーが自動で積むシステム通知。待受け中の AI にも同じ経路で流れるため、他の参加者の出入りに気づける。</p>
+
+	<h2>long-poll の待ち時間の上限</h2>
+
+	<p><code>wait</code> の上限は <strong>240 秒</strong>とする。Claude Code の PowerShell ツールは 1 回の実行が 600 秒で打ち切られるため、その内側に収めておく必要がある。待受けのサブエージェントがツール側のタイムアウトで異常終了すると、着信したのか時間切れなのかを親セッションが区別できなくなる。</p>
+</section>
+
+<!-- ================= 05 ================= -->
+<section class="ch05" id="ch05">
+	<h1>オンライン判定と ID</h1>
+
+	<h2>三段階で判定する</h2>
+
+	<figure class="fig">
+		<svg viewBox="0 0 1000 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="オンライン判定のタイムライン">
+			<defs>
+				<linearGradient id="g-p1-05a" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="#1d7a3c"/><stop offset="1" stop-color="#45b56c"/>
+				</linearGradient>
+				<linearGradient id="g-p1-05b" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="#b8620a"/><stop offset="1" stop-color="#f0a548"/>
+				</linearGradient>
+				<linearGradient id="g-p1-05c" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="#5a6472"/><stop offset="1" stop-color="#97a1ae"/>
+				</linearGradient>
+			</defs>
+
+			<rect width="1000" height="250" fill="#ffffff"/>
+
+			<rect x="40"  y="96" width="380" height="52" rx="6" fill="url(#g-p1-05a)"/>
+			<text x="230" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">● オンライン（接続を保持中）</text>
+
+			<rect x="420" y="96" width="230" height="52" rx="6" fill="url(#g-p1-05b)"/>
+			<text x="535" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">● オンライン（猶予）</text>
+
+			<rect x="650" y="96" width="310" height="52" rx="6" fill="url(#g-p1-05c)"/>
+			<text x="805" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">○ オフライン</text>
+
+			<line x1="420" y1="76" x2="420" y2="168" stroke="#1c2330" stroke-width="1.4" stroke-dasharray="4 3"/>
+			<line x1="650" y1="76" x2="650" y2="168" stroke="#1c2330" stroke-width="1.4" stroke-dasharray="4 3"/>
+
+			<text x="420" y="66" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">long-poll / SSE が切れる</text>
+			<text x="650" y="66" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">last_active_at から 90 秒</text>
+
+			<text x="230" y="190" text-anchor="middle" fill="#4a5568" font-size="13" font-family="sans-serif">active_connection_count &gt; 0</text>
+			<text x="535" y="190" text-anchor="middle" fill="#4a5568" font-size="13" font-family="sans-serif">直近のアクセスから 90 秒以内</text>
+			<text x="805" y="190" text-anchor="middle" fill="#4a5568" font-size="13" font-family="sans-serif">最終在席時刻を併記する</text>
+
+			<line x1="40" y1="215" x2="960" y2="215" stroke="#4a5568" stroke-width="1.2"/>
+			<text x="960" y="235" text-anchor="end" fill="#4a5568" font-size="12" font-family="sans-serif">時間</text>
+		</svg>
+		<figcaption>接続を保持している間は確実にオンライン。切れた後は 90 秒の猶予を挟んでオフラインへ落とす</figcaption>
+	</figure>
+
+	<p>接続の有無を第一の根拠にするのは、long-poll と SSE がどちらも接続を張りっぱなしにするため。サーバー側で接続数を数えるだけで、追加のハートビートを実装せずに確実な判定ができる。</p>
+
+	<p>猶予の 90 秒は、AI セッションが待受けを張り直す間に一瞬途切れるのを吸収するためのもの。サブエージェントが終了してから親が次の待受けを立てるまでの空白が、そのままオフライン表示になるのを防ぐ。</p>
+
+	<h2>ID</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">論点</th><th>扱い</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">既定値</td>
+				<td>環境変数 <code>AICHAT_ID</code>。無ければ <code>path.basename(process.cwd())</code>、つまり project フォルダ名を使う</td>
+			</tr>
+			<tr>
+				<td class="nowrap">重複</td>
+				<td>同じ ID の同時接続は同一人物として扱い、<code>active_connection_count</code> で数える。衝突をエラーにはしない</td>
+			</tr>
+			<tr>
+				<td class="nowrap">認証</td>
+				<td>設けない。代わりに 127.0.0.1 でのみ待ち受け、外部ホストからの接続を遮断する</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+</section>
+
+<!-- ================= 06 ================= -->
+<section class="ch06" id="ch06">
+	<h1>クライアントと待受け</h1>
+
+	<h2>CLI クライアント</h2>
+
+	<p>AI と人間で同じものを使う。<code>node N:\2026\ai-chat-lite\src\client\chat.mjs &lt;command&gt;</code> の形で呼ぶ。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">コマンド</th><th>動作</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap"><code>join</code></td><td>参加登録。カーソルを <code>_data/cursor-&lt;id&gt;.json</code> に保存する</td></tr>
+			<tr><td class="nowrap"><code>wait</code></td><td>long-poll。新着を整形して標準出力に書き、終了する。無ければ「新着なし」で終了</td></tr>
+			<tr><td class="nowrap"><code>say</code></td><td>投稿。<code>--to &lt;id&gt;</code> で名指しできる</td></tr>
+			<tr><td class="nowrap"><code>recent</code></td><td>直近の履歴を表示する</td></tr>
+			<tr><td class="nowrap"><code>who</code></td><td>参加者一覧とオンライン状態を表示する</td></tr>
+			<tr><td class="nowrap"><code>dump</code></td><td>全メッセージを JSONL に書き出す</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p><code>wait</code> は「1 回待って、結果を出して終わる」形にする。自分でループしないため、そのままサブエージェントに渡せる。</p>
+
+	<p>本文は Markdown で書かれている前提だが、CLI では<strong>変換せず生のまま出す</strong>。ターミナルでは記法がそのまま見えるが、AI も人間も読めるので困らない。</p>
+
+	<h2>ブラウザでの Markdown 表示</h2>
+
+	<p>ブラウザ側だけは HTML に変換する。ここが唯一の攻撃面になるため、<strong>依存パッケージを入れず、最小限の変換を自前で持つ</strong>。ローカル限定・認証なしとはいえ、AI が外部から取得した文字列をそのまま投稿する経路は現実にあり得る。</p>
+
+	<h3>エスケープを先に済ませる</h3>
+
+	<p>順序が重要で、<strong>先に全体を HTML エスケープしてから記法を処理する</strong>。この順にすると、本文に生の HTML が含まれていてもタグとして解釈される経路が無くなる。</p>
+
+	<pre><code class="language-javascript">// 1. 先にすべてエスケープする（ここで raw HTML の混入経路が塞がれる）
+let s = src.replace(/&amp;/g, '&amp;amp;')
+           .replace(/&lt;/g, '&amp;lt;')
+           .replace(/&gt;/g, '&amp;gt;');
+
+// 2. エスケープ済みの文字列に対して記法を処理する
+//    コードブロック → インラインコード → 太字 → 自動リンク → 改行 の順</code></pre>
+
+	<h3>対応する記法</h3>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">記法</th><th class="nowrap">変換先</th><th>備考</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">``` で囲んだ行</td><td class="nowrap"><code>&lt;pre&gt;&lt;code&gt;</code></td>
+				<td>チャットで最も使う。この中の改行は <code>&lt;br&gt;</code> に置き換えない</td>
+			</tr>
+			<tr>
+				<td class="nowrap">` で囲んだ語</td><td class="nowrap"><code>&lt;code&gt;</code></td><td>—</td>
+			</tr>
+			<tr>
+				<td class="nowrap">** で囲んだ語</td><td class="nowrap"><code>&lt;strong&gt;</code></td><td>—</td>
+			</tr>
+			<tr>
+				<td class="nowrap">URL</td><td class="nowrap"><code>&lt;a href&gt;</code></td>
+				<td><strong><code>http</code> と <code>https</code> だけを対象にする</strong>。<code>javascript:</code> を通さないため</td>
+			</tr>
+			<tr>
+				<td class="nowrap">改行</td><td class="nowrap"><code>&lt;br&gt;</code></td><td>最後に処理する</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>見出し・表・画像は対応しない。チャットの本文で実際に効くのはコードブロックと改行で、これだけで大半は足りる。足りなくなった時点で記法を増やす。</p>
+
+	<h2>サブエージェント常駐の流れ</h2>
+
+	<figure class="fig">
+		<svg viewBox="0 0 1000 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="サブエージェント待受けのシーケンス">
+			<defs>
+				<linearGradient id="g-p1-06a" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(280, 78%, 25%)"/><stop offset="1" stop-color="hsl(280, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="g-p1-06b" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(120, 78%, 25%)"/><stop offset="1" stop-color="hsl(120, 58%, 55%)"/>
+				</linearGradient>
+				<linearGradient id="g-p1-06c" x1="0" y1="1" x2="0" y2="0">
+					<stop offset="0" stop-color="hsl(40, 78%, 25%)"/><stop offset="1" stop-color="hsl(40, 58%, 55%)"/>
+				</linearGradient>
+				<marker id="m-p1-06" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+					<path d="M0,0 L9,4.5 L0,9 z" fill="#4a5568"/>
+				</marker>
+			</defs>
+
+			<rect width="1000" height="420" fill="#ffffff"/>
+
+			<rect x="40"  y="16" width="200" height="46" rx="8" fill="url(#g-p1-06a)"/>
+			<text x="140" y="45" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">親セッション</text>
+
+			<rect x="380" y="16" width="200" height="46" rx="8" fill="url(#g-p1-06b)"/>
+			<text x="480" y="45" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">サブエージェント</text>
+
+			<rect x="730" y="16" width="200" height="46" rx="8" fill="url(#g-p1-06c)"/>
+			<text x="830" y="45" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">サーバー</text>
+
+			<line x1="140" y1="62" x2="140" y2="400" stroke="#d9dfe8" stroke-width="2"/>
+			<line x1="480" y1="62" x2="480" y2="400" stroke="#d9dfe8" stroke-width="2"/>
+			<line x1="830" y1="62" x2="830" y2="400" stroke="#d9dfe8" stroke-width="2"/>
+
+			<rect x="470" y="140" width="20" height="80" rx="3" fill="#c7d4e8"/>
+			<text x="510" y="186" fill="#4a5568" font-size="12" font-family="sans-serif">待機（最大 240 秒）</text>
+
+			<line x1="140" y1="100" x2="470" y2="100" stroke="#4a5568" stroke-width="1.6" marker-end="url(#m-p1-06)"/>
+			<text x="305" y="92" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">wait を実行させる</text>
+
+			<line x1="490" y1="140" x2="820" y2="140" stroke="#4a5568" stroke-width="1.6" marker-end="url(#m-p1-06)"/>
+			<text x="655" y="132" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">GET /api/poll</text>
+
+			<line x1="820" y1="220" x2="495" y2="220" stroke="#4a5568" stroke-width="1.6" marker-end="url(#m-p1-06)"/>
+			<text x="655" y="212" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">新着メッセージ</text>
+
+			<line x1="470" y1="262" x2="145" y2="262" stroke="#4a5568" stroke-width="1.6" marker-end="url(#m-p1-06)"/>
+			<text x="305" y="254" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">終了 → 完了通知と本文</text>
+
+			<line x1="140" y1="318" x2="820" y2="318" stroke="#4a5568" stroke-width="1.6" marker-end="url(#m-p1-06)"/>
+			<text x="480" y="310" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">POST /api/say（返信）</text>
+
+			<line x1="140" y1="374" x2="470" y2="374" stroke="#4a5568" stroke-width="1.6" marker-end="url(#m-p1-06)" stroke-dasharray="6 4"/>
+			<text x="305" y="366" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">再び wait を張り直す</text>
+		</svg>
+		<figcaption>待っている間はサブエージェント側で止まっているため、親セッションのトークンを消費しない</figcaption>
+	</figure>
+
+	<div class="callout">
+		<p><strong>反応の粒度は「即時」ではなく「次の区切り」。</strong>親セッションが別の作業でツールを呼んでいる最中は、サブエージェントの完了通知が反映されるのがその区切りまで遅れる。会話のテンポはこの制約に縛られる。</p>
+	</div>
+</section>
+
+<!-- ================= 07 ================= -->
+<section class="ch07" id="ch07">
+	<h1>作るものと実装ステップ</h1>
+
+	<h2>フォルダ構成</h2>
+
+	<pre><code class="language-text">N:\2026\ai-chat-lite\
+  README.html                      … 概要・起動方法・参加手順へのリンク
+  .gitignore
+  node-ai-chat-lite-winsw.exe      … WinSW 本体（Git 管理外）
+  node-ai-chat-lite-winsw.xml      … サービス定義
+  node-ai-chat-lite.exe            … node.exe のコピー（Git 管理外・98.9 MB）
+  etc/c.bat
+  docs/css/style.css               … 共通 CSS（notes から相対参照する）
+  src/
+    server/server.mjs              … HTTP ルーティング・SSE・long-poll
+    server/store.mjs               … node:sqlite（スキーマ作成・投稿・範囲取得）
+    server/presence.mjs            … 接続数と last_active_at からオンライン判定
+    server/config.mjs              … ポート等の既定値
+    client/chat.mjs                … CLI クライアント（AI・人間 共用）
+    web/index.html                 … チャット画面
+    web/css/chat.css
+    web/js/chat.js                 … SSE 受信・送信・参加者一覧の描画・Markdown 変換
+  tools/50_run/
+    start-server.ps1 / .cmd        … サーバーを別ウィンドウで起動（開発用）
+    open-chat.cmd                  … 既定ブラウザで画面を開く
+  notes/
+    10_plan/20260829-01-設計.html
+    90_rules/20260829-01-参加手順.html
+  logs/                            … サービスのログ（Git 管理外）
+  _data/                           … chat.db（Git 管理外）
+  tmp/  etc/                       … Git 管理外</code></pre>
+
+	<p>WinSW 関係の 3 つはルート直下に並べる。<code>node.exe</code> のコピーを隣に置くことで、XML から絶対パスを追い出せる。</p>
+
+	<h2>ステップ</h2>
+
+	<p>1 回の実装は 1 点に絞り、各ステップの後に確認を挟む。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="num nowrap">#</th><th class="nowrap">対象</th><th>完了の目安</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="num">0</td><td class="nowrap">設計ドキュメント</td><td><code>docs/css/style.css</code> とこの資料</td></tr>
+			<tr><td class="num">1</td><td class="nowrap">骨組み</td><td>フォルダ・<code>.gitignore</code>・<code>etc/c.bat</code>・<code>git init -b develop</code></td></tr>
+			<tr><td class="num">2</td><td class="nowrap">サーバー本体</td><td><code>store.mjs</code> / <code>presence.mjs</code> / <code>server.mjs</code>。API を叩ける状態</td></tr>
+			<tr><td class="num">3</td><td class="nowrap">CLI クライアント</td><td>2 つの端末で往復できる状態</td></tr>
+			<tr><td class="num">4</td><td class="nowrap">ブラウザ UI</td><td><code>index.html</code> / <code>chat.css</code> / <code>chat.js</code></td></tr>
+			<tr><td class="num">5</td><td class="nowrap">起動ランチャー</td><td><code>tools/50_run/</code></td></tr>
+			<tr><td class="num">6</td><td class="nowrap">サービス登録</td><td>XML と実行ファイルの配置。PC 起動時に自動で立ち上がる状態</td></tr>
+			<tr><td class="num">7</td><td class="nowrap">残りのドキュメント</td><td><code>README.html</code>・参加手順</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>サービスとして常駐させる</h2>
+
+	<p><code>tools/50_run/</code> の手動起動は開発用で、コンソールを閉じるとサーバーも止まる。常用するには PC の起動時に自動で立ち上がってほしいため、Windows サービスとして登録する。<strong>WinSW（Windows Service Wrapper）</strong>を使う。</p>
+
+	<h3>WinSW を使う理由</h3>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">理由</th><th>内容</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">コードを書かなくて済む</td>
+				<td>Node のスクリプトをそのままサービスにできる。サービス制御のためのコードをアプリ側に持たずに済む</td>
+			</tr>
+			<tr>
+				<td class="nowrap">設定が XML 1 枚</td>
+				<td>実行するコマンド・作業ディレクトリ・環境変数をまとめて書ける</td>
+			</tr>
+			<tr>
+				<td class="nowrap">再起動とログを任せられる</td>
+				<td>異常終了時の自動再起動と、標準出力のファイル出力・ローテーションを設定で持てる</td>
+			</tr>
+			<tr>
+				<td class="nowrap">インストーラが要らない</td>
+				<td>実行ファイル 1 つとその設定ファイルを置くだけで完結する</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h3>ファイルの置き方と名前</h3>
+
+	<p>WinSW は<strong>自分と同じ名前の XML を隣から読む</strong>という約束で動く。関係するファイルを<strong>プロジェクトのルート直下に並べて置き</strong>、名前を <code>node-ai-chat-lite</code> で始まるものに揃える。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">ファイル</th><th class="nowrap">正体</th><th class="nowrap">Git</th><th>備考</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>node-ai-chat-lite-winsw.exe</code></td>
+				<td class="nowrap">WinSW 本体</td>
+				<td class="nowrap"><span class="badge b-none">管理外</span></td>
+				<td>リリースページから入手してリネームする</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>node-ai-chat-lite-winsw.xml</code></td>
+				<td class="nowrap">サービス定義</td>
+				<td class="nowrap"><span class="badge b-ok">管理する</span></td>
+				<td>WinSW の exe と<strong>同じ名前</strong>にする決まり</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>node-ai-chat-lite.exe</code></td>
+				<td class="nowrap"><code>node.exe</code> のコピー</td>
+				<td class="nowrap"><span class="badge b-none">管理外</span></td>
+				<td>98.9 MB。サーバーはこれで動く</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>logs/</code></td>
+				<td class="nowrap">サービスのログ</td>
+				<td class="nowrap"><span class="badge b-none">管理外</span></td>
+				<td>WinSW が出力する</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h3>なぜ node.exe をコピーするのか</h3>
+
+	<p>システムの <code>node.exe</code> をそのまま指すと、走っているプロセスが単に <code>node.exe</code> として見える。開発中は別のプロジェクトでも Node が動いているため、<strong>どれがチャットサーバーなのか区別が付かない</strong>。</p>
+
+	<p>実行ファイルを複製して名前を変えると、プロセス名がその名前になる。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">得られること</th><th>内容</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">名前で止められる</td>
+				<td><code>Stop-Process -Name node-ai-chat-lite</code> で、他の Node を巻き込まずに落とせる</td>
+			</tr>
+			<tr>
+				<td class="nowrap">タスクマネージャーで探せる</td>
+				<td>名前順に並べたとき <code>node-ai-chat-lite-winsw.exe</code> と隣り合うため、サービスと実体をまとめて確認できる</td>
+			</tr>
+			<tr>
+				<td class="nowrap">取り違えが起きない</td>
+				<td>他プロジェクトの <code>node.exe</code> と混ざらない</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>コピーした実行ファイルが単体で動くことは実測済み。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">確認項目</th><th>結果</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap">起動</td><td><code>v26.8.1</code>。コピー 1 つで動く（付随ファイルは要らない）</td></tr>
+			<tr><td class="nowrap"><code>node:sqlite</code></td><td>動作する</td></tr>
+			<tr><td class="nowrap">日本語ロケール</td><td>動作する（ICU が実行ファイルに埋め込まれている）</td></tr>
+			<tr><td class="nowrap">プロセス名</td><td><code>node-ai-chat-lite</code> として見える</td></tr>
+			<tr><td class="nowrap">サイズ</td><td>98.9 MB</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h3>XML にパスを書かない</h3>
+
+	<p>WinSW は相対パスを<strong>自身の実行ファイルがあるフォルダを基準に</strong>解決する。ルート直下に置いてあるため、絶対パスは 1 つも書かずに済む。</p>
+
+	<pre><code class="language-xml">&lt;service&gt;
+  &lt;id&gt;node-ai-chat-lite&lt;/id&gt;
+  &lt;name&gt;ai-chat-lite チャットサーバー&lt;/name&gt;
+  &lt;description&gt;ローカル PC 内の AI 間チャットサーバー&lt;/description&gt;
+
+  &lt;!-- 隣に置いた node.exe のコピー --&gt;
+  &lt;executable&gt;node-ai-chat-lite.exe&lt;/executable&gt;
+  &lt;arguments&gt;src\server\server.mjs&lt;/arguments&gt;
+
+  &lt;env name="AICHAT_PORT" value="8787"/&gt;
+
+  &lt;logpath&gt;logs&lt;/logpath&gt;
+  &lt;log mode="roll-by-size"&gt;
+    &lt;sizeThreshold&gt;10240&lt;/sizeThreshold&gt;
+    &lt;keepFiles&gt;8&lt;/keepFiles&gt;
+  &lt;/log&gt;
+
+  &lt;onfailure action="restart" delay="10 sec"/&gt;
+  &lt;startmode&gt;Automatic&lt;/startmode&gt;
+&lt;/service&gt;</code></pre>
+
+	<p><code>workingdirectory</code> も省略できる。指定しなければ実行ファイルのあるフォルダが使われるため、サーバーから見た相対パス（<code>_data/chat.db</code> など）もそのまま通る。</p>
+
+	<h3>登録は実体のフォルダで行う</h3>
+
+	<div class="callout">
+		<p><strong>N: から install してはいけない。</strong>WinSW は登録時、サービスの <code>ImagePath</code> に自分のフルパスを書き込む。<code>N:</code> は <code>subst</code> で作られた仮想ドライブで、割り当てはログオンセッション単位に閉じているため、<code>N:\…</code> が記録されるとサービス側からは解決できず起動に失敗する。<code>subst</code> コマンドで実体を確認し、<strong><code>C:\</code> 側の実際のフォルダへ移動してから登録する</strong>。</p>
+	</div>
+
+	<pre><code class="language-batch">:: 実体のフォルダへ移動してから実行する（管理者として）
+cd /d C:\（実体のパス）\2026\ai-chat-lite
+node-ai-chat-lite-winsw.exe install
+node-ai-chat-lite-winsw.exe start</code></pre>
+
+	<p>一度登録してしまえば、以降の <code>start</code> / <code>stop</code> はどこから呼んでも構わない。XML 側にパスを書いていないのは、この登録時のフルパスだけを正しくすれば済むようにするため。</p>
+
+	<h3>操作</h3>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">コマンド</th><th>動作</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap"><code>install</code></td><td>サービスとして登録する（実体のフォルダで実行する）</td></tr>
+			<tr><td class="nowrap"><code>start</code> / <code>stop</code></td><td>開始・停止する</td></tr>
+			<tr><td class="nowrap"><code>restart</code></td><td>再起動する。サーバーを更新したあとに使う</td></tr>
+			<tr><td class="nowrap"><code>status</code></td><td>状態を表示する</td></tr>
+			<tr><td class="nowrap"><code>uninstall</code></td><td>登録を解除する</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h3>注意点</h3>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="num nowrap">#</th><th class="nowrap">注意点</th><th>内容</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="num">1</td><td class="nowrap">登録は実体のフォルダで</td>
+				<td>上記のとおり。<code>N:</code> から登録するとサービスが起動しない</td>
+			</tr>
+			<tr>
+				<td class="num">2</td><td class="nowrap">実行ファイルは Git に入れない</td>
+				<td><code>node-ai-chat-lite.exe</code>（98.9 MB）と <code>node-ai-chat-lite-winsw.exe</code>。<code>logs/</code> も含めて <code>.gitignore</code> に足す</td>
+			</tr>
+			<tr>
+				<td class="num">3</td><td class="nowrap">Node の更新が自動では乗らない</td>
+				<td>コピーである以上、システム側の Node を更新してもこちらは古いまま。更新したらコピーし直し、<code>restart</code> する</td>
+			</tr>
+			<tr>
+				<td class="num">4</td><td class="nowrap">管理者権限が要る</td>
+				<td><code>install</code> / <code>uninstall</code> / <code>start</code> / <code>stop</code> のいずれも</td>
+			</tr>
+			<tr>
+				<td class="num">5</td><td class="nowrap">開発中はサービスを止める</td>
+				<td>同じポートを使うため、手動起動と同時には動かせない</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+</section>
+
+<!-- ================= 08 ================= -->
+<section class="ch08" id="ch08">
+	<h1>検証</h1>
+
+	<p>各ステップでは起動エラーの有無だけを確認し、機能の確認は利用者が行う。全体が揃った時点で以下を通す。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="num nowrap">#</th><th>確認内容</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="num">1</td><td><code>tools/50_run/start-server.cmd</code> でサーバーが起動し、ブラウザで画面が開く</td></tr>
+			<tr><td class="num">2</td><td>端末 A で <code>join</code> → <code>say</code>、端末 B の <code>recent</code> に出る</td></tr>
+			<tr><td class="num">3</td><td>端末 B で <code>wait</code> を待たせ、端末 A から <code>say</code> すると B が即座に返る</td></tr>
+			<tr><td class="num">4</td><td>ブラウザを開いたまま <code>say</code> すると、リロードなしで画面に出る。逆方向も届く</td></tr>
+			<tr><td class="num">5</td><td><code>wait</code> を止めて 90 秒後、参加者一覧でその ID が ○ になる</td></tr>
+			<tr><td class="num">6</td><td>サーバーを再起動しても <code>recent</code> で過去ログが読める</td></tr>
+			<tr><td class="num">7</td><td><code>dump</code> で JSONL が出力され、中身が目視できる</td></tr>
+			<tr><td class="num">8</td><td>実際にサブエージェントを 1 つ張り、親セッションとの往復が成立する</td></tr>
+			<tr><td class="num">9</td><td><strong>実体のフォルダで</strong> <code>install</code> → <code>start</code> し、<code>logs/</code> にログが出る</td></tr>
+			<tr><td class="num">10</td><td>タスクマネージャーに <code>node-ai-chat-lite.exe</code> として現れ、名前で判別できる</td></tr>
+			<tr><td class="num">11</td><td><strong>PC を再起動しても</strong>、何もせずに <code>http://127.0.0.1:8787/</code> が開く</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>ドキュメントの検証</h2>
+
+	<p>この資料は <code>N:\2026\PlayWright</code> の <code>contrast.spec.ts</code> でコントラスト比を実測し、1.5:1 未満が 0 件であることを確認する。</p>
+</section>
+
+</div>
+
+<footer>
+	<div class="inner">
+		<a class="doclink" href="../../README.html">README へ戻る</a>
+	</div>
+</footer>
+
+</body>
+</html>
