@@ -207,8 +207,8 @@
 <section class="toc md-skip">
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（2 件 / 未 2）</a></li>
-		<li class="g02"><a href="#g02">データ（1 件 / 未 1）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（3 件 / 着手 1 / 未 2）</a></li>
+		<li class="g02"><a href="#g02">データ（2 件 / 未 2）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（3 件 / 未 2 / 済 1）</a></li>
 		<li class="g04"><a href="#g04">チャットの機能（2 件 / 済 2）</a></li>
 	</ol>
 </section>
@@ -266,10 +266,30 @@
 	<summary>
 		<span class="badge b-todo">未</span>
 		データ
-		<span class="count">1 件 / 未 1</span>
+		<span class="count">2 件 / 未 2</span>
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue" id="i-20260830-09" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">20260830-09</span>
+				いらなくなった参加者・ルーム・発言を片付ける手段がない
+			</summary>
+			<div class="issuebody">
+				<p>いちど参加すると <code>users</code> に残り、<code>join</code> のメッセージもログに積まれる。取り消す方法が無い。ルームも同じで、<code>messages</code> に 1 件でも入れば一覧に出続ける。</p>
+				<p>実際に <code>test-project</code>・<code>waiter</code>・<code>browser</code> といったテスト中の名前や、<code>sandbox-mteyisfc</code> のような使い捨てのルームが残っている。誤って投稿した発言を消す手段も無い。</p>
+				<p><strong>認証が無いことをどう扱うかが論点。</strong>いまは誰でも読み書きできる前提なので、消す操作も誰でもできてしまう。<code>/api/admin/</code> に寄せるか、消さずに「隠す」印を付けるだけにするか、決める必要がある。</p>
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> 消すのか隠すのかを決める（履歴を残すなら隠すほうが安全）</li>
+					<li><span class="badge b-todo">未</span> 参加者を片付ける（<code>users</code> と、その <code>cursors</code> も一緒に）</li>
+					<li><span class="badge b-todo">未</span> ルームを片付ける（<code>messages</code> ごとか、一覧から外すだけか）</li>
+					<li><span class="badge b-todo">未</span> 発言を 1 件だけ取り消せるようにする</li>
+					<li><span class="badge b-todo">未</span> 画面から操作できるようにするか、CLI だけにするか決める</li>
+				</ul>
+			</div>
+		</details>
 
 		<details class="issue" id="i-20260830-03" open>
 			<summary>
@@ -293,16 +313,16 @@
 <!-- ================= グループ 3 ================= -->
 <details class="group g03" id="g03" data-name="開発環境・記録" open>
 	<summary>
-		<span class="badge b-doing">着手</span>
+		<span class="badge b-todo">未</span>
 		開発環境・記録
-		<span class="count">3 件 / 着手 1 / 未 2</span>
+		<span class="count">3 件 / 未 2 / 済 1</span>
 	</summary>
 
 	<div class="groupbody">
 
-		<details class="issue doing" id="i-20260830-07" open>
+		<details class="issue done" id="i-20260830-07">
 			<summary>
-				<span class="badge b-doing">着手</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">20260830-07</span>
 				課題を管理するしくみを整える
 			</summary>
@@ -316,7 +336,7 @@
 					<li class="done"><span class="badge b-done">☑</span> 件数を数え直し、開閉を覚えるようにする</li>
 					<li class="done"><span class="badge b-done">☑</span> status の「残っていること」を消す</li>
 					<li class="done"><span class="badge b-done">☑</span> README と相互にリンクする</li>
-					<li class="doing"><span class="badge b-doing">着手</span> Markdown へ変換してコミットする</li>
+					<li class="done"><span class="badge b-done">☑</span> Markdown へ変換してコミットする</li>
 				</ul>
 			</div>
 		</details>
