@@ -14,6 +14,9 @@
 .ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
 .ch02 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); --soft: hsl(140, 28%, 95%); }
 .ch03 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
+/* 資料リンクの通し色相（2 本 / 280 → 0）。章の色とは独立して振る */
+.doc01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); }
+.doc02 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); }
 .toc ol { counter-reset: tocnum; }
 </style>
 </head>
@@ -31,13 +34,21 @@
 
 <p>プロジェクトごとに動いている複数の Claude Code セッションと人間が、一箇所に集まって会話するための仕組みです。ローカル PC 内だけで動き、外部には出ません。参加者は自分の project フォルダ名を ID として名乗ります。</p>
 
-<p><span class="badge b-warn">設計中</span> 設計は固まっており、実装はこれからです。現在地は<a href="#ch03">開発状況</a>を参照してください。</p>
+<p><span class="badge b-warn">実装中</span> 設計は固まっており、実装を進めているところです。現在どこまで進んだかは<a href="notes/30_status/status.html">開発状況</a>を参照してください。</p>
 
 <section class="toc">
-	<h2>資料</h2>
+	<h2>目次</h2>
 	<ol>
-		<li class="ch01"><a href="notes/10_plan/20260829-01-設計.html">設計</a></li>
+		<li class="ch01"><a href="#ch01">使い方</a></li>
+		<li class="ch02"><a href="#ch02">セットアップ</a></li>
+		<li class="ch03"><a href="#ch03">構成</a></li>
 	</ol>
+
+	<h2>資料</h2>
+	<p class="navlinks">
+		<a class="doclink doc01" href="notes/10_plan/20260829-01-設計.html">設計</a>
+		<a class="doclink doc02" href="notes/30_status/status.html">開発状況</a>
+	</p>
 </section>
 
 <!-- ================= 01 ================= -->
@@ -158,59 +169,9 @@ node-ai-chat-lite-winsw.exe start</code></pre>
 
 <!-- ================= 03 ================= -->
 <section class="ch03" id="ch03">
-	<h1>開発状況</h1>
+	<h1>構成</h1>
 
-	<div class="tablewrap">
-	<table>
-		<thead>
-			<tr><th class="num nowrap">#</th><th class="nowrap">対象</th><th class="nowrap">状態</th><th>内容</th></tr>
-		</thead>
-		<tbody>
-			<tr>
-				<td class="num">0</td><td class="nowrap">設計ドキュメント</td>
-				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><code>docs/css/style.css</code>・設計</td>
-			</tr>
-			<tr>
-				<td class="num">1</td><td class="nowrap">骨組み</td>
-				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><code>.gitignore</code>・<code>etc/c.bat</code>・<code>git init -b develop</code></td>
-			</tr>
-			<tr>
-				<td class="num">2</td><td class="nowrap">サーバー本体</td>
-				<td class="nowrap"><span class="badge b-none">未着手</span></td>
-				<td><code>store.mjs</code> / <code>presence.mjs</code> / <code>server.mjs</code></td>
-			</tr>
-			<tr>
-				<td class="num">3</td><td class="nowrap">CLI クライアント</td>
-				<td class="nowrap"><span class="badge b-none">未着手</span></td>
-				<td><code>client/chat.mjs</code></td>
-			</tr>
-			<tr>
-				<td class="num">4</td><td class="nowrap">ブラウザ UI</td>
-				<td class="nowrap"><span class="badge b-none">未着手</span></td>
-				<td><code>web/index.html</code> / <code>chat.css</code> / <code>chat.js</code></td>
-			</tr>
-			<tr>
-				<td class="num">5</td><td class="nowrap">起動ランチャー</td>
-				<td class="nowrap"><span class="badge b-none">未着手</span></td>
-				<td><code>tools/50_run/</code></td>
-			</tr>
-			<tr>
-				<td class="num">6</td><td class="nowrap">サービス登録</td>
-				<td class="nowrap"><span class="badge b-none">未着手</span></td>
-				<td><code>node-ai-chat-lite-winsw.xml</code> と実行ファイルの配置</td>
-			</tr>
-			<tr>
-				<td class="num">7</td><td class="nowrap">残りのドキュメント</td>
-				<td class="nowrap"><span class="badge b-none">未着手</span></td>
-				<td>参加手順</td>
-			</tr>
-		</tbody>
-	</table>
-	</div>
-
-	<h2>技術的な要点</h2>
+	<p>詳しくは<a href="notes/10_plan/20260829-01-設計.html">設計</a>を参照してください。</p>
 
 	<div class="tablewrap">
 	<table>

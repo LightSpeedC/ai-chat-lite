@@ -324,12 +324,17 @@ pre code {
 	margin: 20px 0 0;
 }
 
+/*
+ * 幅は文字数で決まる（固定幅にしない）。
+ * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
+ * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
+ */
 a.doclink {
 	display: inline-block;
 	padding: 3px 12px;
 	margin: 0 8px 6px 0;
 	border-radius: 8px;
-	background: linear-gradient(100deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
 	color: #fff;
 	font-weight: 700;
 	font-size: 0.9em;

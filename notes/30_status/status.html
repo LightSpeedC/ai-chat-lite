@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ai-chat-lite 開発状況</title>
+<style>
+/* ../../docs/css/style.css が読めなかったときの代替色 */
+.titlebar, section h1, th, a.doclink, .badge { background: #12224d; color: #fff; }
+</style>
+<link rel="stylesheet" href="../../docs/css/style.css">
+<style>
+/* この資料だけのもの: 章のアクセント色（3章 / 色相 280→0 を 140 刻み）と目次の採番 */
+.ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
+.ch02 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); --soft: hsl(140, 28%, 95%); }
+.ch03 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
+.toc ol { counter-reset: tocnum; }
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>ai-chat-lite 開発状況</h1>
+		<p class="lead">実装の進み具合と、次にやること</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-08-29</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+<section class="toc">
+	<h2>目次</h2>
+	<ol>
+		<li class="ch01"><a href="#ch01">進捗</a></li>
+		<li class="ch02"><a href="#ch02">動作確認の状況</a></li>
+		<li class="ch03"><a href="#ch03">次にやること</a></li>
+	</ol>
+</section>
+
+<!-- ================= 01 ================= -->
+<section class="ch01" id="ch01">
+	<h1>進捗</h1>
+
+	<p>実装ステップは<a href="../10_plan/20260829-01-設計.html">設計</a>の第 7 章で定義したもの。1 回の実装は 1 点に絞り、各ステップの後に確認を挟む。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="num nowrap">#</th><th class="nowrap">対象</th><th class="nowrap">状態</th><th>内容</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="num">0</td><td class="nowrap">設計ドキュメント</td>
+				<td class="nowrap"><span class="badge b-ok">完了</span></td>
+				<td><code>docs/css/style.css</code>・設計</td>
+			</tr>
+			<tr>
+				<td class="num">1</td><td class="nowrap">骨組み</td>
+				<td class="nowrap"><span class="badge b-ok">完了</span></td>
+				<td><code>.gitignore</code>・<code>etc/c.bat</code>・<code>git init -b develop</code></td>
+			</tr>
+			<tr>
+				<td class="num">2</td><td class="nowrap">サーバー本体</td>
+				<td class="nowrap"><span class="badge b-warn">着手中</span></td>
+				<td><code>config</code> / <code>store</code> / <code>time</code> / <code>log</code> まで完了。残りは <code>presence</code> と <code>server</code></td>
+			</tr>
+			<tr>
+				<td class="num">3</td><td class="nowrap">CLI クライアント</td>
+				<td class="nowrap"><span class="badge b-none">未着手</span></td>
+				<td><code>client/chat.mjs</code></td>
+			</tr>
+			<tr>
+				<td class="num">4</td><td class="nowrap">ブラウザ UI</td>
+				<td class="nowrap"><span class="badge b-none">未着手</span></td>
+				<td><code>web/index.html</code> / <code>chat.css</code> / <code>chat.js</code></td>
+			</tr>
+			<tr>
+				<td class="num">5</td><td class="nowrap">起動ランチャー</td>
+				<td class="nowrap"><span class="badge b-none">未着手</span></td>
+				<td><code>tools/50_run/</code></td>
+			</tr>
+			<tr>
+				<td class="num">6</td><td class="nowrap">サービス登録</td>
+				<td class="nowrap"><span class="badge b-none">未着手</span></td>
+				<td><code>node-ai-chat-lite-winsw.xml</code> と実行ファイルの配置</td>
+			</tr>
+			<tr>
+				<td class="num">7</td><td class="nowrap">残りのドキュメント</td>
+				<td class="nowrap"><span class="badge b-none">未着手</span></td>
+				<td>参加手順</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>できているモジュール</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">ファイル</th><th>役割</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap"><code>src/server/config.mjs</code></td><td>ポート・待ち受けアドレス・DB パス・各種上限。起動ログ用の整形も持つ</td></tr>
+			<tr><td class="nowrap"><code>src/server/store.mjs</code></td><td><code>node:sqlite</code> によるスキーマ作成と読み書き</td></tr>
+			<tr><td class="nowrap"><code>src/server/time.mjs</code></td><td>JST の固定長文字列を作る</td></tr>
+			<tr><td class="nowrap"><code>src/server/log.mjs</code></td><td>日時とレベルを付けて 1 行 1 件で出す</td></tr>
+		</tbody>
+	</table>
+	</div>
+</section>
+
+<!-- ================= 02 ================= -->
+<section class="ch02" id="ch02">
+	<h1>動作確認の状況</h1>
+
+	<h2>テスト</h2>
+
+	<p><code>node --test tests/</code> または <code>tools/40_test/run-tests.cmd</code> で全件実行する。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">ファイル</th><th class="num nowrap">件数</th><th>主な内容</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>tests/time.test.mjs</code></td><td class="num">5</td>
+				<td>固定長・JST・辞書順と時系列順の一致</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>tests/config.test.mjs</code></td><td class="num">10</td>
+				<td>既定値・環境変数の上書き・カレント非依存・起動ログ</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>tests/store.test.mjs</code></td><td class="num">24</td>
+				<td>採番・取得・接続数・CHECK 制約・WAL・インデックス利用</td>
+			</tr>
+			<tr>
+				<td class="nowrap">合計</td><td class="num"><strong>39</strong></td>
+				<td><span class="badge b-ok">全件通過</span></td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>ドキュメントの見た目</h2>
+
+	<p><code>N:\2026\PlayWright</code> の共有環境で実測する。</p>
+
+	<pre><code class="language-powershell">$env:PW_PROJECT = 'ai-chat-lite'
+npm run test:projects -- ai-chat-lite</code></pre>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">対象</th><th class="num nowrap">測定数</th><th class="nowrap">1.5:1 未満</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap">README</td><td class="num">149</td><td class="nowrap"><span class="badge b-ok">0 件</span></td></tr>
+			<tr><td class="nowrap">設計</td><td class="num">903</td><td class="nowrap"><span class="badge b-ok">0 件</span></td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>実測で確かめた前提</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">確かめたこと</th><th>結果</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>node:sqlite</code></td>
+				<td>Node v26.8.1 で experimental 警告なしに動作する</td>
+			</tr>
+			<tr>
+				<td class="nowrap">WAL モード</td>
+				<td>切り替わっている。<code>N:</code> の実体はローカルの NTFS なので制約に当たらない</td>
+			</tr>
+			<tr>
+				<td class="nowrap">インデックス</td>
+				<td><code>WHERE room_id = ? AND msg_seq &gt; ?</code> が <code>messages_ix_room_id_msg_seq</code> を使う</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>node.exe</code> のコピー</td>
+				<td>単体で動く（98.9 MB）。プロセス名が <code>node-ai-chat-lite</code> になる</td>
+			</tr>
+			<tr>
+				<td class="nowrap">DB パスの解決</td>
+				<td>カレントディレクトリに依存しない。<code>N:</code> と実体パスは同じフォルダを指す</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>N:</code> の正体</td>
+				<td><code>subst</code> の仮想ドライブ。<strong>サービスからは見えない</strong>ため、登録は実体のフォルダで行う</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+</section>
+
+<!-- ================= 03 ================= -->
+<section class="ch03" id="ch03">
+	<h1>次にやること</h1>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="num nowrap">#</th><th class="nowrap">対象</th><th>内容</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="num">1</td><td class="nowrap"><code>presence.mjs</code></td>
+				<td>接続数と <code>last_active_at</code> からオンライン判定を組み立てる。猶予は 90 秒</td>
+			</tr>
+			<tr>
+				<td class="num">2</td><td class="nowrap"><code>server.mjs</code></td>
+				<td>HTTP ルーティング・long-poll・SSE。<code>::1</code> と <code>127.0.0.1</code> の両方で待ち受ける</td>
+			</tr>
+			<tr>
+				<td class="num">3</td><td class="nowrap"><code>client/chat.mjs</code></td>
+				<td><code>join</code> / <code>wait</code> / <code>say</code> / <code>recent</code> / <code>who</code> / <code>dump</code></td>
+			</tr>
+			<tr>
+				<td class="num">4</td><td class="nowrap">ブラウザ UI</td>
+				<td>SSE 受信・Markdown 変換（エスケープを先に済ませる）・参加者一覧</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>積み残し</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">項目</th><th>内容</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">WinSW の入手</td>
+				<td>リリースページから取得し、<code>node-ai-chat-lite-winsw.exe</code> にリネームして配置する</td>
+			</tr>
+			<tr>
+				<td class="nowrap">PlayWright 側のコミット</td>
+				<td><code>N:\2026\PlayWright\projects\ai-chat-lite\</code> の spec は別リポジトリ。共有環境の規約では commit が必要</td>
+			</tr>
+			<tr>
+				<td class="nowrap">日付での絞り込み</td>
+				<td>必要になった時点で <code>(room_id, sent_at)</code> のインデックスを追加する。現状は <code>msg_seq</code> だけで足りている</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+</section>
+
+</div>
+
+<footer>
+	<div class="inner">
+		<a class="doclink" href="../../README.html">README へ戻る</a>
+	</div>
+</footer>
+
+</body>
+</html>
