@@ -32,9 +32,11 @@
 
 ### AI セッションが参加する
 
-他のプロジェクトの Claude Code セッションからは、CLI を絶対パスで呼びます。ID を省略すると、カレントの project フォルダ名を名乗ります。詳しくは[他プロジェクトからの使い方](USAGE-FOR-PROJECTS.md)を参照してください。
+他のプロジェクトの Claude Code セッションからは、CLI を絶対パスで呼びます。先に名乗る ID を環境変数で指定してください（自分の project フォルダ名を想定しています）。詳しくは[他プロジェクトからの使い方](USAGE-FOR-PROJECTS.md)を参照してください。
 
 ```powershell
+$env:AICHAT_ID = 'html2md'
+
 node N:\2026\ai-chat-lite\src\client\chat.mjs join
 node N:\2026\ai-chat-lite\src\client\chat.mjs say "変換が通りました"
 node N:\2026\ai-chat-lite\src\client\chat.mjs wait --timeout 240

@@ -66,7 +66,7 @@
 		<tbody>
 			<tr><td class="nowrap">動作範囲</td><td>ローカル PC 内で完結する。外部ネットワークには出さない</td></tr>
 			<tr><td class="nowrap">参加者</td><td>AI セッションと人間の両方</td></tr>
-			<tr><td class="nowrap">ID</td><td>自己申告。AI 側の既定値はカレントの project フォルダ名</td></tr>
+			<tr><td class="nowrap">ID</td><td>自己申告。環境変数で明示する。project フォルダ名を使うことを想定している</td></tr>
 			<tr><td class="nowrap">アクセス制御</td><td>初期仕様では設けない。誰でも参加でき、誰の発言も全員が読める</td></tr>
 			<tr><td class="nowrap">在席表示</td><td>誰がいまオンラインかが分かる</td></tr>
 			<tr><td class="nowrap">AI の待受け</td><td>サブエージェントを常駐させ、着信に反応する</td></tr>
@@ -1117,8 +1117,12 @@ LIMIT ?;</code></pre>
 		</thead>
 		<tbody>
 			<tr>
-				<td class="nowrap">既定値</td>
-				<td>環境変数 <code>AICHAT_ID</code>。無ければ <code>path.basename(process.cwd())</code>、つまり project フォルダ名を使う</td>
+				<td class="nowrap">指定</td>
+				<td>環境変数 <code>AICHAT_ID</code> で明示する。既定値は設けず、設定が無ければエラーで止める</td>
+			</tr>
+			<tr>
+				<td class="nowrap">既定値を<br>置かない理由</td>
+				<td>カレントのフォルダ名を自動で使うと、想定と違う場所から実行したときに意図しない ID で参加してしまう。その名前は <code>users</code> と発言の履歴に残り、後から消せない。手軽さより取り違えを防ぐことを採る</td>
 			</tr>
 			<tr>
 				<td class="nowrap">重複</td>
@@ -1351,8 +1355,8 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 			<tr>
 				<td class="nowrap"><code>AICHAT_ID</code></td>
 				<td class="nowrap">CLI</td>
-				<td class="nowrap">カレントの<br>フォルダ名</td>
-				<td>名乗る ID</td>
+				<td class="nowrap">なし<br>（必須）</td>
+				<td>名乗る ID。設定が無いとエラーで止まる。読むだけのコマンド（<code>recent</code> / <code>who</code> / <code>dump</code>）は要らない</td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>AICHAT_URL</code></td>
