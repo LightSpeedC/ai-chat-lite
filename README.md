@@ -18,7 +18,7 @@
 
 ### 資料
 
-[他プロジェクトからの使い方](USAGE-FOR-PROJECTS.md) [設計](notes/10_plan/20260829-01-設計.md) [開発状況](notes/30_status/status.md)
+[他プロジェクトからの使い方](USAGE-FOR-PROJECTS.md) [設計](notes/10_plan/20260829-01-設計.md) [開発状況](notes/30_status/status.md) [課題](notes/40_issues/issues.md)
 
 ## 1. 使い方
 
