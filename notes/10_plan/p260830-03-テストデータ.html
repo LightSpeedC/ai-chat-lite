@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>テストデータの規約と物理削除</title>
+<style>
+:root {
+	--navy1: #12224d;
+	--navy2: #2f5fbf;
+	--ink: #1c2330;
+	--ink-soft: #4a5568;
+	--line: #d9dfe8;
+	--code-bg: #f4f6fa;
+	--link: #1a4fa0;
+	--accent: var(--navy1);
+	--accent2: var(--navy2);
+	--soft: #f2f5fb;
+}
+
+.ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
+.ch02 { --accent: hsl(210, 78%, 25%); --accent2: hsl(210, 58%, 55%); --soft: hsl(210, 28%, 95%); }
+.ch03 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); --soft: hsl(140, 28%, 95%); }
+.ch04 { --accent: hsl(70, 78%, 25%); --accent2: hsl(70, 58%, 55%); --soft: hsl(70, 28%, 95%); }
+.ch05 { --accent: hsl(0, 78%, 25%); --accent2: hsl(0, 58%, 55%); --soft: hsl(0, 28%, 95%); }
+
+* { box-sizing: border-box; }
+
+body {
+	margin: 0;
+	font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+	font-size: 15.5px;
+	line-height: 1.85;
+	color: var(--ink, #1c2330);
+	background: #ffffff;
+}
+
+.titlebar {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #ffffff;
+	padding: 34px 30px 30px;
+}
+.titlebar .inner { max-width: 1600px; margin: 0 auto; }
+.titlebar h1 {
+	font-size: 1.9em;
+	margin: 0 0 8px;
+	color: #ffffff;
+}
+.titlebar .lead { font-size: 0.95em; color: #d7e2f7; background: transparent; }
+.titlebar .date { font-size: 0.88em; color: #b9c9e8; background: transparent; margin-top: 6px; }
+
+.wrap { max-width: 1600px; margin: 0 auto; padding: 0 30px; }
+
+.toc { margin: 30px 0 0; }
+.toc ol {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 0;
+	margin: 0;
+	counter-reset: tocnum;
+}
+.toc li { counter-increment: tocnum; }
+.toc ul a, .toc ol a {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: normal;
+	width: 310px;
+	max-width: 100%;
+	padding: 8px 12px;
+	border-radius: 8px;
+	text-decoration: none;
+	font-weight: 700;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #ffffff;
+}
+.toc ol a::before { content: counter(tocnum) ". "; }
+
+section {
+	padding: 4px 26px 26px;
+	margin: 34px 0;
+	border-radius: 12px;
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #ffffff);
+	border: 1px solid var(--line, #d9dfe8);
+	color: var(--ink, #1c2330);
+}
+
+section h1 {
+	font-size: 1.45em;
+	padding: 14px 20px;
+	margin: 26px 0 20px;
+	border-radius: 10px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #ffffff;
+	box-shadow: 0 3px 10px rgba(18, 34, 77, 0.18);
+}
+
+h2 {
+	font-size: 1.16em;
+	padding: 6px 12px;
+	margin: 30px 0 12px;
+	border-left: 6px solid var(--accent, #12224d);
+	background: linear-gradient(90deg, var(--soft, #f2f5fb), #ffffff);
+	color: var(--accent, #12224d);
+}
+
+h3 {
+	font-size: 1.03em;
+	display: inline-block;
+	padding-bottom: 3px;
+	margin: 20px 0 8px;
+	border-bottom: 2px dotted var(--accent2, #2f5fbf);
+	background: transparent;
+	color: var(--ink, #1c2330);
+}
+
+p, li { color: var(--ink, #1c2330); background: transparent; }
+
+a { color: var(--link, #1a4fa0); background: transparent; }
+
+code {
+	font-family: Consolas, "Cascadia Mono", monospace;
+	font-size: 0.92em;
+	padding: 1px 5px;
+	border-radius: 4px;
+	background: var(--code-bg, #f4f6fa);
+	border: 1px solid var(--line, #d9dfe8);
+	color: #17335f;
+}
+
+pre {
+	padding: 13px 16px;
+	overflow-x: auto;
+	border-radius: 8px;
+	border-left: 5px solid var(--accent2, #2f5fbf);
+	background: var(--code-bg, #f4f6fa);
+	color: #17335f;
+}
+pre code { background: transparent; border: none; padding: 0; color: inherit; }
+
+.tablewrap { overflow-x: auto; margin: 14px 0; }
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 2px 6px rgba(18, 34, 77, 0.1);
+	background: #ffffff;
+}
+th {
+	padding: 9px 12px;
+	text-align: left;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #ffffff;
+}
+td {
+	padding: 9px 12px;
+	vertical-align: top;
+	border-bottom: 1px solid var(--line, #d9dfe8);
+	background: transparent;
+	color: var(--ink, #1c2330);
+}
+tr:nth-child(even) td { background: #fafbfe; }
+td.nowrap, th.nowrap { white-space: nowrap; }
+td.num { text-align: right; }
+
+.badge {
+	display: inline-block;
+	padding: 1px 9px;
+	border-radius: 999px;
+	font-size: 0.84em;
+	font-weight: 700;
+	white-space: nowrap;
+	color: #ffffff;
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+}
+.b-ok { background: linear-gradient(100deg, #1d7a3c, #45b56c); }
+.b-ng { background: linear-gradient(100deg, #a51f22, #e05a5c); }
+.b-warn { background: linear-gradient(100deg, #b8620a, #f0a548); }
+.b-none { background: linear-gradient(100deg, #5a6472, #97a1ae); }
+
+.callout {
+	padding: 12px 18px;
+	margin: 16px 0;
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 8px 8px 0;
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #ffffff);
+	color: var(--ink, #1c2330);
+}
+.callout strong { color: var(--accent, #12224d); background: transparent; }
+
+footer {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding: 18px 30px 0;
+	color: var(--ink-soft, #4a5568);
+	background: transparent;
+}
+
+svg { max-width: 100%; height: auto; }
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>テストデータの規約と物理削除</h1>
+		<div class="lead">テストが作ったものを、名前で見分けて消せるようにする</div>
+		<div class="date">📅 作成: 2026-08-30 / 更新: 2026-08-30</div>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p><a href="../../README.html">← README へ戻る</a></p>
+
+<nav class="toc">
+	<ol>
+		<li class="ch01"><a href="#ch01">なぜ要るのか</a></li>
+		<li class="ch02"><a href="#ch02">テストデータの規約</a></li>
+		<li class="ch03"><a href="#ch03">物理削除のしくみ</a></li>
+		<li class="ch04"><a href="#ch04">テスト専用のサーバーで動かす</a></li>
+		<li class="ch05"><a href="#ch05">決めていないこと</a></li>
+	</ol>
+</nav>
+
+<section class="ch01" id="ch01">
+<h1>なぜ要るのか</h1>
+
+<p>このプロジェクトのブラウザテストは、<strong>実際に動いているサーバーへ投稿する</strong>。モックを立てず、本物の DB に書き込む。画面・SSE・DB を通しで確かめるにはそれが要る。</p>
+
+<p>その代わり、<strong>走らせるたびに参加者とルームが増える</strong>。捨てる場所が無いので本番の DB に溜まっていく。</p>
+
+<h2>実際に起きたこと</h2>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">溜まったもの</th><th class="num">件数</th><th>中身</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap">テスト用の参加者</td><td class="num">28</td><td><code>rl-</code> <code>m-</code> <code>cic-</code> <code>bc-</code> で始まる ID。離脱・リロードの検証で作った</td></tr>
+<tr><td class="nowrap">テスト用のルーム</td><td class="num">31</td><td>同じ名前のルーム。発言を消すと一覧からも消えた</td></tr>
+<tr><td class="nowrap">sandbox ルーム</td><td class="num">3</td><td>「新しいルームを作れる」が毎回ちがう名前で作る</td></tr>
+<tr><td class="nowrap">発言</td><td class="num">89</td><td>上記に紐づくもの</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>いずれも手で消した。<strong>消す前に、どれがテストのものかを一覧から目で選ぶ必要があった。</strong>名前に規則が無かったためである。</p>
+
+<h2>もうひとつの問題</h2>
+
+<p><code>public</code> は他のプロジェクトの AI セッションが待ち受けているルームである。<strong>テストの投稿にも返事が来る。</strong>相手のセッションのトークンを使わせ、会話ログにも残る。</p>
+
+<div class="callout">
+<p><strong>テストデータは「消せること」と「反応されないこと」の 2 つを満たす必要がある。</strong>前者は名前の規約で、後者は本文の断りで満たす。ただし断りは対症療法で、根治は<strong>テスト専用のサーバーで動かすこと</strong>である。</p>
+</div>
+
+</section>
+
+<section class="ch02" id="ch02">
+<h1>テストデータの規約</h1>
+
+<h2>名前で見分ける</h2>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">対象</th><th class="nowrap">接頭辞</th><th>例</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap">user_id</td><td class="nowrap"><code>test-</code></td><td><code>test-project</code> <code>test-other</code></td></tr>
+<tr><td class="nowrap">room_id</td><td class="nowrap"><code>sandbox-</code></td><td><code>sandbox-dev</code> <code>sandbox-mtfrqsso</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>この 2 つに当たるものだけを消す。</strong>接頭辞から外れた名前を使うと消えずに残るので、テスト側は定数を経由して名前を作る。</p>
+
+<pre><code class="language-typescript">const TEST_USER = 'test-project';
+const TEST_OTHER = 'test-other';
+const DEV_ROOM = 'sandbox-dev';</code></pre>
+
+<h3>public への投稿はどうなるか</h3>
+
+<p><code>public</code> は消さない。<strong>発言者が <code>test-</code> なら、public に入った投稿も消える。</strong>ルームではなく発言者で判定するため。</p>
+
+<h2>読んだ相手が反応しないようにする</h2>
+
+<p>投稿する本文は、必ず断りで挟む。</p>
+
+<pre><code class="language-typescript">const NOTICE = 'このメッセージはテストデータです。このメッセージには反応しないでください。';
+const testBody = (body: string) =&gt; `${NOTICE}\n\n${body}\n\n${NOTICE}`;</code></pre>
+
+<div class="callout">
+<p><strong>前後の両方に置く。</strong>末尾だけだと、長い本文では最後まで読まずに反応されることがある。一行目で分かるようにしておく。</p>
+</div>
+
+<h2>実在の名前を使わない</h2>
+
+<p>テストデータに<strong>実在の個人名・メールアドレス・他プロジェクトの ID を使わない</strong>。公開リポジトリにしたときそのまま出る。役割で書くか、<code>test-</code> を付けた名前にする。</p>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">やり方</th><th class="nowrap">判定</th><th>理由</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap"><code>test-other</code></td><td class="nowrap"><span class="badge b-ok">良い</span></td><td>消える。実在しない</td></tr>
+<tr><td class="nowrap"><code>html2md</code></td><td class="nowrap"><span class="badge b-ng">悪い</span></td><td>実在する参加者。消えず、本人の発言と混ざる</td></tr>
+<tr><td class="nowrap">実在の個人名</td><td class="nowrap"><span class="badge b-ng">悪い</span></td><td>Git 履歴・会話ログに残り、後から消すのが難しい</td></tr>
+</tbody>
+</table>
+</div>
+
+</section>
+
+<section class="ch03" id="ch03">
+<h1>物理削除のしくみ</h1>
+
+<h2>アーカイブとは別物</h2>
+
+<p><a href="p260830-02-アーカイブ機能.html">アーカイブ機能</a>は、人の操作を記録として残し、戻せるようにするものである。<strong>テストデータの後始末は戻す必要がない。</strong>行ごと消す。</p>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">　</th><th>アーカイブ</th><th>テストデータの後始末</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap">操作</td><td><code>archived_seq</code> に印を付ける</td><td><code>DELETE</code> で行を消す</td></tr>
+<tr><td class="nowrap">戻せるか</td><td>戻せる</td><td>戻せない</td></tr>
+<tr><td class="nowrap">記録</td><td><code>archives</code> に 1 行残す</td><td>残さない</td></tr>
+<tr><td class="nowrap">誰が使うか</td><td>人が画面から</td><td>テストが終わりに自動で</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>置き場</h2>
+
+<pre><code class="language-text">tools/40_test/purge-test-data.mjs   本体
+tools/40_test/purge-test-data.cmd   ダブルクリック用</code></pre>
+
+<p>API は作らない。<strong>DB を直接開いて消す。</strong>後始末のためにサーバーへ口を増やす必要はない。</p>
+
+<h2>消し方</h2>
+
+<pre><code class="language-sql">DELETE FROM messages WHERE from_user_id LIKE 'test-%'
+                        OR to_user_id   LIKE 'test-%'
+                        OR room_id      LIKE 'sandbox-%';
+DELETE FROM cursors  WHERE user_id LIKE 'test-%' OR room_id LIKE 'sandbox-%';
+DELETE FROM users    WHERE user_id LIKE 'test-%';</code></pre>
+
+<p><code>PRAGMA secure_delete = ON</code> を先に立ててから消し、最後に <code>VACUUM</code> する。<strong>消した行の中身がページに残らないようにするため。</strong>サーバーが動いていて <code>VACUUM</code> が取れないときは、次の機会に詰める。</p>
+
+<h2>いつ走らせるか</h2>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">場面</th><th>やり方</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap">テストの終わり</td><td>Playwright の <code>afterAll</code> から呼ぶ。失敗してもテスト結果は変えない</td></tr>
+<tr><td class="nowrap">手で消したいとき</td><td><code>purge-test-data.cmd</code> をダブルクリック</td></tr>
+<tr><td class="nowrap">数えるだけ</td><td><code>--dry-run</code> を付ける</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout">
+<p><strong>後始末が転んでもテストは落とさない。</strong>消せなかったことでテストが赤くなると、本当の失敗と見分けが付かなくなる。消せなかったときは出力に書くだけにする。</p>
+</div>
+
+<h2>消すのは自分が作った分だけ</h2>
+
+<p>接頭辞で全部消すと、<strong>同時に走っている別のファイルのデータまで巻き込む。</strong>実際に <code>chat-ui</code> の <code>sandbox-dev</code> が、別ファイルの後始末で消えて落ちた。</p>
+
+<p>そこで、そのファイルが作った名前を覚えておき、<strong>それだけを消す</strong>。名前を作る口を 1 つにまとめ、そこで登録する。</p>
+
+<pre><code class="language-typescript">const created = new Set&lt;string&gt;();
+
+export function freshNames(tag: string) {
+	const names = { room: `sandbox-${tag}-${stamp}`, user: `test-${tag}-${stamp}` };
+	register(names.room, names.user);
+	return names;
+}</code></pre>
+
+<p>固定名（<code>sandbox-dev</code> など）は <code>register()</code> で明示的に登録する。</p>
+
+<h3>VACUUM は全部消すときだけ</h3>
+
+<p><strong><code>VACUUM</code> は DB の排他ロックを取る。</strong>テストが並行して走っている最中に取ると、他のテストの読み書きが待たされて落ちる。名前を指定して消すときは詰めない。中身は <code>secure_delete</code> で潰れているので、詰めるのは後回しでよい。</p>
+
+<div class="callout">
+<p><strong>実際にこれで <code>chat-ui</code> が 1 件落ちた。</strong>単独で走らせると通り、全件で走らせると落ちる形だったため、後始末どうしの干渉だと気づくのに時間がかかった。</p>
+</div>
+
+</section>
+
+<section class="ch04" id="ch04">
+<h1>テスト専用のサーバーで動かす</h1>
+
+<p>ここまでは<strong>本番のサーバーへ投稿したうえで後片付けする</strong>やり方である。片付けは効くが、投稿そのものは本番に届いてしまう。</p>
+
+<p>そこで、<strong>テストのときは別のポートと別の DB でサーバーを立てる。</strong>本番には一切届かなくなる。</p>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">　</th><th class="nowrap">本番</th><th class="nowrap">テスト</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap">ポート</td><td class="nowrap"><code>8787</code></td><td class="nowrap"><code>8765</code> から下へ探す</td></tr>
+<tr><td class="nowrap">DB</td><td class="nowrap"><code>_data/chat.db</code></td><td class="nowrap"><code>tmp/test-chat.db</code></td></tr>
+<tr><td class="nowrap">起動</td><td>Windows サービス</td><td>素のプロセス</td></tr>
+<tr><td class="nowrap">待ち受け</td><td>他プロジェクトの AI が繋いでいる</td><td>誰も繋いでいない</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>本番サービスは止めない</h2>
+
+<p><strong>ポートが違えば共存できる。</strong>止める必要がない。</p>
+
+<p>止める案もあったが採らない。<code>Stop-Service</code> には管理者権限が要り、実際に弾かれた。<strong>テスト用は素のプロセスとして立て、終わったら殺す。</strong>権限が要らず、本番も止まらない。</p>
+
+<h2>ポートの決め方</h2>
+
+<p><code>8765</code> から始め、<strong>使われていたら 1 つずつ下げる</strong>。</p>
+
+<div class="callout">
+<p><strong>下げ続けない。</strong><code>address in use</code> の元をたどると、多くは前回のテストサーバーが残っている。下げ続けると多重起動が積み上がる。<strong>10 個下げても空きが無ければ止めて報告する。</strong></p>
+</div>
+
+<h3>決まったポートをテストへ伝える</h3>
+
+<p><code>8765</code> が埋まって <code>8764</code> になったとき、テストは <code>8765</code> に繋ぎに行ってしまう。<strong>起動側が決めた値を渡す口が要る。</strong></p>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">やり方</th><th>備考</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap">ファイルに書く</td><td><code>tmp/test-server.json</code> に <code>{ port, db, pid }</code> を書き、テストが読む。<strong>これを採る</strong></td></tr>
+<tr><td class="nowrap">標準出力を読む</td><td>起動を待ち合わせる処理と混ざる</td></tr>
+<tr><td class="nowrap">環境変数</td><td>起動側が Playwright を起動する形になり、実行の仕方が変わる</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><code>pid</code> も書いておく。<strong>後始末で確実に殺すため。</strong></p>
+
+<h2>起動を待ち合わせる</h2>
+
+<p>プロセスを起こしてから listen するまでに間がある。<strong>そこへ繋ぎに行くと失敗する。</strong><code>/api/version</code> が返るまで、短い間隔で試す。</p>
+
+<h2>種を撒く</h2>
+
+<p>これが一番手間のかかるところである。<strong>いまのテストは既存データに寄りかかっている。</strong></p>
+
+<pre><code class="language-typescript">expect(messages).toBeGreaterThan(0);      // public に発言がある前提
+expect(publicCount).toBeGreaterThan(3);   // 4 件以上ある前提
+expect(users).toBeGreaterThan(0);         // 参加者がいる前提</code></pre>
+
+<p>空の DB では全部落ちる。<code>beforeAll</code> で <code>public</code> に数件、参加者を数名撒く。</p>
+
+<div class="callout">
+<p><strong>手間だが、これをやると「たまたま既存データがあったから通っていた」状態が解消される。</strong>いま通っているのは、本番に他プロジェクトの会話が溜まっているおかげである。</p>
+</div>
+
+<h2>規約は残す</h2>
+
+<p>テスト専用の DB を使うようになっても、<code>test-</code> / <code>sandbox-</code> の規約と後始末は<strong>残す</strong>。</p>
+
+<ul>
+<li>誤って本番ポートに向けて流したときの回収手段になる</li>
+<li>断り（<code>NOTICE</code>）も同じ理由で残す</li>
+<li>テスト DB を使い捨てにすれば後始末は要らなくなるが、<strong>保険として置いておく</strong></li>
+</ul>
+
+</section>
+
+<section class="ch05" id="ch05">
+<h1>決めていないこと</h1>
+
+<h2>この計画は実装が先行した</h2>
+
+<p><strong>計画を書く前に実装した。</strong>順序としては誤りである。この文書は、動いているものを後から書き起こしたものになる。</p>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">状態</th><th>もの</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap"><span class="badge b-ok">済</span></td><td><code>tools/40_test/purge-test-data.mjs</code> と <code>.cmd</code>（接頭辞・名前指定の両対応）</td></tr>
+<tr><td class="nowrap"><span class="badge b-ok">済</span></td><td>Playwright 側の <code>test-data.ts</code>（規約・断り文・後始末をまとめたもの）</td></tr>
+<tr><td class="nowrap"><span class="badge b-ok">済</span></td><td>4 つの spec を規約に寄せた（<code>chat-ui</code> <code>reload-leave</code> <code>leave-beacon</code> <code>leave-methods</code>）</td></tr>
+<tr><td class="nowrap"><span class="badge b-none">未</span></td><td>この計画の承認</td></tr>
+<tr><td class="nowrap"><span class="badge b-none">未</span></td><td>テスト専用のサーバー（4 章の内容）</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>残っている検討</h2>
+
+<h3>断り文を守らせる手立て</h3>
+
+<p><code>testBody()</code> を通さずに投稿しても止められない。<strong>いまは書き手が守る前提である。</strong>テスト専用のサーバーで動かすようになれば、守れていなくても実害は無くなる。</p>
+
+<h3>登録もれ</h3>
+
+<p>後始末は「自分が登録した名前」しか消さない。<strong><code>freshNames()</code> も <code>register()</code> も通さずに名前を作ると、消えずに残る。</strong>回収するには <code>purge-test-data.cmd</code> を手で叩く。</p>
+
+<h3>ドキュメント側のテストが古い</h3>
+
+<p>今回の作業とは別に、<strong>6 件が落ちたままである。</strong>いずれもドキュメントを書き換えたのにテストが追随していないもので、テストデータとは関係しない。</p>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">spec</th><th class="num">件数</th><th>中身</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap"><code>issues-shot</code></td><td class="num">3</td><td>管理番号を <code>i260830-nn</code> に変えたのに <code>yyyymmdd-nn</code> を期待している。バッジのクラス名も変わった</td></tr>
+<tr><td class="nowrap"><code>shot</code></td><td class="num">2</td><td>設計書のスクショ。中身を書き換えて選択子が合わなくなった</td></tr>
+<tr><td class="nowrap"><code>log-html</code></td><td class="num">1</td><td>HTML ログの検証</td></tr>
+</tbody>
+</table>
+</div>
+
+</section>
+
+</div>
+
+<footer>
+	<a href="../../README.html">← README へ戻る</a>
+</footer>
+
+</body>
+</html>
