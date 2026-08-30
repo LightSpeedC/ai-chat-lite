@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ai-chat-lite バックアップ設計</title>
+<style>
+/* ../../docs/css/style.css が読めなかったときの代替色 */
+.titlebar, section h1, th, a.doclink, .badge { background: #12224d; color: #fff; }
+</style>
+<link rel="stylesheet" href="../../docs/css/style.css">
+<style>
+/* この資料だけのもの: 章のアクセント色（5章 / 色相 280→0 を 70 刻み）と目次の採番 */
+.ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
+.ch02 { --accent: hsl(210, 78%, 25%); --accent2: hsl(210, 58%, 55%); --soft: hsl(210, 28%, 95%); }
+.ch03 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); --soft: hsl(140, 28%, 95%); }
+.ch04 { --accent: hsl( 70, 78%, 25%); --accent2: hsl( 70, 58%, 55%); --soft: hsl( 70, 28%, 95%); }
+.ch05 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
+.toc ol { counter-reset: tocnum; }
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>ai-chat-lite バックアップ設計</h1>
+		<p class="lead">世代を分けて残し、失っても戻せる状態を保つ</p>
+		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-08-30</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+<p>DB を定期的に控え、壊したり消したりしても戻せるようにする。<strong>この文書は承認待ちの設計である。</strong>実装はまだ行っていない。</p>
+
+<section class="toc">
+	<h2>目次</h2>
+	<ol>
+		<li class="ch01"><a href="#ch01">なぜファイルコピーではだめか</a></li>
+		<li class="ch02"><a href="#ch02">4 つの世代</a></li>
+		<li class="ch03"><a href="#ch03">動かし方</a></li>
+		<li class="ch04"><a href="#ch04">戻し方</a></li>
+		<li class="ch05"><a href="#ch05">作るもの</a></li>
+	</ol>
+</section>
+
+<!-- ================= 01 ================= -->
+<section class="ch01" id="ch01">
+	<h1>なぜファイルコピーではだめか</h1>
+
+	<p><code>_data\chat.db</code> をコピーするだけでは<strong>中身がまるごと落ちる</strong>。実測で確かめた結果を残しておく。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">取り方</th><th class="nowrap">取れた件数</th><th>備考</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>chat.db</code> を単体コピー</td>
+				<td class="nowrap num"><strong>0 件</strong></td>
+				<td>本体は 24 KB しかなかった</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>VACUUM INTO</code></td>
+				<td class="nowrap num">64 件</td>
+				<td>出力は 40 KB</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>WAL モードで動かしているため、書き込みは本体ではなく <code>chat.db-wal</code> に溜まる。測った時点では 2.6 MB あった。本体だけを複製すると、まだ統合されていない分が失われる。</p>
+
+	<h2>VACUUM INTO を使う</h2>
+
+	<p><code>VACUUM INTO</code> は WAL を織り込んだ一貫したスナップショットを別ファイルに書く。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">性質</th><th>内容</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap">サービスの停止</td><td><strong>要らない</strong>。読み取り専用の接続から実行でき、動いているサーバーの書き込みを邪魔しない</td></tr>
+			<tr><td class="nowrap">所要</td><td>実測 24 ミリ秒</td></tr>
+			<tr><td class="nowrap">出力</td><td><code>-wal</code> も <code>-shm</code> も伴わない。単体で開ける</td></tr>
+			<tr><td class="nowrap">断片化</td><td>詰め直されるため、元より小さくなることがある</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>常に圧縮する</h2>
+
+	<p>サイズに関わらず <code>.zip</code> にする。実測では 40,960 バイトが 3,722 バイト（9.1 %）になった。</p>
+
+	<p>いまは小さいので圧縮しなくても困らないが、<strong>後から方針を変えると過去の世代と形式が混ざる</strong>。戻す手順が世代によって変わるのは避けたい。最初から揃えておく。</p>
+
+	<div class="callout">
+		<p><strong>zip の中身は <code>chat.db</code> という名前で固定する。</strong>展開してそのまま <code>_data</code> へ置けるようにするため。世代を区別する日時は zip 側の名前に付ける。</p>
+	</div>
+
+	<h2>CSV にしない理由</h2>
+
+	<p>本文は Markdown を想定しており、改行やカンマ、引用符がそのまま入る。CSV に落とすと往復で壊れる余地が残る。DB の形のまま持つのが最も確実で、戻すのも速い。</p>
+</section>
+
+<!-- ================= 02 ================= -->
+<section class="ch02" id="ch02">
+	<h1>4 つの世代</h1>
+
+	<p>取る間隔と残す数を変えた 4 つの区分を持つ。<strong>直近は細かく、古いものは粗く</strong>残す。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">区分</th><th class="nowrap">取る時刻</th><th class="nowrap">残す数</th><th class="nowrap">遡れる範囲</th><th>使いどころ</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>hourly</code></td><td class="nowrap">毎時 0 分</td>
+				<td class="nowrap num">3</td><td class="nowrap">3 時間</td>
+				<td>いま壊した。作業前の状態に戻したい</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>daily</code></td><td class="nowrap">毎日 0 時 1 分</td>
+				<td class="nowrap num">7</td><td class="nowrap">1 週間</td>
+				<td>数日前に消したものを探したい</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>weekly</code></td><td class="nowrap">月曜 0 時 2 分</td>
+				<td class="nowrap num">4</td><td class="nowrap">1 か月</td>
+				<td>先月の状態を見たい</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>monthly</code></td><td class="nowrap">1 日 0 時 3 分</td>
+				<td class="nowrap num">3</td><td class="nowrap">3 か月</td>
+				<td>ずっと前の記録を掘り返したい</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>合計 17 世代。1 世代 4 KB として <strong>70 KB 程度</strong>にしかならない。</p>
+
+	<h2>置き場</h2>
+
+	<p>区分ごとにフォルダを分ける。<strong>混ぜると、どれを消してよいか一目で分からなくなる。</strong></p>
+
+	<pre><code class="language-text">_backup\
+  hourly\   chat-20260830-140000.db.zip
+  daily\    chat-20260830-000100.db.zip
+  weekly\   chat-20260825-000200.db.zip
+  monthly\  chat-20260801-000300.db.zip</code></pre>
+
+	<p><code>_backup</code> は先頭が <code>_</code> なので Git 管理外になる。</p>
+
+	<h2>名前で並べる</h2>
+
+	<p>ファイル名は <code>chat-yyyymmdd-hhmmss.db.zip</code>。桁を揃えてあるので<strong>辞書順に並べれば時系列順</strong>になる。世代を整理するとき、新しい順に並べて上から N 個を残せばよい。</p>
+
+	<div class="callout callout-important">
+		<p><strong>ファイルの更新日時では並べない。</strong>コピーや展開、バックアップソフトの復元で簡単に変わる。名前に入れた日時だけが、取った時点を正しく表す。</p>
+	</div>
+</section>
+
+<!-- ================= 03 ================= -->
+<section class="ch03" id="ch03">
+	<h1>動かし方</h1>
+
+	<p>タスクスケジューラに登録する。<strong>管理者権限は要らない。</strong>ログオンしているユーザーのタスクとして動く。</p>
+
+	<h2>タスクを 4 つに分ける</h2>
+
+	<p>1 つのタスクを毎時動かして「いまどの区分か」を判定する作りも考えられるが、<strong>4 つに分ける方が簡単で壊れにくい</strong>。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">論点</th><th>1 タスク＋判定</th><th>4 タスク（採用）</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">スクリプト</td>
+				<td>実行のたびに区分を判定する</td>
+				<td><strong>引数で受け取るだけ</strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap">PC が寝ていたとき</td>
+				<td>時刻で判定すると取りこぼす。経過時間で判定する別のしくみが要る</td>
+				<td><strong>タスクスケジューラが区分ごとに取り返す</strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap">個別の停止・変更</td>
+				<td>できない。全部か無か</td>
+				<td><strong>区分ごとにできる</strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap">タスクの数</td>
+				<td>1 つ</td>
+				<td>4 つ</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>判定を自前で持つと「0 時のタスクが 1 時に走ったら <code>daily</code> と見なすのか」という問題を自分で解くことになる。タスクスケジューラの <code>StartWhenAvailable</code> は区分ごとに独立してこれを扱うため、任せる。</p>
+
+	<h2>時刻を 1 分ずつずらす</h2>
+
+	<p>毎時 0 分・0 時 1 分・0 時 2 分・0 時 3 分と間を空ける。<strong>同時刻にすると 4 つが同じ DB を同時に読み、ファイル名の秒まで一致して衝突する。</strong></p>
+
+	<p>月曜 0 時には 4 つすべてが順に走る。1 分ずつずれているため重ならない。</p>
+
+	<h2>電源とネットワークの条件を外す</h2>
+
+	<p>既定ではバッテリー駆動中にタスクが動かない。ノート PC で使うことを考え、次を指定する。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">設定</th><th>理由</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap"><code>StartWhenAvailable</code></td><td>時刻を過ぎていたら、起きたあとに取り返す</td></tr>
+			<tr><td class="nowrap"><code>AllowStartIfOnBatteries</code></td><td>バッテリー駆動でも動かす</td></tr>
+			<tr><td class="nowrap"><code>DontStopIfGoingOnBatteries</code></td><td>途中で電源が抜けても止めない</td></tr>
+			<tr><td class="nowrap"><code>ExecutionTimeLimit</code></td><td>10 分。掴んだまま残らないようにする</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>手で取るとき</h2>
+
+	<p>区分を指定して呼ぶ。作業前に 1 本取っておきたいときは <code>hourly</code> を使う。</p>
+
+	<pre><code class="language-powershell">.\backup.ps1 -Kind hourly</code></pre>
+</section>
+
+<!-- ================= 04 ================= -->
+<section class="ch04" id="ch04">
+	<h1>戻し方</h1>
+
+	<p>動いているサーバーに DB を掴まれたままでは入れ替えられない。<strong>メンテナンスの印</strong>と組み合わせる。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">順</th><th>すること</th><th>なぜ</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap num">1</td><td><code>_data\MAINTENANCE</code> を置く</td>
+				<td>この印がある間、サーバーは起動せず待機する</td>
+			</tr>
+			<tr>
+				<td class="nowrap num">2</td><td><code>chat.mjs restart</code> で落とす</td>
+				<td>DB を手放させる。印があるので待機に入る</td>
+			</tr>
+			<tr>
+				<td class="nowrap num">3</td><td>zip を展開し、中身を確かめる</td>
+				<td>壊れた zip で上書きしないため</td>
+			</tr>
+			<tr>
+				<td class="nowrap num">4</td><td>いまの DB を退避し、入れ替える</td>
+				<td>戻した中身が違ったとき、元に戻せるようにする</td>
+			</tr>
+			<tr>
+				<td class="nowrap num">5</td><td>印を消す</td>
+				<td>サーバーが自分から起動する</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-caution">
+		<p><strong><code>stop</code> ではなく <code>restart</code> を使う。</strong>ここは間違えやすく、実際に一度サービスを止めてしまった。</p>
+		<p><code>stop</code> は終了コード 0 で終わる。WinSW はそれを正常終了とみなし、<strong>サービスごと停止する</strong>。そうなると印を消しても誰も起動せず、復旧には管理者権限での再開が要る。</p>
+		<p><code>restart</code> は終了コード 1。異常終了として扱われ、WinSW が 10 秒後に起動し直す。そのとき印があれば待機に入り、消えた時点で動き出す。<strong>メンテナンスの印は、この再起動ループがあって初めて働く。</strong></p>
+	</div>
+
+	<h2>WAL と共有メモリは捨てる</h2>
+
+	<p>入れ替えるとき <code>chat.db-wal</code> と <code>chat.db-shm</code> を必ず消す。古い DB のものが残ったまま新しい本体を置くと、SQLite が食い違いを見て壊れていると判断する。</p>
+
+	<h2>いまの DB は消さない</h2>
+
+	<p><code>chat.db.前-yyyymmdd-hhmmss</code> として退避する。戻した中身が思っていたものと違ったとき、元に戻せるようにするため。</p>
+</section>
+
+<!-- ================= 05 ================= -->
+<section class="ch05" id="ch05">
+	<h1>作るもの</h1>
+
+	<pre><code class="language-text">src/server/backup.mjs           … VACUUM INTO と世代の整理（テスト対象）
+tools/80_ops/
+  backup.mjs                    … スナップショットを取る CLI
+  backup.ps1 / .cmd             … 区分を受け取り、圧縮して世代を整理する
+  restore.ps1 / .cmd            … 戻す
+  register-backup-tasks.ps1 / .cmd … タスクを 4 つ登録する
+tests/backup.test.mjs           … 世代の整理と VACUUM INTO の検証
+notes/90_rules/backup.html      … 運用の手引き（実装後に書く）</code></pre>
+
+	<h2>すでにできているもの</h2>
+
+	<p>単一世代（8 世代・手動＋毎日 1 回）の形で実装と検証を終えている。今回の設計は、これを 4 区分に組み替えるもの。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">項目</th><th class="nowrap">状態</th><th>備考</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>VACUUM INTO</code></td><td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td>稼働中に 24 ミリ秒で完了することを確認</td>
+			</tr>
+			<tr>
+				<td class="nowrap">圧縮と世代整理</td><td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td>11 件から 8 件へ切り詰まることを確認</td>
+			</tr>
+			<tr>
+				<td class="nowrap">戻す手順</td><td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td>印を置いて落とし、入れ替えて起動するまでを確認</td>
+			</tr>
+			<tr>
+				<td class="nowrap">テスト</td><td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td>13 件</td>
+			</tr>
+			<tr>
+				<td class="nowrap">4 区分への組み替え</td><td class="nowrap"><span class="badge b-none">未</span></td>
+				<td>この設計の承認を待っている</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>変える点</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">対象</th><th>いま</th><th>変更後</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">置き場</td><td><code>_backup\</code> 直下</td>
+				<td><code>_backup\&lt;区分&gt;\</code></td>
+			</tr>
+			<tr>
+				<td class="nowrap">世代数</td><td>8 で固定</td>
+				<td>区分ごとに 3 / 7 / 4 / 3</td>
+			</tr>
+			<tr>
+				<td class="nowrap">タスク</td><td>毎日 1 つ</td>
+				<td>4 つ</td>
+			</tr>
+			<tr>
+				<td class="nowrap">戻すとき</td><td>最新 1 つを選ぶ</td>
+				<td>4 区分すべてから新しい順に並べて選ぶ</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>決めていない点</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">論点</th><th>案</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">変化が無いとき</td>
+				<td>前回から発言が増えていなければ取らずに済ませるか、毎回取るか。<strong>毎回取ることを勧める</strong>。判定を持つと、判定自体が壊れたときに気づけない</td>
+			</tr>
+			<tr>
+				<td class="nowrap">失敗したとき</td>
+				<td>タスクの履歴に残るだけで、こちらからは気づけない。<strong>当面は放置し、必要になったら考える</strong></td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+</section>
+
+</div>
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+</body>
+</html>
