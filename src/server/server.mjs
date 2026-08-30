@@ -11,7 +11,7 @@ import { log } from './log.mjs';
 import {
 	addMessage, getSince, getLatest, getBefore, getMaxSeq,
 	joinUser, touchUser, addConnection, removeConnection, listRooms,
-	getCursor, setCursor, closeDb,
+	getCursor, setCursor, closeDb, getUser,
 } from './store.mjs';
 import { listPresence, getPresence, STATUS } from './presence.mjs';
 import {
@@ -265,15 +265,47 @@ function handleVersion(res) {
 	sendJson(res, 200, { version: VERSION, started_at: STARTED_AT });
 }
 
+/**
+ * 離脱を知らせる。ただし、すぐには積まない。
+ *
+ * ブラウザは pagehide で /api/leave を送るが、この行事は画面を閉じたときだけで
+ * なく「リロード」でも起きる。呼ばれた時点で積むと、リロードのたびに
+ * 「離脱しました」が並ぶ（実測でリロード 3 回につき 3 件）。
+ *
+ * pagehide からは閉じたのかリロードなのか区別できない。区別できるのは
+ * サーバー側で、少し待って接続が戻ってくるかを見ればよい。リロードなら
+ * 1 秒ほどで繋ぎ直す。
+ *
+ * 検討した他の案:
+ *   案C 積むのをやめ、sweepOffline() だけに任せる。単純だが、閉じてから
+ *       記録されるまで猶予の 90 秒がかかる
+ *   案E ブラウザが sessionStorage に印を置き、次の onload で 5 秒以内なら
+ *       リロードだったと判断する。ただし pagehide の時点で送信は済んでおり、
+ *       判定できるのは積まれた後になる。本当に閉じた場合は onload が来ないため
+ *       送る機会も失う
+ */
+const LEAVE_GRACE_MS = Number(process.env.AICHAT_LEAVE_GRACE_MS ?? 5000);
+
 async function handleLeave(req, res) {
 	const input = await readJsonBody(req);
 	const userId = requireId(input.user_id, 'user_id');
 	const roomId = roomOf(input.room_id);
 
-	postSystemMessage(roomId, userId, 'leave', `${userId} が離脱しました`);
+	// 在席の表示だけは即座に変える。記録を待たせるのは積む判断だけ
 	broadcastPresence();
 
-	sendJson(res, 200, { user_id: userId, left: true });
+	const timer = setTimeout(() => {
+		// 戻ってきていれば何もしない。リロードや繋ぎ直しがこれに当たる
+		const user = getUser(userId);
+		if (user && user.active_connection_count > 0) return;
+
+		postSystemMessage(roomId, userId, 'leave', `${userId} が離脱しました`);
+		broadcastPresence();
+	}, LEAVE_GRACE_MS);
+	// 終了を妨げない。落とすときに残っていても構わない
+	timer.unref?.();
+
+	sendJson(res, 200, { user_id: userId, left: true, grace_ms: LEAVE_GRACE_MS });
 }
 
 /**

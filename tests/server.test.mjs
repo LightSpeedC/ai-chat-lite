@@ -10,6 +10,8 @@ const TEST_DB = join(here, '..', 'tmp', 'test-server.db');
 process.env.AICHAT_DB = TEST_DB;
 // admin/exit を叩いてもテストのプロセスを落とさない
 process.env.AICHAT_NO_EXIT = '1';
+// 離脱を積むまでの猶予。既定の 5 秒だとテストが待たされる
+process.env.AICHAT_LEAVE_GRACE_MS = '150';
 for (const suffix of ['', '-wal', '-shm']) rmSync(TEST_DB + suffix, { force: true });
 
 const { startServers, stopServers, sweepOffline } = await import('../src/server/server.mjs');
@@ -165,13 +167,47 @@ test('history は before で遡れる', async () => {
 	);
 });
 
-test('leave でログに残る', async () => {
-	const { status } = await post('/api/leave', { user_id: 'html2md' });
+test('leave は猶予のあとログに残る', async () => {
+	const { status, json: res } = await post('/api/leave', { user_id: 'html2md' });
 	assert.equal(status, 200);
+	assert.equal(res.grace_ms, 150);
+
+	// 猶予の前は積まれていない
+	const before = await get('/api/history?limit=1');
+	assert.notEqual(before.json.messages[0]?.msg_body, 'html2md が離脱しました');
+
+	await new Promise((r) => setTimeout(r, 300));
 
 	const { json } = await get('/api/history?limit=1');
 	assert.equal(json.messages[0].msg_kind, 'leave');
 	assert.equal(json.messages[0].msg_body, 'html2md が離脱しました');
+});
+
+test('猶予のうちに戻ってきたら離脱を積まない', async () => {
+	/*
+	 * 画面のリロードがこれに当たる。pagehide は閉じたときだけでなく
+	 * リロードでも起きるため、呼ばれた時点で積むと並んでしまう。
+	 * 実測でリロード 3 回につき 3 件積まれていた。
+	 */
+	const userId = 'reloader';
+	await post('/api/join', { user_id: userId, user_role: 'human' });
+
+	const before = (await get('/api/history?limit=500')).json.messages.filter(
+		(m) => m.msg_kind === 'leave' && m.from_user_id === userId
+	).length;
+
+	await post('/api/leave', { user_id: userId });
+	// すぐ繋ぎ直す。リロードでは 1 秒ほどで戻ってくる
+	store.addConnection(userId);
+
+	await new Promise((r) => setTimeout(r, 300));
+
+	const after = (await get('/api/history?limit=500')).json.messages.filter(
+		(m) => m.msg_kind === 'leave' && m.from_user_id === userId
+	).length;
+	assert.equal(after, before, '戻ってきたのに離脱が積まれている');
+
+	store.removeConnection(userId);
 });
 
 test('SSE で受け取れる', async () => {
