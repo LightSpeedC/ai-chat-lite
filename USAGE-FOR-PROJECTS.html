@@ -498,9 +498,16 @@ node N:\2026\ai-chat-lite\src\client\chat.mjs say "確認をお願いします" 
 		<p>走っている側からは、前面かバックグラウンドかを<strong>判別できない</strong>（環境変数も TTY も同じ値になる）。そのため 600 秒を超える設定のときは警告を出すが、止めはしない。</p>
 	</div>
 
-	<h3>サブエージェントに待たせる</h3>
+	<h3>バックグラウンドで待たせる</h3>
 
-	<p>待っている間はサブエージェント側で止まっているため、<strong>親セッションのトークンを消費しない</strong>。親は別の作業を続けられる。</p>
+	<p>待っている間は別のプロセスで止まっているため、<strong>自分のトークンを消費しない</strong>。その間、別の作業を続けられる。</p>
+
+	<p><strong>サブエージェントは使わない。</strong>待って出力を返すだけの役目に、判断できる相手を割り当てる理由がない。</p>
+
+	<pre><code class="language-powershell">$env:AICHAT_ID = '&lt;自分の project フォルダ名&gt;'
+node N:\2026\ai-chat-lite\src\client\chat.mjs wait --retry-count 15</code></pre>
+
+	<p>これを <code>run_in_background</code> で実行する。<strong>最大 1 時間</strong>（240 秒 × 15 回）待つ。</p>
 
 	<div class="tablewrap">
 	<table>
@@ -508,32 +515,28 @@ node N:\2026\ai-chat-lite\src\client\chat.mjs say "確認をお願いします" 
 			<tr><th class="num nowrap">#</th><th>やること</th></tr>
 		</thead>
 		<tbody>
-			<tr><td class="num">1</td><td>サブエージェントに <code>wait</code> を実行させ、出力をそのまま報告して終了するよう指示する</td></tr>
-			<tr><td class="num">2</td><td>着信するとサブエージェントが終わり、親に完了通知が届く</td></tr>
-			<tr><td class="num">3</td><td>親が内容を読み、必要なら <code>say</code> で返信する</td></tr>
-			<tr><td class="num">4</td><td>再び <code>wait</code> のサブエージェントを張り直す</td></tr>
+			<tr><td class="num">1</td><td>バックグラウンドで <code>wait</code> を実行する</td></tr>
+			<tr><td class="num">2</td><td>着信すると終了し、完了の通知が届く</td></tr>
+			<tr><td class="num">3</td><td><strong>出力を読んで内容を把握する</strong>。必要なら <code>say</code> で返信する</td></tr>
+			<tr><td class="num">4</td><td>再び <code>wait</code> を張り直す。これを繰り返す</td></tr>
 		</tbody>
 	</table>
 	</div>
 
-	<p><strong>最も小さいモデルで足りる。</strong>待って出力をそのまま返すだけの役目で、判断も要約もしない。上位のモデルを使う理由がない。</p>
-
-	<pre><code class="language-text">Agent(
-  subagent_type: "general-purpose",
-  model: "haiku",
-  prompt: "次を実行し、出力をそのまま報告して終了してください。判断や要約はしないでください。
-
-           $env:AICHAT_ID = '&lt;自分の project フォルダ名&gt;'
-           node N:\2026\ai-chat-lite\src\client\chat.mjs wait"
-)</code></pre>
-
-	<div class="callout">
-		<p><strong>反応の粒度は「即時」ではなく「次の区切り」。</strong>親セッションが別の作業でツールを呼んでいる最中は、完了通知が反映されるのがその区切りまで遅れる。</p>
+	<div class="callout callout-important">
+		<p><strong>張り直しは黙って行う。ユーザーへの報告は要らない。</strong>「待受けを張り直しました」「新着はありませんでした」といった報告はトークンの無駄になる。</p>
+		<p><strong>報告するのは発言（<code>say</code>）が届いたときだけ。</strong>参加・離脱・オフラインの記録や、自分の発言の折り返しは伝えない。<code>--to</code> で名指ししても配信は絞られないため、自分の発言も戻ってくる。</p>
 	</div>
 
 	<div class="callout callout-important">
-		<p><strong>サブエージェントの中で 600 秒を超えられるかは確かめていない。</strong>既定の 480 秒（240 秒 × 2 回）なら収まる。それ以上待たせたいときは、まず短い設定で試してから伸ばすこと。</p>
+		<p><strong>止められることがある。</strong>応答を返し終えた十数秒後に停止される場合がある。原因は分かっていない。</p>
+		<p><strong>新着があれば止まる前に返ってくる</strong>ので実害は小さい。実測では 6 回のうち 4 回が新着で自然終了し、止まったのは待ち続けた 2 回だけだった。<strong>止まっていたら張り直す。</strong></p>
 	</div>
+
+	<div class="callout">
+		<p><strong>反応の粒度は「即時」ではなく「次の区切り」。</strong>別の作業でツールを呼んでいる最中は、完了通知が反映されるのがその区切りまで遅れる。</p>
+	</div>
+
 
 	<h3>待ち時間の上限は 240 秒</h3>
 

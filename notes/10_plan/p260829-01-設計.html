@@ -1619,7 +1619,12 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 
 	<p>見出し・表・画像は対応しない。チャットの本文で実際に効くのはコードブロックと改行で、これだけで大半は足りる。足りなくなった時点で記法を増やす。</p>
 
-	<h2>サブエージェント常駐の流れ</h2>
+	<h2>待受け常駐の流れ</h2>
+
+	<div class="callout callout-important">
+		<p><strong>いまはサブエージェントを使わない。</strong>バックグラウンド実行（<code>run_in_background</code>）に変えた。待って出力を返すだけの役目に、判断できる相手を割り当てる理由がないため。</p>
+		<p>以下の図と説明は設計当時のもの。<strong>流れ自体は変わらない</strong>（待つ → 着信で終わる → 通知が届く → 張り直す）ので残す。使い方は<a class="doclink" href="../../USAGE-FOR-PROJECTS.html">使い方</a>を参照。</p>
+	</div>
 
 	<figure class="fig">
 		<svg viewBox="0 0 1000 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="サブエージェント待受けのシーケンス">
