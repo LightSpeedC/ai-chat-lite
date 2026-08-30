@@ -92,6 +92,16 @@
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
 				<td>README・使い方</td>
 			</tr>
+			<tr>
+				<td class="num">8</td><td class="nowrap">長く待つ</td>
+				<td class="nowrap"><span class="badge b-ok">完了</span></td>
+				<td><code>wait</code> が新着なしのとき待ち直す。既定 2 回・合計 480 秒</td>
+			</tr>
+			<tr>
+				<td class="num">9</td><td class="nowrap">バックアップと復旧</td>
+				<td class="nowrap"><span class="badge b-warn">一部</span></td>
+				<td>取得・圧縮・世代整理・復旧・排他まで動く。<a href="../10_plan/20260830-01-バックアップ.html">4 区分への組み替え</a>が残っている</td>
+			</tr>
 		</tbody>
 	</table>
 	</div>
@@ -112,7 +122,8 @@
 			<tr><td class="nowrap"><code>src/server/store.mjs</code></td><td><code>node:sqlite</code> によるスキーマ作成と読み書き</td></tr>
 			<tr><td class="nowrap"><code>src/server/presence.mjs</code></td><td><code>online</code> / <code>grace</code> / <code>offline</code> の 3 状態を判定する</td></tr>
 			<tr><td class="nowrap"><code>src/server/hub.mjs</code></td><td>long-poll と SSE で待っている相手をまとめて管理する</td></tr>
-			<tr><td class="nowrap"><code>src/server/server.mjs</code></td><td>HTTP ルーティング・待ち受け・静的ファイル配信</td></tr>
+			<tr><td class="nowrap"><code>src/server/server.mjs</code></td><td>HTTP ルーティング・待ち受け・静的ファイル配信。終了時に DB を閉じる</td></tr>
+			<tr><td class="nowrap"><code>src/server/backup.mjs</code></td><td><code>VACUUM INTO</code>・世代の整理・印による排他</td></tr>
 			<tr><td class="nowrap"><code>src/client/chat.mjs</code></td><td>CLI クライアント（AI・人間 共用）</td></tr>
 			<tr><td class="nowrap"><code>src/web/js/markdown.js</code></td><td>本文の変換。エスケープを先に済ませる</td></tr>
 			<tr><td class="nowrap"><code>src/web/js/chat.js</code></td><td>SSE 受信・送信・参加者一覧の描画</td></tr>
@@ -142,7 +153,9 @@
 			<tr><td class="nowrap"><code>maintenance.test.mjs</code></td><td class="num">6</td><td>印があれば待つ・消えたら進む・理由を読む</td></tr>
 			<tr><td class="nowrap"><code>markdown.test.mjs</code></td><td class="num">16</td><td>生 HTML の無害化・<code>javascript:</code> を通さない・記法の描画</td></tr>
 			<tr><td class="nowrap"><code>server.test.mjs</code></td><td class="num">37</td><td>API 一式・long-poll・SSE・読んだ位置の記録・オフライン通知・<code>admin/exit</code></td></tr>
-			<tr><td class="nowrap">合計</td><td class="num"><strong>113</strong></td><td><span class="badge b-ok">全件通過</span></td></tr>
+			<tr><td class="nowrap"><code>client-wait.test.mjs</code></td><td class="num">7</td><td>待ち直しの回数・新着で即返る・600 秒超の警告</td></tr>
+			<tr><td class="nowrap"><code>backup.test.mjs</code></td><td class="num">26</td><td>WAL 込みの複製・世代の整理・印の取り合い・残骸の扱い</td></tr>
+			<tr><td class="nowrap">合計</td><td class="num"><strong>146</strong></td><td><span class="badge b-ok">全件通過</span></td></tr>
 		</tbody>
 	</table>
 	</div>
@@ -161,7 +174,7 @@ npm run test:projects -- ai-chat-lite</code></pre>
 		</thead>
 		<tbody>
 			<tr><td class="nowrap"><code>chat-ui.spec.ts</code></td><td>表示・送信・Markdown 描画・生 HTML の無害化・SSE 受信・在席の色・コントラスト</td></tr>
-			<tr><td class="nowrap"><code>contrast.spec.ts</code></td><td>README・設計・開発状況のコントラスト比</td></tr>
+			<tr><td class="nowrap"><code>contrast.spec.ts</code></td><td>プロジェクト内すべての html のコントラスト比</td></tr>
 			<tr><td class="nowrap"><code>shot.spec.ts</code></td><td>スクリーンショットとリンク色の実測</td></tr>
 		</tbody>
 	</table>
@@ -224,6 +237,26 @@ npm run test:projects -- ai-chat-lite</code></pre>
 			<tr>
 				<td class="nowrap"><code>logpath</code> の落とし穴</td>
 				<td><strong>相対パスはサービスのカレント（<code>C:\Windows\System32</code>）基準で解決される。</strong><code>%BASE%\logs</code> と書く必要がある</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><strong>DB は 3 つで 1 組</strong></td>
+				<td><code>chat.db</code> だけを複製すると<strong>発言 64 件のうち 0 件</strong>しか入らない。全部が <code>chat.db-wal</code> 側にあった。<code>VACUUM INTO</code> なら 64 件すべてが揃い、稼働中に <strong>24 ミリ秒</strong>で終わる</td>
+			</tr>
+			<tr>
+				<td class="nowrap">DB を閉じるかどうか</td>
+				<td><strong>書き込み可で開いて閉じたときだけ</strong> 3 つが 1 つにまとまる（4 KB → 114 KB）。読み取り専用では閉じても <code>-wal</code> と <code>-shm</code> が残る</td>
+			</tr>
+			<tr>
+				<td class="nowrap">バックアップの大きさ</td>
+				<td>発言 1,000 件で zip 17 KB、10,000 件で 128 KB、100,000 件で 1.2 MB（圧縮率 5〜6 %）</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><strong>ファイルによる排他</strong></td>
+				<td>Node・Bun・Deno の <code>rename</code> と cmd の <code>move</code> は<strong>先客を黙って上書きする</strong>ため排他にならない。<code>wx</code>（<code>O_CREAT | O_EXCL</code>）は 10 個が取り合っても 1 つだけ成功する。詳細は<a href="../../docs/ファイルで排他する.html">ファイルで排他する</a></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>stop</code> と <code>restart</code> の違い</td>
+				<td><code>stop</code>（終了コード 0）は<strong>サービスごと止まる</strong>。印を消しても起動せず、管理者権限での再開が要る。落として入れ替える用途では <code>restart</code>（終了コード 1）を使う</td>
 			</tr>
 		</tbody>
 	</table>

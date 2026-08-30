@@ -74,6 +74,42 @@
 
 	<p>WAL モードで動かしているため、書き込みは本体ではなく <code>chat.db-wal</code> に溜まる。測った時点では 2.6 MB あった。本体だけを複製すると、まだ統合されていない分が失われる。</p>
 
+	<h2>DB は 3 つのファイルで 1 組</h2>
+
+	<p>この文書を通しての前提になる。<strong><code>chat.db</code> は 3 つのうちの 1 つでしかない。</strong></p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">ファイル</th><th>役割</th><th>欠けるとどうなるか</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>chat.db</code></td>
+				<td>本体。統合済みの内容が入る</td>
+				<td>何も読めない</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>chat.db-wal</code></td>
+				<td>まだ本体に統合されていない書き込み</td>
+				<td><strong>直近の発言がまとめて消える。</strong>実測ではここに全 64 件があった</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>chat.db-shm</code></td>
+				<td>WAL を読むための索引。開いている間だけ要る</td>
+				<td>本体と WAL があれば作り直される</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>どれだけ <code>-wal</code> 側に溜まるかは、いつ統合されたかで決まる。<strong>「本体が大きいから中身も入っている」とは限らない。</strong>逆に本体が小さくても、統合直後なら中身は揃っている。見た目からは判断できない。</p>
+
+	<div class="callout callout-caution">
+		<p><strong>本体を残して <code>-wal</code> / <code>-shm</code> だけを消してはいけない。例外はない。</strong>消した分の書き込みは戻らない。邪魔に見えても消さず、<strong>捨てるときは 3 つまとめて捨て、残すときは 3 つまとめて残す</strong>。</p>
+		<p>この 3 つを扱う場面は 2 つある。1 つは<strong>控えを取るとき</strong>。<code>VACUUM INTO</code> を使えば 3 つを織り込んだ 1 ファイルが得られる（<a href="#ch01">この章</a>）。もう 1 つは<strong>戻すときに現物を退避する</strong>とき。こちらは織り込む手段がないので、3 つまとめて移す（<a href="#ch04">戻し方</a>）。</p>
+	</div>
+
 	<h2>VACUUM INTO を使う</h2>
 
 	<p><code>VACUUM INTO</code> は WAL を織り込んだ一貫したスナップショットを別ファイルに書く。</p>
@@ -121,7 +157,7 @@
 		<tbody>
 			<tr>
 				<td class="nowrap"><code>hourly</code></td><td class="nowrap">毎時 0 分</td>
-				<td class="nowrap num">3</td><td class="nowrap">3 時間</td>
+				<td class="nowrap num">8</td><td class="nowrap">8 時間</td>
 				<td>いま壊した。作業前の状態に戻したい</td>
 			</tr>
 			<tr>
@@ -136,14 +172,46 @@
 			</tr>
 			<tr>
 				<td class="nowrap"><code>monthly</code></td><td class="nowrap">1 日 0 時 3 分</td>
-				<td class="nowrap num">3</td><td class="nowrap">3 か月</td>
+				<td class="nowrap num">6</td><td class="nowrap">半年</td>
 				<td>ずっと前の記録を掘り返したい</td>
 			</tr>
 		</tbody>
 	</table>
 	</div>
 
-	<p>合計 17 世代。1 世代 4 KB として <strong>70 KB 程度</strong>にしかならない。</p>
+	<p>合計 <strong>25 世代</strong>。<code>hourly</code> を 8 本持たせると、朝から夕方までの作業がひととおり収まる。<code>monthly</code> の 6 本は半年分にあたる。</p>
+
+	<h2>どれくらいの大きさになるか</h2>
+
+	<p>実際に流れそうな本文（日本語混じりの Markdown、相槌から表やコード付きの報告まで、平均 81 文字）で作った DB を測った。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">発言数</th><th class="nowrap">DB</th><th class="nowrap">1 世代（zip）</th><th class="nowrap">25 世代の合計</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap num">1,000</td><td class="nowrap num">274 KB</td>
+				<td class="nowrap num">17 KB</td><td class="nowrap num">430 KB</td>
+			</tr>
+			<tr>
+				<td class="nowrap num">10,000</td><td class="nowrap num">2.5 MB</td>
+				<td class="nowrap num">128 KB</td><td class="nowrap num">3.2 MB</td>
+			</tr>
+			<tr>
+				<td class="nowrap num">100,000</td><td class="nowrap num">25.8 MB</td>
+				<td class="nowrap num">1.2 MB</td><td class="nowrap num">30 MB</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>1 日 100 発言なら 10 万件に届くまで 3 年近くかかる。その時点でも 30 MB で、置き場に困る量ではない。</p>
+
+	<div class="callout">
+		<p><strong>この圧縮率は良く出すぎている可能性がある。</strong>測るのに使った本文は同じ文面を繰り返し並べたもので、実際の会話より重複が多い。zip は繰り返しに強いため、本物のやり取りでは 2 倍前後まで膨らむと見ておく。それでも桁は変わらない。</p>
+	</div>
 
 	<h2>置き場</h2>
 
@@ -232,6 +300,128 @@
 	</table>
 	</div>
 
+	<h2>取ってはいけないときに取らない</h2>
+
+	<p>2 つの場面で待つ。どちらも <code>_data</code> に置かれた印を見て判断する。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">印</th><th>意味</th><th>なぜ待つ必要があるか</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>MAINTENANCE</code></td>
+				<td>DB を触っている最中</td>
+				<td>3 つのファイルが揃っていない瞬間がある。<strong>本体を差し替えた直後に古い <code>-wal</code> が残っている状態を複製すると、中途半端なものがバックアップとして残る</strong>。戻せると思っていたものが戻せない</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>BACKUP-RUNNING</code></td>
+				<td>別の区分が取っている最中</td>
+				<td>作業用のフォルダを取り合う。<code>VACUUM INTO</code> は出力先が既にあると失敗するため、<strong>両方とも取れずに終わる</strong>ことがある</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h3>待ち方</h3>
+
+	<p><strong>30 秒おきに 10 回まで見に行き、消えなければ諦める。</strong>最大 5 分待つ。</p>
+
+	<p>諦めても構わない。<code>hourly</code> なら次は 1 時間後で、その間に印は消えているはずである。5 分を超えて DB を触る作業は、そう頻繁には起きない。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">終わり方</th><th class="nowrap">終了コード</th><th>理由</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">取れた</td><td class="nowrap num">0</td>
+				<td>—</td>
+			</tr>
+			<tr>
+				<td class="nowrap">印が消えず諦めた</td><td class="nowrap num">0</td>
+				<td><strong>失敗ではない。</strong>メンテナンス中は想定内の状態で、タスクの履歴を赤くしても対処のしようがない。何が起きたかは画面とログに残す</td>
+			</tr>
+			<tr>
+				<td class="nowrap">取得に失敗した</td><td class="nowrap num">1</td>
+				<td>DB が読めない、書き込めないなど。これは調べる必要がある</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h3>印の置き方</h3>
+
+	<p><strong>「空くのを待ってから置く」と書いてはいけない。</strong>確認してから置くまでの間に、もう一方が入り込む。置きに行って失敗したら待つ、の順にする。</p>
+
+	<p>置くときは <code>wx</code> フラグ（<code>O_CREAT | O_EXCL</code>）を使う。「無ければ作る」を OS が一続きの操作として保証するため、同時に取り合っても 1 つしか成功しない。実測で 10 個のプロセスが取り合っても成功は 1 つだけだった。</p>
+
+	<h3>名前を変える方式は Windows では使えない</h3>
+
+	<p><code>LOCK.&lt;pid&gt;</code> を作ってから <code>LOCK</code> へ名前を変え、成功した者が握ったとみなす書き方がある。POSIX の <code>rename(2)</code> は既にあるものを原子的に置き換えるため、この慣用句が成り立つ。</p>
+
+	<p><strong>Windows では手段によって結果が変わる。</strong>実測した。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">手段</th><th>先に置かれた印があるとき</th><th class="nowrap">排他</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">Node <code>renameSync</code></td>
+				<td><strong>成功してしまう。</strong>先客を追い出して自分の内容に置き換える</td>
+				<td class="nowrap"><span class="badge b-ng">不可</span></td>
+			</tr>
+			<tr>
+				<td class="nowrap">Node <code>writeFileSync</code>（<code>wx</code>）</td>
+				<td>失敗する（<code>EEXIST</code>）。先客の内容はそのまま</td>
+				<td class="nowrap"><span class="badge b-ok">可</span></td>
+			</tr>
+			<tr>
+				<td class="nowrap">PowerShell <code>Rename-Item</code></td>
+				<td>失敗する（既に存在するファイルを作成することはできません）</td>
+				<td class="nowrap"><span class="badge b-ok">可</span></td>
+			</tr>
+			<tr>
+				<td class="nowrap">PowerShell <code>Move-Item</code></td>
+				<td>失敗する。<code>-Force</code> を付けたときだけ上書きする</td>
+				<td class="nowrap"><span class="badge b-ok">可</span></td>
+			</tr>
+			<tr>
+				<td class="nowrap">cmd <code>ren</code></td>
+				<td>失敗する（<code>ERRORLEVEL 1</code>）</td>
+				<td class="nowrap"><span class="badge b-ok">可</span></td>
+			</tr>
+			<tr>
+				<td class="nowrap">cmd <code>move</code></td>
+				<td><strong>成功してしまう。</strong><code>/Y</code> を付けなくても確認なしに上書きする</td>
+				<td class="nowrap"><span class="badge b-ng">不可</span></td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-caution">
+		<p><strong>失敗する側は「取れなかった」と正しく分かるが、成功してしまう側は 2 つとも「取れた」と思い込む。</strong>排他が効いていないことに気づけないまま同時に走る。<code>renameSync</code> と <code>move</code> をこの用途に使わない。</p>
+	</div>
+
+	<h3>握ったまま終わったとき</h3>
+
+	<p><code>BACKUP-RUNNING</code> は処理の最後で必ず消すが、強制終了させられると残る。<strong>残ったままだと、以降どの区分も 5 分待って諦め続ける。</strong>誰も気づかないまま、バックアップが 1 本も取れない状態が続きかねない。</p>
+
+	<p>印に書いた開始時刻を見て、<strong>30 分より古ければ残骸とみなして奪う</strong>。タスクの実行時間の上限を 10 分にしてあるので、正常に動いている処理が 30 分残ることはない。</p>
+
+	<h3>作業用のフォルダも区分ごとに分ける</h3>
+
+	<p>印は保険であり、そもそも取り合わないようにしておく。<code>tmp\backup-work\&lt;区分&gt;\</code> と分けておけば、万一同時に走っても出力先が衝突しない。</p>
+
+	<div class="callout">
+		<p><strong>印だけに頼らない。</strong>ファイルの有無で待たせる方法は、確認してから作るまでの間にもう一方が入り込む余地が残る。厳密な排他にはならないため、衝突しても壊れない作りを併せて持たせる。</p>
+	</div>
+
 	<h2>手で取るとき</h2>
 
 	<p>区分を指定して呼ぶ。作業前に 1 本取っておきたいときは <code>hourly</code> を使う。</p>
@@ -281,13 +471,57 @@
 		<p><code>restart</code> は終了コード 1。異常終了として扱われ、WinSW が 10 秒後に起動し直す。そのとき印があれば待機に入り、消えた時点で動き出す。<strong>メンテナンスの印は、この再起動ループがあって初めて働く。</strong></p>
 	</div>
 
-	<h2>WAL と共有メモリは捨てる</h2>
+	<h2>いまの DB は 3 つとも残す</h2>
 
-	<p>入れ替えるとき <code>chat.db-wal</code> と <code>chat.db-shm</code> を必ず消す。古い DB のものが残ったまま新しい本体を置くと、SQLite が食い違いを見て壊れていると判断する。</p>
+	<p><code>_data\prev-yyyymmdd-hhmmss\</code> を作り、<code>chat.db</code> / <code>chat.db-wal</code> / <code>chat.db-shm</code> をまとめて移す。<strong>1 つでも欠けると戻せない。</strong></p>
 
-	<h2>いまの DB は消さない</h2>
+	<div class="callout callout-caution">
+		<p><strong><code>chat.db</code> だけを残しても意味がない。</strong>最初にこれをやって実害が出た。<code>-wal</code> を消したうえで本体だけを退避したところ、退避したものは<strong>読み込めても 0 件</strong>だった。発言 64 件はすべて <code>-wal</code> 側にあり、消した時点で戻す手段が失われていた。戻した中身が正しかったので事なきを得たが、違っていれば取り返しがつかなかった。</p>
+	</div>
 
-	<p><code>chat.db.前-yyyymmdd-hhmmss</code> として退避する。戻した中身が思っていたものと違ったとき、元に戻せるようにするため。</p>
+	<p>個別に名前を変える方法（<code>chat.db-wal.前-…</code>）は採らない。<code>_data</code> 直下が散らかり、どれが同じ組なのか名前を突き合わせないと分からなくなる。フォルダに入れれば一目で揃う。</p>
+
+	<h2>終了時に DB を閉じる</h2>
+
+	<p>そもそも <code>-wal</code> にデータが残らないようにする。<strong>書き込みができる状態で開いていて、かつ閉じたときに限り</strong>、WAL の内容が本体に統合されて 3 つが 1 つにまとまる。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">開き方</th><th class="nowrap">終わり方</th><th class="nowrap">chat.db</th><th class="nowrap">-wal</th><th class="nowrap">-shm</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">書き込み可</td><td class="nowrap"><code>close()</code> する</td>
+				<td class="nowrap num">4 KB → 114 KB</td>
+				<td class="nowrap">消える</td><td class="nowrap">消える</td>
+			</tr>
+			<tr>
+				<td class="nowrap">書き込み可</td><td class="nowrap">閉じずに終了</td>
+				<td class="nowrap num">4 KB のまま</td>
+				<td class="nowrap num">2.2 MB 残る</td><td class="nowrap num">32 KB 残る</td>
+			</tr>
+			<tr>
+				<td class="nowrap">読み取り専用</td><td class="nowrap"><code>close()</code> する</td>
+				<td class="nowrap num">変わらない</td>
+				<td class="nowrap">残る</td><td class="nowrap">残る</td>
+			</tr>
+			<tr>
+				<td class="nowrap">読み取り専用</td><td class="nowrap">閉じずに終了</td>
+				<td class="nowrap num">変わらない</td>
+				<td class="nowrap">残る</td><td class="nowrap">残る</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout">
+		<p><strong>読み取り専用で開くと、閉じても <code>-wal</code> と <code>-shm</code> が残る。</strong>読み取り専用の接続はチェックポイントも後片付けもしないため。控えの中身を確かめるだけでもこの 2 つが増える。<strong>増えたものを消してはいけない</strong>。元からあったものか自分が作ったものか、開いた側からは区別できない。確認するならコピーを作ってそちらを開く。</p>
+	</div>
+
+	<p>終了の処理で <code>closeDb()</code> を呼ぶ。コストはほとんど無く、<strong><code>-wal</code> の存在を忘れて空の DB を掴む事故が起きなくなる</strong>。閉じられなかった場合も終了は続ける。次に開いたとき SQLite が自分で復旧するため。</p>
+
+	<p>ただし退避は 3 つとも行う。異常終了や強制終了では閉じる処理を通らないため、<code>-wal</code> が残っている前提で扱う。</p>
 </section>
 
 <!-- ================= 05 ================= -->
@@ -337,6 +571,34 @@ notes/90_rules/backup.html      … 運用の手引き（実装後に書く）</
 	</table>
 	</div>
 
+	<h2>いまある世代をどうするか</h2>
+
+	<p><code>_backup\</code> 直下に、単一世代のころに取ったものが残っている。<strong>捨てる理由がないので移す。</strong></p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">順</th><th>すること</th><th>なぜ</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap num">1</td>
+				<td><code>_backup\*.db.zip</code> をすべて <code>_backup\hourly\</code> へ移す</td>
+				<td>取った間隔がまちまちなので、最も細かい区分に入れる。8 本を超える分はその場で整理される</td>
+			</tr>
+			<tr>
+				<td class="nowrap num">2</td>
+				<td>いちばん新しい 1 本を <code>daily</code> / <code>weekly</code> / <code>monthly</code> にもコピーする</td>
+				<td>そうしないと 3 つの区分が空のまま始まる。<code>monthly</code> に 1 本目が入るのは翌月 1 日になるため、それまで戻せる先が <code>hourly</code> しかない状態が続く</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>コピーした 3 本は中身が同じだが構わない。日が経てば区分ごとに別のものへ置き換わる。</p>
+
+	<p>移すのは zip なので、<strong>3 つのファイルを気にする必要はない</strong>。zip の中身は <code>VACUUM INTO</code> が書いた単体の <code>chat.db</code> で、<code>-wal</code> も <code>-shm</code> も伴わない。手で <code>_data</code> の現物を <code>_backup</code> へ持ってこようとしたときだけ、3 つ揃える話が要る。</p>
+
 	<h2>変える点</h2>
 
 	<div class="tablewrap">
@@ -351,7 +613,7 @@ notes/90_rules/backup.html      … 運用の手引き（実装後に書く）</
 			</tr>
 			<tr>
 				<td class="nowrap">世代数</td><td>8 で固定</td>
-				<td>区分ごとに 3 / 7 / 4 / 3</td>
+				<td>区分ごとに 8 / 7 / 4 / 6</td>
 			</tr>
 			<tr>
 				<td class="nowrap">タスク</td><td>毎日 1 つ</td>
