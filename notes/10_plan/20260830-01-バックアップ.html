@@ -5,10 +5,388 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ai-chat-lite バックアップ設計</title>
 <style>
-/* ../../docs/css/style.css が読めなかったときの代替色 */
-.titlebar, section h1, th, a.doclink, .badge { background: #12224d; color: #fff; }
+/* 共通のスタイル。docs\css\style.css と同じ内容を持たせている */
+@charset "UTF-8";
+
+/* ===================================================================
+   ai-chat-lite 共通スタイル
+   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   =================================================================== */
+
+:root {
+	/* 章に依存しない共通色 */
+	--navy1: #12224d;
+	--navy2: #2f5fbf;
+	--ink: #1c2330;
+	--ink-soft: #4a5568;
+	--line: #d9dfe8;
+	--code-bg: #f4f6fa;
+	--link: #1a4fa0;
+
+	/* 章クラスの外に置いた要素が色を失わないための既定値 */
+	--accent: #12224d;
+	--accent2: #2f5fbf;
+	--soft: #f2f5fb;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: #fdfdfe;
+	color: var(--ink, #1c2330);
+	font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+	font-size: 15.5px;
+	line-height: 1.85;
+}
+
+a {
+	color: var(--link, #1a4fa0);
+}
+
+/* ---------- タイトルバー ---------- */
+
+.titlebar {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 34px 30px 30px;
+}
+
+.titlebar .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+}
+
+.titlebar h1 {
+	font-size: 1.85em;
+	margin: 0 0 8px;
+	color: #fff;
+}
+
+.titlebar .lead {
+	margin: 0;
+	color: #d7e2f7;
+	font-size: 0.95em;
+}
+
+.titlebar .date {
+	margin: 10px 0 0;
+	color: #b9caea;
+	font-size: 0.88em;
+}
+
+.titlebar a {
+	color: #cfe0ff;
+}
+
+.titlebar code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+/* ---------- 本文の器 ---------- */
+
+.wrap {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding: 0 30px;
+}
+
+section {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 10px;
+	padding: 4px 26px 26px;
+	margin: 34px 0;
+}
+
+/* ---------- 見出し ---------- */
+
+section h1 {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-size: 1.4em;
+	padding: 14px 20px;
+	margin: 26px 0 20px;
+	border-radius: 8px;
+	box-shadow: 0 3px 10px rgba(20, 34, 70, 0.22);
+}
+
+section h1 code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+h2 {
+	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
+	color: var(--accent, #12224d);
+	font-size: 1.16em;
+	padding: 6px 12px;
+	margin: 30px 0 12px;
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 6px 6px 0;
+}
+
+h3 {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	font-size: 1.02em;
+	display: inline-block;
+	padding-bottom: 3px;
+	margin: 20px 0 8px;
+	border-bottom: 2px dotted var(--accent2, #2f5fbf);
+}
+
+/* ---------- 表 ---------- */
+
+.tablewrap {
+	overflow-x: auto;
+	margin: 14px 0;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 5px rgba(20, 34, 70, 0.10);
+}
+
+th {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	text-align: left;
+	padding: 9px 12px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+th code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+td {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	padding: 9px 12px;
+	border-top: 1px solid var(--line, #d9dfe8);
+	vertical-align: top;
+}
+
+tr:nth-child(even) td {
+	background: #fafbfe;
+	color: var(--ink, #1c2330);
+}
+
+td.num,
+th.num {
+	text-align: right;
+}
+
+td.nowrap,
+th.nowrap {
+	white-space: nowrap;
+}
+
+/* ---------- コード ---------- */
+
+code {
+	background: var(--code-bg, #f4f6fa);
+	color: #17335f;
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 4px;
+	padding: 1px 5px;
+	font-family: "Consolas", "Cascadia Mono", monospace;
+	font-size: 0.92em;
+}
+
+pre {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 5px solid var(--accent2, #2f5fbf);
+	border-radius: 0 8px 8px 0;
+	padding: 13px 16px;
+	overflow-x: auto;
+	line-height: 1.65;
+}
+
+pre code {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	border: none;
+	padding: 0;
+	font-size: 0.92em;
+}
+
+/* ---------- バッジ ---------- */
+
+.badge {
+	display: inline-block;
+	padding: 1px 9px;
+	margin-right: 6px;
+	border-radius: 11px;
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+	font-size: 0.84em;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.badge.b-ok {
+	background: linear-gradient(100deg, #1d7a3c, #45b56c);
+	color: #fff;
+}
+
+.badge.b-ng {
+	background: linear-gradient(100deg, #a51f22, #e05a5c);
+	color: #fff;
+}
+
+.badge.b-warn {
+	background: linear-gradient(100deg, #b8620a, #f0a548);
+	color: #fff;
+}
+
+.badge.b-none {
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+}
+
+/* ---------- callout ---------- */
+
+.callout {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 8px 8px 0;
+	padding: 12px 18px;
+	margin: 16px 0;
+}
+
+.callout strong {
+	color: var(--accent, #12224d);
+	background: transparent;
+}
+
+.callout p {
+	margin: 6px 0;
+}
+
+/* ---------- 目次 ---------- */
+
+.toc ol {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 0;
+	margin: 12px 0 4px;
+}
+
+.toc ul a {
+	color: var(--link, #1a4fa0);
+	background: transparent;
+}
+
+.toc ol li {
+	counter-increment: tocnum;
+	margin: 0;
+}
+
+.toc ol a {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: normal;
+	width: 310px;
+	max-width: 100%;
+	padding: 7px 13px;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+	line-height: 1.45;
+}
+
+.toc ol a::before {
+	content: counter(tocnum) ". ";
+	font-weight: 700;
+}
+
+/* ---------- 資料リンク・戻るリンク ---------- */
+
+.navlinks {
+	margin: 20px 0 0;
+}
+
+/*
+ * 幅は文字数で決まる（固定幅にしない）。
+ * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
+ * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
+ */
+a.doclink {
+	display: inline-block;
+	padding: 3px 12px;
+	margin: 0 8px 6px 0;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	font-size: 0.9em;
+	text-decoration: none;
+}
+
+/* ---------- SVG図 ---------- */
+
+.fig {
+	margin: 18px 0;
+	text-align: center;
+}
+
+.fig svg {
+	max-width: 100%;
+	height: auto;
+}
+
+.fig figcaption {
+	color: var(--ink-soft, #4a5568);
+	background: transparent;
+	font-size: 0.88em;
+	margin-top: 6px;
+}
+
+/* ---------- フッター ---------- */
+
+footer {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 18px 30px 0;
+	margin-top: 40px;
+}
+
+footer .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding-bottom: 18px;
+}
+
+footer a {
+	color: #cfe0ff;
+}
 </style>
-<link rel="stylesheet" href="../../docs/css/style.css">
 <style>
 /* この資料だけのもの: 章のアクセント色（5章 / 色相 280→0 を 70 刻み）と目次の採番 */
 .ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
@@ -242,39 +620,9 @@
 
 	<h2>タスクを 4 つに分ける</h2>
 
-	<p>1 つのタスクを毎時動かして「いまどの区分か」を判定する作りも考えられるが、<strong>4 つに分ける方が簡単で壊れにくい</strong>。</p>
+	<p>1 つのタスクを毎時動かして区分を判定する作りにはしない。判定を自前で持つと「0 時のタスクが 1 時に走ったら <code>daily</code> と見なすのか」を自分で解くことになる。<code>StartWhenAvailable</code> は区分ごとに独立して取り返すため、そちらに任せる。</p>
 
-	<div class="tablewrap">
-	<table>
-		<thead>
-			<tr><th class="nowrap">論点</th><th>1 タスク＋判定</th><th>4 タスク（採用）</th></tr>
-		</thead>
-		<tbody>
-			<tr>
-				<td class="nowrap">スクリプト</td>
-				<td>実行のたびに区分を判定する</td>
-				<td><strong>引数で受け取るだけ</strong></td>
-			</tr>
-			<tr>
-				<td class="nowrap">PC が寝ていたとき</td>
-				<td>時刻で判定すると取りこぼす。経過時間で判定する別のしくみが要る</td>
-				<td><strong>タスクスケジューラが区分ごとに取り返す</strong></td>
-			</tr>
-			<tr>
-				<td class="nowrap">個別の停止・変更</td>
-				<td>できない。全部か無か</td>
-				<td><strong>区分ごとにできる</strong></td>
-			</tr>
-			<tr>
-				<td class="nowrap">タスクの数</td>
-				<td>1 つ</td>
-				<td>4 つ</td>
-			</tr>
-		</tbody>
-	</table>
-	</div>
-
-	<p>判定を自前で持つと「0 時のタスクが 1 時に走ったら <code>daily</code> と見なすのか」という問題を自分で解くことになる。タスクスケジューラの <code>StartWhenAvailable</code> は区分ごとに独立してこれを扱うため、任せる。</p>
+	<p>スクリプトは区分を引数で受け取るだけで済み、<strong>区分ごとに止めたり時刻を変えたりもできる</strong>。</p>
 
 	<h2>時刻を 1 分ずつずらす</h2>
 
@@ -292,85 +640,33 @@
 		<p><strong><code>-TaskPath</code> を省くと見つからない。</strong>フォルダに入れたタスクは、名前だけで <code>Get-ScheduledTask</code> や <code>Unregister-ScheduledTask</code> を呼んでも 0 件になる。登録・照会・解除のすべてで同じパスを渡す。</p>
 	</div>
 
-	<h3>名前に時刻を入れる</h3>
-
-	<p>タスク名を「毎時・毎日・毎週・毎月」だけにすると、一覧が<strong>文字コード順に並び、実行順とは無関係な並びになる</strong>。実際にこうなった。</p>
-
-	<pre><code class="language-text">ai-chat-lite バックアップ (毎月)   ← 実行は最後なのに先頭
-ai-chat-lite バックアップ (毎時)
-ai-chat-lite バックアップ (毎週)
-ai-chat-lite バックアップ (毎日)   ← 実行は 2 番目なのに最後</code></pre>
-
-	<p>時刻を先に置けば、名前順がそのまま実行順になる。一覧を見るだけでいつ走るかも分かる。</p>
+	<h3>タスク名</h3>
 
 	<pre><code class="language-text">ai-chat-lite バックアップ 00時00分 (毎時)
 ai-chat-lite バックアップ 00時01分 (毎日)
 ai-chat-lite バックアップ 00時02分 (毎週)
 ai-chat-lite バックアップ 00時03分 (毎月)</code></pre>
 
-	<div class="callout callout-warning">
-		<p><strong>タスク名に <code>:</code> は使えない。</strong>タスクは <code>C:\Windows\System32\Tasks\</code> の下にタスク名と同じ名前のファイルとして保存されるため、ファイル名に使えない文字（<code>: \ / * ? " &lt; &gt; |</code>）は名前にできない。</p>
-		<p><code>00:00</code> と書くと<strong>「パラメーターが間違っています」で落ちる</strong>。エラーからは原因が分からない。<code>00時00分</code> のように置き換える。</p>
-	</div>
+	<p>時刻を先に置くと、名前順がそのまま実行順になる。区分名だけでは文字コード順に並び、実行順とは無関係になる。</p>
+
+	<p><code>00:00</code> とは書けない。タスク名はそのままファイル名になるため <code>:</code> が使えず、<strong>「パラメーターが間違っています」で落ちる</strong>。</p>
 
 	<h3>フォルダの消し方</h3>
 
-	<p><code>Unregister-ScheduledTask</code> はタスクを消すだけで<strong>フォルダを残す</strong>。フォルダを消すコマンドレットは無いため、COM を使う。</p>
+	<p><code>Unregister-ScheduledTask</code> はタスクを消すだけで<strong>フォルダを残す</strong>。消すコマンドレットが無いため COM を使う。</p>
 
 	<pre><code class="language-powershell">$svc = New-Object -ComObject Schedule.Service
 $svc.Connect()
 $svc.GetFolder('\').DeleteFolder('ai-chat-lite', 0)</code></pre>
 
-	<div class="tablewrap">
-	<table>
-		<thead>
-			<tr><th class="nowrap">状態</th><th>結果</th></tr>
-		</thead>
-		<tbody>
-			<tr>
-				<td class="nowrap">空</td>
-				<td>消える。管理者権限は要らない</td>
-			</tr>
-			<tr>
-				<td class="nowrap">中にタスクがある</td>
-				<td><strong>「ディレクトリが空ではありません」で拒否される。中のタスクは無事</strong></td>
-			</tr>
-		</tbody>
-	</table>
-	</div>
-
-	<p>拒否される側の挙動があるため、人が別のタスクを同じフォルダに入れていても巻き添えにしない。解除の処理に組み込んでよい。</p>
+	<p>中にタスクが残っていれば「ディレクトリが空ではありません」で拒否され、中身は無事。<strong>人が別のタスクを同じフォルダに入れていても巻き添えにしない</strong>ので、解除の処理に組み込んでよい。</p>
 
 	<h2>毎月のトリガは XML で作る</h2>
 
-	<p>4 つのうち月次だけ作り方が違う。<code>New-ScheduledTaskTrigger</code> に月次の指定が無く、CIM のクラスを組み立てても<strong>「パラメーターが間違っています」で受け付けられない</strong>。</p>
-
-	<div class="tablewrap">
-	<table>
-		<thead>
-			<tr><th class="nowrap">作り方</th><th>結果</th></tr>
-		</thead>
-		<tbody>
-			<tr>
-				<td class="nowrap"><code>New-ScheduledTaskTrigger</code></td>
-				<td>月次の指定が無い</td>
-			</tr>
-			<tr>
-				<td class="nowrap"><code>MSFT_TaskMonthlyTrigger</code> を組み立てる</td>
-				<td>登録時に「パラメーターが間違っています」で失敗する</td>
-			</tr>
-			<tr>
-				<td class="nowrap"><code>Register-ScheduledTask -Xml</code></td>
-				<td><strong>通る</strong></td>
-			</tr>
-		</tbody>
-	</table>
-	</div>
-
-	<p>プロパティ名にも罠がある。<code>MonthsOfYear</code> ではなく <code>MonthOfYear</code>（単数）。複数形で書くと「そのプロパティは見つからない」で落ちる。ただし直しても登録は通らない。</p>
+	<p>月次だけ作り方が違う。<code>Register-ScheduledTask -Xml</code> を使う。<code>New-ScheduledTaskTrigger</code> に月次の指定が無く、<code>MSFT_TaskMonthlyTrigger</code> を組み立てても「パラメーターが間違っています」で受け付けられない。</p>
 
 	<div class="callout callout-warning">
-		<p><strong><code>Register-ScheduledTask</code> は失敗しても止まらない。</strong><code>$ErrorActionPreference = 'Stop'</code> を置いていても次の行へ進む。<code>-ErrorAction Stop</code> を明示しないと、<strong>登録に失敗したのに「登録しました」と表示される</strong>。実際にこれを踏んだ。</p>
+		<p><strong><code>Register-ScheduledTask</code> には <code>-ErrorAction Stop</code> を付ける。</strong><code>$ErrorActionPreference = 'Stop'</code> を置いていても失敗時に次の行へ進み、<strong>登録できていないのに「登録しました」と表示される</strong>。</p>
 	</div>
 
 	<h2>電源とネットワークの条件を外す</h2>
@@ -419,7 +715,7 @@ $svc.GetFolder('\').DeleteFolder('ai-chat-lite', 0)</code></pre>
 
 	<p><strong>30 秒おきに 10 回まで見に行き、消えなければ諦める。</strong>最大 5 分待つ。</p>
 
-	<p>諦めても構わない。<code>hourly</code> なら次は 1 時間後で、その間に印は消えているはずである。5 分を超えて DB を触る作業は、そう頻繁には起きない。</p>
+	<p>5 分を超えて DB を触る作業はそう頻繁には起きない。それでも取れなかったなら、<strong>その回の控えは無い</strong>。<code>hourly</code> は 1 時間後に取り直せるが、<code>monthly</code> の次は翌月である。</p>
 
 	<div class="tablewrap">
 	<table>
@@ -429,15 +725,15 @@ $svc.GetFolder('\').DeleteFolder('ai-chat-lite', 0)</code></pre>
 		<tbody>
 			<tr>
 				<td class="nowrap">取れた</td><td class="nowrap num">0</td>
-				<td>—</td>
+				<td>待ったかどうかは問わない</td>
 			</tr>
 			<tr>
-				<td class="nowrap">印が消えず諦めた</td><td class="nowrap num">0</td>
-				<td><strong>失敗ではない。</strong>メンテナンス中は想定内の状態で、タスクの履歴を赤くしても対処のしようがない。何が起きたかは画面とログに残す</td>
+				<td class="nowrap">印が消えず諦めた</td><td class="nowrap num"><strong>1</strong></td>
+				<td><strong>その回の控えが無い。</strong>理由がメンテナンスでも同じ。印の消し忘れに気づけるよう、タスクの履歴を赤くする</td>
 			</tr>
 			<tr>
 				<td class="nowrap">取得に失敗した</td><td class="nowrap num">1</td>
-				<td>DB が読めない、書き込めないなど。これは調べる必要がある</td>
+				<td>DB が読めない、書き込めないなど</td>
 			</tr>
 		</tbody>
 	</table>
@@ -449,55 +745,7 @@ $svc.GetFolder('\').DeleteFolder('ai-chat-lite', 0)</code></pre>
 
 	<p>置くときは <code>wx</code> フラグ（<code>O_CREAT | O_EXCL</code>）を使う。「無ければ作る」を OS が一続きの操作として保証するため、同時に取り合っても 1 つしか成功しない。実測で 10 個のプロセスが取り合っても成功は 1 つだけだった。</p>
 
-	<h3>名前を変える方式は Windows では使えない</h3>
-
-	<p><code>LOCK.&lt;pid&gt;</code> を作ってから <code>LOCK</code> へ名前を変え、成功した者が握ったとみなす書き方がある。POSIX の <code>rename(2)</code> は既にあるものを原子的に置き換えるため、この慣用句が成り立つ。</p>
-
-	<p><strong>Windows では手段によって結果が変わる。</strong>実測した。</p>
-
-	<div class="tablewrap">
-	<table>
-		<thead>
-			<tr><th class="nowrap">手段</th><th>先に置かれた印があるとき</th><th class="nowrap">排他</th></tr>
-		</thead>
-		<tbody>
-			<tr>
-				<td class="nowrap">Node <code>renameSync</code></td>
-				<td><strong>成功してしまう。</strong>先客を追い出して自分の内容に置き換える</td>
-				<td class="nowrap"><span class="badge b-ng">不可</span></td>
-			</tr>
-			<tr>
-				<td class="nowrap">Node <code>writeFileSync</code>（<code>wx</code>）</td>
-				<td>失敗する（<code>EEXIST</code>）。先客の内容はそのまま</td>
-				<td class="nowrap"><span class="badge b-ok">可</span></td>
-			</tr>
-			<tr>
-				<td class="nowrap">PowerShell <code>Rename-Item</code></td>
-				<td>失敗する（既に存在するファイルを作成することはできません）</td>
-				<td class="nowrap"><span class="badge b-ok">可</span></td>
-			</tr>
-			<tr>
-				<td class="nowrap">PowerShell <code>Move-Item</code></td>
-				<td>失敗する。<code>-Force</code> を付けたときだけ上書きする</td>
-				<td class="nowrap"><span class="badge b-ok">可</span></td>
-			</tr>
-			<tr>
-				<td class="nowrap">cmd <code>ren</code></td>
-				<td>失敗する（<code>ERRORLEVEL 1</code>）</td>
-				<td class="nowrap"><span class="badge b-ok">可</span></td>
-			</tr>
-			<tr>
-				<td class="nowrap">cmd <code>move</code></td>
-				<td><strong>成功してしまう。</strong><code>/Y</code> を付けなくても確認なしに上書きする</td>
-				<td class="nowrap"><span class="badge b-ng">不可</span></td>
-			</tr>
-		</tbody>
-	</table>
-	</div>
-
-	<div class="callout callout-caution">
-		<p><strong>失敗する側は「取れなかった」と正しく分かるが、成功してしまう側は 2 つとも「取れた」と思い込む。</strong>排他が効いていないことに気づけないまま同時に走る。<code>renameSync</code> と <code>move</code> をこの用途に使わない。</p>
-	</div>
+	<p>名前を変える方式（<code>LOCK.&lt;pid&gt;</code> を作って <code>LOCK</code> へ <code>rename</code>）は使わない。Node の <code>renameSync</code> と cmd の <code>move</code> は<strong>先客を黙って上書きし、2 つとも「取れた」と思い込む</strong>。処理系ごとの実測は<a href="../../docs/ファイルで排他する.html">ファイルで排他する</a>にある。</p>
 
 	<h3>握ったまま終わったとき</h3>
 
@@ -511,6 +759,189 @@ $svc.GetFolder('\').DeleteFolder('ai-chat-lite', 0)</code></pre>
 
 	<div class="callout">
 		<p><strong>印だけに頼らない。</strong>ファイルの有無で待たせる方法は、確認してから作るまでの間にもう一方が入り込む余地が残る。厳密な排他にはならないため、衝突しても壊れない作りを併せて持たせる。</p>
+	</div>
+
+	<h2>記録を残す</h2>
+
+	<p>タスクから走ると画面の出力は消え、残るのは <code>LastTaskResult</code> だけ。何件取れたか、なぜ取れなかったかを追えるようにする。バックアップと復旧の両方を対象にする。</p>
+
+	<h3>決めたこと</h3>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">項目</th><th>内容</th><th>理由</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">置き場</td>
+				<td><code>logs\yyyymm-backup-hourly-log.html</code><br><code>logs\yyyymm-backup-others-log.html</code></td>
+				<td>年月が先頭。名前で並べると時系列順になる。<code>-log</code> を付けて資料の html と区別する</td>
+			</tr>
+			<tr>
+				<td class="nowrap">形式</td>
+				<td><strong>HTML</strong>。1 行を <code>&lt;div&gt;</code> 1 つで書く</td>
+				<td><code>WARN</code> と <code>ERROR</code> を色で目立たせる。テキストでは目を凝らさないと見分けられない</td>
+			</tr>
+			<tr>
+				<td class="nowrap">分け方</td>
+				<td><code>hourly</code> は単独。<code>daily</code> / <code>weekly</code> / <code>monthly</code> と復旧は <code>others</code></td>
+				<td><code>hourly</code> は他の 3 つを合わせた 20 倍以上。混ぜると <code>monthly</code> の年 12 行が埋もれる</td>
+			</tr>
+			<tr>
+				<td class="nowrap">保持</td>
+				<td>12 か月。先頭 6 桁で判断する</td>
+				<td>取得のたびに見る。専用の仕組みは持たない</td>
+			</tr>
+			<tr>
+				<td class="nowrap">1 回の実行で</td>
+				<td>1 行</td>
+				<td>毎時走るものが何行も書くと追いにくい。途中経過は画面にだけ出す</td>
+			</tr>
+			<tr>
+				<td class="nowrap">諦めたとき</td>
+				<td><code>ERROR</code> ＋ <strong>終了コードを非 0 にする</strong>。理由は問わない</td>
+				<td>タスクの履歴が赤くなり、ログを開かずに気づける。印の消し忘れで控えが取れ続けない事態を見逃さない</td>
+			</tr>
+			<tr>
+				<td class="nowrap">書けないとき</td>
+				<td>バックアップは続ける</td>
+				<td>記録が残らないより、控えが取れない方が困る</td>
+			</tr>
+			<tr>
+				<td class="nowrap">文字コード</td>
+				<td>BOM 無し UTF-8 ＋ CRLF</td>
+				<td>日本語を含む。<code>&lt;meta charset&gt;</code> で宣言する</td>
+			</tr>
+			<tr>
+				<td class="nowrap">消す対象</td>
+				<td><code>yyyymm-backup-*-log.html</code> だけ</td>
+				<td>サービスのログ（WinSW が書くもの）に触れない</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h3>書き方</h3>
+
+	<p>先頭に <code>&lt;head&gt;</code> と <code>&lt;style&gt;</code> を 1 度だけ書き、<strong>以降は 1 行ずつ追記する</strong>。閉じタグは書かない。</p>
+
+	<pre><code class="language-html">&lt;div class=I&gt;2026-08-30 11:31:05.398 INFO  [hourly ] 取得 78 件 / 3,970 バイト / 10 ms / 8 世代を保持&lt;/div&gt;
+&lt;div class=W&gt;2026-08-30 13:00:31.042 WARN  [hourly ] 取得 79 件 / 4,012 バイト / 11 ms / 別のバックアップを 30 秒待機&lt;/div&gt;
+&lt;div class=E&gt;2026-08-30 14:05:00.911 ERROR [hourly ] 諦め メンテナンスの印が 5 分経っても消えない&lt;/div&gt;</code></pre>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">取り決め</th><th>内容</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">class</td>
+				<td><code>I</code> / <code>W</code> / <code>E</code>。<strong>クォートで囲まない</strong>（<code>class=I</code>）。値に記号を含まないため省ける</td>
+			</tr>
+			<tr>
+				<td class="nowrap">閉じタグ</td>
+				<td>行末の <code>&lt;/div&gt;</code> だけ書く。<strong><code>&lt;/body&gt;</code> と <code>&lt;/html&gt;</code> は書かない</strong>。ブラウザが補完する</td>
+			</tr>
+			<tr>
+				<td class="nowrap">エスケープ</td>
+				<td><code>&amp;</code> <code>&lt;</code> <code>&gt;</code> の 3 文字。<strong>この順で置き換える</strong>（<code>&amp;</code> を後にすると二重に変換される）</td>
+			</tr>
+			<tr>
+				<td class="nowrap">本文の中身</td>
+				<td>テキストのログと同じ。先頭が固定長の JST 日時、レベル 5 文字、区分は固定幅</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h3>実測</h3>
+
+	<p>ブラウザで実際に確かめた（7 件すべて通過）。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">確かめたこと</th><th>結果</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">閉じタグを書かない</td>
+				<td>補完される。行がすべて要素として取れる</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>class=I</code> とクォート無し</td>
+				<td>効く。<code>.I</code> <code>.W</code> <code>.E</code> で選べる</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><strong>行の書きかけで開く</strong></td>
+				<td><strong>壊れない。</strong>途中まで書かれた行も、そこまでは見える</td>
+			</tr>
+			<tr>
+				<td class="nowrap">記号を含む本文</td>
+				<td>エスケープすれば要素として解釈されない</td>
+			</tr>
+			<tr>
+				<td class="nowrap">1000 行</td>
+				<td>115 ミリ秒 / 70 KB。<code>hourly</code> は月 744 行なので 55 KB 程度</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-important">
+		<p><strong>書き込みの途中で開いても壊れないことが要点。</strong>ログは書かれ続けるファイルなので、いつ開かれるか分からない。閉じタグを待たずに表示できる作りにしておく。</p>
+	</div>
+
+	<h3>レベルの意味</h3>
+
+	<p><strong>控えが取れたかどうかで決まる。</strong>取れなかったなら理由によらず <code>E</code>。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">場面</th><th class="nowrap">待って取れた</th><th class="nowrap">5 分待っても取れなかった</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>MAINTENANCE</code> があった</td>
+				<td class="nowrap"><code>I</code></td>
+				<td class="nowrap"><strong><code>E</code></strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>BACKUP-RUNNING</code> があった</td>
+				<td class="nowrap"><code>W</code></td>
+				<td class="nowrap"><strong><code>E</code></strong></td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-important">
+		<p><strong>メンテナンスの印を消し忘れると、以後すべての控えが取れなくなる。</strong>これを <code>I</code> で流すと、毎時 <code>I</code> が並ぶだけで異常に見えない。数か月後に戻そうとして、控えが 1 本も無いことに気づく。<strong>諦めは <code>MAINTENANCE</code> が理由でも <code>E</code> にする。</strong></p>
+	</div>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">レベル</th><th class="nowrap">色</th><th>意味</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>I</code></td><td class="nowrap">なし</td>
+				<td>取れた。戻した。人が DB を触っている間に待つのは設計どおりの動作</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>W</code></td><td class="nowrap">橙</td>
+				<td><strong>起きないはずのことが起きている。</strong>4 区分は 1 分ずらしてあり、1 回の取得は 1 秒とかからない。待たされたなら前の実行が 60 倍以上長引いている</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>E</code></td><td class="nowrap">赤</td>
+				<td><strong>その回の控えが無い。</strong><code>monthly</code> なら次は翌月で、半年分のうち 1 本が空く</td>
+			</tr>
+		</tbody>
+	</table>
 	</div>
 
 	<h2>手で取るとき</h2>
@@ -574,45 +1005,35 @@ $svc.GetFolder('\').DeleteFolder('ai-chat-lite', 0)</code></pre>
 
 	<h2>終了時に DB を閉じる</h2>
 
-	<p>そもそも <code>-wal</code> にデータが残らないようにする。<strong>書き込みができる状態で開いていて、かつ閉じたときに限り</strong>、WAL の内容が本体に統合されて 3 つが 1 つにまとまる。</p>
+	<p>終了の処理で <code>closeDb()</code> を呼ぶ。<strong>書き込みができる状態で開いていて、かつ閉じたときに限り</strong>、WAL の内容が本体に統合されて 3 つが 1 つにまとまる。</p>
 
 	<div class="tablewrap">
 	<table>
 		<thead>
-			<tr><th class="nowrap">開き方</th><th class="nowrap">終わり方</th><th class="nowrap">chat.db</th><th class="nowrap">-wal</th><th class="nowrap">-shm</th></tr>
+			<tr><th class="nowrap">開き方</th><th class="nowrap">終わり方</th><th class="nowrap">chat.db</th><th class="nowrap">-wal / -shm</th></tr>
 		</thead>
 		<tbody>
 			<tr>
 				<td class="nowrap">書き込み可</td><td class="nowrap"><code>close()</code> する</td>
-				<td class="nowrap num">4 KB → 114 KB</td>
-				<td class="nowrap">消える</td><td class="nowrap">消える</td>
+				<td class="nowrap num">4 KB → 114 KB</td><td class="nowrap">消える</td>
 			</tr>
 			<tr>
 				<td class="nowrap">書き込み可</td><td class="nowrap">閉じずに終了</td>
-				<td class="nowrap num">4 KB のまま</td>
-				<td class="nowrap num">2.2 MB 残る</td><td class="nowrap num">32 KB 残る</td>
+				<td class="nowrap num">4 KB のまま</td><td class="nowrap num">2.2 MB 残る</td>
 			</tr>
 			<tr>
-				<td class="nowrap">読み取り専用</td><td class="nowrap"><code>close()</code> する</td>
-				<td class="nowrap num">変わらない</td>
-				<td class="nowrap">残る</td><td class="nowrap">残る</td>
-			</tr>
-			<tr>
-				<td class="nowrap">読み取り専用</td><td class="nowrap">閉じずに終了</td>
-				<td class="nowrap num">変わらない</td>
-				<td class="nowrap">残る</td><td class="nowrap">残る</td>
+				<td class="nowrap">読み取り専用</td><td class="nowrap">どちらも</td>
+				<td class="nowrap num">変わらない</td><td class="nowrap">残る</td>
 			</tr>
 		</tbody>
 	</table>
 	</div>
 
-	<div class="callout">
-		<p><strong>読み取り専用で開くと、閉じても <code>-wal</code> と <code>-shm</code> が残る。</strong>読み取り専用の接続はチェックポイントも後片付けもしないため。控えの中身を確かめるだけでもこの 2 つが増える。<strong>増えたものを消してはいけない</strong>。元からあったものか自分が作ったものか、開いた側からは区別できない。確認するならコピーを作ってそちらを開く。</p>
+	<p>閉じられなかった場合も終了は続ける。次に開いたとき SQLite が自分で復旧するため。<strong>退避は 3 つとも行う</strong>。強制終了では閉じる処理を通らず、<code>-wal</code> が残っている前提で扱う必要がある。</p>
+
+	<div class="callout callout-caution">
+		<p><strong>読み取り専用で開くと、閉じても <code>-wal</code> と <code>-shm</code> が残る。</strong>控えの中身を確かめるだけでもこの 2 つが増えるが、<strong>増えたものを消してはいけない</strong>。元からあったものか自分が作ったものか区別できない。確認するならコピーを作ってそちらを開く。</p>
 	</div>
-
-	<p>終了の処理で <code>closeDb()</code> を呼ぶ。コストはほとんど無く、<strong><code>-wal</code> の存在を忘れて空の DB を掴む事故が起きなくなる</strong>。閉じられなかった場合も終了は続ける。次に開いたとき SQLite が自分で復旧するため。</p>
-
-	<p>ただし退避は 3 つとも行う。異常終了や強制終了では閉じる処理を通らないため、<code>-wal</code> が残っている前提で扱う。</p>
 </section>
 
 <!-- ================= 05 ================= -->
@@ -629,39 +1050,25 @@ tools/80_ops/
 tests/backup.test.mjs           … 32 件
 notes/90_rules/backup.html      … 運用の手引き</code></pre>
 
-	<h2>すでにできているもの</h2>
-
-	<p>単一世代（8 世代・手動＋毎日 1 回）の形で実装と検証を終えている。今回の設計は、これを 4 区分に組み替えるもの。</p>
+	<h2>できていること</h2>
 
 	<div class="tablewrap">
 	<table>
 		<thead>
-			<tr><th class="nowrap">項目</th><th class="nowrap">状態</th><th>備考</th></tr>
+			<tr><th class="nowrap">項目</th><th class="nowrap">状態</th><th>確かめたこと</th></tr>
 		</thead>
 		<tbody>
 			<tr>
-				<td class="nowrap"><code>VACUUM INTO</code></td><td class="nowrap"><span class="badge b-ok">済</span></td>
-				<td>稼働中に 24 ミリ秒で完了することを確認</td>
-			</tr>
-			<tr>
-				<td class="nowrap">圧縮と世代整理</td><td class="nowrap"><span class="badge b-ok">済</span></td>
-				<td>11 件から 8 件へ切り詰まることを確認</td>
-			</tr>
-			<tr>
-				<td class="nowrap">戻す手順</td><td class="nowrap"><span class="badge b-ok">済</span></td>
-				<td>印を置いて落とし、入れ替えて起動するまでを確認</td>
-			</tr>
-			<tr>
-				<td class="nowrap">テスト</td><td class="nowrap"><span class="badge b-ok">済</span></td>
-				<td>13 件</td>
-			</tr>
-			<tr>
-				<td class="nowrap">4 区分への組み替え</td><td class="nowrap"><span class="badge b-ok">済</span></td>
-				<td>4 区分すべてで取得を確認。<code>hourly</code> が 8 世代に切り詰まることも確認</td>
+				<td class="nowrap">取得・圧縮・世代整理</td><td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td>4 区分すべてで取得。<code>hourly</code> が 8 世代に切り詰まる</td>
 			</tr>
 			<tr>
 				<td class="nowrap">印による排他</td><td class="nowrap"><span class="badge b-ok">済</span></td>
-				<td>メンテナンス中・バックアップ中とも待って見送る。テスト 32 件</td>
+				<td>メンテナンス中・バックアップ中とも待って見送る</td>
+			</tr>
+			<tr>
+				<td class="nowrap">戻す手順</td><td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td>印を置いて落とし、3 つ退避して入れ替え、起動するまで</td>
 			</tr>
 			<tr>
 				<td class="nowrap">置き場の移行</td><td class="nowrap"><span class="badge b-ok">済</span></td>
@@ -669,67 +1076,27 @@ notes/90_rules/backup.html      … 運用の手引き</code></pre>
 			</tr>
 			<tr>
 				<td class="nowrap">タスクの登録</td><td class="nowrap"><span class="badge b-ok">済</span></td>
-				<td><code>\ai-chat-lite\</code> フォルダに 4 つ登録した。手で起動して <code>LastTaskResult = 0</code> と新しい世代の追加を確認</td>
+				<td><code>\ai-chat-lite\</code> に 4 つ。手で起動して <code>LastTaskResult = 0</code></td>
+			</tr>
+			<tr>
+				<td class="nowrap">テスト</td><td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td>32 件</td>
+			</tr>
+			<tr>
+				<td class="nowrap">記録を残す</td><td class="nowrap"><span class="badge b-warn">承認待ち</span></td>
+				<td>設計のみ。<a href="#ch03">記録を残す</a>を参照</td>
 			</tr>
 		</tbody>
 	</table>
 	</div>
 
-	<h2>いまある世代をどうするか</h2>
+	<h2>置き場を移すとき</h2>
 
-	<p><code>_backup\</code> 直下に、単一世代のころに取ったものが残っている。<strong>捨てる理由がないので移す。</strong></p>
+	<p>区分を分ける前の控えは <code>_backup\hourly\</code> へ移す。取った間隔がまちまちなので、最も細かい区分に入れる。</p>
 
-	<div class="tablewrap">
-	<table>
-		<thead>
-			<tr><th class="nowrap">順</th><th>すること</th><th>なぜ</th></tr>
-		</thead>
-		<tbody>
-			<tr>
-				<td class="nowrap num">1</td>
-				<td><code>_backup\*.db.zip</code> をすべて <code>_backup\hourly\</code> へ移す</td>
-				<td>取った間隔がまちまちなので、最も細かい区分に入れる。8 本を超える分はその場で整理される</td>
-			</tr>
-			<tr>
-				<td class="nowrap num">2</td>
-				<td>いちばん新しい 1 本を <code>daily</code> / <code>weekly</code> / <code>monthly</code> にもコピーする</td>
-				<td>そうしないと 3 つの区分が空のまま始まる。<code>monthly</code> に 1 本目が入るのは翌月 1 日になるため、それまで戻せる先が <code>hourly</code> しかない状態が続く</td>
-			</tr>
-		</tbody>
-	</table>
-	</div>
+	<p>そのうえで<strong>いちばん新しい 1 本を <code>daily</code> / <code>weekly</code> / <code>monthly</code> にも配る</strong>。配らないと <code>monthly</code> に 1 本目が入るのは翌月 1 日で、それまで戻せる先が <code>hourly</code> しかない。中身が同じ 3 本になるが、日が経てば区分ごとに別のものへ置き換わる。</p>
 
-	<p>コピーした 3 本は中身が同じだが構わない。日が経てば区分ごとに別のものへ置き換わる。</p>
-
-	<p>移すのは zip なので、<strong>3 つのファイルを気にする必要はない</strong>。zip の中身は <code>VACUUM INTO</code> が書いた単体の <code>chat.db</code> で、<code>-wal</code> も <code>-shm</code> も伴わない。手で <code>_data</code> の現物を <code>_backup</code> へ持ってこようとしたときだけ、3 つ揃える話が要る。</p>
-
-	<h2>変える点</h2>
-
-	<div class="tablewrap">
-	<table>
-		<thead>
-			<tr><th class="nowrap">対象</th><th>いま</th><th>変更後</th></tr>
-		</thead>
-		<tbody>
-			<tr>
-				<td class="nowrap">置き場</td><td><code>_backup\</code> 直下</td>
-				<td><code>_backup\&lt;区分&gt;\</code></td>
-			</tr>
-			<tr>
-				<td class="nowrap">世代数</td><td>8 で固定</td>
-				<td>区分ごとに 8 / 7 / 4 / 6</td>
-			</tr>
-			<tr>
-				<td class="nowrap">タスク</td><td>毎日 1 つ</td>
-				<td>4 つ</td>
-			</tr>
-			<tr>
-				<td class="nowrap">戻すとき</td><td>最新 1 つを選ぶ</td>
-				<td>4 区分すべてから新しい順に並べて選ぶ</td>
-			</tr>
-		</tbody>
-	</table>
-	</div>
+	<p>移すのは zip なので 3 つのファイルを気にする必要はない。<code>VACUUM INTO</code> が書いた単体の <code>chat.db</code> だけが入っている。</p>
 
 	<h2>決めていない点</h2>
 
