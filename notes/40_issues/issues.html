@@ -657,7 +657,7 @@ footer a {
 			</summary>
 			<div class="issuebody">
 				<p>いちど参加すると <code>users</code> に残り、<code>join</code> のメッセージもログに積まれる。取り消す方法が無い。ルームも同じで、<code>messages</code> に 1 件でも入れば一覧に出続ける。</p>
-				<p>実際に <code>test-project</code>・<code>waiter</code>・<code>browser</code> といったテスト中の名前や、<code>sandbox-mteyisfc</code> のような使い捨てのルームが残っている。誤って投稿した発言を消す手段も無い。</p>
+				<p>実際に動作確認で名乗った ID や、<code>sandbox-mteyisfc</code> のような使い捨てのルームが残っている。誤って投稿した発言を消す手段も無い。</p>
 				<p><strong>認証が無いことをどう扱うかが論点。</strong>いまは誰でも読み書きできる前提なので、消す操作も誰でもできてしまう。<code>/api/admin/</code> に寄せるか、消さずに「隠す」印を付けるだけにするか、決める必要がある。</p>
 				<ul class="todos">
 					<li><span class="badge b-todo">未</span> 消すのか隠すのかを決める（履歴を残すなら隠すほうが安全）</li>
@@ -760,10 +760,36 @@ footer a {
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">5 件 / 未 3 / 済 2</span>
+		<span class="count">6 件 / 未 4 / 済 2</span>
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue" id="i-20260830-13" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">20260830-13</span>
+				画面をリロードするたびに離脱が積まれる
+			</summary>
+			<div class="issuebody">
+				<p>ブラウザを閉じるときだけでなく、<strong>リロードでも <code>pagehide</code> が起きる</strong>。そのたびに <code>/api/leave</code> が呼ばれ、「〇〇 が離脱しました」が記録される。</p>
+				<p>実際に 5 秒間で 6 行並んだ。ログとして実態を表していない。</p>
+				<pre><code class="language-text">10:43:29.379 -- human が離脱しました
+10:43:30.614 -- human が離脱しました
+10:43:31.201 -- human が離脱しました
+10:43:31.547 -- human が離脱しました
+10:43:32.178 -- human が離脱しました
+10:43:34.017 -- human が離脱しました</code></pre>
+				<p>離脱を積む条件が「<code>/api/leave</code> が呼ばれたら」になっている。<strong>本当に居なくなったかを見ていない</strong>。リロードなら数秒後に同じ相手が戻ってくる。</p>
+				<p>猶予を過ぎてオフラインに落ちたことは <code>sweepOffline()</code> が別に記録している。<strong>明示的な離脱と二重になっている面もある</strong>。</p>
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> 積む条件を決める。接続が 0 になってしばらく戻らなければ積む、が有力</li>
+					<li><span class="badge b-todo">未</span> <code>sweepOffline()</code> の記録と役割が重なっていないか整理する</li>
+					<li><span class="badge b-todo">未</span> 短い間に何度も出さないようにする（同じ相手の連続を 1 行にまとめる等）</li>
+					<li><span class="badge b-todo">未</span> 既に積まれている分をどうするか決める</li>
+				</ul>
+			</div>
+		</details>
 
 		<details class="issue" id="i-20260830-12" open>
 			<summary>
