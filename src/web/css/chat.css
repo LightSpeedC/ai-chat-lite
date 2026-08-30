@@ -271,6 +271,26 @@ body {
 	background: transparent;
 	font-size: 0.78em;
 	margin-bottom: 2px;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+
+/* 発言者。日時と同じ扱いでは埋もれるため、色と太さで前に出す */
+.msg .who {
+	color: var(--ink, #1c2330);
+	background: transparent;
+	font-weight: 700;
+	font-size: 1.08em;
+}
+
+/*
+ * 発言の脇に出す在席の印。参加者一覧と同じ .mark を使う。
+ * 文字より小さめにして、名前より目立たないようにする。
+ */
+.msg .meta .mark {
+	width: 8px;
+	height: 8px;
 }
 
 .msg .body {
@@ -287,8 +307,10 @@ body {
 	margin-left: auto;
 }
 
+/* 自分の発言は右寄せ。印と名前の並びも逆にして、吹き出しの側に寄せる */
 .msg.mine .meta {
 	text-align: right;
+	flex-direction: row-reverse;
 }
 
 .msg.mine .body {

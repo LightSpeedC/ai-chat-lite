@@ -45,6 +45,14 @@ let oldestSeq = null;  // 画面に出ている中で最も古い msg_seq
 let source = null;     // EventSource
 let serverVersion = null; // 最後に受け取ったサーバーの版
 
+/*
+ * 誰がいまどの状態かを覚えておく。発言の脇に印を出すために使う。
+ *
+ * 発言そのものは過去の記録だが、印は「いまの状態」を映す。発言した時点の
+ * 状態は DB に持っていないため作れない。参加者一覧と食い違わない方を採る。
+ */
+const statusOf = new Map();
+
 // --- 本文の描画 ---
 
 function messageElement(m) {
@@ -61,8 +69,14 @@ function messageElement(m) {
 	wrap.className = 'msg' + (mine ? ' mine' : '') + (toMe ? ' to-me' : '');
 
 	const to = m.to_user_id ? ` <span class="to">@${escapeText(m.to_user_id)}</span>` : '';
+
+	// 参加者一覧と同じ印を出す。data-user は presence が届いたとき塗り直すための目印
+	const status = statusOf.get(m.from_user_id) ?? 'offline';
+	const mark = `<span class="mark ${status}" data-user="${escapeText(m.from_user_id)}"></span>`;
+
 	wrap.innerHTML =
-		`<div class="meta">${escapeText(m.from_user_id)}${to} ・ ${escapeText(m.sent_at)}</div>` +
+		`<div class="meta">${mark}<span class="who">${escapeText(m.from_user_id)}</span>${to}` +
+		` ・ ${escapeText(m.sent_at)}</div>` +
 		`<div class="body">${renderBody(m.msg_body)}</div>`;
 	return wrap;
 }
@@ -118,9 +132,25 @@ function renderUsers(users) {
 		const option = document.createElement('option');
 		option.value = u.user_id;
 		el.userIds.appendChild(option);
+
+		statusOf.set(u.user_id, u.status);
 	}
 
 	el.userCount.textContent = String(users.filter((u) => u.online).length);
+	refreshMessageMarks();
+}
+
+/*
+ * 既に出ている発言の印を、いまの状態に合わせ直す。
+ *
+ * 在席は変わり続けるため、描いたときのままにすると参加者一覧と食い違う。
+ * presence が届くたびに塗り直す。
+ */
+function refreshMessageMarks() {
+	for (const mark of el.log.querySelectorAll('.msg .mark[data-user]')) {
+		const status = statusOf.get(mark.dataset.user) ?? 'offline';
+		mark.className = `mark ${status}`;
+	}
 }
 
 // --- 通信 ---
