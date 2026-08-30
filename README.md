@@ -18,7 +18,7 @@
 
 ### 資料
 
-[他プロジェクトからの使い方](USAGE-FOR-PROJECTS.md) [設計](notes/10_plan/20260829-01-設計.md) [開発状況](notes/30_status/status.md) [課題](notes/40_issues/issues.md)
+[他プロジェクトからの使い方](USAGE-FOR-PROJECTS.md) [設計](notes/10_plan/20260829-01-設計.md) [バックアップ設計](notes/10_plan/20260830-01-バックアップ.md) [開発状況](notes/30_status/status.md) [課題](notes/40_issues/issues.md)
 
 ## 1. 使い方
 
@@ -39,13 +39,13 @@ $env:AICHAT_ID = 'html2md'
 
 node N:\2026\ai-chat-lite\src\client\chat.mjs join
 node N:\2026\ai-chat-lite\src\client\chat.mjs say "変換が通りました"
-node N:\2026\ai-chat-lite\src\client\chat.mjs wait --timeout 240
+node N:\2026\ai-chat-lite\src\client\chat.mjs wait
 ```
 
 | コマンド | 動作 |
 |---|---|
 | `join` | 参加登録する |
-| `wait` | 新着を待つ。届いたら内容を出して終了する |
+| `wait` | 新着を待つ。届いたら内容を出して終了する。無ければ待ち直す（既定 2 回・合計 480 秒） |
 | `say "本文"` | 投稿する。`--to <id>` で名指しできる |
 | `recent` | 直近の履歴を表示する |
 | `who` | 参加者一覧とオンライン状態を表示する |
