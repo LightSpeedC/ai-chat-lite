@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>バックアップの手引き</title>
+<style>
+/* ../../docs/css/style.css が読めなかったときの代替色 */
+.titlebar, section h1, th, a.doclink, .badge { background: #12224d; color: #fff; }
+</style>
+<link rel="stylesheet" href="../../docs/css/style.css">
+<style>
+/* この資料だけのもの: 章のアクセント色（4章 / 色相 280→0 を 93.3 刻み）と目次の採番 */
+.ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
+.ch02 { --accent: hsl(186.7, 78%, 25%); --accent2: hsl(186.7, 58%, 55%); --soft: hsl(186.7, 28%, 95%); }
+.ch03 { --accent: hsl( 93.3, 78%, 25%); --accent2: hsl( 93.3, 58%, 55%); --soft: hsl( 93.3, 28%, 95%); }
+.ch04 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
+.toc ol { counter-reset: tocnum; }
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>バックアップの手引き</h1>
+		<p class="lead">控えの取り方・戻し方・困ったときの見どころ</p>
+		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-08-30</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+<p>普段は自動で動くので何もしなくてよい。<strong>手を出すのは、戻したいときと、動いていないと気づいたときだけ</strong>。なぜこの形にしたかは<a href="../10_plan/20260830-01-バックアップ.html">バックアップ設計</a>にある。</p>
+
+<section class="toc">
+	<h2>目次</h2>
+	<ol>
+		<li class="ch01"><a href="#ch01">はじめる</a></li>
+		<li class="ch02"><a href="#ch02">戻す</a></li>
+		<li class="ch03"><a href="#ch03">確かめる</a></li>
+		<li class="ch04"><a href="#ch04">やってはいけないこと</a></li>
+	</ol>
+</section>
+
+<!-- ================= 01 ================= -->
+<section class="ch01" id="ch01">
+	<h1>はじめる</h1>
+
+	<p><strong>管理者権限は要らない。</strong>ログオンしているユーザーのタスクとして動く。</p>
+
+	<h2>1 度だけやること</h2>
+
+	<pre><code class="language-batch">tools\80_ops\migrate-backup-layout.cmd
+tools\80_ops\register-backup-tasks.cmd</code></pre>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">やること</th><th>中身</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">置き場を整える</td>
+				<td>区分を分ける前のものを <code>hourly</code> へ移し、最新の 1 本を残り 3 区分にも配る。配らないと <code>monthly</code> が空のまま翌月 1 日まで待つことになる</td>
+			</tr>
+			<tr>
+				<td class="nowrap">タスクを登録する</td>
+				<td>4 つ登録する。既に同じ名前があれば作り直す</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>いつ取られるか</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">区分</th><th class="nowrap">取る時刻</th><th class="nowrap">残る数</th><th class="nowrap">遡れる範囲</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap"><code>hourly</code></td><td class="nowrap">毎時 0 分</td><td class="num nowrap">8</td><td class="nowrap">8 時間</td></tr>
+			<tr><td class="nowrap"><code>daily</code></td><td class="nowrap">毎日 0 時 1 分</td><td class="num nowrap">7</td><td class="nowrap">1 週間</td></tr>
+			<tr><td class="nowrap"><code>weekly</code></td><td class="nowrap">月曜 0 時 2 分</td><td class="num nowrap">4</td><td class="nowrap">1 か月</td></tr>
+			<tr><td class="nowrap"><code>monthly</code></td><td class="nowrap">1 日 0 時 3 分</td><td class="num nowrap">6</td><td class="nowrap">半年</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>PC が寝ていて時刻を過ぎたときは、起きたあとに取り返す。<strong>サービスは止めなくてよい。</strong>読み取り専用で複製するので、動いたまま取れる。</p>
+
+	<h2>いま取っておきたいとき</h2>
+
+	<p>DB を触る前など、手で 1 本取りたいときは区分を指定して呼ぶ。</p>
+
+	<pre><code class="language-powershell">tools\80_ops\backup.ps1 -Kind hourly</code></pre>
+
+	<p>置き場は <code>_backup\&lt;区分&gt;\chat-yyyymmdd-hhmmss.db.zip</code>。</p>
+</section>
+
+<!-- ================= 02 ================= -->
+<section class="ch02" id="ch02">
+	<h1>戻す</h1>
+
+	<pre><code class="language-batch">tools\80_ops\restore.cmd</code></pre>
+
+	<p>いちばん新しいものが選ばれる。<strong>区分をまたいで新しい順に並べる</strong>ので、どこにあるかを気にしなくてよい。確認を求められたら <code>yes</code> と入力する。</p>
+
+	<h2>選んで戻す</h2>
+
+	<pre><code class="language-powershell">tools\80_ops\restore.ps1 -Path _backup\daily\chat-20260828-000100.db.zip</code></pre>
+
+	<h2>何が起きるか</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="num nowrap">順</th><th>すること</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="num">1</td><td><code>_data\MAINTENANCE</code> を置く。この印がある間、サーバーは起動せず待つ</td></tr>
+			<tr><td class="num">2</td><td>サーバーを落とす。印があるので、起動しようとして待機に入る</td></tr>
+			<tr><td class="num">3</td><td>zip を展開し、中身の件数を数えて確かめる</td></tr>
+			<tr><td class="num">4</td><td>いまの DB を <code>_data\prev-yyyymmdd-hhmmss\</code> へ移し、入れ替える</td></tr>
+			<tr><td class="num">5</td><td>印を消す。サーバーが自分から起動する</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>数秒で起動する。<code>http://localhost:8787/</code> を開いて確かめる。</p>
+
+	<h2>戻したものが違っていたら</h2>
+
+	<p><strong>いまの DB は消していない。</strong><code>_data\prev-yyyymmdd-hhmmss\</code> に 3 つのファイルが入っている。元に戻すには、印を置いてサーバーを落とし、3 つとも <code>_data</code> へ戻す。</p>
+
+	<pre><code class="language-powershell">echo 戻し直しています &gt; _data\MAINTENANCE
+node src\client\chat.mjs restart
+
+# _data\prev-… の中身 3 つを _data\ へ移す（chat.db / chat.db-wal / chat.db-shm）
+
+Remove-Item _data\MAINTENANCE</code></pre>
+
+	<div class="callout callout-caution">
+		<p><strong>3 つとも戻すこと。</strong><code>chat.db</code> だけを戻すと、直近の発言がまとめて消える。実測では 64 件のすべてが <code>chat.db-wal</code> 側にあり、本体は空同然だった。</p>
+	</div>
+</section>
+
+<!-- ================= 03 ================= -->
+<section class="ch03" id="ch03">
+	<h1>確かめる</h1>
+
+	<h2>ちゃんと取れているか</h2>
+
+	<pre><code class="language-powershell">Get-ChildItem _backup -Recurse -Filter 'chat-*.db.zip' |
+	Group-Object { $_.Directory.Name } |
+	Select-Object Name, Count</code></pre>
+
+	<p>数が増えていない区分があれば、タスクが動いていない。</p>
+
+	<pre><code class="language-powershell">Get-ScheduledTask -TaskName 'ai-chat-lite バックアップ*' |
+	Get-ScheduledTaskInfo |
+	Select-Object TaskName, LastRunTime, LastTaskResult</code></pre>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap"><code>LastTaskResult</code></th><th>意味</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap num">0</td><td>取れた。または<strong>印があったので見送った</strong>。どちらも正常</td></tr>
+			<tr><td class="nowrap num">0 以外</td><td>取れなかった。DB が読めない、書き込めないなど。調べる必要がある</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>中身を見たいとき</h2>
+
+	<p><strong>zip を展開して、そのコピーを開く。</strong>控えそのものを直接開かない。</p>
+
+	<pre><code class="language-powershell">Expand-Archive _backup\daily\chat-20260828-000100.db.zip -DestinationPath tmp\peek
+node -e "const{DatabaseSync}=require('node:sqlite');const d=new DatabaseSync('tmp/peek/chat.db');console.log(d.prepare('SELECT count(*) c FROM messages').get().c + ' 件');d.close();"</code></pre>
+
+	<h2>全部止まっているとき</h2>
+
+	<p>どの区分も取れていないなら、<strong>印が残っている</strong>可能性がある。</p>
+
+	<pre><code class="language-powershell">Get-Content _data\BACKUP-RUNNING
+Get-Content _data\MAINTENANCE</code></pre>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">印</th><th>対処</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>BACKUP-RUNNING</code></td>
+				<td>中身に開始時刻と <code>pid</code> が書いてある。<strong>30 分より古ければ次の実行が自分で奪う</strong>ので、待てばよい。急ぐなら <code>Get-Process -Id &lt;pid&gt;</code> で本当に動いていないことを確かめてから消す</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>MAINTENANCE</code></td>
+				<td>人が置いたもの。<strong>勝手に消さない。</strong>DB を触っている最中かもしれない。置いた人に確かめる</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+</section>
+
+<!-- ================= 04 ================= -->
+<section class="ch04" id="ch04">
+	<h1>やってはいけないこと</h1>
+
+	<div class="callout callout-caution">
+		<p><strong><code>chat.db-wal</code> と <code>chat.db-shm</code> を消さない。例外はない。</strong><code>-wal</code> には本体にまだ統合されていない書き込みが入っている。消せばその分が失われ、本体だけが残る。<strong>本体の大きさから中身の量は判断できない。</strong>実測では 40 KB の本体に 0 件、2.6 MB の <code>-wal</code> に 64 件すべてが入っていた。</p>
+		<p>捨てるときは 3 つまとめて捨て、残すときは 3 つまとめて残す。</p>
+	</div>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">やってはいけない</th><th>なぜ</th><th>代わりに</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>chat.db</code> だけをコピーする</td>
+				<td>中身が入っていないことがある</td>
+				<td><code>backup.ps1</code> を使う。<code>VACUUM INTO</code> が 3 つを織り込んだ 1 ファイルを作る</td>
+			</tr>
+			<tr>
+				<td class="nowrap">控えを直接開く</td>
+				<td>読むだけでも <code>-wal</code> と <code>-shm</code> が作られ、閉じても残る</td>
+				<td>展開してコピーを開く</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>MAINTENANCE</code> を消す</td>
+				<td>人が DB を触っている最中かもしれない</td>
+				<td>置いた人に確かめる</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>_backup</code> を Git に入れる</td>
+				<td>発言の中身が履歴に残り、消すには履歴の書き換えが要る</td>
+				<td>先頭が <code>_</code> なので既に管理外。そのままにする</td>
+			</tr>
+			<tr>
+				<td class="nowrap">戻すのに <code>stop</code> を使う</td>
+				<td>終了コード 0 で<strong>サービスごと止まる</strong>。印を消しても起動せず、管理者権限での再開が要る</td>
+				<td><code>restore.ps1</code> を使う。中で <code>restart</code> を呼んでいる</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+</section>
+
+</div>
+
+<footer>
+	<div class="inner">
+		<a class="doclink" href="../../README.html">README へ戻る</a>
+	</div>
+</footer>
+
+</body>
+</html>

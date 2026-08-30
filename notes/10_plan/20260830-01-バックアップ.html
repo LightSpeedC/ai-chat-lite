@@ -33,7 +33,7 @@
 
 <p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
 
-<p>DB を定期的に控え、壊したり消したりしても戻せるようにする。<strong>この文書は承認待ちの設計である。</strong>実装はまだ行っていない。</p>
+<p>DB を定期的に控え、壊したり消したりしても戻せるようにする。<strong>実装済み。</strong>使い方は<a href="../90_rules/backup.html">バックアップの手引き</a>にある。この文書は、なぜこの形にしたかを残すもの。</p>
 
 <section class="toc">
 	<h2>目次</h2>
@@ -479,7 +479,7 @@
 		<p><strong><code>chat.db</code> だけを残しても意味がない。</strong>最初にこれをやって実害が出た。<code>-wal</code> を消したうえで本体だけを退避したところ、退避したものは<strong>読み込めても 0 件</strong>だった。発言 64 件はすべて <code>-wal</code> 側にあり、消した時点で戻す手段が失われていた。戻した中身が正しかったので事なきを得たが、違っていれば取り返しがつかなかった。</p>
 	</div>
 
-	<p>個別に名前を変える方法（<code>chat.db-wal.前-…</code>）は採らない。<code>_data</code> 直下が散らかり、どれが同じ組なのか名前を突き合わせないと分からなくなる。フォルダに入れれば一目で揃う。</p>
+	<p>個別に名前を変える方法（<code>chat.db-wal.prev-…</code>）は採らない。<code>_data</code> 直下が散らかり、どれが同じ組なのか名前を突き合わせないと分からなくなる。フォルダに入れれば一目で揃う。</p>
 
 	<h2>終了時に DB を閉じる</h2>
 
@@ -528,14 +528,15 @@
 <section class="ch05" id="ch05">
 	<h1>作るもの</h1>
 
-	<pre><code class="language-text">src/server/backup.mjs           … VACUUM INTO と世代の整理（テスト対象）
+	<pre><code class="language-text">src/server/backup.mjs           … VACUUM INTO・世代の整理・印による排他
 tools/80_ops/
-  backup.mjs                    … スナップショットを取る CLI
+  backup.mjs                    … 印を見て待ち、スナップショットを取る
   backup.ps1 / .cmd             … 区分を受け取り、圧縮して世代を整理する
-  restore.ps1 / .cmd            … 戻す
-  register-backup-tasks.ps1 / .cmd … タスクを 4 つ登録する
-tests/backup.test.mjs           … 世代の整理と VACUUM INTO の検証
-notes/90_rules/backup.html      … 運用の手引き（実装後に書く）</code></pre>
+  restore.ps1 / .cmd            … 戻す。3 つまとめて退避する
+  register-backup-tasks.ps1 / .cmd  … タスクを 4 つ登録する
+  migrate-backup-layout.ps1 / .cmd  … 区分を分ける前のものを移す（1 度だけ）
+tests/backup.test.mjs           … 32 件
+notes/90_rules/backup.html      … 運用の手引き</code></pre>
 
 	<h2>すでにできているもの</h2>
 
@@ -564,8 +565,20 @@ notes/90_rules/backup.html      … 運用の手引き（実装後に書く）</
 				<td>13 件</td>
 			</tr>
 			<tr>
-				<td class="nowrap">4 区分への組み替え</td><td class="nowrap"><span class="badge b-none">未</span></td>
-				<td>この設計の承認を待っている</td>
+				<td class="nowrap">4 区分への組み替え</td><td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td>4 区分すべてで取得を確認。<code>hourly</code> が 8 世代に切り詰まることも確認</td>
+			</tr>
+			<tr>
+				<td class="nowrap">印による排他</td><td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td>メンテナンス中・バックアップ中とも待って見送る。テスト 32 件</td>
+			</tr>
+			<tr>
+				<td class="nowrap">置き場の移行</td><td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td>8 件を <code>hourly</code> へ移し、最新 1 本を残り 3 区分へ配った</td>
+			</tr>
+			<tr>
+				<td class="nowrap">タスクの登録</td><td class="nowrap"><span class="badge b-none">未</span></td>
+				<td><code>register-backup-tasks.cmd</code> は用意した。実行はこれから</td>
 			</tr>
 		</tbody>
 	</table>
