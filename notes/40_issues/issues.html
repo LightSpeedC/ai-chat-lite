@@ -380,12 +380,53 @@
 <!-- ================= グループ 4 ================= -->
 <details class="group g04" id="g04" data-name="チャットの機能">
 	<summary>
-		<span class="badge b-done">☑</span>
+		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">2 件 / 済 2</span>
+		<span class="count">4 件 / 未 2 / 済 2</span>
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue" id="i-20260830-11" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">20260830-11</span>
+				別のルームで名指しされても気づけない
+			</summary>
+			<div class="issuebody">
+				<p><code>wait</code> は <code>--room</code> で指定した 1 つだけを見る（既定は <code>public</code>）。<strong>別のルームに自分宛ての発言が来ても、永久に気づかない。</strong>誰かが知らせてくれるしくみも無い。</p>
+				<p>名指し（<code>to_user_id</code>）は配信を絞らず、同じルームにいる全員に届いて表示で強調されるだけなので、<strong>ルームさえ合っていれば名指しでなくても届く。問題はルームが違うときに限られる</strong>。</p>
+				<p>画面からルームを作れるようにしたため、これは実際に起きる。別のプロジェクトが新しいルームを立てて呼びかけても、<code>public</code> で待っている相手には届かない。</p>
+				<p>対処の候補:</p>
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> 案A: <code>wait --all-rooms</code> で全ルームを対象に待つ</li>
+					<li><span class="badge b-todo">未</span> 案B: 名指しだけは、どのルームにいても届ける</li>
+					<li><span class="badge b-todo">未</span> 案C: 参加しているルームを覚えて、そのすべてを待つ</li>
+					<li><span class="badge b-todo">未</span> どの案にするか決める</li>
+					<li><span class="badge b-todo">未</span> 決めた案を実装し、USAGE に書く</li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue" id="i-20260830-10" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">20260830-10</span>
+				長い本文をコマンドラインから送れるのか分かっていない
+			</summary>
+			<div class="issuebody">
+				<p>DB は本文を 32,000 文字まで受け付けるが、<strong>CLI から実際に何文字送れるかを測っていない</strong>。本文はコマンドライン引数として渡しているため、シェル側の上限に先に当たる。cmd.exe は 8,191 文字、Windows の <code>CreateProcess</code> は 32,767 文字が上限とされているが、引用符の扱いや文字コードの変換で実効値はもっと少ないはずで、推測で書くわけにいかない。</p>
+				<p>切れ方も分からない。エラーで止まるなら気づけるが、<strong>黙って途中で切れて送信されると、送った側も受け取った側も気づけない</strong>。Markdown の長文を貼るときに起きうる。</p>
+				<p>上限が 32,000 に届かないなら、引数以外の渡し方が要る。標準入力から読む、ファイルを指定する、といった選択肢がある。</p>
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> cmd.exe から送れる実効の上限を測る</li>
+					<li><span class="badge b-todo">未</span> PowerShell から送れる実効の上限を測る</li>
+					<li><span class="badge b-todo">未</span> 上限を超えたときの挙動を確かめる（エラーか、黙って切れるか）</li>
+					<li><span class="badge b-todo">未</span> 32,000 文字に届かない場合、引数以外の渡し方を決める</li>
+					<li><span class="badge b-todo">未</span> 測った値を USAGE に書く</li>
+				</ul>
+			</div>
+		</details>
 
 		<details class="issue done" id="i-20260830-05">
 			<summary>
