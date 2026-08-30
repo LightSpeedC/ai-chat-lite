@@ -38,6 +38,10 @@ $dbPath      = Join-Path $dataDir 'chat.db'
 $lockPath    = Join-Path $dataDir 'MAINTENANCE'
 $workDir     = Join-Path $root 'tmp\restore-work'
 $clientPath  = Join-Path $root 'src\client\chat.mjs'
+$logsDir     = Join-Path $root 'logs'
+
+# 記録は others のログへ。復旧は頻度が低いので hourly と分ける必要がない
+. (Join-Path $PSScriptRoot 'log.ps1')
 
 # --- 戻す zip を決める ---
 
@@ -181,6 +185,16 @@ console.log(r.c + ' 件 / 最大 msg_seq ' + (r.m ?? 'なし'));
 	Move-Item -LiteralPath $restored -Destination $dbPath
 	Write-Host ('[4/5] 入れ替えました（前の {0} を {1} に残しています）' -f ($moved -join ' / '), (Split-Path $prevDir -Leaf))
 
+	Write-OpsLog -Level I -Kind restore -LogsDir $logsDir -Message (
+		'復旧 {0} から {1} / 前の DB は {2} へ' -f (Split-Path $Path -Leaf), $check, (Split-Path $prevDir -Leaf)
+	)
+
+} catch {
+	# 途中で止まった場合も記録に残す。DB が中途半端な状態かもしれない
+	Write-OpsLog -Level E -Kind restore -LogsDir $logsDir -Message (
+		'復旧に失敗 {0} / {1}' -f (Split-Path $Path -Leaf), ($_.Exception.Message -replace "`r?`n", ' ')
+	)
+	throw
 } finally {
 	# --- 5. 印を消す。途中で失敗しても必ず消す ---
 	if (Test-Path $lockPath) {

@@ -42,6 +42,18 @@ $ErrorActionPreference = 'Stop'
 $root      = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $backupDir = Join-Path $root ('_backup\' + $Kind)
 $workDir   = Join-Path $root ('tmp\backup-work\' + $Kind)
+$logsDir   = Join-Path $root 'logs'
+
+# 記録は HTML で残す。WARN と ERROR を色で目立たせるため
+. (Join-Path $PSScriptRoot 'log.ps1')
+
+function Write-BackupLog {
+	param(
+		[ValidateSet('I', 'W', 'E')] [string] $Level,
+		[string] $Message
+	)
+	Write-OpsLog -Level $Level -Kind $Kind -Message $Message -LogsDir $logsDir
+}
 
 # 前回の作業跡が残っていると VACUUM INTO が「出力先が既にある」で止まる
 if (Test-Path $workDir) {
@@ -57,14 +69,48 @@ Write-Host ('[{0}] DB のスナップショットを取得しています...' -f
 	エラーにしない。メンテナンス中は想定内の状態で、タスクの履歴を赤くしても
 	対処のしようがない。何が起きたかは Node 側が標準エラーに書いている
 #>
-$output = & node (Join-Path $PSScriptRoot 'backup.mjs') $Kind $workDir
-if ($LASTEXITCODE -eq 2) {
+$output = & node (Join-Path $PSScriptRoot 'backup.mjs') $Kind $workDir 2>&1
+$exitCode = $LASTEXITCODE
+
+<#
+	標準エラーに出た説明から、記録に残す 1 行を選ぶ。
+
+	待機の途中経過（「30 秒待ちます（1/10）」）は画面には要るが、ログには要らない。
+	10 回待てば 10 行が並び、肝心の結論が埋もれる。最後の 1 行だけを採る。
+#>
+$stderrLines = @($output | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] } |
+	ForEach-Object { $_.ToString().Trim() } | Where-Object { $_ })
+
+$waitedFor = ($stderrLines | Where-Object { $_ -match '待ちます' } | Select-Object -First 1)
+# 結論の 1 行だけを採る。待機の途中経過・印の中身・次回の案内は画面にだけ出す
+$notes = ($stderrLines | Where-Object {
+		$_ -notmatch '待ちます' -and $_ -notmatch '^今回は取得を見送' -and $_ -notmatch '^印の中身'
+	} | Select-Object -Last 1)
+
+# 何を待ったか。レベルの判定にも使う
+$waitReason =
+	if ($waitedFor -match 'バックアップの印') { '別のバックアップを待った' }
+	elseif ($waitedFor -match 'メンテナンスの印') { 'メンテナンス中のため待った' }
+	else { '' }
+
+<#
+	終了コード 2 は「印が消えず、取らずに終えた」。
+
+	これを 0 で返してはいけない。メンテナンスの印を消し忘れると以後すべての
+	控えが取れなくなるが、正常終了で流すとタスクの履歴が緑のまま並び、
+	異常に見えない。数か月後に戻そうとして、控えが 1 本も無いことに気づく。
+	理由がメンテナンスでも、控えが無いことに変わりはない。
+#>
+if ($exitCode -eq 2) {
+	Write-BackupLog -Level E -Message ('諦め {0}' -f $notes)
+	Remove-OldOpsLogs -LogsDir $logsDir
 	Write-Host ''
-	Write-Host '今回は取得しませんでした。'
-	exit 0
+	Write-Host '今回は取得できませんでした。'
+	exit 1
 }
-if ($LASTEXITCODE -ne 0) {
-	throw "スナップショットの取得に失敗しました (終了コード $LASTEXITCODE)"
+if ($exitCode -ne 0) {
+	Write-BackupLog -Level E -Message ('失敗 終了コード {0} {1}' -f $exitCode, $notes)
+	throw "スナップショットの取得に失敗しました (終了コード $exitCode)"
 }
 
 $info = @{}
@@ -110,5 +156,24 @@ if ($all.Count -gt $Keep) {
 	}
 }
 
+$kept = [Math]::Min($all.Count, $Keep)
+
+<#
+	待った理由でレベルを変える。
+
+	別のバックアップと重なるのは設計上起きないはずのこと。4 区分は 1 分ずらして
+	あり、1 回の取得は 1 秒とかからない。待たされたなら前の実行が 60 倍以上
+	長引いている。メンテナンス中に待つのは設計どおりの動作なので INFO のまま。
+#>
+$level = if ($waitedFor -match 'バックアップの印') { 'W' } else { 'I' }
+$waited = if ($waitReason) { ' / ' + $waitReason } else { '' }
+
+Write-BackupLog -Level $level -Message (
+	'取得 {0} 件 / {1:N0} バイト / {2} ms / {3} 世代を保持 / {4}{5}' -f `
+		[int] $info['messages'], $zipSize, $info['ms'], $kept, (Split-Path $zipPath -Leaf), $waited
+)
+Remove-OldOpsLogs -LogsDir $logsDir
+
 Write-Host ''
-Write-Host ('完了しました。{0} は {1} 世代を保持しています: {2}' -f $Kind, [Math]::Min($all.Count, $Keep), $backupDir)
+Write-Host ('完了しました。{0} は {1} 世代を保持しています: {2}' -f $Kind, $kept, $backupDir)
+Write-Host ('  ログ: {0}' -f (Get-OpsLogPath -Kind $Kind -LogsDir $logsDir))
