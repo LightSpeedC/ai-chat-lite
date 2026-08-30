@@ -611,10 +611,10 @@ footer a {
 
 	<div class="groupbody">
 
-		<details class="issue" id="i-20260830-01" open>
+		<details class="issue" id="i260830-01" open>
 			<summary>
 				<span class="badge b-todo">未</span>
-				<span class="no">20260830-01</span>
+				<span class="no">i260830-01</span>
 				WinSW 関係のファイルをルート直下から deploy/ へ移す
 			</summary>
 			<div class="issuebody">
@@ -630,10 +630,10 @@ footer a {
 			</div>
 		</details>
 
-		<details class="issue" id="i-20260830-02" open>
+		<details class="issue" id="i260830-02" open>
 			<summary>
 				<span class="badge b-todo">未</span>
-				<span class="no">20260830-02</span>
+				<span class="no">i260830-02</span>
 				サービス回復の段数と delay を運用に合わせる
 			</summary>
 			<div class="issuebody">
@@ -659,14 +659,14 @@ footer a {
 
 	<div class="groupbody">
 
-		<details class="issue" id="i-20260830-15" open>
+		<details class="issue" id="i260830-15" open>
 			<summary>
 				<span class="badge b-todo">未</span>
-				<span class="no">20260830-15</span>
+				<span class="no">i260830-15</span>
 				消したものを本当に消す手段がない
 			</summary>
 			<div class="issuebody">
-				<p><a href="../10_plan/20260830-02-削除機能.html">削除機能</a>は論理削除で作る。<code>deleted_at</code> を入れるだけなので<strong>元の中身は DB に残る</strong>。見えなくなるだけで、<code>dump</code> でも控えの zip でも読める。</p>
+				<p><a class="doclink" href="../10_plan/p260830-02-アーカイブ機能.html">アーカイブ機能</a>は <code>archived_seq</code> を入れるだけなので<strong>元の中身は DB に残る</strong>。見えなくなるだけで、<code>dump</code> でも控えの zip でも読める。</p>
 				<p>取り消せることを優先した結果で、それ自体は狙いどおり。ただし<strong>本当に消したい場面</strong>が出てきたときの手段が無い。</p>
 				<p>2 つのやり方がある。どちらも取り消せない。</p>
 				<ul class="todos">
@@ -679,16 +679,16 @@ footer a {
 			</div>
 		</details>
 
-		<details class="issue doing" id="i-20260830-09" open>
+		<details class="issue doing" id="i260830-09" open>
 			<summary>
 				<span class="badge b-doing">着手</span>
-				<span class="no">20260830-09</span>
+				<span class="no">i260830-09</span>
 				いらなくなった参加者・ルーム・発言を片付ける手段がない
 			</summary>
 			<div class="issuebody">
 				<p>いちど参加すると <code>users</code> に残り、<code>join</code> のメッセージもログに積まれる。取り消す方法が無い。ルームも同じで、<code>messages</code> に 1 件でも入れば一覧に出続ける。</p>
 				<p>実際に動作確認で名乗った ID や、<code>sandbox-mteyisfc</code> のような使い捨てのルームが残っている。誤って投稿した発言を消す手段も無い。</p>
-				<p><a class="doclink" href="../10_plan/20260830-02-アーカイブ機能.html">アーカイブ機能の設計</a>を書いた。<strong>消さずに archive する</strong>形で、1 回の操作を <code>archives</code> テーブルの 1 行として記録し、まとめて戻せるようにする。</p>
+				<p><a class="doclink" href="../10_plan/p260830-02-アーカイブ機能.html">アーカイブ機能の設計</a>を書いた。<strong>消さずに archive する</strong>形で、1 回の操作を <code>archives</code> テーブルの 1 行として記録し、まとめて戻せるようにする。</p>
 				<ul class="todos">
 					<li class="done"><span class="badge b-done">☑</span> 消すのか隠すのかを決める → <strong>archive（戻せる形）にする</strong></li>
 					<li class="done"><span class="badge b-done">☑</span> 参加者を片付ける方式 → <code>users</code> と <code>cursors</code>。<code>--with-messages</code> で発言も</li>
@@ -706,10 +706,10 @@ footer a {
 			</div>
 		</details>
 
-		<details class="issue" id="i-20260830-03" open>
+		<details class="issue" id="i260830-03" open>
 			<summary>
 				<span class="badge b-todo">未</span>
-				<span class="no">20260830-03</span>
+				<span class="no">i260830-03</span>
 				日付で絞り込むならインデックスを足す
 			</summary>
 			<div class="issuebody">
@@ -735,10 +735,10 @@ footer a {
 
 	<div class="groupbody">
 
-		<details class="issue done" id="i-20260830-07">
+		<details class="issue done" id="i260830-07">
 			<summary>
 				<span class="badge b-done">☑</span>
-				<span class="no">20260830-07</span>
+				<span class="no">i260830-07</span>
 				課題を管理するしくみを整える
 			</summary>
 			<div class="issuebody">
@@ -756,10 +756,10 @@ footer a {
 			</div>
 		</details>
 
-		<details class="issue" id="i-20260830-08" open>
+		<details class="issue" id="i260830-08" open>
 			<summary>
 				<span class="badge b-todo">未</span>
-				<span class="no">20260830-08</span>
+				<span class="no">i260830-08</span>
 				html2md に「変換しないファイル」の指定がほしい
 			</summary>
 			<div class="issuebody">
@@ -774,10 +774,10 @@ footer a {
 			</div>
 		</details>
 
-		<details class="issue" id="i-20260830-04" open>
+		<details class="issue" id="i260830-04" open>
 			<summary>
 				<span class="badge b-todo">未</span>
-				<span class="no">20260830-04</span>
+				<span class="no">i260830-04</span>
 				PlayWright 側の spec をコミットする
 			</summary>
 			<div class="issuebody">
@@ -802,14 +802,14 @@ footer a {
 
 	<div class="groupbody">
 
-		<details class="issue" id="i-20260830-14" open>
+		<details class="issue" id="i260830-14" open>
 			<summary>
 				<span class="badge b-todo">未</span>
-				<span class="no">20260830-14</span>
+				<span class="no">i260830-14</span>
 				ルーム一覧を常に見えるようにし、自分宛ての着信を知らせる
 			</summary>
 			<div class="issuebody">
-				<p>いまルームは選択欄（<code>select</code>）で、<strong>開かないと何があるか見えない</strong>。他のルームに自分宛ての発言が来ても気づけない（<a href="#i-20260830-11">20260830-11</a> と同じ根）。</p>
+				<p>いまルームは選択欄（<code>select</code>）で、<strong>開かないと何があるか見えない</strong>。他のルームに自分宛ての発言が来ても気づけない（<a href="#i260830-11">i260830-11</a> と同じ根）。</p>
 				<p>参加者一覧の上にルーム一覧を固定で置き、<strong>未読と自分宛てが一目で分かる</strong>ようにする。</p>
 
 				<h3>実現の見通し</h3>
@@ -835,10 +835,10 @@ footer a {
 			</div>
 		</details>
 
-		<details class="issue done" id="i-20260830-13">
+		<details class="issue done" id="i260830-13">
 			<summary>
 				<span class="badge b-done">☑</span>
-				<span class="no">20260830-13</span>
+				<span class="no">i260830-13</span>
 				画面をリロードするたびに離脱が積まれる
 			</summary>
 			<div class="issuebody">
@@ -850,15 +850,15 @@ footer a {
 					<li class="done"><span class="badge b-done">☑</span> 実ブラウザで確かめる（claude-in-chrome でリロード 3 回 → 0 件、閉じる → 1 件）</li>
 					<li class="done"><span class="badge b-done">☑</span> 回帰テストを書く（<code>reload-leave.spec.ts</code> 4 件）</li>
 					<li class="done"><span class="badge b-done">☑</span> 既に積まれている分 → <strong>DB を作り直したので残っていない</strong></li>
-					<li class="done"><span class="badge b-done">☑</span> <span class="badge b-moved">移動</span> <code>sweepOffline()</code> の記録と役割が重なっている点は<a href="#i-20260830-16">20260830-16</a>へ切り出した</li>
+					<li class="done"><span class="badge b-done">☑</span> <span class="badge b-moved">移動</span> <code>sweepOffline()</code> の記録と役割が重なっている点は<a href="#i260830-16">i260830-16</a>へ切り出した</li>
 				</ul>
 			</div>
 		</details>
 
-		<details class="issue" id="i-20260830-16" open>
+		<details class="issue" id="i260830-16" open>
 			<summary>
 				<span class="badge b-todo">未</span>
-				<span class="no">20260830-16</span>
+				<span class="no">i260830-16</span>
 				離脱の記録が 2 か所から積まれる
 			</summary>
 			<div class="issuebody">
@@ -894,10 +894,10 @@ footer a {
 			</div>
 		</details>
 
-		<details class="issue" id="i-20260830-12" open>
+		<details class="issue" id="i260830-12" open>
 			<summary>
 				<span class="badge b-todo">未</span>
-				<span class="no">20260830-12</span>
+				<span class="no">i260830-12</span>
 				CLI から書いたのか画面から書いたのか分からない
 			</summary>
 			<div class="issuebody">
@@ -914,10 +914,10 @@ footer a {
 			</div>
 		</details>
 
-		<details class="issue" id="i-20260830-11" open>
+		<details class="issue" id="i260830-11" open>
 			<summary>
 				<span class="badge b-todo">未</span>
-				<span class="no">20260830-11</span>
+				<span class="no">i260830-11</span>
 				別のルームで名指しされても気づけない
 			</summary>
 			<div class="issuebody">
@@ -935,10 +935,10 @@ footer a {
 			</div>
 		</details>
 
-		<details class="issue" id="i-20260830-10" open>
+		<details class="issue" id="i260830-10" open>
 			<summary>
 				<span class="badge b-todo">未</span>
-				<span class="no">20260830-10</span>
+				<span class="no">i260830-10</span>
 				長い本文をコマンドラインから送れるのか分かっていない
 			</summary>
 			<div class="issuebody">
@@ -955,10 +955,10 @@ footer a {
 			</div>
 		</details>
 
-		<details class="issue done" id="i-20260830-05">
+		<details class="issue done" id="i260830-05">
 			<summary>
 				<span class="badge b-done">☑</span>
-				<span class="no">20260830-05</span>
+				<span class="no">i260830-05</span>
 				オフラインへ落ちたことを知らせる
 			</summary>
 			<div class="issuebody">
@@ -972,10 +972,10 @@ footer a {
 			</div>
 		</details>
 
-		<details class="issue done" id="i-20260830-06">
+		<details class="issue done" id="i260830-06">
 			<summary>
 				<span class="badge b-done">☑</span>
-				<span class="no">20260830-06</span>
+				<span class="no">i260830-06</span>
 				画面からルームを切り替えられるようにする
 			</summary>
 			<div class="issuebody">
@@ -1031,7 +1031,7 @@ footer a {
 	<p>やることの一部が「別の話」だと分かることがあります。その場合は<strong>新しい課題を立て、元の行は済にします</strong>。<span class="badge b-moved">移動</span> を付けて行き先を書き添えます。</p>
 
 	<pre><code class="language-html">&lt;li class="done"&gt;&lt;span class="badge b-done"&gt;☑&lt;/span&gt;
-  &lt;span class="badge b-moved"&gt;移動&lt;/span&gt; …は&lt;a href="#i-20260830-16"&gt;20260830-16&lt;/a&gt;へ切り出した&lt;/li&gt;</code></pre>
+  &lt;span class="badge b-moved"&gt;移動&lt;/span&gt; …は&lt;a href="#i260830-16"&gt;i260830-16&lt;/a&gt;へ切り出した&lt;/li&gt;</code></pre>
 
 	<p><strong>元の課題としては済んでいます。</strong>やること自体は残っていますが、それは移した先が持ちます。未のまま残すと、片付いた課題がいつまでも開いたままになります。</p>
 </section>

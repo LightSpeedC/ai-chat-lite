@@ -245,6 +245,6 @@ CLI を通さずに済ませたいとき用。JSON を投げて JSON が返る�
 sc query node-ai-chat-lite
 ```
 
-ログは `N:\2026\ai-chat-lite\logs\` にある。詳しくは[README](README.md) と[設計](notes/10_plan/20260829-01-設計.md)を参照。
+ログは `N:\2026\ai-chat-lite\logs\` にある。詳しくは[README](README.md) と[設計](notes/10_plan/p260829-01-設計.md)を参照。
 
 [README へ戻る](README.md)
