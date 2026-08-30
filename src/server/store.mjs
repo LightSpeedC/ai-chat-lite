@@ -18,6 +18,16 @@ if (journalMode.journal_mode !== 'wal') {
 	log.warn(`WAL に切り替わりませんでした（現在: ${journalMode.journal_mode}）`);
 }
 
+/*
+ * archived_seq は「片付けた操作の番号」を指す。NULL なら生きている。
+ *
+ * 消すのではなく archive する形にしてある。1 回の操作を 1 件として記録し、
+ * まとめて戻せるようにするため。操作を記録する archives テーブルと、
+ * 実際に片付ける処理はまだ作っていない（notes/10_plan/20260830-02-アーカイブ機能.html）。
+ *
+ * 列だけ先に置くのは、後から足すと messages を作り直すことになるため。
+ * SQLite の ALTER TABLE は列の追加と改名しかできず、CHECK の変更もできない。
+ */
 db.exec(`
 CREATE TABLE IF NOT EXISTS messages (
   msg_seq      INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,12 +38,13 @@ CREATE TABLE IF NOT EXISTS messages (
   from_user_id TEXT    NOT NULL
                  CHECK (length(from_user_id) BETWEEN 1 AND 64),
   msg_kind     TEXT    NOT NULL
-                 CHECK (msg_kind IN ('say','join','leave')),
+                 CHECK (msg_kind IN ('say','join','leave','archive')),
   to_user_id   TEXT
                  CHECK (to_user_id IS NULL
                         OR length(to_user_id) BETWEEN 1 AND 64),
   msg_body     TEXT    NOT NULL
-                 CHECK (length(msg_body) BETWEEN 1 AND 32000)
+                 CHECK (length(msg_body) BETWEEN 1 AND 32000),
+  archived_seq INTEGER
 );
 
 CREATE INDEX IF NOT EXISTS messages_ix_room_id_msg_seq ON messages(room_id, msg_seq);
@@ -42,14 +53,15 @@ CREATE INDEX IF NOT EXISTS messages_ix_room_id_msg_seq ON messages(room_id, msg_
 -- クライアント側のファイルに置くと、実行した場所に縛られて位置を見失う。
 -- サーバーが覚えておけば、どこから繋いでも続きから受け取れる。
 CREATE TABLE IF NOT EXISTS cursors (
-  user_id    TEXT    NOT NULL
-               CHECK (length(user_id) BETWEEN 1 AND 64),
-  room_id    TEXT    NOT NULL
-               CHECK (length(room_id) BETWEEN 1 AND 64),
-  msg_seq    INTEGER NOT NULL
-               CHECK (msg_seq >= 0),
-  updated_at TEXT    NOT NULL
-               CHECK (length(updated_at) = 23),
+  user_id      TEXT    NOT NULL
+                 CHECK (length(user_id) BETWEEN 1 AND 64),
+  room_id      TEXT    NOT NULL
+                 CHECK (length(room_id) BETWEEN 1 AND 64),
+  msg_seq      INTEGER NOT NULL
+                 CHECK (msg_seq >= 0),
+  updated_at   TEXT    NOT NULL
+                 CHECK (length(updated_at) = 23),
+  archived_seq INTEGER,
   PRIMARY KEY (user_id, room_id)
 );
 
@@ -63,7 +75,8 @@ CREATE TABLE IF NOT EXISTS users (
   last_active_at          TEXT    NOT NULL
                             CHECK (length(last_active_at) = 23),
   active_connection_count INTEGER NOT NULL DEFAULT 0
-                            CHECK (active_connection_count >= 0)
+                            CHECK (active_connection_count >= 0),
+  archived_seq            INTEGER
 );
 `);
 
