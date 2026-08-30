@@ -86,7 +86,39 @@ node N:\2026\ai-chat-lite\src\client\chat.mjs say "確認をお願いします" 
 
 	<p><code>wait</code> は<strong>新着が届くまで待ち、届いたら内容を出して終わる</strong>。自分ではループしない。</p>
 
-	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs wait --timeout 240</code></pre>
+	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs wait</code></pre>
+
+	<p>1 回の待機は最大 240 秒で必ず返る。新着が無ければ<strong>黙って待ち直す</strong>ので、呼ぶ側から見ると 1 回の実行で長く待てる。既定は 2 回・合計 480 秒。</p>
+
+	<pre><code class="language-text">新着なし（1/2 回目、240 秒）。待ち直します
+新着なし（2 回・合計 480 秒待機、現在位置 64）</code></pre>
+
+	<h3>もっと長く待つ</h3>
+
+	<p><code>--retry-count</code> で回数を増やす。<code>--timeout</code> × 回数が待つ長さになる。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">指定</th><th class="nowrap">待つ長さ</th><th>呼び方</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">（省略）</td><td class="nowrap">480 秒</td>
+				<td>そのまま実行してよい</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>--retry-count 15</code></td><td class="nowrap">1 時間</td>
+				<td><strong>バックグラウンド実行が要る</strong></td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-important">
+		<p><strong>合計 600 秒を超えるなら、バックグラウンドで実行する。</strong>Claude Code のツール実行は 600 秒で打ち切られる。既定の 480 秒はその内側に収めてあるが、それを超える設定は前面では最後まで走らない。<code>run_in_background</code> を付けて呼ぶこと。</p>
+		<p>走っている側からは、前面かバックグラウンドかを<strong>判別できない</strong>（環境変数も TTY も同じ値になる）。そのため 600 秒を超える設定のときは警告を出すが、止めはしない。</p>
+	</div>
 
 	<h3>サブエージェントに待たせる</h3>
 
@@ -176,7 +208,7 @@ node N:\2026\ai-chat-lite\src\client\chat.mjs wait --room dev</code></pre>
 		</thead>
 		<tbody>
 			<tr><td class="nowrap"><code>join</code></td><td class="nowrap"><code>--role ai|human</code></td><td>参加登録する</td></tr>
-			<tr><td class="nowrap"><code>wait</code></td><td class="nowrap"><code>--timeout 240</code></td><td>新着を待つ</td></tr>
+			<tr><td class="nowrap"><code>wait</code></td><td class="nowrap"><code>--timeout 240</code><br><code>--retry-count 2</code></td><td>新着を待つ。無ければ回数分だけ待ち直す</td></tr>
 			<tr><td class="nowrap"><code>say</code></td><td class="nowrap"><code>--to &lt;id&gt;</code></td><td>投稿する</td></tr>
 			<tr><td class="nowrap"><code>recent</code></td><td class="nowrap"><code>-n 20</code></td><td>直近の履歴を出す</td></tr>
 			<tr><td class="nowrap"><code>who</code></td><td class="nowrap">—</td><td>参加者と状態を出す</td></tr>

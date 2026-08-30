@@ -41,6 +41,18 @@ function requireUserId() {
 
 const STATUS_MARK = { online: '●', grace: '◐', offline: '○' };
 
+/**
+ * wait を既定で何回繰り返すか。
+ *
+ * 240 秒 × 2 回 = 480 秒。Claude Code のツール実行が打ち切られる 600 秒の
+ * 内側に収まる値にしてある。3 回にすると 720 秒になり、待ち切る前に
+ * 呼び出し側が切られる。
+ */
+const DEFAULT_WAIT_ROUNDS = 2;
+
+/** ツールからの実行が打ち切られるまでの秒数。これを超える設定には警告を出す */
+const TOOL_TIMEOUT_SEC = 600;
+
 // --- 引数 ---
 
 const [, , command, ...rest] = process.argv;
@@ -50,6 +62,20 @@ function option(name, fallback = null) {
 	const i = rest.indexOf(`--${name}`);
 	if (i >= 0 && rest[i + 1] !== undefined) return rest[i + 1];
 	return fallback;
+}
+
+/**
+ * 待ち直す回数として受け取った値を解釈する。
+ *
+ * `Number(x) || 既定値` と書いてはいけない。0 は falsy なので、
+ * 「0 回」と書いたつもりが既定値に化ける。ここでは 0 や負の数を
+ * 「1 回」に丸め、数として読めないときだけ既定値に戻す。
+ */
+function roundsOf(raw) {
+	if (raw === null || raw === undefined || raw === '') return DEFAULT_WAIT_ROUNDS;
+	const n = Number(raw);
+	if (!Number.isFinite(n)) return DEFAULT_WAIT_ROUNDS;
+	return Math.max(1, Math.trunc(n));
 }
 
 /** オプションでない最初の引数（本文など） */
@@ -137,22 +163,48 @@ async function cmdSay() {
 
 async function cmdWait() {
 	const timeout = Math.min(Number(option('timeout', MAX_WAIT_SEC)) || MAX_WAIT_SEC, MAX_WAIT_SEC);
+	const rounds = roundsOf(option('retry-count'));
+	const totalSec = timeout * rounds;
 
 	/*
-	 * since は渡さない。どこまで読んだかはサーバーが覚えている。
-	 * 一度も読んでいなければ、参加した時点から待つ扱いになる（過去ログは recent で取る）。
-	 * 受け取った分は返答と同時に記録されるので、次はその続きから届く。
+	 * 待ち直す理由。
+	 *
+	 * 1 回の long-poll は MAX_WAIT_SEC（240 秒）で必ず返る。サーバー側で
+	 * これ以上引き延ばすと、途中の切断に気づけないまま握り続けることになる。
+	 * 代わりに、返ってきたら黙って待ち直す。呼ぶ側から見ると 1 回の実行で
+	 * 長く待てる。
 	 */
-	const result = await call(
-		`/api/poll?user_id=${encodeURIComponent(USER_ID)}&room_id=${encodeURIComponent(ROOM)}&wait=${timeout}`
-	);
-
-	if (result.messages.length === 0) {
-		console.log(`新着なし（${timeout} 秒待機、現在位置 ${result.msg_seq}）`);
-		return;
+	if (totalSec > TOOL_TIMEOUT_SEC) {
+		console.error(`合計 ${totalSec} 秒（${Math.round(totalSec / 60)} 分）待つ設定です。`);
+		console.error(`  ツールからの実行は ${TOOL_TIMEOUT_SEC} 秒で打ち切られるため、この設定は前面では最後まで走りません。`);
+		console.error('  バックグラウンド実行（run_in_background）で呼んでください。');
+		console.error('');
 	}
-	console.log(`新着 ${result.messages.length} 件:`);
-	printMessages(result.messages);
+
+	let last = null;
+	for (let round = 1; round <= rounds; round++) {
+		/*
+		 * since は渡さない。どこまで読んだかはサーバーが覚えている。
+		 * 一度も読んでいなければ、参加した時点から待つ扱いになる（過去ログは recent で取る）。
+		 * 受け取った分は返答と同時に記録されるので、次はその続きから届く。
+		 */
+		last = await call(
+			`/api/poll?user_id=${encodeURIComponent(USER_ID)}&room_id=${encodeURIComponent(ROOM)}&wait=${timeout}`
+		);
+
+		if (last.messages.length > 0) {
+			console.log(`新着 ${last.messages.length} 件:`);
+			printMessages(last.messages);
+			return;
+		}
+
+		// 最後の回は下でまとめて出す。途中経過だけをここで知らせる
+		if (round < rounds) {
+			console.log(`新着なし（${round}/${rounds} 回目、${timeout} 秒）。待ち直します`);
+		}
+	}
+
+	console.log(`新着なし（${rounds} 回・合計 ${totalSec} 秒待機、現在位置 ${last.msg_seq}）`);
 }
 
 async function cmdRecent() {
