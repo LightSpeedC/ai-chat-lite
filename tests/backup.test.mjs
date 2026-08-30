@@ -1,6 +1,6 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, rmSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync, existsSync, readdirSync, utimesSync } from 'node:fs';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
@@ -11,9 +11,19 @@ const SRC = join(WORK, 'source.db');
 
 // 本番の DB を触らないよう、環境変数で差し替えてから読み込む
 process.env.AICHAT_DB = SRC;
-const { backupBaseName, vacuumInto, listBackups, pruneBackups, KEEP_GENERATIONS } = await import(
-	'../src/server/backup.mjs'
-);
+const {
+	backupBaseName,
+	vacuumInto,
+	listBackups,
+	pruneBackups,
+	KEEP_GENERATIONS,
+	isLockActive,
+	acquireWithWait,
+	acquireLock,
+	releaseLock,
+	readLock,
+	STALE_LOCK_MS,
+} = await import('../src/server/backup.mjs');
 
 /** 中身の入った DB を用意する。WAL に書き込みを残した状態にする */
 function createSourceDb() {
@@ -179,5 +189,168 @@ describe('バックアップ', () => {
 
 	test('残す世代の既定は 8', () => {
 		assert.equal(KEEP_GENERATIONS, 8);
+	});
+});
+
+describe('取ってはいけないときに取らない', () => {
+	const LOCK_DIR = join(WORK, 'locks');
+
+	before(() => {
+		mkdirSync(LOCK_DIR, { recursive: true });
+	});
+
+	/** 指定した時間だけ古い印を作る */
+	function makeLock(name, ageMs = 0) {
+		const path = join(LOCK_DIR, name);
+		writeFileSync(path, 'テスト用の印');
+		if (ageMs > 0) {
+			const at = new Date(Date.now() - ageMs);
+			utimesSync(path, at, at);
+		}
+		return path;
+	}
+
+	test('印が無ければ効いていない', () => {
+		assert.equal(isLockActive(join(LOCK_DIR, 'ない印')), false);
+	});
+
+	test('印があれば効いている', () => {
+		assert.equal(isLockActive(makeLock('ある印')), true);
+	});
+
+	test('古すぎる印は残骸とみなす', () => {
+		// 強制終了で残った印。これを見ないと、以降すべてが待って諦め続ける
+		const stale = makeLock('古い印', STALE_LOCK_MS + 60 * 1000);
+		assert.equal(isLockActive(stale, STALE_LOCK_MS), false);
+	});
+
+	test('新しい印は残骸とみなさない', () => {
+		const fresh = makeLock('新しい印', 60 * 1000);
+		assert.equal(isLockActive(fresh, STALE_LOCK_MS), true);
+	});
+
+	test('古さを見ない設定なら、古い印でも効いている', () => {
+		// メンテナンスの印は人が置くもの。何時間置かれていても奪ってはいけない
+		const stale = makeLock('人が置いた印', STALE_LOCK_MS * 10);
+		assert.equal(isLockActive(stale, 0), true);
+	});
+
+	test('同時に取り合っても 1 つしか成功しない', () => {
+		/*
+		 * wx フラグ（O_CREAT | O_EXCL）を使う理由がこれ。
+		 * 名前を変える方式は Windows では使えない。Node の renameSync は
+		 * 既にある印を黙って上書きし、2 つとも「取れた」と思い込む。
+		 * PowerShell の Rename-Item と cmd の ren は失敗するが、
+		 * cmd の move は上書きする。シェルによって結果が変わる。
+		 */
+		const path = join(LOCK_DIR, 'RACE');
+		rmSync(path, { force: true });
+
+		let won = 0;
+		for (let i = 0; i < 10; i++) {
+			if (acquireLock(`kind${i}`, path)) won++;
+		}
+
+		assert.equal(won, 1, '複数が同時に取れてしまっている');
+		assert.match(readLock(path), /kind0/, '先に取った方が残っていない');
+		releaseLock(path);
+	});
+
+	test('印が無ければ待たずに取れる', async () => {
+		const result = await acquireWithWait({
+			file: join(LOCK_DIR, 'すぐ取れる印'),
+			maintenanceFile: join(LOCK_DIR, 'ない印'),
+			pollMs: 10,
+			maxTries: 3,
+		});
+		assert.equal(result.acquired, true);
+		assert.ok(result.waitedMs < 100, '待つ必要がないのに待っている');
+		releaseLock(join(LOCK_DIR, 'すぐ取れる印'));
+	});
+
+	test('印が消えれば取れる', async () => {
+		const path = makeLock('あとで消す印');
+		setTimeout(() => rmSync(path, { force: true }), 30);
+
+		const result = await acquireWithWait({
+			file: path,
+			maintenanceFile: join(LOCK_DIR, 'ない印'),
+			pollMs: 10,
+			maxTries: 10,
+		});
+		assert.equal(result.acquired, true);
+		releaseLock(path);
+	});
+
+	test('印が消えなければ回数を使い切って諦める', async () => {
+		const path = makeLock('消さない印');
+		const tried = [];
+
+		const result = await acquireWithWait({
+			file: path,
+			maintenanceFile: join(LOCK_DIR, 'ない印'),
+			pollMs: 5,
+			maxTries: 3,
+			onWait: (info) => tried.push(info.tries),
+		});
+
+		assert.equal(result.acquired, false);
+		assert.match(result.reason, /バックアップの印が消えませんでした/);
+		// 3 回待って 4 回目の確認で諦める。待つ回数は maxTries と同じ
+		assert.deepEqual(tried, [1, 2, 3]);
+	});
+
+	test('メンテナンス中は印を置きに行かない', async () => {
+		// 置いてしまうと、人が DB を触り終えたあとも印が残る
+		const maintenance = makeLock('MAINTENANCE-中');
+		const running = join(LOCK_DIR, 'RUNNING-触らない');
+		rmSync(running, { force: true });
+
+		const result = await acquireWithWait({
+			file: running,
+			maintenanceFile: maintenance,
+			pollMs: 5,
+			maxTries: 1,
+		});
+
+		assert.equal(result.acquired, false);
+		assert.match(result.reason, /メンテナンスの印が消えませんでした/);
+		assert.equal(existsSync(running), false, 'メンテナンス中なのに印を置いている');
+	});
+
+	test('握ったまま終わった印は奪って取れる', async () => {
+		// これが無いと、強制終了で残った印のせいで以降すべてが取れなくなる
+		const stale = makeLock('残骸', STALE_LOCK_MS + 60 * 1000);
+
+		const result = await acquireWithWait({
+			file: stale,
+			maintenanceFile: join(LOCK_DIR, 'ない印'),
+			pollMs: 5,
+			maxTries: 1,
+			kind: 'hourly',
+		});
+
+		assert.equal(result.acquired, true);
+		assert.match(readLock(stale), /hourly/, '奪ったのに中身が古いまま');
+		releaseLock(stale);
+	});
+
+	test('印を置くと誰がいつ始めたかが読める', () => {
+		const path = join(LOCK_DIR, 'RUNNING');
+		rmSync(path, { force: true });
+		assert.equal(acquireLock('hourly', path), true);
+
+		const body = readLock(path);
+		assert.match(body, /hourly/);
+		assert.match(body, /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
+		assert.match(body, new RegExp(`pid ${process.pid}`));
+
+		releaseLock(path);
+		assert.equal(existsSync(path), false);
+	});
+
+	test('印が無い状態で消しても失敗しない', () => {
+		// 取得に失敗した経路でも必ず外しにいくため、二重に消されることがある
+		assert.doesNotThrow(() => releaseLock(join(LOCK_DIR, 'ない印')));
 	});
 });

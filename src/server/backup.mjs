@@ -1,9 +1,11 @@
 import { DatabaseSync } from 'node:sqlite';
-import { existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
 
-import { DB_PATH } from './config.mjs';
+import { ROOT, DB_PATH } from './config.mjs';
 import { nowJst } from './time.mjs';
+import { MAINTENANCE_FILE } from './maintenance.mjs';
 
 /**
  * バックアップの取得。
@@ -65,6 +67,137 @@ export function vacuumInto(dest, src = DB_PATH) {
 		return { dest, bytes: statSync(dest).size, ms: Date.now() - startedAt, messages };
 	} finally {
 		db.close();
+	}
+}
+
+// --- 取ってはいけないときに取らないためのしくみ ---
+
+/** バックアップ中を表す印 */
+export const RUNNING_FILE = join(ROOT, '_data', 'BACKUP-RUNNING');
+
+/**
+ * 印を見に行く間隔と、諦めるまでの回数。30 秒 × 10 回 = 最大 5 分。
+ *
+ * 環境変数で短くできる。既定のままでは動作を確かめるのに 5 分かかるため。
+ */
+export const LOCK_POLL_MS = Number(process.env.AICHAT_LOCK_POLL_MS ?? 30 * 1000);
+export const LOCK_MAX_TRIES = Number(process.env.AICHAT_LOCK_MAX_TRIES ?? 10);
+
+/**
+ * 握ったまま終わった印を残骸とみなすまでの時間。
+ *
+ * タスクの実行時間の上限を 10 分にしてあるため、正常に動いている処理の印が
+ * 30 分残ることはない。これを見ないと、強制終了で残った印のせいで
+ * 以降どの区分も待って諦め続けることになる。
+ */
+export const STALE_LOCK_MS = 30 * 60 * 1000;
+
+/**
+ * 印が効いているか。無ければ false、古すぎるものも false。
+ *
+ * @param {string} file
+ * @param {number} [staleMs] これより古い印は残骸とみなす。0 で無効
+ */
+export function isLockActive(file, staleMs = 0) {
+	if (!existsSync(file)) return false;
+	if (staleMs <= 0) return true;
+	try {
+		return Date.now() - statSync(file).mtimeMs < staleMs;
+	} catch {
+		// 見に行った瞬間に消えた
+		return false;
+	}
+}
+
+/**
+ * バックアップ中の印を置く。置けたら true、既にあれば false。
+ *
+ * `wx` フラグ（O_CREAT | O_EXCL）で作る。OS が「無ければ作る」を
+ * 一続きの操作として保証するため、同時に取り合っても 1 つしか成功しない。
+ *
+ * 名前を変える方式（LOCK.pid を作って LOCK へ rename）は Windows では
+ * 使えない。Node の renameSync は既にある印を黙って上書きするため、
+ * 2 つのプロセスが両方「取れた」と思い込む。実測で確かめてある。
+ * PowerShell の Rename-Item と cmd の ren は失敗するが、cmd の move は
+ * 上書きするので、シェルによって結果が変わる書き方も避ける。
+ */
+export function acquireLock(kind = 'manual', file = RUNNING_FILE) {
+	mkdirSync(dirname(file), { recursive: true });
+	try {
+		writeFileSync(file, `${kind} が ${nowJst()} に開始しました（pid ${process.pid}）\n`, {
+			flag: 'wx',
+		});
+		return true;
+	} catch (err) {
+		if (err.code === 'EEXIST') return false;
+		throw err;
+	}
+}
+
+/**
+ * 印を取れるまで待つ。
+ *
+ * 「空くのを待ってから置く」と書くと、確認してから置くまでの間に
+ * 割り込まれる。置きに行って失敗したら待つ、の順にする。
+ *
+ * メンテナンスの印は人が置くものなので、こちらは奪わずに消えるのを待つ。
+ *
+ * @returns {Promise<{ acquired: boolean, waitedMs: number, reason: string }>}
+ *   acquired が false なら諦めた。呼び出し元はバックアップを取らずに終える
+ */
+export async function acquireWithWait({
+	kind = 'manual',
+	file = RUNNING_FILE,
+	maintenanceFile = MAINTENANCE_FILE,
+	pollMs = LOCK_POLL_MS,
+	maxTries = LOCK_MAX_TRIES,
+	staleMs = STALE_LOCK_MS,
+	onWait = null,
+} = {}) {
+	const startedAt = Date.now();
+
+	for (let tries = 0; tries <= maxTries; tries++) {
+		let label = null;
+
+		if (isLockActive(maintenanceFile, 0)) {
+			// DB を触っている最中。中途半端な状態を複製しないよう手を出さない
+			label = 'メンテナンス';
+		} else {
+			// 握ったまま終わった印は残骸とみなして外す
+			if (existsSync(file) && !isLockActive(file, staleMs)) {
+				releaseLock(file);
+			}
+			if (acquireLock(kind, file)) {
+				return { acquired: true, waitedMs: Date.now() - startedAt, reason: '' };
+			}
+			label = 'バックアップ';
+		}
+
+		if (tries === maxTries) {
+			return {
+				acquired: false,
+				waitedMs: Date.now() - startedAt,
+				reason: `${label}の印が消えませんでした: ${label === 'メンテナンス' ? maintenanceFile : file}`,
+			};
+		}
+		onWait?.({ label, tries: tries + 1, maxTries, pollMs });
+		await sleep(pollMs);
+	}
+	// ここには来ない
+	return { acquired: false, waitedMs: Date.now() - startedAt, reason: '不明' };
+}
+
+/** 印を消す。無くても構わない */
+export function releaseLock(file = RUNNING_FILE) {
+	rmSync(file, { force: true });
+}
+
+/** 印に書かれた内容。無ければ空 */
+export function readLock(file = RUNNING_FILE) {
+	try {
+		return readFileSync(file, 'utf8').trim();
+	} catch {
+		return '';
 	}
 }
 
