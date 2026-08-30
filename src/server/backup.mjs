@@ -20,8 +20,31 @@ import { MAINTENANCE_FILE } from './maintenance.mjs';
  * 出来上がったファイルは -wal も -shm も伴わず、単体で開ける。
  */
 
-/** 世代の上限。これを超えた分は古いものから消す */
-export const KEEP_GENERATIONS = 8;
+/**
+ * 世代の区分。直近は細かく、古いものは粗く残す。
+ *
+ * 取る時刻を 1 分ずつずらしてある。同時刻にすると 4 つが同じ DB を同時に読み、
+ * ファイル名の秒まで一致して衝突する。月曜 0 時には 4 つすべてが順に走る。
+ */
+export const KINDS = {
+	hourly: { keep: 8, label: '毎時', span: '8 時間' },
+	daily: { keep: 7, label: '毎日', span: '1 週間' },
+	weekly: { keep: 4, label: '毎週', span: '1 か月' },
+	monthly: { keep: 6, label: '毎月', span: '半年' },
+};
+
+/** 区分を指定せずに取ったときの置き場。手で取ったものは hourly に混ぜる */
+export const DEFAULT_KIND = 'hourly';
+
+/** 区分の名前として使えるか。フォルダ名になるので、知らない名前は受け付けない */
+export function isKnownKind(kind) {
+	return Object.hasOwn(KINDS, kind);
+}
+
+/** その区分で残す世代数 */
+export function keepOf(kind) {
+	return KINDS[kind]?.keep ?? KINDS[DEFAULT_KIND].keep;
+}
 
 /** バックアップ名の書式。zip を外すと chat.db になるようにしてある */
 const NAME_PATTERN = /^chat-(\d{8})-(\d{6})\.db(\.zip)?$/;
@@ -225,10 +248,28 @@ export function listBackups(dir) {
  * @param {number} [keep] 残す数
  * @returns {string[]} 消したファイル名
  */
-export function pruneBackups(dir, keep = KEEP_GENERATIONS) {
+export function pruneBackups(dir, keep = KINDS[DEFAULT_KIND].keep) {
 	const stale = listBackups(dir).slice(keep);
 	for (const name of stale) {
 		rmSync(join(dir, name), { force: true });
 	}
 	return stale;
+}
+
+/**
+ * 全区分の控えを新しい順に並べる。戻すときに選ぶ材料になる。
+ *
+ * @param {string} backupRoot _backup のパス
+ * @returns {{ kind: string, name: string, path: string }[]}
+ */
+export function listAllBackups(backupRoot) {
+	const all = [];
+	for (const kind of Object.keys(KINDS)) {
+		const dir = join(backupRoot, kind);
+		for (const name of listBackups(dir)) {
+			all.push({ kind, name, path: join(dir, name) });
+		}
+	}
+	// 名前に日時が入っているので、名前で並べれば時系列順になる
+	return all.sort((a, b) => (a.name < b.name ? 1 : a.name > b.name ? -1 : 0));
 }

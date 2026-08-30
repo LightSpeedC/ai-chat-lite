@@ -7,34 +7,40 @@
 	サービスを止めずに実行できる。読み取り専用の接続で VACUUM INTO するため、
 	動いているサーバーの書き込みを邪魔しない。
 
-	出力は _backup\chat-yyyymmdd-hhmmss.db.zip。サイズに関わらず常に圧縮する。
-	8 世代を残し、古いものから消す。
+	出力は _backup\<区分>\chat-yyyymmdd-hhmmss.db.zip。サイズに関わらず
+	常に圧縮する。区分ごとに残す世代数が違う。
 
-	メンテナンス中（_data\MAINTENANCE がある）や、別のバックアップが動いている
-	間は待つ。30 秒おきに 10 回まで見に行き、消えなければ取らずに終える。
+	  hourly    8 世代（8 時間）
+	  daily     7 世代（1 週間）
+	  weekly    4 世代（1 か月）
+	  monthly   6 世代（半年）
+
+	メンテナンス中（_data\MAINTENANCE がある）や、別のバックアップが動いて
+	いる間は待つ。30 秒おきに 10 回まで見に行き、消えなければ取らずに終える。
 	取らなかった場合も終了コードは 0。失敗ではないため。
 
 .PARAMETER Kind
-	区分の名前。作業フォルダと印の中身に使う。既定は manual。
+	区分。hourly / daily / weekly / monthly のいずれか。既定は hourly。
 
 .PARAMETER Keep
-	残す世代数。既定は 8。
+	残す世代数。省略すると区分ごとの既定値を使う。
 
 .EXAMPLE
 	.\backup.ps1
-	.\backup.ps1 -Keep 30
+	.\backup.ps1 -Kind daily
+	.\backup.ps1 -Kind monthly -Keep 12
 #>
 [CmdletBinding()]
 param(
-	[string] $Kind = 'manual',
+	[ValidateSet('hourly', 'daily', 'weekly', 'monthly')]
+	[string] $Kind = 'hourly',
 	[int] $Keep = 0
 )
 
 $ErrorActionPreference = 'Stop'
 
 $root      = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-$backupDir = Join-Path $root '_backup'
-# 区分ごとに分ける。万一同時に走っても出力先が衝突しない
+$backupDir = Join-Path $root ('_backup\' + $Kind)
 $workDir   = Join-Path $root ('tmp\backup-work\' + $Kind)
 
 # 前回の作業跡が残っていると VACUUM INTO が「出力先が既にある」で止まる
@@ -42,7 +48,7 @@ if (Test-Path $workDir) {
 	Remove-Item -LiteralPath $workDir -Recurse -Force
 }
 
-Write-Host 'DB のスナップショットを取得しています...'
+Write-Host ('[{0}] DB のスナップショットを取得しています...' -f $Kind)
 
 <#
 	Node 側で印を見て待ち、通れば VACUUM INTO する。結果を key=value で受け取る。
@@ -76,7 +82,7 @@ Write-Host ('  発言数       : {0} 件' -f $info['messages'])
 Write-Host ('  スナップショット: {0:N0} バイト（{1} ミリ秒）' -f [int] $info['bytes'], $info['ms'])
 
 if (-not (Test-Path $backupDir)) {
-	New-Item -ItemType Directory -Path $backupDir | Out-Null
+	New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
 }
 if (Test-Path $zipPath) {
 	# 同じ秒に 2 回実行した場合。上書きせず、そのまま知らせる
@@ -105,4 +111,4 @@ if ($all.Count -gt $Keep) {
 }
 
 Write-Host ''
-Write-Host ('完了しました。{0} 世代を保持しています: {1}' -f [Math]::Min($all.Count, $Keep), $backupDir)
+Write-Host ('完了しました。{0} は {1} 世代を保持しています: {2}' -f $Kind, [Math]::Min($all.Count, $Keep), $backupDir)

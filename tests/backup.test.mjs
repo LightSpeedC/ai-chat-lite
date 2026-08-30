@@ -16,7 +16,11 @@ const {
 	vacuumInto,
 	listBackups,
 	pruneBackups,
-	KEEP_GENERATIONS,
+	listAllBackups,
+	isKnownKind,
+	keepOf,
+	KINDS,
+	DEFAULT_KIND,
 	isLockActive,
 	acquireWithWait,
 	acquireLock,
@@ -188,7 +192,67 @@ describe('バックアップ', () => {
 	});
 
 	test('残す世代の既定は 8', () => {
-		assert.equal(KEEP_GENERATIONS, 8);
+		assert.equal(keepOf(DEFAULT_KIND), 8);
+	});
+});
+
+describe('4 つの世代', () => {
+	test('区分ごとに残す数が決まっている', () => {
+		// 直近は細かく、古いものは粗く。合計 25 世代
+		assert.equal(keepOf('hourly'), 8);
+		assert.equal(keepOf('daily'), 7);
+		assert.equal(keepOf('weekly'), 4);
+		assert.equal(keepOf('monthly'), 6);
+	});
+
+	test('知らない区分は受け付けない', () => {
+		// 区分の名前はフォルダ名になる。打ち間違いで別の場所に作らせない
+		assert.equal(isKnownKind('hourly'), true);
+		assert.equal(isKnownKind('yearly'), false);
+		assert.equal(isKnownKind('..'), false);
+		assert.equal(isKnownKind(''), false);
+	});
+
+	test('知らない区分でも既定の世代数が返る', () => {
+		// 呼び出し側が弾く前提だが、ここで落ちて控えが取れなくなるのは困る
+		assert.equal(keepOf('しらない'), keepOf(DEFAULT_KIND));
+	});
+
+	test('区分をまたいで新しい順に並ぶ', () => {
+		// 戻すとき、どの区分にあるかを気にせず最新を選べるようにする
+		const dir = join(WORK, 'all');
+		for (const [kind, names] of Object.entries({
+			hourly: ['chat-20260830-140000.db.zip', 'chat-20260830-130000.db.zip'],
+			daily: ['chat-20260830-000100.db.zip'],
+			weekly: ['chat-20260825-000200.db.zip'],
+			monthly: ['chat-20260801-000300.db.zip'],
+		})) {
+			mkdirSync(join(dir, kind), { recursive: true });
+			for (const n of names) writeFileSync(join(dir, kind, n), 'x');
+		}
+
+		const all = listAllBackups(dir);
+
+		assert.equal(all.length, 5);
+		assert.equal(all[0].name, 'chat-20260830-140000.db.zip');
+		assert.equal(all[0].kind, 'hourly');
+		assert.equal(all.at(-1).name, 'chat-20260801-000300.db.zip');
+		assert.equal(all.at(-1).kind, 'monthly');
+	});
+
+	test('区分のフォルダが無くても落ちない', () => {
+		// 使い始めたばかりのときは daily も weekly も空
+		const dir = join(WORK, 'all-empty');
+		mkdirSync(join(dir, 'hourly'), { recursive: true });
+		writeFileSync(join(dir, 'hourly', 'chat-20260830-140000.db.zip'), 'x');
+
+		const all = listAllBackups(dir);
+		assert.equal(all.length, 1);
+		assert.equal(all[0].kind, 'hourly');
+	});
+
+	test('区分は 4 つだけ', () => {
+		assert.deepEqual(Object.keys(KINDS), ['hourly', 'daily', 'weekly', 'monthly']);
 	});
 });
 

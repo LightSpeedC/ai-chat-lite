@@ -7,7 +7,10 @@ import {
 	acquireWithWait,
 	releaseLock,
 	readLock,
-	KEEP_GENERATIONS,
+	isKnownKind,
+	keepOf,
+	KINDS,
+	DEFAULT_KIND,
 } from '../../src/server/backup.mjs';
 
 /**
@@ -27,7 +30,15 @@ import {
  *   1 … 取得に失敗した
  */
 
-const kind = process.argv[2] ?? 'manual';
+const kind = process.argv[2] ?? DEFAULT_KIND;
+
+if (!isKnownKind(kind)) {
+	console.error(`知らない区分です: ${kind}`);
+	console.error(`  使えるのは: ${Object.keys(KINDS).join(' / ')}`);
+	process.exit(1);
+}
+
+// 区分ごとに分ける。万一同時に走っても出力先が衝突しない
 const outDir = process.argv[3] ?? join(ROOT, 'tmp', 'backup-work', kind);
 
 // メンテナンス中や、別の区分が取っている最中は待つ。取れたら印を握った状態で返る
@@ -61,9 +72,10 @@ try {
 	console.log(`bytes=${result.bytes}`);
 	console.log(`ms=${result.ms}`);
 	console.log(`messages=${result.messages}`);
-	console.log(`keep=${KEEP_GENERATIONS}`);
+	console.log(`keep=${keepOf(kind)}`);
 	console.log(`src=${DB_PATH}`);
 	console.log(`kind=${kind}`);
+	console.log(`work=${outDir}`);
 } finally {
 	// 取得に失敗しても必ず外す。残すと以降のすべてが待たされる
 	releaseLock();

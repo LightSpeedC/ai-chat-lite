@@ -42,8 +42,21 @@ $clientPath  = Join-Path $root 'src\client\chat.mjs'
 # --- 戻す zip を決める ---
 
 if (-not $Path) {
-	$latest = Get-ChildItem -LiteralPath $backupDir -Filter 'chat-*.db.zip' -ErrorAction SilentlyContinue |
-		Sort-Object Name -Descending | Select-Object -First 1
+	# 全区分から新しい順に並べて先頭を採る。名前に日時が入っているので
+	# 名前で並べれば時系列順になる。更新日時はコピーや展開で変わるため使わない
+	$candidates = @()
+	foreach ($kind in 'hourly', 'daily', 'weekly', 'monthly') {
+		$dir = Join-Path $backupDir $kind
+		if (Test-Path $dir) {
+			$candidates += Get-ChildItem -LiteralPath $dir -Filter 'chat-*.db.zip'
+		}
+	}
+	# 区分を分ける前に取ったものも拾う
+	if (Test-Path $backupDir) {
+		$candidates += Get-ChildItem -LiteralPath $backupDir -Filter 'chat-*.db.zip'
+	}
+
+	$latest = $candidates | Sort-Object Name -Descending | Select-Object -First 1
 	if (-not $latest) {
 		throw "バックアップが 1 つもありません: $backupDir"
 	}
