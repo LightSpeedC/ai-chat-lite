@@ -581,7 +581,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 課題</h1>
 		<p class="lead">これから解決すること。片付いたら閉じて残す</p>
-		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-08-30</p>
+		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-08-31</p>
 	</div>
 </div>
 
@@ -596,9 +596,9 @@ footer a {
 <section class="toc md-skip">
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（2 件 / 未 2）</a></li>
-		<li class="g02"><a href="#g02">データ（2 件 / 未 2）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（3 件 / 未 2 / 済 1）</a></li>
-		<li class="g04"><a href="#g04">チャットの機能（2 件 / 済 2）</a></li>
+		<li class="g02"><a href="#g02">データ（3 件 / 未 2 / 着手 1）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（3 件 / 済 3）</a></li>
+		<li class="g04"><a href="#g04">チャットの機能（8 件 / 未 5 / 済 3）</a></li>
 	</ol>
 </section>
 
@@ -727,11 +727,11 @@ footer a {
 </details>
 
 <!-- ================= グループ 3 ================= -->
-<details class="group g03" id="g03" data-name="開発環境・記録" open>
+<details class="group g03" id="g03" data-name="開発環境・記録">
 	<summary>
-		<span class="badge b-todo">未</span>
+		<span class="badge b-done">☑</span>
 		開発環境・記録
-		<span class="count">3 件 / 未 2 / 済 1</span>
+		<span class="count">3 件 / 済 3</span>
 	</summary>
 
 	<div class="groupbody">
@@ -757,35 +757,42 @@ footer a {
 			</div>
 		</details>
 
-		<details class="issue" id="i260830-08" open>
+		<details class="issue done" id="i260830-08">
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260830-08</span>
 				html2md に「変換しないファイル」の指定がほしい
 			</summary>
 			<div class="issuebody">
 				<p>この課題一覧は <code>details</code> と <code>summary</code> の開閉が本質で、Markdown にするとグループ名も課題タイトルも落ちる。本文と「やること」だけが並び、かえって読みにくい。</p>
-				<p>html2md のオプションは <code>--root</code> / <code>--dir</code> / <code>--no-readme</code> / <code>--dry-run</code> だけで、<strong>個別のファイルを外す方法が無い</strong>。<code>--dir</code> で <code>40_issues</code> を避けると、root 直下の <code>USAGE-FOR-PROJECTS.html</code> まで拾われなくなる。</p>
-				<p>いまは <code>tools/30_html2md/html2md.cmd</code> が変換のあとに消して対処している。<code>--exclude</code> のような指定ができれば、この後始末は要らなくなる。</p>
+				<p>html2md のオプションは <code>--root</code> / <code>--dir</code> / <code>--no-readme</code> / <code>--dry-run</code> だけで、<strong>個別のファイルを外す方法が無かった</strong>。<code>--dir</code> で <code>40_issues</code> を避けると、root 直下の <code>USAGE-FOR-PROJECTS.html</code> まで拾われなくなる。</p>
+				<p>html2md 側で <code>md-skip</code> が用意された。<strong>ページ単位で外すときは <code>&lt;meta name="md-skip"&gt;</code> を <code>head</code> に置く</strong>。要素単位で外すクラス <code>md-skip</code> とは別で、こちらの読み違いだった。</p>
+				<p>この課題一覧とログ 2 本に入れてある。実行すると「md-skip の指定により変換しません」と出る。<code>html2md.cmd</code> の後始末（変換後に消す処理）は外した。</p>
 				<ul class="todos">
 					<li class="done"><span class="badge b-done">☑</span> 当面の対処として、変換後に消すようにする</li>
-					<li><span class="badge b-todo">未</span> html2md 側へ要望として伝える（他プロジェクトなので直接は直さない）</li>
-					<li><span class="badge b-todo">未</span> 対応されたら <code>html2md.cmd</code> から後始末を外す</li>
+					<li class="done"><span class="badge b-done">☑</span> html2md 側へ要望として伝える（他プロジェクトなので直接は直さない）</li>
+					<li class="done"><span class="badge b-done">☑</span> 対応されたら <code>html2md.cmd</code> から後始末を外す</li>
 				</ul>
+				<div class="callout callout-warning">
+					<p><strong>md-skip を指定したファイルへのリンクは、Markdown 側で切れる。</strong><code>status.md</code> と <code>README.md</code> から <code>issues.md</code> へのリンクが該当する。中身が読めないものを作る意味はないので、<strong>md-skip 先へのリンクは Markdown でも <code>.html</code> のままにする</strong>のが素直という点で html2md と合意している。実装は html2md 側の判断待ち。</p>
+				</div>
 			</div>
 		</details>
 
-		<details class="issue" id="i260830-04" open>
+		<details class="issue done" id="i260830-04">
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260830-04</span>
 				PlayWright 側の spec をコミットする
 			</summary>
 			<div class="issuebody">
-				<p><code>N:\2026\PlayWright\projects\ai-chat-lite\</code> の spec が未コミット。共有環境の規約では「テストスクリプトは必ず commit する」となっている。別リポジトリなので、こちらのコミットには含まれない。</p>
+				<p><code>N:\2026\PlayWright\projects\ai-chat-lite\</code> の spec が未コミットだった。共有環境の規約では「テストスクリプトは必ず commit する」となっている。別リポジトリなので、こちらのコミットには含まれない。</p>
+				<p>spec 9 本を 3 回に分けてコミットした。<code>.gitignore</code> に <code>projects/*/tmp/</code> と <code>projects/*/test-results/</code> があり、出力は入っていない。</p>
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> <code>contrast</code> / <code>shot</code> / <code>chat-ui</code> / <code>issues-shot</code> をコミットする</li>
-					<li><span class="badge b-todo">未</span> 出力（<code>tmp/</code>・<code>test-results/</code>）が除外されていることを確かめる</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>contrast</code> / <code>shot</code> / <code>chat-ui</code> / <code>issues-shot</code> をコミットする</li>
+					<li class="done"><span class="badge b-done">☑</span> 出力（<code>tmp/</code>・<code>test-results/</code>）が除外されていることを確かめる</li>
+					<li class="done"><span class="badge b-done">☑</span> テストデータの規約に合わせ、<code>test-data.ts</code> を足して 4 本を寄せる</li>
+					<li class="done"><span class="badge b-done">☑</span> 落ちていた 6 件を直す（決め打ちをやめ、全 54 件が通る状態にした）</li>
 				</ul>
 			</div>
 		</details>
@@ -794,7 +801,7 @@ footer a {
 </details>
 
 <!-- ================= グループ 4 ================= -->
-<details class="group g04" id="g04" data-name="チャットの機能">
+<details class="group g04" id="g04" data-name="チャットの機能" open>
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
@@ -1049,17 +1056,18 @@ footer a {
 'use strict';
 
 /*
- * この一覧だけの補助。
+ * この一覧だけの補助。やることは 2 つだけ。
  *
  *   1. グループの状態バッジと件数を、中身から数え直す
  *   2. 目次のラベルも同じ内容に揃える
- *   3. 開閉した状態を覚えておき、次に開いたとき戻す
  *
  * HTML 側には静的にも書いてあるため、この処理が動かなくても内容は読める。
  * 数え直しはあくまで「手で書いた値がずれるのを防ぐ」ためのもの。
+ *
+ * 開閉は覚えない。開いた状態は毎回 HTML の open 属性どおりになる。
+ * 覚えていた頃は、前に閉じたグループが次に開いたときも閉じたままになり、
+ * 課題が増えても気づけなかった。開閉は details の役目に任せる。
  */
-
-const STORE_KEY = 'aichat.issues.open';
 
 /** 状態の見せ方。CSS のクラス名と合わせる */
 const STATE = {
@@ -1123,39 +1131,7 @@ function summarize() {
 	}
 }
 
-// --- 開閉の記憶 ---
-
-function readOpenState() {
-	try {
-		return JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
-	} catch {
-		return {};
-	}
-}
-
-function restoreOpenState() {
-	const saved = readOpenState();
-	for (const details of document.querySelectorAll('details[id]')) {
-		if (details.id in saved) details.open = saved[details.id];
-	}
-}
-
-function rememberOpenState() {
-	const state = {};
-	for (const details of document.querySelectorAll('details[id]')) state[details.id] = details.open;
-	try {
-		localStorage.setItem(STORE_KEY, JSON.stringify(state));
-	} catch {
-		// 保存できなくても表示には支障がない
-	}
-}
-
 summarize();
-restoreOpenState();
-
-for (const details of document.querySelectorAll('details[id]')) {
-	details.addEventListener('toggle', rememberOpenState);
-}
 </script>
 
 </body>
