@@ -51,6 +51,7 @@ function Get-OpsLogHeader {
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<meta name="md-skip">
 <title>$Title</title>
 <style>
 body { margin: 0; background: #fdfdfe; color: #1c2330; font-family: "Consolas", "Cascadia Mono", monospace; font-size: 13px; line-height: 1.7; }
