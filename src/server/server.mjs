@@ -11,7 +11,7 @@ import { log } from './log.mjs';
 import {
 	addMessage, getSince, getLatest, getBefore, getMaxSeq,
 	joinUser, touchUser, addConnection, removeConnection, listRooms,
-	getCursor, setCursor,
+	getCursor, setCursor, closeDb,
 } from './store.mjs';
 import { listPresence, getPresence, STATUS } from './presence.mjs';
 import {
@@ -299,6 +299,21 @@ function scheduleExit(res, code, payload) {
 	// 応答が相手に届いてから終える
 	setTimeout(() => {
 		releaseAll();
+
+		/*
+		 * DB を閉じてから終える。閉じないと WAL の内容が本体に統合されず、
+		 * chat.db-wal と chat.db-shm が残る。しかも発言の大半はその -wal 側に
+		 * 残るため、chat.db だけを持ち出しても中身が空になる。
+		 * 実測では、閉じれば 3 ファイルが 1 つにまとまり、閉じなければ
+		 * 4 KB の本体と 2.2 MB の -wal が残った。
+		 */
+		try {
+			closeDb();
+		} catch (err) {
+			// 閉じられなくても終了は続ける。次の起動で SQLite が復旧する
+			log.error(`DB を閉じられませんでした: ${err?.message ?? err}`);
+		}
+
 		log.warn(`終了コード ${code} で終了します`);
 		process.exit(code);
 	}, 200);

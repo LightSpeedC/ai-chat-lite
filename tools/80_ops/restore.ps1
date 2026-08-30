@@ -10,7 +10,8 @@
 	印を消すと、サーバーが自分から起動する。管理者権限は要らない。
 
 	いまの DB は消さずに退避する。戻した中身が思っていたものと違ったとき、
-	元に戻せるようにするため。
+	元に戻せるようにするため。chat.db / chat.db-wal / chat.db-shm の 3 つを
+	まとめて _data\prev-yyyymmdd-hhmmss\ へ移す。1 つでも欠けると戻せない。
 
 .PARAMETER Path
 	戻す zip。省略すると最新のものを使う。
@@ -55,7 +56,7 @@ Write-Host ('戻す先 : {0}' -f $dbPath)
 Write-Host ''
 
 if (-not $Force) {
-	Write-Host 'いまの DB は _data\chat.db.前-yyyymmdd-hhmmss として退避します。'
+	Write-Host 'いまの DB は 3 つとも _data\prev-yyyymmdd-hhmmss\ へ退避します。'
 	$answer = Read-Host 'この内容で戻しますか（yes と入力すると実行します）'
 	if ($answer -cne 'yes') {
 		Write-Host '中止しました。'
@@ -141,20 +142,31 @@ console.log(r.c + ' 件 / 最大 msg_seq ' + (r.m ?? 'なし'));
 	}
 	Write-Host ('[3/5] 展開しました: {0}' -f $check)
 
-	# --- 4. 入れ替える ---
+	<#
+		--- 4. 入れ替える ---
 
-	$stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-	if (Test-Path $dbPath) {
-		Move-Item -LiteralPath $dbPath -Destination "$dbPath.前-$stamp"
-	}
-	# WAL と共有メモリは古い DB のものなので、必ず捨てる。
-	# 残したまま新しい本体を置くと、SQLite が食い違いを見て壊れたと判断する
-	foreach ($suffix in '-wal', '-shm') {
+		いまの DB は 3 つのファイルで 1 組になっている。chat.db だけを残しても
+		戻せない。サーバーが閉じずに終わると発言の大半は chat.db-wal 側に残り、
+		本体は空同然になるため。実測では 64 件のうち 0 件しか本体に無かった。
+
+		3 つまとめてフォルダへ移す。個別にリネームすると _data 直下が散らかり、
+		どれが同じ組なのか名前を突き合わせないと分からなくなる。
+	#>
+	$stamp   = Get-Date -Format 'yyyyMMdd-HHmmss'
+	$prevDir = Join-Path $dataDir "prev-$stamp"
+	New-Item -ItemType Directory -Path $prevDir | Out-Null
+
+	$moved = @()
+	foreach ($suffix in '', '-wal', '-shm') {
 		$sidecar = $dbPath + $suffix
-		if (Test-Path $sidecar) { Remove-Item -LiteralPath $sidecar -Force }
+		if (Test-Path $sidecar) {
+			Move-Item -LiteralPath $sidecar -Destination (Join-Path $prevDir ('chat.db' + $suffix))
+			$moved += 'chat.db' + $suffix
+		}
 	}
+
 	Move-Item -LiteralPath $restored -Destination $dbPath
-	Write-Host '[4/5] 入れ替えました（いまの DB は chat.db.前-… として残しています）'
+	Write-Host ('[4/5] 入れ替えました（前の {0} を {1} に残しています）' -f ($moved -join ' / '), (Split-Path $prevDir -Leaf))
 
 } finally {
 	# --- 5. 印を消す。途中で失敗しても必ず消す ---
