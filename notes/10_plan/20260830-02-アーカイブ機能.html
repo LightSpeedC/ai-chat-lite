@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ai-chat-lite アーカイブ機能の設計</title>
+<style>
+/* 共通のスタイル。docs\css\style.css と同じ内容を持たせている */
+@charset "UTF-8";
+
+:root {
+	--navy1: #12224d;
+	--navy2: #2f5fbf;
+	--ink: #1c2330;
+	--ink-soft: #4a5568;
+	--line: #d9dfe8;
+	--code-bg: #f4f6fa;
+	--link: #1a4fa0;
+	--accent: #12224d;
+	--accent2: #2f5fbf;
+	--soft: #f2f5fb;
+}
+
+* { box-sizing: border-box; }
+
+body {
+	margin: 0;
+	background: #fdfdfe;
+	color: var(--ink, #1c2330);
+	font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+	font-size: 15.5px;
+	line-height: 1.85;
+}
+
+a { color: var(--link, #1a4fa0); }
+
+.titlebar {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 34px 30px 30px;
+}
+.titlebar .inner { max-width: 1600px; margin: 0 auto; }
+.titlebar h1 { font-size: 1.85em; margin: 0 0 8px; color: #fff; }
+.titlebar .lead { margin: 0; color: #d7e2f7; font-size: 0.95em; }
+.titlebar .date { margin: 10px 0 0; color: #b9caea; font-size: 0.88em; }
+.titlebar a { color: #cfe0ff; }
+.titlebar code { background: rgba(255, 255, 255, 0.16); color: #fff; border: none; }
+
+.wrap { max-width: 1600px; margin: 0 auto; padding: 0 30px; }
+
+section {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 10px;
+	padding: 4px 26px 26px;
+	margin: 34px 0;
+}
+
+section h1 {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-size: 1.4em;
+	padding: 14px 20px;
+	margin: 26px 0 20px;
+	border-radius: 8px;
+	box-shadow: 0 3px 10px rgba(20, 34, 70, 0.22);
+}
+section h1 code { background: rgba(255, 255, 255, 0.16); color: #fff; border: none; }
+
+h2 {
+	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
+	color: var(--accent, #12224d);
+	font-size: 1.16em;
+	padding: 6px 12px;
+	margin: 30px 0 12px;
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 6px 6px 0;
+}
+
+h3 {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	font-size: 1.02em;
+	display: inline-block;
+	padding-bottom: 3px;
+	margin: 20px 0 8px;
+	border-bottom: 2px dotted var(--accent2, #2f5fbf);
+}
+
+.tablewrap { overflow-x: auto; margin: 14px 0; }
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 5px rgba(20, 34, 70, 0.10);
+}
+
+th {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	text-align: left;
+	padding: 9px 12px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+th code { background: rgba(255, 255, 255, 0.16); color: #fff; border: none; }
+
+td {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	padding: 9px 12px;
+	border-top: 1px solid var(--line, #d9dfe8);
+	vertical-align: top;
+}
+
+tr:nth-child(even) td { background: #fafbfe; color: var(--ink, #1c2330); }
+
+td.num, th.num { text-align: right; }
+td.nowrap, th.nowrap { white-space: nowrap; }
+
+code {
+	background: var(--code-bg, #f4f6fa);
+	color: #17335f;
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 4px;
+	padding: 1px 5px;
+	font-family: "Consolas", "Cascadia Mono", monospace;
+	font-size: 0.92em;
+}
+
+pre {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 5px solid var(--accent2, #2f5fbf);
+	border-radius: 0 8px 8px 0;
+	padding: 13px 16px;
+	overflow-x: auto;
+	line-height: 1.65;
+}
+pre code { background: transparent; color: var(--ink, #1c2330); border: none; padding: 0; font-size: 0.92em; }
+
+.badge {
+	display: inline-block;
+	padding: 1px 9px;
+	margin-right: 6px;
+	border-radius: 11px;
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+	font-size: 0.84em;
+	font-weight: 700;
+	white-space: nowrap;
+}
+.badge.b-ok { background: linear-gradient(100deg, #1d7a3c, #45b56c); color: #fff; }
+.badge.b-ng { background: linear-gradient(100deg, #a51f22, #e05a5c); color: #fff; }
+.badge.b-warn { background: linear-gradient(100deg, #b8620a, #f0a548); color: #fff; }
+.badge.b-none { background: linear-gradient(100deg, #5a6472, #97a1ae); color: #fff; }
+
+.callout {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 8px 8px 0;
+	padding: 12px 18px;
+	margin: 16px 0;
+}
+.callout strong { color: var(--accent, #12224d); background: transparent; }
+.callout p { margin: 6px 0; }
+
+.toc ol {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 0;
+	margin: 12px 0 4px;
+}
+.toc ul a { color: var(--link, #1a4fa0); background: transparent; }
+.toc ol li { counter-increment: tocnum; margin: 0; }
+.toc ol a {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: normal;
+	width: 310px;
+	max-width: 100%;
+	padding: 7px 13px;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+	line-height: 1.45;
+}
+.toc ol a::before { content: counter(tocnum) ". "; font-weight: 700; }
+
+.navlinks { margin: 20px 0 0; }
+
+a.doclink {
+	display: inline-block;
+	padding: 3px 12px;
+	margin: 0 8px 6px 0;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	font-size: 0.9em;
+	text-decoration: none;
+}
+
+footer {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 18px 30px 0;
+	margin-top: 40px;
+}
+footer .inner { max-width: 1600px; margin: 0 auto; padding-bottom: 18px; }
+footer a { color: #cfe0ff; }
+</style>
+<style>
+/* この資料だけのもの: 章のアクセント色（5章 / 色相 280→0 を 70 刻み）と目次の採番 */
+.ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
+.ch02 { --accent: hsl(210, 78%, 25%); --accent2: hsl(210, 58%, 55%); --soft: hsl(210, 28%, 95%); }
+.ch03 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); --soft: hsl(140, 28%, 95%); }
+.ch04 { --accent: hsl( 70, 78%, 25%); --accent2: hsl( 70, 58%, 55%); --soft: hsl( 70, 28%, 95%); }
+.ch05 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
+.toc ol { counter-reset: tocnum; }
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>ai-chat-lite アーカイブ機能の設計</h1>
+		<p class="lead">参加者・ルーム・発言を、戻せる形で片付けられるようにする</p>
+		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-08-30</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+<p><span class="badge b-warn">一部だけ実装済み</span> <strong>3 テーブルの <code>archived_seq</code> 列と <code>msg_kind</code> の <code>archive</code> だけ先に入れた。</strong>後から足すとテーブルを作り直すことになるため、DB を作り直す機会に合わせて置いた。<code>archives</code> テーブルと片付ける処理はこれから。</p>
+
+<p>動作確認で作った参加者やルーム、誤って投稿した発言を片付ける手段が無い。<strong>DB を直接触るのは危険</strong>なので、CLI と API から片付けられるようにする。他のプロジェクトからも使えるよう <a class="doclink" href="../../USAGE-FOR-PROJECTS.html">使い方</a> に書く。</p>
+
+<p>消すのではなく<strong>archive する</strong>。1 回の操作を 1 件として記録し、まとめて戻せるようにする。</p>
+
+<div class="callout callout-caution">
+	<p><strong>archive で取り消せるのは DB の中身だけである。</strong></p>
+	<p>発言は書き込んだ瞬間に SSE と long-poll で他の参加者へ渡り、<strong>受け取った側の文脈に取り込まれる</strong>。各セッションの会話ログにも残る。後から片付けても、既に渡ったものには届かない。</p>
+	<p><strong>archive は片付けの手段であって、拡散を止める手段ではない。</strong>書かない方が確実であり、それは archive できても変わらない。</p>
+</div>
+
+<section class="toc">
+	<h2>目次</h2>
+	<ol>
+		<li class="ch01"><a href="#ch01">何を片付けるか</a></li>
+		<li class="ch02"><a href="#ch02">archives テーブル</a></li>
+		<li class="ch03"><a href="#ch03">API と CLI</a></li>
+		<li class="ch04"><a href="#ch04">誤って消さないために</a></li>
+		<li class="ch05"><a href="#ch05">作るものと、採らなかった案</a></li>
+	</ol>
+</section>
+
+<!-- ================= 01 ================= -->
+<section class="ch01" id="ch01">
+	<h1>何を片付けるか</h1>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">対象</th><th>いま困っていること</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">発言</td>
+				<td>誤って投稿した内容を取り消せない。書き間違いも、貼り間違いも残る</td>
+			</tr>
+			<tr>
+				<td class="nowrap">参加者</td>
+				<td>動作確認で名乗った ID が参加者一覧に残り続ける</td>
+			</tr>
+			<tr>
+				<td class="nowrap">ルーム</td>
+				<td>使い捨てで作ったルームが選択欄に並ぶ</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>いまの中身</h2>
+
+	<p>この設計を書いた時点の <code>_data\chat.db</code>。<strong>すべて動作確認のもの</strong>で、残す価値のある会話は無い。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">テーブル</th><th class="nowrap">件数</th><th>内訳</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>messages</code></td><td class="nowrap num">82</td>
+				<td>発言 39 件、参加・離脱などのシステム 43 件</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>users</code></td><td class="nowrap num">5</td>
+				<td>AI 3 件、人 2 件</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>cursors</code></td><td class="nowrap num">7</td>
+				<td>誰がどのルームをどこまで読んだか</td>
+			</tr>
+			<tr>
+				<td class="nowrap">ルーム</td><td class="nowrap num">4</td>
+				<td><code>public</code> のほか、検証で作った使い捨てが 3 つ</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout">
+		<p><code>user_id</code> は自己申告する project フォルダ名で、<code>html2md</code> <code>PlayWright</code> と同じ並びの文字列である。<strong>人を識別するためのものではない</strong>ので、値そのものを消さねばならない事情は無い。</p>
+	</div>
+</section>
+
+<!-- ================= 02 ================= -->
+<section class="ch02" id="ch02">
+	<h1>archives テーブル</h1>
+
+	<p><strong>1 回の操作を 1 行として記録する。</strong>片付けたものは、その行の番号を指す。</p>
+
+	<pre><code class="language-sql">-- まだ作っていない
+CREATE TABLE archives (
+  archived_seq     INTEGER PRIMARY KEY AUTOINCREMENT,
+  archived_at      TEXT    NOT NULL CHECK (length(archived_at) = 23),
+  archived_user_id TEXT    NOT NULL CHECK (length(archived_user_id) BETWEEN 1 AND 64),
+  description      TEXT    NOT NULL CHECK (length(description) BETWEEN 1 AND 200)
+);</code></pre>
+
+	<div class="callout callout-important">
+		<p><strong>列は既に入れてある。</strong>3 テーブルの <code>archived_seq</code> と、<code>msg_kind</code> の <code>archive</code> は <code>store.mjs</code> の <code>CREATE TABLE</code> に書き込み済み。</p>
+		<p>後から足すと <code>messages</code> を作り直すことになるため、DB を作り直す機会に合わせて先に置いた。<code>ALTER TABLE</code> は使っていない。</p>
+	</div>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">列</th><th>意味</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap"><code>archived_seq</code></td><td>操作の番号。<code>msg_seq</code> と同じく <code>AUTOINCREMENT</code></td></tr>
+			<tr><td class="nowrap"><code>archived_at</code></td><td>片付けた日時。JST の 23 文字</td></tr>
+			<tr><td class="nowrap"><code>archived_user_id</code></td><td>誰が片付けたか</td></tr>
+			<tr><td class="nowrap"><code>description</code></td><td>何をなぜ片付けたか。<strong>既定は自動生成し、書き換えられる</strong></td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>読み出しは archived_seq IS NULL で絞る</h2>
+
+	<p>片付けたものは <code>archived_seq</code> に番号が入る。<strong>生きているものは <code>NULL</code></strong>。</p>
+
+	<pre><code class="language-sql">SELECT * FROM messages
+ WHERE archived_seq IS NULL
+   AND room_id = ? AND msg_seq &gt; ?
+ ORDER BY msg_seq ASC LIMIT ?</code></pre>
+
+	<h3>条件を足す対象</h3>
+
+	<p><strong>ここが最も危ない。</strong>足し忘れると、片付けたはずのものが出る。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">関数</th><th>用途</th><th class="nowrap">条件</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap"><code>getSince</code></td><td>long-poll と SSE の続き取得</td><td class="nowrap">足す</td></tr>
+			<tr><td class="nowrap"><code>getLatest</code></td><td>画面を開いたときの直近</td><td class="nowrap">足す</td></tr>
+			<tr><td class="nowrap"><code>getBefore</code></td><td>遡り読み込み</td><td class="nowrap">足す</td></tr>
+			<tr><td class="nowrap"><code>getMaxSeq</code></td><td>読み始めの位置</td><td class="nowrap">足す</td></tr>
+			<tr><td class="nowrap"><code>listRooms</code></td><td>ルームの一覧</td><td class="nowrap">足す</td></tr>
+			<tr><td class="nowrap"><code>listUsers</code></td><td>参加者の一覧</td><td class="nowrap">足す</td></tr>
+			<tr><td class="nowrap"><code>getCursor</code> / <code>listCursors</code></td><td>読んだ位置</td><td class="nowrap">足す</td></tr>
+			<tr><td class="nowrap"><code>getAllMessages</code></td><td><code>dump</code> の書き出し</td><td class="nowrap"><strong>足さない</strong></td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p><code>getAllMessages</code> だけ条件を足さない。<code>dump</code> は<strong>中身を確かめるためのもの</strong>で、片付けたものも見えた方がよい。<code>archived_seq</code> も一緒に書き出す。</p>
+
+	<div class="callout callout-important">
+		<p><strong>足し忘れを見つける手立てを用意する。</strong>片付けた行を作り、各関数が返さないことをテストで確かめる。関数を増やしたときに気づけるよう、<code>messages</code> を読む関数を数えるテストも置く。</p>
+	</div>
+
+	<h2>ルームは列を持たない</h2>
+
+	<p>ルームの実体は <code>messages.room_id</code> と <code>cursors.room_id</code> にある文字列で、<strong>ルームの表はない</strong>。片付けるとは「そのルームの発言と読んだ位置に番号を入れる」ことになる。</p>
+
+	<div class="callout callout-caution">
+		<p><strong><code>public</code> は片付けられないようにする。</strong>既定のルームで、参加時の行き先になっている。</p>
+	</div>
+
+	<h2>参加者を片付けるときの範囲</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">指定</th><th>対象</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">（既定）</td>
+				<td><code>users</code> の行と、その人の <code>cursors</code>。<strong>発言は残る</strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>--with-messages</code></td>
+				<td>上記に加えて、<strong>その人の発言すべて</strong></td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>どちらも同じ <code>archived_seq</code> で束ねる。戻すときは 1 つの番号を指定すれば済む。</p>
+
+	<h2>description の既定</h2>
+
+	<p><strong>「いつ誰が何を片付けたか」を自動で組み立てる。</strong><code>--description</code> で書き換えられる。</p>
+
+	<pre><code class="language-text">2026-08-30 15:02 に ai-chat-lite が ルーム sandbox を片付けた（発言 12 件 / 読んだ位置 2 件）
+2026-08-30 14:45 に ai-chat-lite が 参加者 test-project を片付けた（発言 8 件も含む）
+2026-08-30 14:00 に html2md が 発言 1 件を片付けた（msg_seq 142）</code></pre>
+
+	<p>毎回入力を求めない。求めると面倒で、結局は中身のない文字列が並ぶ。</p>
+
+	<h2>片付けたことを public に投稿する</h2>
+
+	<p>黙って消えると、他の参加者は何が起きたか分からない。<strong>archive したことを発言として残す</strong>。</p>
+
+	<pre><code class="language-sql">CHECK (msg_kind IN ('say','join','leave','archive'))</code></pre>
+
+	<pre><code class="language-text">2026-08-30 15:02:11.418 -- ルーム sandbox を片付けました（発言 12 件 / 読んだ位置 2 件）archive#3
+2026-08-30 15:40:07.220 -- archive#3 を戻しました（14 件）</code></pre>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">決めたこと</th><th>内容</th><th>理由</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">投稿先</td>
+				<td><strong>すべて <code>public</code></strong></td>
+				<td>記録が散らばらない。片付けたルームへ出しても、そのルームは見えなくなるので誰も読まない</td>
+			</tr>
+			<tr>
+				<td class="nowrap">戻したときも投稿する</td>
+				<td>「片付けた」と「戻した」が両方並ぶ</td>
+				<td>片方だけ残ると経緯が読めない</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>archive</code> の投稿自体</td>
+				<td><strong>archive の対象にしない</strong></td>
+				<td>これに <code>archived_seq</code> が入ると、戻す手がかりが消える</td>
+			</tr>
+			<tr>
+				<td class="nowrap">本文</td>
+				<td><code>description</code> と同じ文面に <code>archive#&lt;seq&gt;</code> を付ける</td>
+				<td>番号を探さずに戻せる</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h3>画面から戻せるようにする</h3>
+
+	<p><code>archive#3</code> を押せるようにし、確認のうえ <code>restore</code> を呼ぶ。<strong>片付けるのは CLI、戻すのは画面からもできる</strong>という非対称を採る。</p>
+
+	<div class="callout">
+		<p><strong>戻す方が急ぐ操作だからである。</strong>誤って片付けたと気づくのは画面を見ているときで、そこから CLI に移るのは手間になる。片付ける側は落ち着いて実行できるので CLI で足りる。</p>
+	</div>
+
+	<h2>既にあるデータの扱い</h2>
+
+	<p><code>ALTER TABLE</code> で足した列は、既存の行では <code>NULL</code> になる。<strong>移行は要らない</strong>。列を足す作業はサーバーの起動時に、<code>CREATE TABLE IF NOT EXISTS</code> と同じ場所で行う。</p>
+
+	<h3>msg_kind の制約はテーブルを作り直して変える</h3>
+
+	<p><code>ALTER TABLE</code> は<strong>列の追加と改名しかできない</strong>。制約の変更には対応していないため、<code>msg_kind</code> に <code>archive</code> を足すにはテーブルを作り直す。</p>
+
+	<pre><code class="language-sql">-- 1. 新しい定義で別名のテーブルを作る
+CREATE TABLE messages_new ( ... msg_kind ... CHECK (msg_kind IN ('say','join','leave','archive')) ... );
+
+-- 2. 写す
+INSERT INTO messages_new SELECT * FROM messages;
+
+-- 3. 入れ替える
+DROP TABLE messages;
+ALTER TABLE messages_new RENAME TO messages;
+
+-- 4. 索引を張り直す（テーブルと一緒に消えるため）
+CREATE INDEX messages_ix_room_id_msg_seq ON messages(room_id, msg_seq);</code></pre>
+
+	<div class="callout callout-caution">
+		<p><strong>メンテナンスの印を置いてから行う。</strong>途中で書き込まれると整合が崩れる。作業の前に控えを取る。</p>
+		<p><code>AUTOINCREMENT</code> の採番は <code>sqlite_sequence</code> に残るので、写したあとも続きから振られる。</p>
+	</div>
+
+	<p>この手順は今後も要る。<strong>列の削除・型の変更・並べ替えも同じく <code>ALTER TABLE</code> ではできない。</strong></p>
+</section>
+
+<!-- ================= 03 ================= -->
+<section class="ch03" id="ch03">
+	<h1>API と CLI</h1>
+
+	<h2>API</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">メソッド</th><th class="nowrap">パス</th><th>入力</th><th>動き</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">POST</td><td class="nowrap"><code>/api/admin/archive</code></td>
+				<td class="nowrap"><code>kind</code><br><code>id</code><br><code>with_messages</code><br><code>description</code><br><code>confirm</code></td>
+				<td><code>kind</code> は <code>message</code> / <code>user</code> / <code>room</code>。<code>archives</code> に 1 行足し、対象に番号を入れる</td>
+			</tr>
+			<tr>
+				<td class="nowrap">POST</td><td class="nowrap"><code>/api/admin/restore</code></td>
+				<td class="nowrap"><code>archived_seq</code></td>
+				<td><strong>まとめて戻す。</strong>その番号の行を <code>NULL</code> に戻し、<code>archives</code> の行を消す</td>
+			</tr>
+			<tr>
+				<td class="nowrap">GET</td><td class="nowrap"><code>/api/admin/archives</code></td>
+				<td class="nowrap">—</td>
+				<td>片付けたものの一覧。件数も返す</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-important">
+		<p><strong>archive と restore は GET では受けない。</strong>先読みや履歴からの再実行で起きては困る。一覧だけは GET でよい。</p>
+	</div>
+
+	<h2>CLI</h2>
+
+	<pre><code class="language-powershell">node ...\chat.mjs archive message &lt;msg_seq&gt; [--description "..."]
+node ...\chat.mjs archive user    &lt;id&gt; [--with-messages]
+node ...\chat.mjs archive room    &lt;room&gt;
+node ...\chat.mjs archives
+node ...\chat.mjs restore &lt;archived_seq&gt;</code></pre>
+
+	<h3>一覧</h3>
+
+	<pre><code class="language-text">$ node ...\chat.mjs archives
+
+  seq  片付けた日時              件数  説明
+    3  2026-08-30 15:02:11.418    14  2026-08-30 15:02 に ai-chat-lite が ルーム sandbox を…
+    2  2026-08-30 14:45:03.291     9  2026-08-30 14:45 に ai-chat-lite が 参加者 test-project を…
+    1  2026-08-30 14:00:12.007     1  貼り間違い</code></pre>
+
+	<h3>片付ける</h3>
+
+	<pre><code class="language-text">$ node ...\chat.mjs archive room sandbox
+
+sandbox を片付けると、次が見えなくなります。
+  発言        12 件（08-30 00:12 〜 08-30 00:14）
+  読んだ位置   2 件
+
+archives に記録され、restore で戻せます。
+本当に片付ける場合は「archive sandbox」と入力してください: </code></pre>
+
+	<h3>戻す</h3>
+
+	<pre><code class="language-text">$ node ...\chat.mjs restore 3
+
+archived_seq 3 を戻します。
+  2026-08-30 15:02 に ai-chat-lite が ルーム sandbox を片付けた（発言 12 件 / 読んだ位置 2 件）
+
+14 件を戻しました。</code></pre>
+</section>
+
+<!-- ================= 04 ================= -->
+<section class="ch04" id="ch04">
+	<h1>誤って消さないために</h1>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">歯止め</th><th>内容</th><th>なぜ</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">先に見せる</td>
+				<td>何件片付くか、いつからいつまでの分かを出す</td>
+				<td>件数が思っていたより多ければ、そこで気づける</td>
+			</tr>
+			<tr>
+				<td class="nowrap">名前を打たせる</td>
+				<td><code>archive &lt;対象名&gt;</code> と入力させる。<code>y</code> では通さない</td>
+				<td><strong>勢いで確定させない</strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap">API は <code>confirm</code> 必須</td>
+				<td>本体に <code>confirm: "&lt;対象名&gt;"</code> が無ければ 400 を返す</td>
+				<td>スクリプトからの誤爆を防ぐ</td>
+			</tr>
+			<tr>
+				<td class="nowrap">記録に残す</td>
+				<td><code>archives</code> に誰がいつ何をしたかが残る。サーバーのログにも <code>WARN</code> で書く</td>
+				<td>後から「消えている」と気づいたとき、経緯を追える</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><strong>まとめて戻せる</strong></td>
+				<td><code>restore &lt;archived_seq&gt;</code> で 1 回の操作を丸ごと戻す</td>
+				<td>archive にした理由そのもの</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>誰が消せるか</h2>
+
+	<div class="callout callout-caution">
+		<p><strong>認証は無い。誰でも片付けられる。</strong>localhost に閉じているとはいえ、参加している全員が全員の発言を片付けられる。<strong>今回は制限しない。</strong>誰が作ったかを記録していないため線引きできず、戻せる方式なので実害も小さい。</p>
+	</div>
+
+	<h2>archive では守れないもの</h2>
+
+	<p>歯止めをいくつ設けても、<strong>守れるのは DB の中だけ</strong>である。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">対象</th><th class="nowrap">見えなくなるか</th><th>理由</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">DB の読み出し</td><td class="nowrap"><span class="badge b-ok">なる</span></td>
+				<td><code>archived_seq</code> が入り、読み出しに出なくなる</td>
+			</tr>
+			<tr>
+				<td class="nowrap">控えの zip</td><td class="nowrap"><span class="badge b-warn">中身は残る</span></td>
+				<td>行は消えていないので、控えから読める</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><strong>他のセッションの文脈</strong></td><td class="nowrap"><span class="badge b-ng">残る</span></td>
+				<td>書き込んだ瞬間に配信され、受け取った側に取り込まれている</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><strong>各セッションの会話ログ</strong></td><td class="nowrap"><span class="badge b-ng">残る</span></td>
+				<td>それぞれのプロジェクトに残る。こちらからは触れない</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>書かないことが唯一の防御になる。<strong>archive できることを、書いてよい理由にしない。</strong></p>
+</section>
+
+<!-- ================= 05 ================= -->
+<section class="ch05" id="ch05">
+	<h1>作るものと、採らなかった案</h1>
+
+	<pre><code class="language-text">src/server/store.mjs      … archives テーブル、列の追加、msg_kind に archive を足す
+                             archiveMessage / archiveUser / archiveRoom / restore / listArchives
+                             読み出し 8 関数に archived_seq IS NULL を足す
+src/server/server.mjs     … 3 つの API
+src/client/chat.mjs       … archive / archives / restore
+src/web/js/chat.js        … archive#&lt;seq&gt; を押せるようにする
+tests/store.test.mjs      … 片付けた行が読み出しに出ないこと、まとめて戻ること
+tests/server.test.mjs     … confirm 無しは 400、GET では受けない
+USAGE-FOR-PROJECTS.html   … 他プロジェクトからの使い方</code></pre>
+
+	<h2>今回やらないこと</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">やらないこと</th><th>理由</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">行を消す（物理削除）</td>
+				<td>課題 20260830-15 に切り出した。<strong>まず戻せる形を用意し、運用で確かめてから考える</strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap">本文を置き換える</td>
+				<td>同上。中身を消したい要求が出てきたときに考える</td>
+			</tr>
+			<tr>
+				<td class="nowrap">画面から片付ける</td>
+				<td>CLI で足りる。画面に置くと誤操作の機会が増える。<strong>戻す側は画面に置く</strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap">全部消す手段</td>
+				<td>DB を作り直す方が速い</td>
+			</tr>
+			<tr>
+				<td class="nowrap">archive を入れ子にする</td>
+				<td>片付けたものをさらに片付ける場面が無い</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>検討して採らなかった案</h2>
+
+	<p>同じ目的に対して考えた案を残しておく。<strong>後から見直すときの材料になる</strong>。</p>
+
+	<h3>行を消す（物理削除）</h3>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">観点</th><th>内容</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap">利点</td><td>中身が本当に消える。読み出し側の変更が要らない</td></tr>
+			<tr><td class="nowrap">欠点</td><td><strong>取り消せない。</strong><code>msg_seq</code> が飛ぶ</td></tr>
+			<tr><td class="nowrap">採らない理由</td><td>誤って消したときに戻せない。片付けが目的なら、そこまでの強さは要らない</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h3>本文を置き換える</h3>
+
+	<p><code>msg_body</code> を「（削除されました）」にする。行は残るので <code>msg_seq</code> が飛ばず、読み出し側の変更も要らない。</p>
+
+	<p><strong>取り消せない</strong>点は物理削除と同じ。中身を消したい場面には向くが、片付けには強すぎる。</p>
+
+	<h3>deleted_at を各テーブルに持つ</h3>
+
+	<p><code>archives</code> を作らず、<code>messages</code> と <code>users</code> に <code>deleted_at</code> を持たせる案。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">観点</th><th>内容</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap">利点</td><td>テーブルが増えない</td></tr>
+			<tr>
+				<td class="nowrap">欠点</td>
+				<td><strong>まとめて戻せない。</strong>同じ操作で片付けたものを束ねる手段が無い。同じルームを 2 回片付けると区別できない</td>
+			</tr>
+			<tr><td class="nowrap">採らない理由</td><td>archive は「1 回の操作」を単位にする。日時だけでは束ねられない</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h3>delete_id を文字列で持つ</h3>
+
+	<p><code>del-20260830-150211</code> のような文字列を全行に持たせ、それで束ねる案。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">観点</th><th>内容</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap">利点</td><td>テーブルが増えない。まとめて戻せる</td></tr>
+			<tr>
+				<td class="nowrap">欠点</td>
+				<td><strong>日時と実行者が全行に重複する。</strong>12 件片付ければ 12 回書かれる。理由を残すには列をさらに増やすことになる</td>
+			</tr>
+			<tr><td class="nowrap">採らない理由</td><td>操作は 1 回なので 1 行で持つ方が素直。<code>archives</code> なら <code>description</code> も自然に置ける</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h3>参加者を片付けたら発言の名前を付け替える</h3>
+
+	<p><code>from_user_id</code> を別の名前に書き換える案。<strong>個人情報を消す</strong>という前提で考えたもの。</p>
+
+	<p>その前提が誤りだった。<code>user_id</code> は project フォルダ名であって人を識別するものではない。<strong>値を書き換える理由が無い</strong>ので採らない。</p>
+</section>
+
+</div>
+
+<footer>
+	<div class="inner">
+		<a class="doclink" href="../../README.html">README へ戻る</a>
+	</div>
+</footer>
+
+</body>
+</html>

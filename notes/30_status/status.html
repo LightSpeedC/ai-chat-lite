@@ -480,6 +480,16 @@ footer a {
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
 				<td>4 区分（時 8 / 日 7 / 週 4 / 月 6）で取得・圧縮・世代整理・復旧・排他・記録。タスクも登録済み。使い方は<a class="doclink" href="../90_rules/backup.html">バックアップの手引き</a></td>
 			</tr>
+			<tr>
+				<td class="num">10</td><td class="nowrap">離脱の判定</td>
+				<td class="nowrap"><span class="badge b-ok">完了</span></td>
+				<td>リロードで離脱が積まれていた。<code>/api/leave</code> を受けて 5 秒待ち、接続が戻らなければ積む形にした</td>
+			</tr>
+			<tr>
+				<td class="num">11</td><td class="nowrap">アーカイブ機能</td>
+				<td class="nowrap"><span class="badge b-warn">一部</span></td>
+				<td><a class="doclink" href="../10_plan/20260830-02-アーカイブ機能.html">設計</a>を書き、<strong>3 テーブルに <code>archived_seq</code> の列だけ足した</strong>。<code>archives</code> テーブルと処理はこれから</td>
+			</tr>
 		</tbody>
 	</table>
 	</div>
@@ -497,7 +507,7 @@ footer a {
 			<tr><td class="nowrap"><code>src/server/config.mjs</code></td><td>ポート・待ち受けアドレス・DB パス・各種上限。起動ログ用の整形も持つ</td></tr>
 			<tr><td class="nowrap"><code>src/server/time.mjs</code></td><td>JST の固定長文字列を作る</td></tr>
 			<tr><td class="nowrap"><code>src/server/log.mjs</code></td><td>日時とレベルを付けて標準出力へ。ファイルには書かない</td></tr>
-			<tr><td class="nowrap"><code>src/server/store.mjs</code></td><td><code>node:sqlite</code> によるスキーマ作成と読み書き</td></tr>
+			<tr><td class="nowrap"><code>src/server/store.mjs</code></td><td><code>node:sqlite</code> によるスキーマ作成と読み書き。3 テーブルに <code>archived_seq</code> の列を持つ（処理は未実装）</td></tr>
 			<tr><td class="nowrap"><code>src/server/presence.mjs</code></td><td><code>online</code> / <code>grace</code> / <code>offline</code> の 3 状態を判定する</td></tr>
 			<tr><td class="nowrap"><code>src/server/hub.mjs</code></td><td>long-poll と SSE で待っている相手をまとめて管理する</td></tr>
 			<tr><td class="nowrap"><code>src/server/server.mjs</code></td><td>HTTP ルーティング・待ち受け・静的ファイル配信。終了時に DB を閉じる</td></tr>
@@ -531,10 +541,10 @@ footer a {
 			<tr><td class="nowrap"><code>presence.test.mjs</code></td><td class="num">15</td><td>3 状態の判定・猶予の境界・一覧の並び順</td></tr>
 			<tr><td class="nowrap"><code>maintenance.test.mjs</code></td><td class="num">6</td><td>印があれば待つ・消えたら進む・理由を読む</td></tr>
 			<tr><td class="nowrap"><code>markdown.test.mjs</code></td><td class="num">16</td><td>生 HTML の無害化・<code>javascript:</code> を通さない・記法の描画</td></tr>
-			<tr><td class="nowrap"><code>server.test.mjs</code></td><td class="num">37</td><td>API 一式・long-poll・SSE・読んだ位置の記録・オフライン通知・<code>admin/exit</code></td></tr>
+			<tr><td class="nowrap"><code>server.test.mjs</code></td><td class="num">38</td><td>API 一式・long-poll・SSE・読んだ位置の記録・オフライン通知・離脱の猶予・<code>admin/exit</code></td></tr>
 			<tr><td class="nowrap"><code>client-wait.test.mjs</code></td><td class="num">7</td><td>待ち直しの回数・新着で即返る・600 秒超の警告</td></tr>
 			<tr><td class="nowrap"><code>backup.test.mjs</code></td><td class="num">32</td><td>WAL 込みの複製・世代の整理・印の取り合い・残骸の扱い・4 区分</td></tr>
-			<tr><td class="nowrap">合計</td><td class="num"><strong>152</strong></td><td><span class="badge b-ok">全件通過</span></td></tr>
+			<tr><td class="nowrap">合計</td><td class="num"><strong>153</strong></td><td><span class="badge b-ok">全件通過</span></td></tr>
 		</tbody>
 	</table>
 	</div>
@@ -554,7 +564,14 @@ npm run test:projects -- ai-chat-lite</code></pre>
 		<tbody>
 			<tr><td class="nowrap"><code>chat-ui.spec.ts</code></td><td>表示・送信・Markdown 描画・生 HTML の無害化・SSE 受信・在席の色・コントラスト</td></tr>
 			<tr><td class="nowrap"><code>contrast.spec.ts</code></td><td>プロジェクト内すべての html のコントラスト比</td></tr>
+			<tr><td class="nowrap"><code>reload-leave.spec.ts</code></td><td>リロードで離脱が積まれないこと、閉じたら積まれること</td></tr>
+			<tr><td class="nowrap"><code>log-html.spec.ts</code></td><td>閉じタグ無しの HTML ログが読めること、色が付くこと</td></tr>
+			<tr><td class="nowrap"><code>issues-shot.spec.ts</code></td><td>課題一覧の開閉と状態バッジ</td></tr>
 			<tr><td class="nowrap"><code>shot.spec.ts</code></td><td>スクリーンショットとリンク色の実測</td></tr>
+			<tr>
+				<td class="nowrap"><code>leave-methods.spec.ts</code><br><code>leave-beacon.spec.ts</code></td>
+				<td><strong>調査用。</strong>閉じ方・リロードの仕方ごとに <code>pagehide</code> が届くかを測る。実行に 1.4 分かかるので普段は回さない</td>
+			</tr>
 		</tbody>
 	</table>
 	</div>
@@ -640,6 +657,14 @@ npm run test:projects -- ai-chat-lite</code></pre>
 			<tr>
 				<td class="nowrap"><strong>HTML のログ</strong></td>
 				<td><code>&lt;/body&gt;</code> と <code>&lt;/html&gt;</code> を書かなくてもブラウザが補完する。<strong>書き込みの途中で開いても壊れず、そこまでの行が読める</strong>。<code>class=I</code> とクォート無しでも効く。1000 行で 115 ミリ秒 / 70 KB</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>pagehide</code> の届き方</td>
+				<td><strong>閉じ方によって <code>sendBeacon</code> が届かない。</strong>Playwright で <code>page.close()</code>・<code>goto('about:blank')</code>・別ページへの遷移は届くが、<code>context.close()</code> と <code>window.close()</code> は届かない</td>
+			</tr>
+			<tr>
+				<td class="nowrap">リロードと離脱の区別</td>
+				<td><code>pagehide</code> は<strong>閉じたときもリロードでも起きる</strong>ため、ブラウザ側では区別できない。サーバーで 5 秒待ち、接続が戻るかを見て判断する</td>
 			</tr>
 		</tbody>
 	</table>

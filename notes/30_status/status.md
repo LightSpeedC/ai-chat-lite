@@ -28,6 +28,8 @@
 | 7 | 残りのドキュメント | ✅ **完了** | README・使い方 |
 | 8 | 長く待つ | ✅ **完了** | `wait` が新着なしのとき待ち直す。既定 2 回・合計 480 秒 |
 | 9 | バックアップと復旧 | ✅ **完了** | 4 区分（時 8 / 日 7 / 週 4 / 月 6）で取得・圧縮・世代整理・復旧・排他・記録。タスクも登録済み。使い方は[バックアップの手引き](../90_rules/backup.md) |
+| 10 | 離脱の判定 | ✅ **完了** | リロードで離脱が積まれていた。`/api/leave` を受けて 5 秒待ち、接続が戻らなければ積む形にした |
+| 11 | アーカイブ機能 | ⚠ **一部** | [設計](../10_plan/20260830-02-アーカイブ機能.md)を書き、**3 テーブルに `archived_seq` の列だけ足した**。`archives` テーブルと処理はこれから |
 
 ### モジュール
 
@@ -38,7 +40,7 @@
 | `src/server/config.mjs` | ポート・待ち受けアドレス・DB パス・各種上限。起動ログ用の整形も持つ |
 | `src/server/time.mjs` | JST の固定長文字列を作る |
 | `src/server/log.mjs` | 日時とレベルを付けて標準出力へ。ファイルには書かない |
-| `src/server/store.mjs` | `node:sqlite` によるスキーマ作成と読み書き |
+| `src/server/store.mjs` | `node:sqlite` によるスキーマ作成と読み書き。3 テーブルに `archived_seq` の列を持つ（処理は未実装） |
 | `src/server/presence.mjs` | `online` / `grace` / `offline` の 3 状態を判定する |
 | `src/server/hub.mjs` | long-poll と SSE で待っている相手をまとめて管理する |
 | `src/server/server.mjs` | HTTP ルーティング・待ち受け・静的ファイル配信。終了時に DB を閉じる |
@@ -62,10 +64,10 @@
 | `presence.test.mjs` | 15 | 3 状態の判定・猶予の境界・一覧の並び順 |
 | `maintenance.test.mjs` | 6 | 印があれば待つ・消えたら進む・理由を読む |
 | `markdown.test.mjs` | 16 | 生 HTML の無害化・`javascript:` を通さない・記法の描画 |
-| `server.test.mjs` | 37 | API 一式・long-poll・SSE・読んだ位置の記録・オフライン通知・`admin/exit` |
+| `server.test.mjs` | 38 | API 一式・long-poll・SSE・読んだ位置の記録・オフライン通知・離脱の猶予・`admin/exit` |
 | `client-wait.test.mjs` | 7 | 待ち直しの回数・新着で即返る・600 秒超の警告 |
 | `backup.test.mjs` | 32 | WAL 込みの複製・世代の整理・印の取り合い・残骸の扱い・4 区分 |
-| 合計 | **152** | ✅ **全件通過** |
+| 合計 | **153** | ✅ **全件通過** |
 
 ### ブラウザ画面
 
@@ -80,7 +82,11 @@ npm run test:projects -- ai-chat-lite
 |---|---|
 | `chat-ui.spec.ts` | 表示・送信・Markdown 描画・生 HTML の無害化・SSE 受信・在席の色・コントラスト |
 | `contrast.spec.ts` | プロジェクト内すべての html のコントラスト比 |
+| `reload-leave.spec.ts` | リロードで離脱が積まれないこと、閉じたら積まれること |
+| `log-html.spec.ts` | 閉じタグ無しの HTML ログが読めること、色が付くこと |
+| `issues-shot.spec.ts` | 課題一覧の開閉と状態バッジ |
 | `shot.spec.ts` | スクリーンショットとリンク色の実測 |
+| `leave-methods.spec.ts`<br>`leave-beacon.spec.ts` | <strong>調査用。</strong>閉じ方・リロードの仕方ごとに `pagehide` が届くかを測る。実行に 1.4 分かかるので普段は回さない |
 
 コントラスト比が 1.5:1 未満のものは、いずれの資料・画面でも 0 件。
 
@@ -106,6 +112,8 @@ npm run test:projects -- ai-chat-lite
 | **ファイルによる排他** | Node・Bun・Deno の `rename` と cmd の `move` は**先客を黙って上書きする**ため排他にならない。`wx`（`O_CREAT | O_EXCL`）は 10 個が取り合っても 1 つだけ成功する。詳細は[ファイルで排他する](../../docs/ファイルで排他する.md) |
 | `stop` と `restart` の違い | `stop`（終了コード 0）は**サービスごと止まる**。印を消しても起動せず、管理者権限での再開が要る。落として入れ替える用途では `restart`（終了コード 1）を使う |
 | **HTML のログ** | `</body>` と `</html>` を書かなくてもブラウザが補完する。**書き込みの途中で開いても壊れず、そこまでの行が読める**。`class=I` とクォート無しでも効く。1000 行で 115 ミリ秒 / 70 KB |
+| `pagehide` の届き方 | <strong>閉じ方によって `sendBeacon` が届かない。</strong>Playwright で `page.close()`・`goto('about:blank')`・別ページへの遷移は届くが、`context.close()` と `window.close()` は届かない |
+| リロードと離脱の区別 | `pagehide` は**閉じたときもリロードでも起きる**ため、ブラウザ側では区別できない。サーバーで 5 秒待ち、接続が戻るかを見て判断する |
 
 ### ログの置き場
 

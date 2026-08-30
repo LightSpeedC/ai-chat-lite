@@ -562,6 +562,16 @@ footer a {
 .badge.b-todo { background: linear-gradient(100deg, #5a6472, #97a1ae); }
 .badge.b-doing { background: linear-gradient(100deg, #b8620a, #f0a548); }
 .badge.b-done { background: linear-gradient(100deg, #1d7a3c, #45b56c); }
+
+/*
+ * 別の課題へ切り出したもの。その課題としては済だが、やること自体は
+ * 残っている。追えるように行き先を書き添える。
+ * 状態の 3 段階とは別の意味なので、色も別にする。
+ */
+.badge.b-moved {
+	background: linear-gradient(100deg, #3f4b8a, #7a86c4);
+	color: #fff;
+}
 </style>
 </head>
 <body>
@@ -644,27 +654,54 @@ footer a {
 	<summary>
 		<span class="badge b-todo">未</span>
 		データ
-		<span class="count">2 件 / 未 2</span>
+		<span class="count">3 件 / 未 2 / 着手 1</span>
 	</summary>
 
 	<div class="groupbody">
 
-		<details class="issue" id="i-20260830-09" open>
+		<details class="issue" id="i-20260830-15" open>
 			<summary>
 				<span class="badge b-todo">未</span>
+				<span class="no">20260830-15</span>
+				消したものを本当に消す手段がない
+			</summary>
+			<div class="issuebody">
+				<p><a href="../10_plan/20260830-02-削除機能.html">削除機能</a>は論理削除で作る。<code>deleted_at</code> を入れるだけなので<strong>元の中身は DB に残る</strong>。見えなくなるだけで、<code>dump</code> でも控えの zip でも読める。</p>
+				<p>取り消せることを優先した結果で、それ自体は狙いどおり。ただし<strong>本当に消したい場面</strong>が出てきたときの手段が無い。</p>
+				<p>2 つのやり方がある。どちらも取り消せない。</p>
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> 行を消す（<code>DELETE</code>）。<code>msg_seq</code> が飛ぶ</li>
+					<li><span class="badge b-todo">未</span> 本文を置き換える（<code>msg_body</code> を「（削除されました）」に）。行は残る</li>
+					<li><span class="badge b-todo">未</span> どちらを採るか、あるいは両方持つかを決める</li>
+					<li><span class="badge b-todo">未</span> 論理削除したものだけを対象にするか、直接消せるようにするかを決める</li>
+					<li><span class="badge b-todo">未</span> 控えを取ってからでないと実行できない形にするか検討する</li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue doing" id="i-20260830-09" open>
+			<summary>
+				<span class="badge b-doing">着手</span>
 				<span class="no">20260830-09</span>
 				いらなくなった参加者・ルーム・発言を片付ける手段がない
 			</summary>
 			<div class="issuebody">
 				<p>いちど参加すると <code>users</code> に残り、<code>join</code> のメッセージもログに積まれる。取り消す方法が無い。ルームも同じで、<code>messages</code> に 1 件でも入れば一覧に出続ける。</p>
 				<p>実際に動作確認で名乗った ID や、<code>sandbox-mteyisfc</code> のような使い捨てのルームが残っている。誤って投稿した発言を消す手段も無い。</p>
-				<p><strong>認証が無いことをどう扱うかが論点。</strong>いまは誰でも読み書きできる前提なので、消す操作も誰でもできてしまう。<code>/api/admin/</code> に寄せるか、消さずに「隠す」印を付けるだけにするか、決める必要がある。</p>
+				<p><a class="doclink" href="../10_plan/20260830-02-アーカイブ機能.html">アーカイブ機能の設計</a>を書いた。<strong>消さずに archive する</strong>形で、1 回の操作を <code>archives</code> テーブルの 1 行として記録し、まとめて戻せるようにする。</p>
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> 消すのか隠すのかを決める（履歴を残すなら隠すほうが安全）</li>
-					<li><span class="badge b-todo">未</span> 参加者を片付ける（<code>users</code> と、その <code>cursors</code> も一緒に）</li>
-					<li><span class="badge b-todo">未</span> ルームを片付ける（<code>messages</code> ごとか、一覧から外すだけか）</li>
-					<li><span class="badge b-todo">未</span> 発言を 1 件だけ取り消せるようにする</li>
-					<li><span class="badge b-todo">未</span> 画面から操作できるようにするか、CLI だけにするか決める</li>
+					<li class="done"><span class="badge b-done">☑</span> 消すのか隠すのかを決める → <strong>archive（戻せる形）にする</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> 参加者を片付ける方式 → <code>users</code> と <code>cursors</code>。<code>--with-messages</code> で発言も</li>
+					<li class="done"><span class="badge b-done">☑</span> ルームを片付ける方式 → <code>messages</code> と <code>cursors</code> に番号を入れる。<code>public</code> は不可</li>
+					<li class="done"><span class="badge b-done">☑</span> 発言を 1 件だけ取り消す方式 → <code>archive message &lt;msg_seq&gt;</code></li>
+					<li class="done"><span class="badge b-done">☑</span> 画面か CLI か → <strong>片付けは CLI、戻すのは画面からも</strong></li>
+					<li><span class="badge b-todo">未</span> <code>archives</code> テーブルと 3 テーブルへの列追加</li>
+					<li><span class="badge b-todo">未</span> <code>messages</code> を作り直して <code>msg_kind</code> に <code>archive</code> を足す</li>
+					<li><span class="badge b-todo">未</span> 読み出し 8 関数に <code>archived_seq IS NULL</code> を足す</li>
+					<li><span class="badge b-todo">未</span> API 3 つと CLI コマンド 3 つ</li>
+					<li><span class="badge b-todo">未</span> 画面で <code>archive#&lt;seq&gt;</code> を押せるようにする</li>
+					<li><span class="badge b-todo">未</span> テストを書く</li>
+					<li><span class="badge b-todo">未</span> USAGE に書く</li>
 				</ul>
 			</div>
 		</details>
@@ -760,33 +797,99 @@ footer a {
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">6 件 / 未 4 / 済 2</span>
+		<span class="count">8 件 / 未 5 / 済 3</span>
 	</summary>
 
 	<div class="groupbody">
 
-		<details class="issue" id="i-20260830-13" open>
+		<details class="issue" id="i-20260830-14" open>
 			<summary>
 				<span class="badge b-todo">未</span>
+				<span class="no">20260830-14</span>
+				ルーム一覧を常に見えるようにし、自分宛ての着信を知らせる
+			</summary>
+			<div class="issuebody">
+				<p>いまルームは選択欄（<code>select</code>）で、<strong>開かないと何があるか見えない</strong>。他のルームに自分宛ての発言が来ても気づけない（<a href="#i-20260830-11">20260830-11</a> と同じ根）。</p>
+				<p>参加者一覧の上にルーム一覧を固定で置き、<strong>未読と自分宛てが一目で分かる</strong>ようにする。</p>
+
+				<h3>実現の見通し</h3>
+				<p>材料は揃っている。<code>cursors</code>（誰がどのルームをどこまで読んだか）と各ルームの最大 <code>msg_seq</code> の差が未読数、<code>to_user_id</code> が自分と一致する発言の有無が名指しの有無になる。</p>
+				<p><code>GET /api/rooms</code> を広げてルームごとに返す形が素直。</p>
+				<pre><code class="language-json">[
+  { "room_id": "public", "unread": 12, "mentions": 2 },
+  { "room_id": "dev",    "unread": 0,  "mentions": 0 }
+]</code></pre>
+
+				<h3>詰めるところ</h3>
+				<p><strong>SSE はいまいるルームの発言しか流していない。</strong>他のルームの着信を知るには、配信の範囲を広げるか、定期的に <code>/api/rooms</code> を取り直すかを決める必要がある。</p>
+				<p>ルームが増えたときの見せ方も決めていない。数が多くなると縦に伸びる。</p>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> <code>/api/rooms</code> に <code>unread</code> と <code>mentions</code> を足す</li>
+					<li><span class="badge b-todo">未</span> 他のルームの着信をどう知るか決める（SSE を広げる / 定期取得）</li>
+					<li><span class="badge b-todo">未</span> 選択欄をやめ、参加者一覧の上に固定で並べる</li>
+					<li><span class="badge b-todo">未</span> 未読と名指しの見せ方を決める（数字・色・記号）</li>
+					<li><span class="badge b-todo">未</span> ルームが増えたときの扱いを決める</li>
+					<li><span class="badge b-todo">未</span> 画面のテストを書く</li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue done" id="i-20260830-13">
+			<summary>
+				<span class="badge b-done">☑</span>
 				<span class="no">20260830-13</span>
 				画面をリロードするたびに離脱が積まれる
 			</summary>
 			<div class="issuebody">
-				<p>ブラウザを閉じるときだけでなく、<strong>リロードでも <code>pagehide</code> が起きる</strong>。そのたびに <code>/api/leave</code> が呼ばれ、「〇〇 が離脱しました」が記録される。</p>
-				<p>実際に 5 秒間で 6 行並んだ。ログとして実態を表していない。</p>
-				<pre><code class="language-text">10:43:29.379 -- human が離脱しました
-10:43:30.614 -- human が離脱しました
-10:43:31.201 -- human が離脱しました
-10:43:31.547 -- human が離脱しました
-10:43:32.178 -- human が離脱しました
-10:43:34.017 -- human が離脱しました</code></pre>
-				<p>離脱を積む条件が「<code>/api/leave</code> が呼ばれたら」になっている。<strong>本当に居なくなったかを見ていない</strong>。リロードなら数秒後に同じ相手が戻ってくる。</p>
-				<p>猶予を過ぎてオフラインに落ちたことは <code>sweepOffline()</code> が別に記録している。<strong>明示的な離脱と二重になっている面もある</strong>。</p>
+				<p>ブラウザを閉じるときだけでなく、<strong>リロードでも <code>pagehide</code> が起きる</strong>。そのたびに <code>/api/leave</code> が呼ばれ、「〇〇 が離脱しました」が記録されていた。実測でリロード 3 回につき 3 件。</p>
+				<p><code>pagehide</code> からは閉じたのかリロードなのか区別できない。<strong>区別できるのはサーバー側</strong>で、少し待って接続が戻ってくるかを見ればよい。リロードなら 1 秒ほどで繋ぎ直す。</p>
+				<p><code>/api/leave</code> を受けたら 5 秒待ち、その時点で接続が 0 のままなら積む形にした（<code>AICHAT_LEAVE_GRACE_MS</code> で変えられる）。在席の表示だけは即座に変える。</p>
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> 積む条件を決める。接続が 0 になってしばらく戻らなければ積む、が有力</li>
-					<li><span class="badge b-todo">未</span> <code>sweepOffline()</code> の記録と役割が重なっていないか整理する</li>
-					<li><span class="badge b-todo">未</span> 短い間に何度も出さないようにする（同じ相手の連続を 1 行にまとめる等）</li>
-					<li><span class="badge b-todo">未</span> 既に積まれている分をどうするか決める</li>
+					<li class="done"><span class="badge b-done">☑</span> 積む条件を決める → <strong>5 秒待って戻らなければ積む</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> 実ブラウザで確かめる（claude-in-chrome でリロード 3 回 → 0 件、閉じる → 1 件）</li>
+					<li class="done"><span class="badge b-done">☑</span> 回帰テストを書く（<code>reload-leave.spec.ts</code> 4 件）</li>
+					<li class="done"><span class="badge b-done">☑</span> 既に積まれている分 → <strong>DB を作り直したので残っていない</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> <span class="badge b-moved">移動</span> <code>sweepOffline()</code> の記録と役割が重なっている点は<a href="#i-20260830-16">20260830-16</a>へ切り出した</li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue" id="i-20260830-16" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">20260830-16</span>
+				離脱の記録が 2 か所から積まれる
+			</summary>
+			<div class="issuebody">
+				<p>離脱を積む処理が 2 つあり、意味が重なっている。</p>
+				<div class="tablewrap">
+				<table>
+					<thead>
+						<tr><th class="nowrap">箇所</th><th>契機</th><th class="nowrap">文言</th><th class="nowrap">投稿先</th></tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td class="nowrap"><code>handleLeave</code></td>
+							<td><code>/api/leave</code> を受けて 5 秒後</td>
+							<td class="nowrap">離脱しました</td>
+							<td class="nowrap"><strong>そのルーム</strong></td>
+						</tr>
+						<tr>
+							<td class="nowrap"><code>sweepOffline</code></td>
+							<td>猶予 90 秒を過ぎたら</td>
+							<td class="nowrap">オフラインになりました</td>
+							<td class="nowrap"><strong><code>public</code> 固定</strong></td>
+						</tr>
+					</tbody>
+				</table>
+				</div>
+				<p>タブを閉じると<strong>両方が積まれる</strong>。5 秒後に「離脱しました」、90 秒後に「オフラインになりました」が並ぶ。</p>
+				<p>投稿先も食い違っている。片方はそのルーム、もう片方は <code>public</code> 固定。<strong>ルームごとの在席を持っていない</strong>ことが根にある。</p>
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> 2 つの役割を整理する（どちらか 1 つにするか、意味を分けるか）</li>
+					<li><span class="badge b-todo">未</span> 投稿先を揃える。ルームごとの在席を持つかどうかも決める</li>
+					<li><span class="badge b-todo">未</span> 待受け中の AI が相手の離脱に気づけることを保つ</li>
 				</ul>
 			</div>
 		</details>
@@ -922,6 +1025,15 @@ footer a {
 	<p>グループの状態と件数は<strong>中身から数え直しています</strong>。課題を足したり状態を変えたりしたときに、見出しと目次を手で直す必要はありません。</p>
 
 	<p><strong>片付いた課題は元のグループに残します。</strong>どういう文脈で出てきた課題だったかが分かるためです。グループごと片付いたら、そのグループを <code>issues-archive</code> へ移します。</p>
+
+	<h2>やることを別の課題へ移したとき</h2>
+
+	<p>やることの一部が「別の話」だと分かることがあります。その場合は<strong>新しい課題を立て、元の行は済にします</strong>。<span class="badge b-moved">移動</span> を付けて行き先を書き添えます。</p>
+
+	<pre><code class="language-html">&lt;li class="done"&gt;&lt;span class="badge b-done"&gt;☑&lt;/span&gt;
+  &lt;span class="badge b-moved"&gt;移動&lt;/span&gt; …は&lt;a href="#i-20260830-16"&gt;20260830-16&lt;/a&gt;へ切り出した&lt;/li&gt;</code></pre>
+
+	<p><strong>元の課題としては済んでいます。</strong>やること自体は残っていますが、それは移した先が持ちます。未のまま残すと、片付いた課題がいつまでも開いたままになります。</p>
 </section>
 
 </div>
