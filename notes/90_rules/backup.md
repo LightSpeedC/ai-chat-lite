@@ -29,7 +29,16 @@ tools\80_ops\register-backup-tasks.cmd
 | やること | 中身 |
 |---|---|
 | 置き場を整える | 区分を分ける前のものを `hourly` へ移し、最新の 1 本を残り 3 区分にも配る。配らないと `monthly` が空のまま翌月 1 日まで待つことになる |
-| タスクを登録する | 4 つ登録する。既に同じ名前があれば作り直す |
+| タスクを登録する | タスクスケジューラの `\ai-chat-lite\` フォルダに 4 つ登録する。フォルダは自動で作られる。既に同じ名前があれば作り直す |
+
+登録されるのはこの 4 つ。**名前に時刻が入っているので、一覧の並び順がそのまま実行順になる**。
+
+| タスク名 | 区分 |
+|---|---|
+| `ai-chat-lite バックアップ 00時00分 (毎時)` | `hourly` |
+| `ai-chat-lite バックアップ 00時01分 (毎日)` | `daily` |
+| `ai-chat-lite バックアップ 00時02分 (毎週)` | `weekly` |
+| `ai-chat-lite バックアップ 00時03分 (毎月)` | `monthly` |
 
 ### いつ取られるか
 
@@ -107,10 +116,23 @@ Get-ChildItem _backup -Recurse -Filter 'chat-*.db.zip' |
 数が増えていない区分があれば、タスクが動いていない。
 
 ```powershell
-Get-ScheduledTask -TaskName 'ai-chat-lite バックアップ*' |
+Get-ScheduledTask -TaskPath '\ai-chat-lite\' |
 	Get-ScheduledTaskInfo |
 	Select-Object TaskName, LastRunTime, LastTaskResult
 ```
+
+> [!NOTE]
+> <strong>`-TaskPath` を省くと見つからない。</strong>タスクは `\ai-chat-lite\` フォルダに置いてある。名前だけで `Get-ScheduledTask` を呼んでも 0 件になる。
+
+### やめるとき
+
+```batch
+tools\80_ops\unregister-backup-tasks.cmd
+```
+
+4 つとも解除し、**空になったフォルダも消す**。ほかのタスクが同じフォルダに残っていれば、フォルダは消さずにそのままにする。
+
+控え（`_backup`）は消さない。要らなくなったら手で消す。
 
 | `LastTaskResult` | 意味 |
 |---:|---|

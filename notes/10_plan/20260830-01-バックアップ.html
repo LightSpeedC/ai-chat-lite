@@ -282,6 +282,97 @@
 
 	<p>月曜 0 時には 4 つすべてが順に走る。1 分ずつずれているため重ならない。</p>
 
+	<h2>専用のフォルダに置く</h2>
+
+	<p>タスクスケジューラの <code>\ai-chat-lite\</code> フォルダに作る。<strong>ルート直下には置かない。</strong>Windows が既定で持っているタスクに紛れると、どれが自分のものか見分けがつかなくなる。</p>
+
+	<p>フォルダは登録のときに自動で作られる。管理者権限は要らない。</p>
+
+	<div class="callout callout-important">
+		<p><strong><code>-TaskPath</code> を省くと見つからない。</strong>フォルダに入れたタスクは、名前だけで <code>Get-ScheduledTask</code> や <code>Unregister-ScheduledTask</code> を呼んでも 0 件になる。登録・照会・解除のすべてで同じパスを渡す。</p>
+	</div>
+
+	<h3>名前に時刻を入れる</h3>
+
+	<p>タスク名を「毎時・毎日・毎週・毎月」だけにすると、一覧が<strong>文字コード順に並び、実行順とは無関係な並びになる</strong>。実際にこうなった。</p>
+
+	<pre><code class="language-text">ai-chat-lite バックアップ (毎月)   ← 実行は最後なのに先頭
+ai-chat-lite バックアップ (毎時)
+ai-chat-lite バックアップ (毎週)
+ai-chat-lite バックアップ (毎日)   ← 実行は 2 番目なのに最後</code></pre>
+
+	<p>時刻を先に置けば、名前順がそのまま実行順になる。一覧を見るだけでいつ走るかも分かる。</p>
+
+	<pre><code class="language-text">ai-chat-lite バックアップ 00時00分 (毎時)
+ai-chat-lite バックアップ 00時01分 (毎日)
+ai-chat-lite バックアップ 00時02分 (毎週)
+ai-chat-lite バックアップ 00時03分 (毎月)</code></pre>
+
+	<div class="callout callout-warning">
+		<p><strong>タスク名に <code>:</code> は使えない。</strong>タスクは <code>C:\Windows\System32\Tasks\</code> の下にタスク名と同じ名前のファイルとして保存されるため、ファイル名に使えない文字（<code>: \ / * ? " &lt; &gt; |</code>）は名前にできない。</p>
+		<p><code>00:00</code> と書くと<strong>「パラメーターが間違っています」で落ちる</strong>。エラーからは原因が分からない。<code>00時00分</code> のように置き換える。</p>
+	</div>
+
+	<h3>フォルダの消し方</h3>
+
+	<p><code>Unregister-ScheduledTask</code> はタスクを消すだけで<strong>フォルダを残す</strong>。フォルダを消すコマンドレットは無いため、COM を使う。</p>
+
+	<pre><code class="language-powershell">$svc = New-Object -ComObject Schedule.Service
+$svc.Connect()
+$svc.GetFolder('\').DeleteFolder('ai-chat-lite', 0)</code></pre>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">状態</th><th>結果</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">空</td>
+				<td>消える。管理者権限は要らない</td>
+			</tr>
+			<tr>
+				<td class="nowrap">中にタスクがある</td>
+				<td><strong>「ディレクトリが空ではありません」で拒否される。中のタスクは無事</strong></td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>拒否される側の挙動があるため、人が別のタスクを同じフォルダに入れていても巻き添えにしない。解除の処理に組み込んでよい。</p>
+
+	<h2>毎月のトリガは XML で作る</h2>
+
+	<p>4 つのうち月次だけ作り方が違う。<code>New-ScheduledTaskTrigger</code> に月次の指定が無く、CIM のクラスを組み立てても<strong>「パラメーターが間違っています」で受け付けられない</strong>。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">作り方</th><th>結果</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>New-ScheduledTaskTrigger</code></td>
+				<td>月次の指定が無い</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>MSFT_TaskMonthlyTrigger</code> を組み立てる</td>
+				<td>登録時に「パラメーターが間違っています」で失敗する</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>Register-ScheduledTask -Xml</code></td>
+				<td><strong>通る</strong></td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>プロパティ名にも罠がある。<code>MonthsOfYear</code> ではなく <code>MonthOfYear</code>（単数）。複数形で書くと「そのプロパティは見つからない」で落ちる。ただし直しても登録は通らない。</p>
+
+	<div class="callout callout-warning">
+		<p><strong><code>Register-ScheduledTask</code> は失敗しても止まらない。</strong><code>$ErrorActionPreference = 'Stop'</code> を置いていても次の行へ進む。<code>-ErrorAction Stop</code> を明示しないと、<strong>登録に失敗したのに「登録しました」と表示される</strong>。実際にこれを踏んだ。</p>
+	</div>
+
 	<h2>電源とネットワークの条件を外す</h2>
 
 	<p>既定ではバッテリー駆動中にタスクが動かない。ノート PC で使うことを考え、次を指定する。</p>
@@ -577,8 +668,8 @@ notes/90_rules/backup.html      … 運用の手引き</code></pre>
 				<td>8 件を <code>hourly</code> へ移し、最新 1 本を残り 3 区分へ配った</td>
 			</tr>
 			<tr>
-				<td class="nowrap">タスクの登録</td><td class="nowrap"><span class="badge b-none">未</span></td>
-				<td><code>register-backup-tasks.cmd</code> は用意した。実行はこれから</td>
+				<td class="nowrap">タスクの登録</td><td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td><code>\ai-chat-lite\</code> フォルダに 4 つ登録した。手で起動して <code>LastTaskResult = 0</code> と新しい世代の追加を確認</td>
 			</tr>
 		</tbody>
 	</table>

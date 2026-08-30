@@ -67,8 +67,24 @@ tools\80_ops\register-backup-tasks.cmd</code></pre>
 			</tr>
 			<tr>
 				<td class="nowrap">タスクを登録する</td>
-				<td>4 つ登録する。既に同じ名前があれば作り直す</td>
+				<td>タスクスケジューラの <code>\ai-chat-lite\</code> フォルダに 4 つ登録する。フォルダは自動で作られる。既に同じ名前があれば作り直す</td>
 			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>登録されるのはこの 4 つ。<strong>名前に時刻が入っているので、一覧の並び順がそのまま実行順になる</strong>。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">タスク名</th><th class="nowrap">区分</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap"><code>ai-chat-lite バックアップ 00時00分 (毎時)</code></td><td class="nowrap"><code>hourly</code></td></tr>
+			<tr><td class="nowrap"><code>ai-chat-lite バックアップ 00時01分 (毎日)</code></td><td class="nowrap"><code>daily</code></td></tr>
+			<tr><td class="nowrap"><code>ai-chat-lite バックアップ 00時02分 (毎週)</code></td><td class="nowrap"><code>weekly</code></td></tr>
+			<tr><td class="nowrap"><code>ai-chat-lite バックアップ 00時03分 (毎月)</code></td><td class="nowrap"><code>monthly</code></td></tr>
 		</tbody>
 	</table>
 	</div>
@@ -159,9 +175,21 @@ Remove-Item _data\MAINTENANCE</code></pre>
 
 	<p>数が増えていない区分があれば、タスクが動いていない。</p>
 
-	<pre><code class="language-powershell">Get-ScheduledTask -TaskName 'ai-chat-lite バックアップ*' |
+	<pre><code class="language-powershell">Get-ScheduledTask -TaskPath '\ai-chat-lite\' |
 	Get-ScheduledTaskInfo |
 	Select-Object TaskName, LastRunTime, LastTaskResult</code></pre>
+
+	<div class="callout">
+		<p><strong><code>-TaskPath</code> を省くと見つからない。</strong>タスクは <code>\ai-chat-lite\</code> フォルダに置いてある。名前だけで <code>Get-ScheduledTask</code> を呼んでも 0 件になる。</p>
+	</div>
+
+	<h2>やめるとき</h2>
+
+	<pre><code class="language-batch">tools\80_ops\unregister-backup-tasks.cmd</code></pre>
+
+	<p>4 つとも解除し、<strong>空になったフォルダも消す</strong>。ほかのタスクが同じフォルダに残っていれば、フォルダは消さずにそのままにする。</p>
+
+	<p>控え（<code>_backup</code>）は消さない。要らなくなったら手で消す。</p>
 
 	<div class="tablewrap">
 	<table>
