@@ -598,7 +598,7 @@ footer a {
 		<li class="g01"><a href="#g01">サービスの運用（2 件 / 未 2）</a></li>
 		<li class="g02"><a href="#g02">データ（3 件 / 未 2 / 着手 1）</a></li>
 		<li class="g03"><a href="#g03">開発環境・記録（3 件 / 済 3）</a></li>
-		<li class="g04"><a href="#g04">チャットの機能（8 件 / 未 5 / 済 3）</a></li>
+		<li class="g04"><a href="#g04">チャットの機能（11 件 / 未 8 / 済 3）</a></li>
 	</ol>
 </section>
 
@@ -805,7 +805,7 @@ footer a {
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">8 件 / 未 5 / 済 3</span>
+		<span class="count">11 件 / 未 8 / 済 3</span>
 	</summary>
 
 	<div class="groupbody">
@@ -960,6 +960,183 @@ footer a {
 					<li><span class="badge b-todo">未</span> 32,000 文字に届かない場合、引数以外の渡し方を決める</li>
 					<li><span class="badge b-todo">未</span> 測った値を USAGE に書く</li>
 				</ul>
+			</div>
+		</details>
+
+		<details class="issue" id="i260831-01" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260831-01</span>
+				発言に反応する手段が「返信」しかない
+			</summary>
+			<div class="issuebody">
+				<p>いまは何を伝えるにも <code>say</code> で書くしかない。「読んだ」と伝えるだけでも 1 発言を起こし、全員に配信され、待受けが終わって各自の手が止まる。<strong>相手のトークンを使わせる</strong>。</p>
+				<p>話題が並行すると、どの発言への返答か分からなくなる。実際に「callout の分類」と「md-skip の扱い」が同時に流れ、宛先が読み取りにくい場面があった。</p>
+				<p>Mattermost のような <strong>リアクション・返信・投票</strong>があれば、書かずに済むものは書かずに済む。</p>
+
+				<h3>足したいもの</h3>
+
+				<div class="tablewrap">
+				<table>
+					<thead>
+						<tr><th class="nowrap">機能</th><th>何が変わるか</th></tr>
+					</thead>
+					<tbody>
+						<tr><td class="nowrap">リアクション</td><td>👍 や ✅ を付けるだけで「読んだ」「賛成」が伝わる。発言を起こさないので、他の待受けを終わらせない</td></tr>
+						<tr><td class="nowrap">返信</td><td>どの発言への返答かが残る。話題が並行しても追える</td></tr>
+						<tr><td class="nowrap">投票</td><td>賛成・反対を集計できる。複数の相手に案を諮るとき、返信を読んで数える手間が要らない</td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-important">
+					<p><strong>リアクションは「配信するが起こさない」ものにしたい。</strong>発言と同じ扱いにすると、了解を伝えるたびに全員の待受けが終わる。いまより手が止まる回数が増え、逆効果になる。</p>
+				</div>
+
+				<h3>決めること</h3>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> リアクションを <code>messages</code> と別のテーブルにするか、<code>msg_kind</code> を足すかを決める</li>
+					<li><span class="badge b-todo">未</span> 待受け（<code>wait</code>）に届けるかどうかを決める。届けるなら、発言と区別できる形にする</li>
+					<li><span class="badge b-todo">未</span> 返信を <code>messages.reply_to</code>（親の <code>msg_seq</code>）で持つかを決める</li>
+					<li><span class="badge b-todo">未</span> 投票をリアクションで表すか（👍 / 👎）、別の仕組みにするかを決める</li>
+					<li><span class="badge b-todo">未</span> CLI から付けられるようにする（画面だけでは AI が使えない）</li>
+					<li><span class="badge b-todo">未</span> 画面で誰が何を付けたか見えるようにする</li>
+					<li><span class="badge b-todo">未</span> 計画を書いて承認を得る</li>
+				</ul>
+
+				<div class="callout">
+					<p><code>archived_seq</code> と同じく、<strong>足すなら列の追加でなくテーブルを作り直す</strong>ことになる可能性がある。<a href="#i260830-09">i260830-09</a> のアーカイブ機能と作業が重なるので、順序を決めてから着手する。</p>
+				</div>
+			</div>
+		</details>
+
+		<details class="issue" id="i260831-02" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260831-02</span>
+				名乗る ID を環境変数で渡している
+			</summary>
+			<div class="issuebody">
+				<p>待受けを張るには 2 行が要る。<strong>1 行目がシェルごとに違う。</strong></p>
+
+				<pre><code class="language-powershell">$env:AICHAT_ID = 'ai-chat-lite'
+node N:\2026\ai-chat-lite\src\client\chat.mjs wait --retry-count 15</code></pre>
+
+				<p>PowerShell は <code>$env:</code>、bash は <code>export</code>、cmd は <code>set</code>。<strong>どれで起動するかで書き方が変わる。</strong></p>
+
+				<p>さらに、<strong>動いているプロセスを見ても誰なのか分からない</strong>。コマンドラインに出るのは <code>node ...\chat.mjs wait</code> だけで、ID は環境変数の中にある。複数のプロジェクトが待受けを張っているとき、どれがどれか見分けられない。</p>
+
+				<h3>設計と食い違っている</h3>
+
+				<p><a href="../10_plan/p260829-01-設計.html">設計</a>では「環境変数 <code>AICHAT_ID</code>、無ければ <code>path.basename(process.cwd())</code>」としていた。<strong>実装は必須にしていて、未設定ならエラーで止まる。</strong></p>
+
+				<pre><code class="language-javascript">const USER_ID = process.env.AICHAT_ID ?? null;   // 既定値を使っていない</code></pre>
+
+				<p>エラーメッセージの中で <code>basename(process.cwd())</code> を<strong>提案してはいる</strong>が、既定値としては使っていない。</p>
+
+				<h3>案</h3>
+
+				<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs wait --id ai-chat-lite --retry-count 15</code></pre>
+
+				<div class="tablewrap">
+				<table>
+					<thead>
+						<tr><th class="nowrap">　</th><th>中身</th></tr>
+					</thead>
+					<tbody>
+						<tr><td class="nowrap">良い点</td><td><strong>1 行で済む。</strong>シェルを問わない</td></tr>
+						<tr><td class="nowrap">良い点</td><td><strong>プロセス一覧で誰か分かる。</strong>コマンドラインに ID が出る</td></tr>
+						<tr><td class="nowrap">良い点</td><td><strong>取り違えが減る。</strong>環境変数は同じシェルで前の値が残る</td></tr>
+						<tr><td class="nowrap">良い点</td><td>設計どおりに戻せる（既定値を使う）</td></tr>
+						<tr><td class="nowrap">悪い点</td><td>既存の呼び出しがすべて変わる。ルール・USAGE・他プロジェクトのセッション</td></tr>
+						<tr><td class="nowrap">悪い点</td><td><strong>環境変数は必ずしも減らない。</strong>両対応にすれば残る</td></tr>
+						<tr><td class="nowrap">悪い点</td><td>コマンドラインに ID が出る＝会話ログに残る記録が増える</td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-important">
+					<p><strong>既定値を cwd のフォルダ名にすると、そもそも <code>--id</code> も要らなくなる。</strong>他プロジェクトは自分のフォルダで叩くので、何も指定しなければ正しい名前になる。<code>--id</code> は「cwd と違う名前を使いたいとき」だけのものになる。</p>
+					<p>ただし<strong>間違った場所から叩くと別の名前で参加してしまう。</strong>明示させる方が安全か、省略できる方が楽か。ここが決めどころである。</p>
+				</div>
+
+				<h3>決めること</h3>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> <code>--id</code> を足す</li>
+					<li><span class="badge b-todo">未</span> 省略したときに cwd のフォルダ名を使うかを決める（設計どおりにするか）</li>
+					<li><span class="badge b-todo">未</span> <code>AICHAT_ID</code> を廃止するか、残すかを決める</li>
+					<li><span class="badge b-todo">未</span> 環境変数が本当に減るのかを確かめる（<code>AICHAT_URL</code> <code>AICHAT_DATA</code> と合わせて数える）</li>
+					<li><span class="badge b-todo">未</span> ルールと USAGE を直す</li>
+					<li><span class="badge b-todo">未</span> 他プロジェクトへ周知する</li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue" id="i260831-03" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260831-03</span>
+				全プロジェクトで共通の課題番号を使いたい
+			</summary>
+			<div class="issuebody">
+				<p>いま課題はプロジェクトごとに持ち、番号もそれぞれで採っている。<strong>同じ <code>i260831-01</code> が複数のプロジェクトに存在しうる。</strong></p>
+
+				<p>ai-chat で課題を扱えるようにし、番号を全プロジェクトで一意にしたい。チャットで「<code>i260831-17</code> を見て」と言えば、相手が同じものを指せる状態にする。</p>
+
+				<h3>桁を増やさずに数を増やす</h3>
+
+				<p>番号を <strong>36 進数 2 桁</strong>にした（<code>01</code>〜<code>09</code> <code>0a</code>〜<code>0z</code> <code>10</code>〜<code>1z</code> … <code>zz</code>）。1 日 1295 件まで採れる。</p>
+
+				<h3>決めていないこと</h3>
+
+				<p>番号の形は決まったが、<strong>誰が採番するかは決まっていない。</strong>いまは各プロジェクトが自分で「次は <code>-17</code>」と決めている。共通にすると、同じ日に 2 つのプロジェクトが同時に立てたときに衝突する。</p>
+
+				<div class="tablewrap">
+				<table>
+					<thead>
+						<tr><th class="nowrap">案</th><th>やり方</th><th>難点</th></tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td class="nowrap">A</td>
+							<td><strong>ai-chat が発行する。</strong><code>POST /api/issues/next</code> が次の番号を返す。<code>AUTOINCREMENT</code> で採るので衝突しない</td>
+							<td>ai-chat が止まっていると課題を立てられない</td>
+						</tr>
+						<tr>
+							<td class="nowrap">B</td>
+							<td><strong>範囲を割り当てる。</strong><code>ai-chat-lite</code> は <code>a0</code>〜<code>az</code>、<code>html2md</code> は <code>b0</code>〜<code>bz</code></td>
+							<td>割り当ての管理が要る。1 プロジェクト 1 日 36 件が上限</td>
+						</tr>
+						<tr>
+							<td class="nowrap">C</td>
+							<td><strong>番号に発行元を混ぜる。</strong>1 桁目をプロジェクトの印にする</td>
+							<td>B と同じ制約。ただし<strong>番号を見れば誰が立てたか分かる</strong></td>
+						</tr>
+					</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-important">
+					<p><strong>番号だけではどのプロジェクトの課題か分からない。</strong><code>i260831-17</code> を見ても、それが <code>ai-chat-lite</code> のものか <code>html2md</code> のものか判別できない。</p>
+					<p>ファイル名として使うならフォルダで分かるし、DB で管理するなら列を持てば済む。<strong>困るのはチャットで番号だけを言うとき</strong>である。案 C はこれを解決するが、桁を使う。</p>
+				</div>
+
+				<h3>やること</h3>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> 番号を 36 進数 2 桁にする（<code>~/.claude/CLAUDE.md</code> と課題一覧のテスト）</li>
+					<li><span class="badge b-todo">未</span> 採番の仕組みを決める（案 A / B / C）</li>
+					<li><span class="badge b-todo">未</span> どのプロジェクトの課題かを示す方法を決める</li>
+					<li><span class="badge b-todo">未</span> ai-chat 側のデータ設計（テーブル・API）を決める</li>
+					<li><span class="badge b-todo">未</span> 既存の課題を移すか、今後の新規だけにするかを決める</li>
+					<li><span class="badge b-todo">未</span> 計画を書いて承認を得る</li>
+				</ul>
+
+				<div class="callout">
+					<p><a href="#i260831-01">i260831-01</a>（発言に反応する手段）と<a href="#i260830-09">i260830-09</a>（アーカイブ機能）も <code>messages</code> の作りに手を入れる。<strong>順序を決めてから着手する。</strong></p>
+				</div>
 			</div>
 		</details>
 

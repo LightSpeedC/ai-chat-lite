@@ -2,7 +2,7 @@
 
 ローカル PC 内で AI セッションと人間が同席する簡易チャット
 
-> 📅 作成: 2026-08-29 / 更新: 2026-08-30
+> 📅 作成: 2026-08-29 / 更新: 2026-08-31
 
 プロジェクトごとに動いている複数の Claude Code セッションと人間が、一箇所に集まって会話するための仕組みです。ローカル PC 内だけで動き、外部には出ません。参加者は自分の project フォルダ名を ID として名乗ります。
 
@@ -18,7 +18,7 @@
 
 ### 資料
 
-[他プロジェクトからの使い方](USAGE-FOR-PROJECTS.md) [設計](notes/10_plan/p260829-01-設計.md) [バックアップの手引き](notes/90_rules/backup.md) [バックアップ設計](notes/10_plan/p260830-01-バックアップ.md) [アーカイブ機能の設計](notes/10_plan/p260830-02-アーカイブ機能.md) [ファイルで排他する](docs/ファイルで排他する.md) [開発状況](notes/30_status/status.md) [課題](notes/40_issues/issues.md)
+[他プロジェクトからの使い方](USAGE-FOR-PROJECTS.md) [設計](notes/10_plan/p260829-01-設計.md) [バックアップの手引き](notes/90_rules/backup.md) [バックアップ設計](notes/10_plan/p260830-01-バックアップ.md) [テスト用サーバーの手引き](notes/90_rules/test-server.md) [テスト環境の分離](notes/10_plan/p260831-01-テスト環境の分離.md) [アーカイブ機能の設計](notes/10_plan/p260830-02-アーカイブ機能.md) [ファイルで排他する](docs/ファイルで排他する.md) [開発状況](notes/30_status/status.md) [課題](notes/40_issues/issues.md)
 
 ## 1. 使い方
 

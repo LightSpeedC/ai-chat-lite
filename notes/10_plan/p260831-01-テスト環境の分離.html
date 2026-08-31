@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>テスト環境の分離</title>
+<style>
+:root {
+	--navy1: #12224d;
+	--navy2: #2f5fbf;
+	--ink: #1c2330;
+	--ink-soft: #4a5568;
+	--line: #d9dfe8;
+	--code-bg: #f4f6fa;
+	--link: #1a4fa0;
+	--accent: #12224d;
+	--accent2: #2f5fbf;
+	--soft: #f2f5fb;
+}
+
+.ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
+.ch02 { --accent: hsl(224, 78%, 25%); --accent2: hsl(224, 58%, 55%); --soft: hsl(224, 28%, 95%); }
+.ch03 { --accent: hsl(168, 78%, 25%); --accent2: hsl(168, 58%, 55%); --soft: hsl(168, 28%, 95%); }
+.ch04 { --accent: hsl(112, 78%, 25%); --accent2: hsl(112, 58%, 55%); --soft: hsl(112, 28%, 95%); }
+.ch05 { --accent: hsl( 56, 78%, 25%); --accent2: hsl( 56, 58%, 55%); --soft: hsl( 56, 28%, 95%); }
+.ch06 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
+
+* { box-sizing: border-box; }
+
+body {
+	margin: 0;
+	font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+	font-size: 15.5px;
+	line-height: 1.85;
+	color: var(--ink, #1c2330);
+	background: #fdfdfe;
+}
+
+.titlebar {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 34px 30px 30px;
+}
+.titlebar .inner { max-width: 1600px; margin: 0 auto; }
+.titlebar h1 { font-size: 1.9em; margin: 0 0 8px; color: #fff; }
+.titlebar .lead { font-size: 0.95em; color: #d7e2f7; background: transparent; margin: 0; }
+.titlebar .date { font-size: 0.88em; color: #b9c9e8; background: transparent; margin: 10px 0 0; }
+
+.wrap { max-width: 1600px; margin: 0 auto; padding: 0 30px; }
+
+.toc { margin: 30px 0 0; }
+.toc ol {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 0;
+	margin: 12px 0 4px;
+	counter-reset: tocnum;
+}
+.toc ol li { counter-increment: tocnum; margin: 0; }
+.toc ol a {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: normal;
+	width: 310px;
+	max-width: 100%;
+	padding: 7px 13px;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+	line-height: 1.45;
+}
+.toc ol a::before { content: counter(tocnum) ". "; font-weight: 700; }
+
+section {
+	padding: 4px 26px 26px;
+	margin: 34px 0;
+	border-radius: 10px;
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
+	border: 1px solid var(--line, #d9dfe8);
+	color: var(--ink, #1c2330);
+}
+
+section h1 {
+	font-size: 1.4em;
+	padding: 14px 20px;
+	margin: 26px 0 20px;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	box-shadow: 0 3px 10px rgba(20, 34, 70, 0.22);
+}
+section h1 code { background: rgba(255, 255, 255, 0.16); color: #fff; border: none; }
+
+h2 {
+	font-size: 1.16em;
+	padding: 6px 12px;
+	margin: 30px 0 12px;
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 6px 6px 0;
+	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
+	color: var(--accent, #12224d);
+}
+
+h3 {
+	font-size: 1.02em;
+	display: inline-block;
+	padding-bottom: 3px;
+	margin: 20px 0 8px;
+	border-bottom: 2px dotted var(--accent2, #2f5fbf);
+	background: transparent;
+	color: var(--ink, #1c2330);
+}
+
+p, li { color: var(--ink, #1c2330); background: transparent; }
+a { color: var(--link, #1a4fa0); background: transparent; }
+
+code {
+	font-family: Consolas, "Cascadia Mono", monospace;
+	font-size: 0.92em;
+	padding: 1px 5px;
+	border-radius: 4px;
+	background: var(--code-bg, #f4f6fa);
+	border: 1px solid var(--line, #d9dfe8);
+	color: #17335f;
+}
+
+pre {
+	padding: 13px 16px;
+	overflow-x: auto;
+	border-radius: 0 8px 8px 0;
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 5px solid var(--accent2, #2f5fbf);
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	line-height: 1.65;
+}
+pre code { background: transparent; border: none; padding: 0; color: inherit; }
+
+.tablewrap { overflow-x: auto; margin: 14px 0; }
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 5px rgba(20, 34, 70, 0.10);
+	background: #fff;
+}
+th {
+	padding: 9px 12px;
+	text-align: left;
+	white-space: nowrap;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+}
+th code { background: rgba(255, 255, 255, 0.16); color: #fff; border: none; }
+td {
+	padding: 9px 12px;
+	vertical-align: top;
+	border-top: 1px solid var(--line, #d9dfe8);
+	background: transparent;
+	color: var(--ink, #1c2330);
+}
+tr:nth-child(even) td { background: #fafbfe; }
+td.nowrap, th.nowrap { white-space: nowrap; }
+td.num, th.num { text-align: right; }
+
+.badge {
+	display: inline-block;
+	padding: 1px 9px;
+	margin-right: 6px;
+	border-radius: 999px;
+	font-size: 0.84em;
+	font-weight: 700;
+	white-space: nowrap;
+	color: #fff;
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+}
+.b-ok { background: linear-gradient(100deg, #1d7a3c, #45b56c); }
+.b-ng { background: linear-gradient(100deg, #a51f22, #e05a5c); }
+.b-warn { background: linear-gradient(100deg, #b8620a, #f0a548); }
+.b-none { background: linear-gradient(100deg, #5a6472, #97a1ae); }
+
+.callout {
+	padding: 12px 18px;
+	margin: 16px 0;
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 8px 8px 0;
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+}
+.callout strong { color: var(--accent, #12224d); background: transparent; }
+.callout p { margin: 6px 0; }
+
+.fig { margin: 18px 0; text-align: center; }
+.fig svg { max-width: 100%; height: auto; }
+.fig figcaption { color: var(--ink-soft, #4a5568); background: transparent; font-size: 0.88em; margin-top: 6px; }
+
+footer {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding: 18px 30px 0;
+	color: var(--ink-soft, #4a5568);
+	background: transparent;
+}
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>テスト環境の分離</h1>
+		<p class="lead">忘れたら本番に届く、から、忘れたら止まる、へ</p>
+		<p class="date">📅 作成: 2026-08-31 / 更新: 2026-08-31</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p><a href="../../README.html">← README へ戻る</a></p>
+
+<nav class="toc">
+	<ol>
+		<li class="ch01"><a href="#ch01">なぜ分けるのか</a></li>
+		<li class="ch02"><a href="#ch02">置き場と既定値</a></li>
+		<li class="ch03"><a href="#ch03">環境を名乗る</a></li>
+		<li class="ch04"><a href="#ch04">見た目で分かる</a></li>
+		<li class="ch05"><a href="#ch05">他プロジェクトから使えない</a></li>
+		<li class="ch06"><a href="#ch06">書き分けと段取り</a></li>
+	</ol>
+</nav>
+
+<section class="ch01" id="ch01">
+<h1>なぜ分けるのか</h1>
+
+<p>テストは実際に動いているサーバーへ投稿する。<a href="p260830-03-テストデータ.html">テストデータの規約</a>で名前と後始末を決め、テスト用サーバーも立てられるようにした。それでも<strong>本番に届く経路が残っている</strong>。</p>
+
+<h2>残っている 5 つの経路</h2>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">経路</th><th>いま何が起きるか</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap">環境変数を忘れる</td><td>後始末スクリプトの既定が本番 DB。<strong>ダブルクリックで本番を触る</strong>。<code>VACUUM</code> まで走る</td></tr>
+<tr><td class="nowrap">サーバーを立て忘れる</td><td>テストが黙って本番へ繋ぐ。<strong>public に投稿が流れる</strong></td></tr>
+<tr><td class="nowrap">接続先を取り違える</td><td>気づく手立てが無い</td></tr>
+<tr><td class="nowrap">他プロジェクトが繋ぐ</td><td>テスト用サーバーに届いてしまう</td></tr>
+<tr><td class="nowrap">人が画面で取り違える</td><td>本番とテストの見た目が同じ</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout callout-warning">
+<p><strong>2 番目は実際に起きた。</strong>テスト用サーバーを立てる前にテストを走らせ、public へ投稿が流れて他プロジェクトの AI が返事をした。相手のトークンを使わせ、相手の会話ログにも残った。</p>
+</div>
+
+<h2>考え方</h2>
+
+<p>いまはどれも<strong>「忘れたら本番に届く」</strong>作りになっている。これを<strong>「忘れたら止まる」</strong>に変える。</p>
+
+<p>そのために、既定値をテスト側へ倒す。ただし<strong>倒すのは開発用のものだけ</strong>で、他プロジェクトが使うものは本番を既定に保つ。</p>
+
+<div class="fig">
+<svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="5 つの経路がそれぞれ別の層で止まる図">
+	<defs>
+		<linearGradient id="g-p31-1a" x1="0" y1="1" x2="0" y2="0">
+			<stop offset="0" stop-color="hsl(280, 78%, 25%)"/>
+			<stop offset="1" stop-color="hsl(280, 58%, 55%)"/>
+		</linearGradient>
+		<linearGradient id="g-p31-1b" x1="0" y1="1" x2="0" y2="0">
+			<stop offset="0" stop-color="hsl(0, 78%, 25%)"/>
+			<stop offset="1" stop-color="hsl(0, 58%, 55%)"/>
+		</linearGradient>
+		<linearGradient id="g-p31-1c" x1="0" y1="1" x2="0" y2="0">
+			<stop offset="0" stop-color="hsl(140, 78%, 25%)"/>
+			<stop offset="1" stop-color="hsl(140, 58%, 55%)"/>
+		</linearGradient>
+	</defs>
+
+	<text x="12" y="22" font-size="13" fill="#4a5568">事故の経路</text>
+	<text x="300" y="22" font-size="13" fill="#4a5568">止める層</text>
+	<text x="600" y="22" font-size="13" fill="#4a5568">結果</text>
+
+	<rect x="12" y="36" width="200" height="26" rx="5" fill="url(#g-p31-1a)"/>
+	<text x="24" y="54" font-size="12" fill="#fff">環境変数を忘れる</text>
+	<rect x="12" y="68" width="200" height="26" rx="5" fill="url(#g-p31-1a)"/>
+	<text x="24" y="86" font-size="12" fill="#fff">サーバーを立て忘れる</text>
+	<rect x="12" y="100" width="200" height="26" rx="5" fill="url(#g-p31-1a)"/>
+	<text x="24" y="118" font-size="12" fill="#fff">接続先を取り違える</text>
+	<rect x="12" y="132" width="200" height="26" rx="5" fill="url(#g-p31-1a)"/>
+	<text x="24" y="150" font-size="12" fill="#fff">他プロジェクトが繋ぐ</text>
+	<rect x="12" y="164" width="200" height="26" rx="5" fill="url(#g-p31-1a)"/>
+	<text x="24" y="182" font-size="12" fill="#fff">人が画面で取り違える</text>
+
+	<rect x="272" y="36" width="230" height="26" rx="5" fill="url(#g-p31-1c)"/>
+	<text x="284" y="54" font-size="12" fill="#fff">既定がテスト DB（2 章）</text>
+	<rect x="272" y="68" width="230" height="26" rx="5" fill="url(#g-p31-1c)"/>
+	<text x="284" y="86" font-size="12" fill="#fff">繋がずに止まる（2 章）</text>
+	<rect x="272" y="100" width="230" height="26" rx="5" fill="url(#g-p31-1c)"/>
+	<text x="284" y="118" font-size="12" fill="#fff">環境を確かめる（3 章）</text>
+	<rect x="272" y="132" width="230" height="26" rx="5" fill="url(#g-p31-1c)"/>
+	<text x="284" y="150" font-size="12" fill="#fff">トークンを要る（5 章）</text>
+	<rect x="272" y="164" width="230" height="26" rx="5" fill="url(#g-p31-1c)"/>
+	<text x="284" y="182" font-size="12" fill="#fff">色が違う（4 章）</text>
+
+	<g stroke="#97a1ae" stroke-width="1.5" fill="none">
+		<path d="M212 49 L268 49"/><path d="M212 81 L268 81"/><path d="M212 113 L268 113"/>
+		<path d="M212 145 L268 145"/><path d="M212 177 L268 177"/>
+		<path d="M502 49 L558 49"/><path d="M502 81 L558 81"/><path d="M502 113 L558 113"/>
+		<path d="M502 145 L558 145"/><path d="M502 177 L558 177"/>
+	</g>
+
+	<rect x="562" y="80" width="146" height="66" rx="6" fill="url(#g-p31-1b)"/>
+	<text x="584" y="106" font-size="13" fill="#fff">本番に届かない</text>
+	<text x="596" y="128" font-size="11" fill="#fff">（手前で止まる）</text>
+</svg>
+<figcaption>経路ごとに別の層で止める。どれか 1 つが抜けても、他の層が残る</figcaption>
+</div>
+
+</section>
+
+<section class="ch02" id="ch02">
+<h1>置き場と既定値</h1>
+
+<h2>置き場をまとめて分ける</h2>
+
+<p><code>_data/</code> にあるのは DB だけではない。<strong>3 種類ある。</strong></p>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">もの</th><th>何か</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap"><code>chat.db</code></td><td>DB 本体（<code>-wal</code> <code>-shm</code> を含めて 3 ファイル）</td></tr>
+<tr><td class="nowrap"><code>BACKUP-RUNNING</code></td><td>バックアップ中の印</td></tr>
+<tr><td class="nowrap"><code>MAINTENANCE</code></td><td>メンテナンス中の印</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>DB だけ移しても足りない。</strong>印が本番側に残ると、テスト中に置いた印が本番のバックアップを止める。<strong>フォルダごと分ける。</strong></p>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">　</th><th class="nowrap">置き場</th><th>中身</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap">本番</td><td class="nowrap"><code>_data/</code></td><td>いまのまま</td></tr>
+<tr><td class="nowrap">テスト</td><td class="nowrap"><code>tmp/_data/</code></td><td>同じ構造。<code>tmp/test-chat.db</code> から移す</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>ファイル名を揃え、置き場だけで見分ける。</strong>本番と同じ構造にするので、バックアップや復旧の検証もそのまま動く。</p>
+
+<p><code>tmp/</code> の下にあることが「捨ててよい」の印になる。<strong><code>tmp/_data/</code> ごと捨てられる</strong>ので、いまの「3 ファイルを個別に消す」処理も要らなくなる。</p>
+
+<h2>変数は 1 つだけ足す</h2>
+
+<pre><code class="language-javascript">// config.mjs
+export const DATA_DIR = process.env.AICHAT_DATA ?? join(ROOT, '_data');
+export const IS_TEST  = DATA_DIR !== join(ROOT, '_data');   // 既定でなければテスト
+export const DB_PATH  = join(DATA_DIR, 'chat.db');</code></pre>
+
+<p><strong><code>AICHAT_DB</code> を廃止して <code>AICHAT_DATA</code> にする</strong>ので、管理する変数は増えない。</p>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">決まるもの</th><th>どう決まるか</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap">DB</td><td><code>AICHAT_DATA/chat.db</code></td></tr>
+<tr><td class="nowrap">バックアップの印</td><td><code>AICHAT_DATA/BACKUP-RUNNING</code></td></tr>
+<tr><td class="nowrap">メンテナンスの印</td><td><code>AICHAT_DATA/MAINTENANCE</code></td></tr>
+<tr><td class="nowrap">接続情報・トークン</td><td><code>AICHAT_DATA/server.json</code></td></tr>
+<tr><td class="nowrap"><strong>本番かテストか</strong></td><td><strong>置き場が <code>_data</code> かどうか</strong></td></tr>
+<tr><td class="nowrap">画面の色</td><td>上の判定から</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout callout-important">
+<p><strong>環境を表す変数を別に持たない。</strong>置き場が本番でなければテスト、と決めれば足りる。分けて持つと「DB はテスト、印は本番」という危うい組み合わせを作れてしまう。<strong>1 つにすれば、その組み合わせ自体が存在しない。</strong></p>
+</div>
+
+<h2>単体テストも同じ下に置く</h2>
+
+<p>単体テストは <code>tmp/</code> の直下に DB を散らしている（<code>test-store.db</code> <code>test-server.db</code> …）。これも <code>tmp/_data/</code> の下へ寄せる。</p>
+
+<pre><code class="language-javascript">// いま
+process.env.AICHAT_DB = join(here, '..', 'tmp', 'test-store.db');
+
+// 案
+process.env.AICHAT_DATA = join(here, '..', 'tmp', '_data', 'unit-store');</code></pre>
+
+<div class="callout callout-warning">
+<p><strong>テストごとに別のフォルダにする。</strong><code>node --test</code> はファイルごとに別プロセスで<strong>並行して走る</strong>。同じフォルダを共有すると、印や DB を取り合って壊れる。</p>
+</div>
+
+<h2>どちらを既定にするか</h2>
+
+<p>判断は<strong>フォルダ規約にすでにある</strong>。<code>src/</code> は納品する、<code>tools/</code> は納品しない。</p>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">対象</th><th class="nowrap">誰が使うか</th><th class="nowrap">既定</th><th>変更</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap"><code>src/client/chat.mjs</code></td><td class="nowrap">他プロジェクト</td><td class="nowrap">本番</td><td>変えない</td></tr>
+<tr><td class="nowrap"><code>src/server/</code></td><td class="nowrap">サーバー本体</td><td class="nowrap">本番</td><td>変えない</td></tr>
+<tr><td class="nowrap"><code>tools/40_test/</code></td><td class="nowrap">この開発</td><td class="nowrap"><strong>テスト</strong></td><td>倒す</td></tr>
+<tr><td class="nowrap">PlayWright の spec</td><td class="nowrap">この開発</td><td class="nowrap"><strong>テスト</strong></td><td>倒す</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout callout-important">
+<p><strong>公開しているものは本番が既定でなければならない。</strong>他プロジェクトが誤ってテスト環境へ繋ぐのも同じくらい困る。倒すのは納品しない側だけにする。</p>
+</div>
+
+<h2>後始末スクリプト</h2>
+
+<pre><code class="language-javascript">// いま: 忘れると本番
+const dbPath = process.env.AICHAT_DB ?? join(root, '_data', 'chat.db');
+
+// 案: 忘れるとテスト
+const dataDir = process.env.AICHAT_DATA ?? join(root, 'tmp', '_data');</code></pre>
+
+<p>本番を触るときは <code>--production</code> を明示させる。<strong><code>tools/</code> の中に本番のパスを書かない</strong>ので、うっかりでは届かない。</p>
+
+<h2>テスト側は本番へ落ちない</h2>
+
+<pre><code class="language-javascript">// いま: json が無ければ本番へ
+return { url: 'http://localhost:8787', db: null };
+
+// 案: 無ければ止める
+throw new Error('テスト用サーバーが立っていません。run-ui-tests から実行してください。');</code></pre>
+
+</section>
+
+<section class="ch03" id="ch03">
+<h1>環境を名乗る</h1>
+
+<h2>置き場から決まる</h2>
+
+<p>環境を表す変数は持たない。<strong><code>AICHAT_DATA</code> が既定でなければテスト</strong>とする。</p>
+
+<pre><code class="language-javascript">export const IS_TEST = DATA_DIR !== join(ROOT, '_data');</code></pre>
+
+<div class="callout callout-important">
+<p><strong>既定が本番になるのが要点。</strong>何も指定しなければ本番。公開側（<code>chat.mjs</code>・サーバー本体）はいままでどおり動く。テスト用サーバーを立てるときだけ <code>AICHAT_DATA</code> を渡す。</p>
+</div>
+
+<h2><code>/api/version</code> に含める</h2>
+
+<pre><code class="language-json">{
+	"version": "...",
+	"env": "test"
+}</code></pre>
+
+<p>繋いだ側は<strong>自分がどちらに居るか分かる</strong>。他プロジェクトは無視すればよいだけで、影響はない。逆に、誤ってテスト用へ繋いだ場合も気づける。</p>
+
+<h2>投稿の直前に確かめる</h2>
+
+<pre><code class="language-typescript">if (version.env !== 'test') {
+	throw new Error('本番サーバーには投稿しない');
+}</code></pre>
+
+<p><strong>接続先を取り違えても、投稿の手前で止まる。</strong>通しのランチャーを経由せず spec を直接叩いても効く。</p>
+
+</section>
+
+<section class="ch04" id="ch04">
+<h1>見た目で分かる</h1>
+
+<p>人が画面を開いたとき、<strong>どちらに居るかが一目で分かる</strong>ようにする。</p>
+
+<h2>色を変える</h2>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">　</th><th class="nowrap">濃い側</th><th class="nowrap">明るい側</th><th>色相</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap">本番（紺）</td><td class="nowrap"><code>#12224d</code></td><td class="nowrap"><code>#2f5fbf</code></td><td>226° / 220°</td></tr>
+<tr><td class="nowrap"><strong>テスト（赤茶）</strong></td><td class="nowrap"><code>#4d2c12</code></td><td class="nowrap"><code>#c0682f</code></td><td>26° / 24°</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>色相だけを変え、彩度と明度は揃える。</strong>見た目の重さが変わらないので、色だけが違って見える。</p>
+
+<h2>やり方</h2>
+
+<pre><code class="language-html">&lt;body data-env="test"&gt;</code></pre>
+
+<pre><code class="language-css">body[data-env="test"] {
+	--navy1: #4d2c12;
+	--navy2: #c0682f;
+}</code></pre>
+
+<p><strong>変数を差し替えるだけにする。</strong>タイトルバーも、参加者一覧も、ボタンも、変数を参照している箇所がまとめて変わる。個別に上書きすると、足したときに書き忘れる。</p>
+
+<h2>文字でも出す</h2>
+
+<p>色だけに頼らない。タイトルバーに <span class="badge b-warn">テスト環境</span> のバッジを出す。色の見分けがつきにくい場合や、白黒で印刷した場合にも分かる。</p>
+
+</section>
+
+<section class="ch05" id="ch05">
+<h1>他プロジェクトから使えない</h1>
+
+<p>テスト用サーバーは<strong>この開発のためだけのもの</strong>。他プロジェクトが繋いでくると、テスト中のデータに他人の発言が混ざる。</p>
+
+<h2>その回かぎりのトークン</h2>
+
+<p>起動するたびに新しいトークンを作り、接続情報と一緒に書く。</p>
+
+<pre><code class="language-json">{
+	"port": 8765,
+	"env": "test",
+	"token": "（毎回変わる）",
+	"data": "...\\tmp\\_data",
+	"pid": 0
+}</code></pre>
+
+<p>置き場は <code>AICHAT_DATA/server.json</code>。<strong><code>AICHAT_DATA</code> が分かれば場所も決まる</strong>ので、別に教える必要がない。</p>
+
+<h2>要求するのはテストのときだけ</h2>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">置き場</th><th>トークン</th><th>誰が繋ぐか</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap"><code>_data/</code>（本番）</td><td><strong>要らない</strong></td><td>他プロジェクト・人</td></tr>
+<tr><td class="nowrap"><code>tmp/_data/</code>（テスト）</td><td><strong>要る</strong></td><td>このプロジェクトのテストだけ</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout callout-important">
+<p><strong>本番はいまのまま、何も要求しない。</strong>他プロジェクトへの影響をゼロにする。トークンを足すのはテストモードのときだけ。</p>
+</div>
+
+<h2><code>chat.mjs</code> には口を作らない</h2>
+
+<p>公開クライアントにトークンを渡す引数や環境変数を<strong>用意しない</strong>。用意すれば、いずれ誰かがテスト用へ繋ぐ道になる。</p>
+
+<p>ポートを見つけて直接叩かれても、トークンが無いので弾かれる。</p>
+
+</section>
+
+<section class="ch06" id="ch06">
+<h1>書き分けと段取り</h1>
+
+<h2>読み手で書き分ける</h2>
+
+<p><code>USAGE-FOR-PROJECTS</code> は<strong>他プロジェクトが読む</strong>。ここにテスト用サーバーの立て方を書くと、他プロジェクトが <code>tmp/</code> を触りに来る。複数が同時にやれば衝突する。</p>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">読み手</th><th class="nowrap">置き場</th><th>書くこと</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap">他プロジェクト</td><td class="nowrap"><code>USAGE-FOR-PROJECTS</code></td><td><strong>本番に繋ぐ前提。</strong>名前の規約・断り・後始末で守る</td></tr>
+<tr><td class="nowrap">この開発</td><td class="nowrap"><code>notes/90_rules/</code></td><td>テスト用サーバーの立て方・トークン・色</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout callout-warning">
+<p><strong>いまの USAGE には「テスト用サーバーを立てる」と書いてある。</strong>他プロジェクト向けの文書なので、この節を移す。</p>
+</div>
+
+<h2>テストの回し方</h2>
+
+<p>通しのランチャーは <strong><code>AICHAT_DATA</code> を渡すだけ</strong>にする。接続先もトークンも <code>server.json</code> から決まるので、値を個別に渡す必要がない。</p>
+
+<pre><code class="language-powershell">$env:AICHAT_DATA = "$root\tmp\_data"
+&amp; node $starter          # server.json を書く
+npm run test:projects -- $target
+&amp; node $starter --stop   # tmp\_data ごと捨てる</code></pre>
+
+<p>テスト側は <code>AICHAT_DATA/server.json</code> を読む。<strong>ランチャーを通さず spec を直接叩いても同じ経路で動く。</strong></p>
+
+<h2>触るファイル</h2>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">場所</th><th class="nowrap">ファイル</th><th>直すこと</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap" rowspan="4">本体</td><td class="nowrap"><code>src/server/config.mjs</code></td><td><code>DATA_DIR</code> と <code>IS_TEST</code> を新設。<code>AICHAT_DB</code> を廃止</td></tr>
+<tr><td class="nowrap"><code>src/server/backup.mjs</code></td><td><code>RUNNING_FILE</code> を <code>DATA_DIR</code> の下へ</td></tr>
+<tr><td class="nowrap"><code>src/server/maintenance.mjs</code></td><td><code>MAINTENANCE_FILE</code> を <code>DATA_DIR</code> の下へ</td></tr>
+<tr><td class="nowrap"><code>src/server/server.mjs</code></td><td><code>/api/version</code> に <code>env</code>。テスト時はトークンを検証</td></tr>
+
+<tr><td class="nowrap" rowspan="3">画面</td><td class="nowrap"><code>src/web/index.html</code></td><td><code>data-env</code> を持たせる</td></tr>
+<tr><td class="nowrap"><code>src/web/css/chat.css</code></td><td><code>[data-env="test"]</code> で <code>--navy1</code> / <code>--navy2</code> を差し替え</td></tr>
+<tr><td class="nowrap"><code>src/web/js/chat.js</code></td><td><code>version</code> の <code>env</code> を受けて <code>data-env</code> を立てる</td></tr>
+
+<tr><td class="nowrap" rowspan="3">道具</td><td class="nowrap"><code>tools/40_test/purge-test-data.mjs</code></td><td>既定を <code>tmp/_data</code> へ。本番は <code>--production</code></td></tr>
+<tr><td class="nowrap"><code>tools/40_test/start-test-server.mjs</code></td><td><code>AICHAT_DATA</code>、トークン生成、<code>server.json</code></td></tr>
+<tr><td class="nowrap"><code>tools/40_test/run-ui-tests.ps1</code></td><td><code>AICHAT_DATA</code> を渡す</td></tr>
+
+<tr><td class="nowrap">テスト</td><td class="nowrap"><code>tests/*.test.mjs</code>（7 本）</td><td><code>AICHAT_DB</code> → <code>AICHAT_DATA</code>。テストごとに別フォルダ</td></tr>
+<tr><td class="nowrap">画面テスト</td><td class="nowrap"><code>test-data.ts</code></td><td><code>server.json</code> を読む。投稿前に <code>env</code> を確かめる</td></tr>
+<tr><td class="nowrap">文書</td><td class="nowrap"><code>USAGE-FOR-PROJECTS</code> ほか</td><td>読み手で書き分け</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout">
+<p><code>tools/80_ops/restore.ps1</code> は<strong>本番だけを相手にする</strong>ので触らない。復旧はテスト環境で行わない。</p>
+</div>
+
+<h2>作る順序</h2>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="num nowrap">#</th><th class="nowrap">やること</th><th>なぜこの順か</th></tr>
+</thead>
+<tbody>
+<tr><td class="num">1</td><td class="nowrap"><code>AICHAT_DATA</code> と <code>IS_TEST</code></td><td>すべてがここから決まる。<code>AICHAT_DB</code> の置き換えも一緒に</td></tr>
+<tr><td class="num">2</td><td class="nowrap">印を <code>DATA_DIR</code> の下へ</td><td>1 が要る。バックアップ・メンテナンス</td></tr>
+<tr><td class="num">3</td><td class="nowrap"><code>/api/version</code> に <code>env</code></td><td>4・6 が使う</td></tr>
+<tr><td class="num">4</td><td class="nowrap">道具の既定をテストへ倒す</td><td>1〜3 が要る</td></tr>
+<tr><td class="num">5</td><td class="nowrap">トークン</td><td>1・3 が要る</td></tr>
+<tr><td class="num">6</td><td class="nowrap">画面の色</td><td>3 が要る。独立して足せる</td></tr>
+<tr><td class="num">7</td><td class="nowrap">文書の書き分け</td><td>すべて決まってから</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>1〜4 が土台</strong>で、5・6 はその上に乗る。7 は最後。</p>
+
+<div class="callout callout-important">
+<p><strong>1 を入れた時点でテストが全部落ちる。</strong><code>AICHAT_DB</code> を使っている単体テストが 7 本ある。1 と一緒に置き換えて、通る状態に戻してから次へ進む。</p>
+</div>
+
+<h2>確かめること</h2>
+
+<ul>
+<li>後始末スクリプトをダブルクリックしても、本番 DB が変わらない</li>
+<li>テスト用サーバーを立てずにテストを走らせると、<strong>投稿せずに止まる</strong></li>
+<li><code>AICHAT_URL</code> を本番に向けてテストを走らせても、<strong>投稿せずに止まる</strong></li>
+<li>トークンなしでテスト用サーバーを叩くと弾かれる</li>
+<li>本番はトークンなしで従来どおり動く（他プロジェクトに影響がない）</li>
+<li>画面を開くと、本番は紺・テストは赤茶になる</li>
+</ul>
+
+<h2>決めていないこと</h2>
+
+<h3>既存のテスト DB の移行</h3>
+
+<p><code>tmp/test-chat.db</code> は捨ててよい。テスト用なので取っておく意味がない。<strong>移さずに消す。</strong></p>
+
+<h3>トークンの渡し方</h3>
+
+<p>ヘッダか、クエリか。<strong>ヘッダの方が記録に残りにくい</strong>が、SSE（<code>EventSource</code>）はヘッダを付けられない。画面からも繋ぐなら、クエリを併用することになる。実装のときに決める。</p>
+
+<h3>本番サーバーがテスト用の名前を拒むか</h3>
+
+<p><code>test-</code> の <code>user_id</code> と <code>sandbox-</code> の <code>room_id</code> を本番が弾く案もあった。<strong>今回は入れない。</strong>ここまでの層で足りるか見てから判断する。</p>
+
+</section>
+
+</div>
+
+<footer>
+	<a href="../../README.html">← README へ戻る</a>
+</footer>
+
+</body>
+</html>

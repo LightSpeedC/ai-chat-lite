@@ -211,7 +211,7 @@ svg { max-width: 100%; height: auto; }
 	<div class="inner">
 		<h1>テストデータの規約と物理削除</h1>
 		<div class="lead">テストが作ったものを、名前で見分けて消せるようにする</div>
-		<div class="date">📅 作成: 2026-08-30 / 更新: 2026-08-30</div>
+		<div class="date">📅 作成: 2026-08-30 / 更新: 2026-08-31</div>
 	</div>
 </div>
 
@@ -410,6 +410,10 @@ export function freshNames(tag: string) {
 <p>ここまでは<strong>本番のサーバーへ投稿したうえで後片付けする</strong>やり方である。片付けは効くが、投稿そのものは本番に届いてしまう。</p>
 
 <p>そこで、<strong>テストのときは別のポートと別の DB でサーバーを立てる。</strong>本番には一切届かなくなる。</p>
+
+	<div class="callout callout-important">
+		<p><strong>この章の内容は <a href="p260831-01-テスト環境の分離.html">テスト環境の分離</a> に引き継いだ。</strong>ここに書いたのは「別のポート・別の DB で立てる」までで、既定値をどちらに倒すか、環境をどう名乗るか、他プロジェクトから使えないようにするかは、そちらで決めている。</p>
+	</div>
 
 <div class="tablewrap">
 <table>
