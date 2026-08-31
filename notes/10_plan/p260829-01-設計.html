@@ -1973,6 +1973,12 @@ const { startServers, stopServers } = await import('./server.mjs');</code></pre>
 
 	<p>サービスとして動かすと <code>logs/</code> に残るため、想定と違う場所を掴んでいればすぐ気づける。ポートの衝突・DB の取り違え・片方のアドレスでしか待ち受けていない状態は、この数行で切り分けられる。</p>
 
+	<p>WinSW が振り分ける先は 3 つになる。</p>
+
+	<pre><code class="language-text">logs\…-winsw.out.log        … 標準出力（起動ログ・警告）
+logs\…-winsw.err.log        … 標準エラー。ERROR だけがここに来る
+logs\…-winsw.wrapper.log    … WinSW 自身。起動・停止・子プロセスの ID</code></pre>
+
 	<h2>ステップ</h2>
 
 	<p>1 回の実装は 1 点に絞り、各ステップの後に確認を挟む。</p>

@@ -401,7 +401,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 開発状況</h1>
 		<p class="lead">実装の進み具合と、次にやること</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-08-30</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-08-31</p>
 	</div>
 </div>
 
@@ -478,47 +478,38 @@ footer a {
 			<tr>
 				<td class="num">9</td><td class="nowrap">バックアップと復旧</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td>4 区分（時 8 / 日 7 / 週 4 / 月 6）で取得・圧縮・世代整理・復旧・排他・記録。タスクも登録済み。使い方は<a class="doclink" href="../90_rules/backup.html">バックアップの手引き</a></td>
+				<td>4 区分で取得・復旧・世代整理まで動いている。タスク登録済み。<a class="doclink" href="../10_plan/p260830-01-バックアップ.html">計画</a>・<a class="doclink" href="../90_rules/backup.html">手引き</a></td>
 			</tr>
 			<tr>
 				<td class="num">10</td><td class="nowrap">離脱の判定</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td>リロードで離脱が積まれていた。<code>/api/leave</code> を受けて 5 秒待ち、接続が戻らなければ積む形にした</td>
+				<td>リロードで積まれる問題を直した（<a class="doclink" href="../40_issues/issues.html#i260830-13">i260830-13</a>）</td>
 			</tr>
 			<tr>
 				<td class="num">11</td><td class="nowrap">アーカイブ機能</td>
 				<td class="nowrap"><span class="badge b-warn">一部</span></td>
 				<td><a class="doclink" href="../10_plan/p260830-02-アーカイブ機能.html">設計</a>を書き、<strong>3 テーブルに <code>archived_seq</code> の列だけ足した</strong>。<code>archives</code> テーブルと処理はこれから</td>
 			</tr>
+			<tr>
+				<td class="num">12</td><td class="nowrap">テストデータの物理削除</td>
+				<td class="nowrap"><span class="badge b-ok">完了</span></td>
+				<td><code>test-</code> / <code>sandbox-</code> を消す。<a class="doclink" href="../10_plan/p260830-03-テストデータ.html">計画</a></td>
+			</tr>
+			<tr>
+				<td class="num">13</td><td class="nowrap">テスト環境の分離</td>
+				<td class="nowrap"><span class="badge b-ok">完了</span></td>
+				<td>DB・ポート・アクセストークン・画面の色で分けた。<a class="doclink" href="../10_plan/p260831-01-テスト環境の分離.html">計画</a>・<a class="doclink" href="../90_rules/test-server.html">手引き</a></td>
+			</tr>
+			<tr>
+				<td class="num">14</td><td class="nowrap"><code>connector</code> への改名</td>
+				<td class="nowrap"><span class="badge b-none">未</span></td>
+				<td><a class="doclink" href="../10_plan/p260831-02-connectorへの改名.html">計画</a>を書いている</td>
+			</tr>
 		</tbody>
 	</table>
 	</div>
 
-	<h2>モジュール</h2>
-
-	<div class="tablewrap">
-	<table>
-		<thead>
-			<tr><th class="nowrap">ファイル</th><th>役割</th></tr>
-		</thead>
-		<tbody>
-			<tr><td class="nowrap"><code>src/server/main.mjs</code></td><td>起動口。メンテナンスの印が消えるのを待ってから server を読み込む</td></tr>
-			<tr><td class="nowrap"><code>src/server/maintenance.mjs</code></td><td><code>_data\MAINTENANCE</code> を見張る。DB を触る間の起動を止める</td></tr>
-			<tr><td class="nowrap"><code>src/server/config.mjs</code></td><td>ポート・待ち受けアドレス・DB パス・各種上限。起動ログ用の整形も持つ</td></tr>
-			<tr><td class="nowrap"><code>src/server/time.mjs</code></td><td>JST の固定長文字列を作る</td></tr>
-			<tr><td class="nowrap"><code>src/server/log.mjs</code></td><td>日時とレベルを付けて標準出力へ。ファイルには書かない</td></tr>
-			<tr><td class="nowrap"><code>src/server/store.mjs</code></td><td><code>node:sqlite</code> によるスキーマ作成と読み書き。3 テーブルに <code>archived_seq</code> の列を持つ（処理は未実装）</td></tr>
-			<tr><td class="nowrap"><code>src/server/presence.mjs</code></td><td><code>online</code> / <code>grace</code> / <code>offline</code> の 3 状態を判定する</td></tr>
-			<tr><td class="nowrap"><code>src/server/hub.mjs</code></td><td>long-poll と SSE で待っている相手をまとめて管理する</td></tr>
-			<tr><td class="nowrap"><code>src/server/server.mjs</code></td><td>HTTP ルーティング・待ち受け・静的ファイル配信。終了時に DB を閉じる</td></tr>
-			<tr><td class="nowrap"><code>src/server/backup.mjs</code></td><td><code>VACUUM INTO</code>・世代の整理・印による排他</td></tr>
-			<tr><td class="nowrap"><code>tools/80_ops/log.ps1</code></td><td>バックアップと復旧の記録を HTML で残す</td></tr>
-			<tr><td class="nowrap"><code>src/client/chat.mjs</code></td><td>CLI クライアント（AI・人間 共用）</td></tr>
-			<tr><td class="nowrap"><code>src/web/js/markdown.js</code></td><td>本文の変換。エスケープを先に済ませる</td></tr>
-			<tr><td class="nowrap"><code>src/web/js/chat.js</code></td><td>SSE 受信・送信・参加者一覧の描画</td></tr>
-		</tbody>
-	</table>
-	</div>
+	<p>各ファイルの役割は<a class="doclink" href="../10_plan/p260829-01-設計.html">設計</a>のフォルダ構成にある。</p>
 </section>
 
 <!-- ================= 02 ================= -->
@@ -578,122 +569,7 @@ npm run test:projects -- ai-chat-lite</code></pre>
 
 	<p>コントラスト比が 1.5:1 未満のものは、いずれの資料・画面でも 0 件。</p>
 
-	<h2>実測で確かめたこと</h2>
-
-	<div class="tablewrap">
-	<table>
-		<thead>
-			<tr><th class="nowrap">確かめたこと</th><th>結果</th></tr>
-		</thead>
-		<tbody>
-			<tr>
-				<td class="nowrap"><code>node:sqlite</code></td>
-				<td>Node v26.8.1 で experimental 警告なしに動作する</td>
-			</tr>
-			<tr>
-				<td class="nowrap">WAL モード</td>
-				<td>切り替わっている。<code>N:</code> の実体はローカルの NTFS なので制約に当たらない</td>
-			</tr>
-			<tr>
-				<td class="nowrap">インデックス</td>
-				<td><code>WHERE room_id = ? AND msg_seq &gt; ?</code> が <code>messages_ix_room_id_msg_seq</code> を使う</td>
-			</tr>
-			<tr>
-				<td class="nowrap"><code>node.exe</code> のコピー</td>
-				<td>単体で動く（98.9 MB）。プロセス名が <code>node-ai-chat-lite</code> になり、タスクマネージャで判別できる</td>
-			</tr>
-			<tr>
-				<td class="nowrap">DB パスの解決</td>
-				<td>カレントディレクトリに依存しない。<code>N:</code> と実体パスは同じフォルダを指す</td>
-			</tr>
-			<tr>
-				<td class="nowrap"><code>N:</code> の正体</td>
-				<td><code>subst</code> の仮想ドライブ。サービスからは見えないため、登録は実体のフォルダで行う</td>
-			</tr>
-			<tr>
-				<td class="nowrap">long-poll</td>
-				<td>待機中は <code>online</code>、投稿で即座に起床、終了後は <code>grace</code> に落ちる</td>
-			</tr>
-			<tr>
-				<td class="nowrap"><strong>管理者権限なしの入れ替え</strong></td>
-				<td><code>restart</code> でプロセスが落ち、10 秒後に新しいコードで起動する。<strong>WinSW ごと起動し直されるため XML も読み直される</strong>（ポートやログ設定の変更も反映される）</td>
-			</tr>
-			<tr>
-				<td class="nowrap">サービス回復の設定</td>
-				<td>「1 回目」「2 回目」「それ以降」の 3 段階。3 つ書けば打ち止めにならない。<code>resetfailure</code> は 60 秒</td>
-			</tr>
-			<tr>
-				<td class="nowrap">読んだ位置</td>
-				<td>サーバーが <code>cursors</code> に覚える。<code>since</code> を省略しても続きから届き、実行するフォルダを変えても位置が保たれる</td>
-			</tr>
-			<tr>
-				<td class="nowrap">メンテナンスの印</td>
-				<td><code>_data\MAINTENANCE</code> があると起動を保留する。<strong>待機中は DB を掴んでいない</strong>（リネームできることを確認）。印を消してから <strong>0.8 秒</strong>で起動した</td>
-			</tr>
-			<tr>
-				<td class="nowrap"><code>logpath</code> の落とし穴</td>
-				<td><strong>相対パスはサービスのカレント（<code>C:\Windows\System32</code>）基準で解決される。</strong><code>%BASE%\logs</code> と書く必要がある</td>
-			</tr>
-			<tr>
-				<td class="nowrap"><strong>DB は 3 つで 1 組</strong></td>
-				<td><code>chat.db</code> だけを複製すると<strong>発言 64 件のうち 0 件</strong>しか入らない。全部が <code>chat.db-wal</code> 側にあった。<code>VACUUM INTO</code> なら 64 件すべてが揃い、稼働中に <strong>24 ミリ秒</strong>で終わる</td>
-			</tr>
-			<tr>
-				<td class="nowrap">DB を閉じるかどうか</td>
-				<td><strong>書き込み可で開いて閉じたときだけ</strong> 3 つが 1 つにまとまる（4 KB → 114 KB）。読み取り専用では閉じても <code>-wal</code> と <code>-shm</code> が残る</td>
-			</tr>
-			<tr>
-				<td class="nowrap">バックアップの大きさ</td>
-				<td>発言 1,000 件で zip 17 KB、10,000 件で 128 KB、100,000 件で 1.2 MB（圧縮率 5〜6 %）</td>
-			</tr>
-			<tr>
-				<td class="nowrap"><strong>ファイルによる排他</strong></td>
-				<td>Node・Bun・Deno の <code>rename</code> と cmd の <code>move</code> は<strong>先客を黙って上書きする</strong>ため排他にならない。<code>wx</code>（<code>O_CREAT | O_EXCL</code>）は 10 個が取り合っても 1 つだけ成功する。詳細は<a class="doclink" href="../../docs/ファイルで排他する.html">ファイルで排他する</a></td>
-			</tr>
-			<tr>
-				<td class="nowrap"><code>stop</code> と <code>restart</code> の違い</td>
-				<td><code>stop</code>（終了コード 0）は<strong>サービスごと止まる</strong>。印を消しても起動せず、管理者権限での再開が要る。落として入れ替える用途では <code>restart</code>（終了コード 1）を使う</td>
-			</tr>
-			<tr>
-				<td class="nowrap"><strong>HTML のログ</strong></td>
-				<td><code>&lt;/body&gt;</code> と <code>&lt;/html&gt;</code> を書かなくてもブラウザが補完する。<strong>書き込みの途中で開いても壊れず、そこまでの行が読める</strong>。<code>class=I</code> とクォート無しでも効く。1000 行で 115 ミリ秒 / 70 KB</td>
-			</tr>
-			<tr>
-				<td class="nowrap"><code>pagehide</code> の届き方</td>
-				<td><strong>閉じ方によって <code>sendBeacon</code> が届かない。</strong>Playwright で <code>page.close()</code>・<code>goto('about:blank')</code>・別ページへの遷移は届くが、<code>context.close()</code> と <code>window.close()</code> は届かない</td>
-			</tr>
-			<tr>
-				<td class="nowrap">リロードと離脱の区別</td>
-				<td><code>pagehide</code> は<strong>閉じたときもリロードでも起きる</strong>ため、ブラウザ側では区別できない。サーバーで 5 秒待ち、接続が戻るかを見て判断する</td>
-			</tr>
-		</tbody>
-	</table>
-	</div>
-
-	<h2>ログの置き場</h2>
-
-	<div class="tablewrap">
-	<table>
-		<thead>
-			<tr><th class="nowrap">ファイル</th><th>中身</th></tr>
-		</thead>
-		<tbody>
-			<tr><td class="nowrap"><code>logs\…-winsw.out.log</code></td><td>サーバーの標準出力（起動ログ・警告）</td></tr>
-			<tr><td class="nowrap"><code>logs\…-winsw.err.log</code></td><td>標準エラー。<code>ERROR</code> だけがここに来る</td></tr>
-			<tr><td class="nowrap"><code>logs\…-winsw.wrapper.log</code></td><td>WinSW 自身のログ。起動・停止・子プロセスの ID</td></tr>
-			<tr>
-				<td class="nowrap"><code>logs\yyyymm-backup-hourly-log.html</code></td>
-				<td>毎時のバックアップ。<strong>HTML で書き、WARN と ERROR に色を付ける</strong></td>
-			</tr>
-			<tr>
-				<td class="nowrap"><code>logs\yyyymm-backup-others-log.html</code></td>
-				<td>日次・週次・月次のバックアップと復旧</td>
-			</tr>
-		</tbody>
-	</table>
-	</div>
-
-	<p>アプリはファイルに書かない。行き先は起動する側が決める。手で起動すればコンソールに出て、テストからならパイプで受け取れる。</p>
+	<p>調べて分かったことは、それぞれの計画に書いてある。<a class="doclink" href="../10_plan/p260829-01-設計.html">設計</a>（<code>node:sqlite</code>・WAL・索引・サービス化・ログ）／<a class="doclink" href="../10_plan/p260830-01-バックアップ.html">バックアップ</a>（DB は 3 つで 1 組・<code>VACUUM INTO</code>・ファイルによる排他）。</p>
 </section>
 
 <!-- ================= 03 ================= -->
