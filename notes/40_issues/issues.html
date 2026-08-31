@@ -598,7 +598,7 @@ footer a {
 		<li class="g01"><a href="#g01">サービスの運用（2 件 / 未 2）</a></li>
 		<li class="g02"><a href="#g02">データ（3 件 / 未 2 / 着手 1）</a></li>
 		<li class="g03"><a href="#g03">開発環境・記録（3 件 / 済 3）</a></li>
-		<li class="g04"><a href="#g04">チャットの機能（14 件 / 未 11 / 済 3）</a></li>
+		<li class="g04"><a href="#g04">チャットの機能（14 件 / 未 8 / 済 6）</a></li>
 	</ol>
 </section>
 
@@ -838,14 +838,14 @@ footer a {
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">14 件 / 未 11 / 済 3</span>
+		<span class="count">14 件 / 未 8 / 済 6</span>
 	</summary>
 
 	<div class="groupbody">
 
-		<details class="issue" id="i260901-02" open>
+		<details class="issue done" id="i260901-02" open>
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260901-02</span>
 				接続先を引数で渡し、よく使うオプションに省略形を付ける
 			</summary>
@@ -918,20 +918,20 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 				<p><strong>放っておくとずれる。</strong>実際に <code>usage()</code> の <code>--retry-count</code> と <code>USAGE</code> の <code>--access-token</code> が抜けていた（不具合として先に埋めた）。<strong>オプションを増やす前に、2 つを一致させる形を決める</strong>（片方を生成するか、手で揃えるか）。</p>
 
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> 計画を書く。<a href="#i260901-01">i260901-01</a> と<strong>同じ計画にまとめるか決める</strong></li>
-					<li><span class="badge b-todo">未</span> <code>--url</code> と <code>--port</code> を同時に指定したときの扱いを決める（<a href="#i260901-01">i260901-01</a> の「両方はエラー」と揃えるか）</li>
-					<li><span class="badge b-todo">未</span> 短い形をどれに付けるか決める（衝突するものは付けない）</li>
-					<li><span class="badge b-todo">未</span> <code>AICHAT_URL</code> を廃止するか決める</li>
-					<li><span class="badge b-todo">未</span> <code>option()</code> を別名の表で解決する形に変える</li>
-					<li><span class="badge b-todo">未</span> <code>chat.mjs</code> の <code>usage()</code> を直す（<strong>実物。ここが正</strong>）</li>
-					<li><span class="badge b-todo">未</span> <code>USAGE-FOR-PROJECTS</code> の表と <code>~/.claude/CLAUDE.md</code> を直す</li>
+					<li class="done"><span class="badge b-done">☑</span> 計画を書く。<a href="#i260901-01">i260901-01</a> と<strong>同じ計画にまとめるか決める</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> <code>--url</code> と <code>--port</code> を同時に指定したときの扱いを決める（<a href="#i260901-01">i260901-01</a> の「両方はエラー」と揃えるか）</li>
+					<li class="done"><span class="badge b-done">☑</span> 短い形をどれに付けるか決める（衝突するものは付けない）</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>AICHAT_URL</code> を廃止するか決める</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>option()</code> を別名の表で解決する形に変える</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>chat.mjs</code> の <code>usage()</code> を直す（<strong>実物。ここが正</strong>）</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>USAGE-FOR-PROJECTS</code> の表と <code>~/.claude/CLAUDE.md</code> を直す</li>
 				</ul>
 			</div>
 		</details>
 
-		<details class="issue" id="i260901-01" open>
+		<details class="issue done" id="i260901-01" open>
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260901-01</span>
 				待受けの時間指定を設計からやり直す
 			</summary>
@@ -1020,17 +1020,17 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 				<p><strong>着手の順序に注意する。</strong><a href="#i260831-02">i260831-02</a>（<code>connector</code> への改名）も CLI のオプション名を触る。どちらを先にするかを決めてから始める。</p>
 
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> 計画を書く（<code>notes/10_plan/</code>）</li>
+					<li class="done"><span class="badge b-done">☑</span> 計画を書く（<code>notes/10_plan/</code>）</li>
 					<li class="done"><span class="badge b-done">☑</span> オプションの形を決める → <strong><code>--wait-min</code> と <code>--wait-hour</code></strong></li>
 					<li class="done"><span class="badge b-done">☑</span> 途中の出力をどうするか決める → <strong>開始 1 行と終了 1 行だけ</strong></li>
 					<li class="done"><span class="badge b-done">☑</span> 両方を指定したときの扱いを決める → <strong>エラー</strong></li>
 					<li class="done"><span class="badge b-done">☑</span> 上限なしの指定を持たせるか決める → <strong><code>0</code> を無限とする</strong></li>
 					<li class="done"><span class="badge b-done">☑</span> 既定値を決める → <strong>8 時間</strong></li>
-					<li><span class="badge b-todo">未</span> テストで短く待つ手段を決める（分・時だけでは 1 件も流せない）</li>
-					<li><span class="badge b-todo">未</span> <a href="#i260831-02">i260831-02</a> との順序を決める</li>
-					<li><span class="badge b-todo">未</span> 実装し、<code>client-wait.test.mjs</code> を書き換える</li>
-					<li><span class="badge b-todo">未</span> <code>chat.mjs</code> の <code>usage()</code> を直す（<strong>実物。ここが正</strong>）</li>
-					<li><span class="badge b-todo">未</span> <code>USAGE-FOR-PROJECTS</code> と <code>~/.claude/CLAUDE.md</code> の待受けの例を直す</li>
+					<li class="done"><span class="badge b-done">☑</span> テストで短く待つ手段を決める（分・時だけでは 1 件も流せない）</li>
+					<li class="done"><span class="badge b-done">☑</span> <a href="#i260831-02">i260831-02</a> との順序を決める</li>
+					<li class="done"><span class="badge b-done">☑</span> 実装し、<code>client-wait.test.mjs</code> を書き換える</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>chat.mjs</code> の <code>usage()</code> を直す（<strong>実物。ここが正</strong>）</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>USAGE-FOR-PROJECTS</code> と <code>~/.claude/CLAUDE.md</code> の待受けの例を直す</li>
 				</ul>
 			</div>
 		</details>
@@ -1242,9 +1242,9 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 			</div>
 		</details>
 
-		<details class="issue" id="i260831-02" open>
+		<details class="issue done" id="i260831-02" open>
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260831-02</span>
 				名乗る ID を <code>--connector-id</code> で渡す
 			</summary>
@@ -1256,12 +1256,12 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 				<p>詳細と決めていない点は<a href="../10_plan/p260831-02-connectorへの改名.html">計画</a>の「CLI のコマンドとオプション」にある。</p>
 
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> 省略したときに cwd のフォルダ名を使うかを決める</li>
-					<li><span class="badge b-todo">未</span> <a href="#i260901-01">i260901-01</a> と <a href="#i260901-02">i260901-02</a> との順序を決める（同じ行を書き換える）</li>
-					<li><span class="badge b-todo">未</span> <code>--connector-id</code> を足し、<code>AICHAT_ID</code> を廃止する</li>
-					<li><span class="badge b-todo">未</span> <code>chat.mjs</code> の <code>usage()</code> を直す（<strong>実物。ここが正</strong>）</li>
-					<li><span class="badge b-todo">未</span> <code>USAGE-FOR-PROJECTS</code> の表と <code>~/.claude/CLAUDE.md</code> を直す</li>
-					<li><span class="badge b-todo">未</span> 他プロジェクトへ周知する</li>
+					<li class="done"><span class="badge b-done">☑</span> 省略したときに cwd のフォルダ名を使うかを決める</li>
+					<li class="done"><span class="badge b-done">☑</span> <a href="#i260901-01">i260901-01</a> と <a href="#i260901-02">i260901-02</a> との順序を決める（同じ行を書き換える）</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>--connector-id</code> を足し、<code>AICHAT_ID</code> を廃止する</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>chat.mjs</code> の <code>usage()</code> を直す（<strong>実物。ここが正</strong>）</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>USAGE-FOR-PROJECTS</code> の表と <code>~/.claude/CLAUDE.md</code> を直す</li>
+					<li class="done"><span class="badge b-done">☑</span> 他プロジェクトへ周知する</li>
 				</ul>
 			</div>
 		</details>

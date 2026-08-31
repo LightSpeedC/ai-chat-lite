@@ -2,7 +2,7 @@
 
 本番と切り離してテストを回す
 
-> 📅 作成: 2026-08-31 / 更新: 2026-08-31
+> 📅 作成: 2026-08-31 / 更新: 2026-09-01
 
 [README へ戻る](../../README.md)
 
@@ -89,7 +89,7 @@ tools\40_test\stop-test-server.cmd
 | 繋ぐ側 | 渡し方 |
 |---|---|
 | 画面 | URL のクエリ（`?access_token=…`）。受け取ったらそのタブで覚える |
-| CLI | `--access-token <値>` |
+| CLI | `--access-token <値>`（短い形 `-a`）。接続先は `--port`（`-p`）で `server.json` の `port` を渡す |
 | テスト | `server.json` を読み、ヘッダ（`X-AiChat-Access-Token`）に載せる |
 | SSE・sendBeacon | **ヘッダを付けられないのでクエリ** |
 

@@ -401,7 +401,7 @@ footer a {
 	<div class="inner">
 		<h1>テスト用サーバーの手引き</h1>
 		<p class="lead">本番と切り離してテストを回す</p>
-		<p class="date">📅 作成: 2026-08-31 / 更新: 2026-08-31</p>
+		<p class="date">📅 作成: 2026-08-31 / 更新: 2026-09-01</p>
 	</div>
 </div>
 
@@ -505,7 +505,7 @@ tools\40_test\stop-test-server.cmd</code></pre>
 		</thead>
 		<tbody>
 			<tr><td class="nowrap">画面</td><td>URL のクエリ（<code>?access_token=…</code>）。受け取ったらそのタブで覚える</td></tr>
-			<tr><td class="nowrap">CLI</td><td><code>--access-token &lt;値&gt;</code></td></tr>
+			<tr><td class="nowrap">CLI</td><td><code>--access-token &lt;値&gt;</code>（短い形 <code>-a</code>）。接続先は <code>--port</code>（<code>-p</code>）で <code>server.json</code> の <code>port</code> を渡す</td></tr>
 			<tr><td class="nowrap">テスト</td><td><code>server.json</code> を読み、ヘッダ（<code>X-AiChat-Access-Token</code>）に載せる</td></tr>
 			<tr><td class="nowrap">SSE・sendBeacon</td><td><strong>ヘッダを付けられないのでクエリ</strong></td></tr>
 		</tbody>

@@ -406,7 +406,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 設計</h1>
 		<p class="lead">ローカルPC内で AI セッションと人間が同席する簡易チャットの設計</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-08-31</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-01</p>
 	</div>
 </div>
 
@@ -444,7 +444,7 @@ footer a {
 		<tbody>
 			<tr><td class="nowrap">動作範囲</td><td>ローカル PC 内で完結する。外部ネットワークには出さない</td></tr>
 			<tr><td class="nowrap">参加者</td><td>AI セッションと人間の両方</td></tr>
-			<tr><td class="nowrap">ID</td><td>自己申告。環境変数で明示する。project フォルダ名を使うことを想定している</td></tr>
+			<tr><td class="nowrap">ID</td><td>自己申告。<code>--connector-id</code> で明示する。project フォルダ名を使うことを想定している</td></tr>
 			<tr><td class="nowrap">アクセス制御</td><td>初期仕様では設けない。誰でも参加でき、誰の発言も全員が読める</td></tr>
 			<tr><td class="nowrap">在席表示</td><td>誰がいまオンラインかが分かる</td></tr>
 			<tr><td class="nowrap">AI の待受け</td><td>サブエージェントを常駐させ、着信に反応する</td></tr>
@@ -1562,7 +1562,7 @@ LIMIT ?;</code></pre>
 		<tbody>
 			<tr>
 				<td class="nowrap">指定</td>
-				<td>環境変数 <code>AICHAT_ID</code> で明示する。既定値は設けず、設定が無ければエラーで止める</td>
+				<td><code>--connector-id</code>（<code>-c</code>）で明示する。既定値は設けず、指定が無ければエラーで止める</td>
 			</tr>
 			<tr>
 				<td class="nowrap">既定値を<br>置かない理由</td>
@@ -1849,16 +1849,16 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 				<td>待つ回数。これを超えたら諦める</td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>AICHAT_ID</code></td>
+				<td class="nowrap"><s><code>AICHAT_ID</code></s></td>
 				<td class="nowrap">CLI</td>
-				<td class="nowrap">なし<br>（必須）</td>
-				<td>名乗る ID。設定が無いとエラーで止まる。読むだけのコマンド（<code>recent</code> / <code>who</code> / <code>dump</code>）は要らない</td>
+				<td class="nowrap">—</td>
+				<td><strong>廃止した。</strong><code>--connector-id</code>（<code>-c</code>）で渡す</td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>AICHAT_URL</code></td>
+				<td class="nowrap"><s><code>AICHAT_URL</code></s></td>
 				<td class="nowrap">CLI</td>
-				<td class="nowrap"><code>http://localhost:</code><br><code>&lt;AICHAT_PORT&gt;</code></td>
-				<td>接続先。ポート以外も変えたいときに使う</td>
+				<td class="nowrap">—</td>
+				<td><strong>廃止した。</strong><code>--url</code>（<code>-u</code>）か <code>--port</code>（<code>-p</code>）で渡す。<strong>既定値は持たない</strong></td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>AICHAT_MANAGED</code></td>

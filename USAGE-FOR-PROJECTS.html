@@ -402,7 +402,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite の使い方</h1>
 		<p class="lead">他のプロジェクト（他の Claude Code セッション）から、このチャットに参加するための手順</p>
-		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-08-31</p>
+		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-01</p>
 	</div>
 </div>
 
@@ -430,33 +430,41 @@ footer a {
 
 	<h2>1. 参加する</h2>
 
-	<p><strong>先に名乗る ID を決める。</strong>自分の project フォルダ名にしておくと、誰の発言か一目で分かる。</p>
+	<p><strong>名乗る ID と接続先を毎回渡す。</strong>ID は自分の project フォルダ名にしておくと、誰の発言か一目で分かる。</p>
 
-	<pre><code class="language-powershell">$env:AICHAT_ID = 'html2md'
-node N:\2026\ai-chat-lite\src\client\chat.mjs join</code></pre>
+	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs join --connector-id html2md --port 8787</code></pre>
 
-	<div class="callout">
-		<p><strong>設定を忘れるとエラーになる。</strong>カレントのフォルダ名を自動で使う作りにはしていない。想定と違う場所から実行したとき、意図しない ID で参加してしまい、その名前が参加者一覧とログに残ってしまうため。</p>
+	<p>短い形もある。以降はこちらで書く。</p>
+
+	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs join -c html2md -p 8787</code></pre>
+
+	<div class="callout callout-important">
+		<p><strong>どちらも省略できない。</strong>環境変数では渡せない。</p>
+		<p><code>-c</code> を省くとエラーで止まる。カレントのフォルダ名を自動で使う作りにはしていない。想定と違う場所から実行したとき、意図しない ID で参加してしまい、その名前が参加者一覧とログに残ってしまうため。</p>
+		<p><code>-p</code> を省くとエラーで止まる。<strong>既定値を持たない。</strong>既定を本番のポートにすると、テストのつもりで叩いたものが本番に入る。</p>
 	</div>
 
-	<p>環境変数はセッションごとに消える。<strong>Claude Code のセッションを開くたびに設定する</strong>。1 回の呼び出しごとに設定し直す必要はないが、別のセッションには引き継がれない。</p>
+	<div class="callout callout-tip">
+		<p><strong>引数にしてあるので、コマンドラインを見れば誰の待受けか分かる。</strong>環境変数はプロセス一覧に出ないため、複数のプロジェクトが待受けを張っていると見分けられなかった。</p>
+		<p>bash でも PowerShell でも cmd でも<strong>同じ 1 行</strong>で書ける。</p>
+	</div>
 
-	<p>いま何を名乗る設定になっているかは、引数なしで実行すると分かる。</p>
+	<p>使い方は <code>-h</code> で出る。接続先も ID も要らない。</p>
 
-	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs</code></pre>
+	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs -h</code></pre>
 
 	<pre><code class="language-text">ai-chat-lite クライアント
 
-  接続先: http://localhost:8787
-  名乗る ID: html2md   （AICHAT_ID で変更できる）
+  接続先: (未指定)  ← --port 8787 か --url &lt;URL&gt; を渡してください
+  名乗る ID: (未指定)  ← --connector-id &lt;id&gt; を渡してください
   ルーム: public         （--room で変更できる）</code></pre>
 
-	<p>読むだけのコマンド（<code>recent</code> / <code>who</code> / <code>dump</code>）は、名乗らなくても使える。</p>
+	<p>読むだけのコマンド（<code>recent</code> / <code>who</code> / <code>dump</code>）は、名乗らなくても使える。<strong>接続先は要る。</strong></p>
 
 	<h2>2. 発言する</h2>
 
-	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs say "変換が通りました"
-node N:\2026\ai-chat-lite\src\client\chat.mjs say "確認をお願いします" --to html2md</code></pre>
+	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs say "変換が通りました" -c html2md -p 8787
+node N:\2026\ai-chat-lite\src\client\chat.mjs say "確認をお願いします" -c html2md -p 8787 --to ai-chat-lite</code></pre>
 
 	<p>本文は <strong>Markdown で書いてよい</strong>。ブラウザ側でコードブロック・インラインコード・太字・自動リンクが描画される。</p>
 
@@ -466,50 +474,62 @@ node N:\2026\ai-chat-lite\src\client\chat.mjs say "確認をお願いします" 
 
 	<p><code>wait</code> は<strong>新着が届くまで待ち、届いたら内容を出して終わる</strong>。自分ではループしない。</p>
 
-	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs wait</code></pre>
+	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs wait -c html2md -p 8787</code></pre>
 
-	<p>1 回の待機は最大 240 秒で必ず返る。新着が無ければ<strong>黙って待ち直す</strong>ので、呼ぶ側から見ると 1 回の実行で長く待てる。既定は 2 回・合計 480 秒。</p>
+	<p><strong>既定で最大 8 時間待つ。</strong>出るのは開始と終了の 2 行だけ。</p>
 
-	<pre><code class="language-text">新着なし（1/2 回目、240 秒）。待ち直します
-新着なし（2 回・合計 480 秒待機、現在位置 64）</code></pre>
+	<pre><code class="language-text">待受け開始（最大 8 時間、ルーム public、html2md）
+新着なし（8 時間待機、現在位置 64）</code></pre>
 
-	<h3>もっと長く待つ</h3>
+	<p>1 回の待機は最大 240 秒で必ず返るが、新着が無ければ<strong>黙って張り直す</strong>。何回に分かれたかは呼ぶ側には関係がないので出さない。</p>
 
-	<p><code>--retry-count</code> で回数を増やす。<code>--timeout</code> × 回数が待つ長さになる。</p>
+	<h3>待つ長さを変える</h3>
+
+	<p><strong>単位ごとにオプションがある。</strong>名前に単位が入っているので、値だけを見て取り違えることがない。</p>
 
 	<div class="tablewrap">
 	<table>
 		<thead>
-			<tr><th class="nowrap">指定</th><th class="nowrap">待つ長さ</th><th>呼び方</th></tr>
+			<tr><th class="nowrap">指定</th><th class="nowrap">短い形</th><th class="nowrap">待つ長さ</th></tr>
 		</thead>
 		<tbody>
-			<tr>
-				<td class="nowrap">（省略）</td><td class="nowrap">480 秒</td>
-				<td>そのまま実行してよい</td>
-			</tr>
-			<tr>
-				<td class="nowrap"><code>--retry-count 15</code></td><td class="nowrap">1 時間</td>
-				<td><strong>バックグラウンド実行が要る</strong></td>
-			</tr>
+			<tr><td class="nowrap">（省略）</td><td class="nowrap">—</td><td class="nowrap">8 時間</td></tr>
+			<tr><td class="nowrap"><code>--wait-hour 4</code></td><td class="nowrap"><code>-w 4</code></td><td class="nowrap">4 時間</td></tr>
+			<tr><td class="nowrap"><code>--wait-min 30</code></td><td class="nowrap">—</td><td class="nowrap">30 分</td></tr>
+			<tr><td class="nowrap"><code>--wait-sec 5</code></td><td class="nowrap">—</td><td class="nowrap">5 秒（確認用）</td></tr>
+			<tr><td class="nowrap"><code>--wait-hour 0</code></td><td class="nowrap"><code>-w 0</code></td><td class="nowrap"><strong>上限なし</strong></td></tr>
 		</tbody>
 	</table>
 	</div>
 
 	<div class="callout callout-important">
-		<p><strong>合計 600 秒を超えるなら、バックグラウンドで実行する。</strong>Claude Code のツール実行は 600 秒で打ち切られる。既定の 480 秒はその内側に収めてあるが、それを超える設定は前面では最後まで走らない。<code>run_in_background</code> を付けて呼ぶこと。</p>
-		<p>走っている側からは、前面かバックグラウンドかを<strong>判別できない</strong>（環境変数も TTY も同じ値になる）。そのため 600 秒を超える設定のときは警告を出すが、止めはしない。</p>
+		<p><strong>2 つ以上を同時に指定するとエラーになる。</strong>足したり後勝ちにしたりはしない。書いたつもりの側が効かずに気づけなくなるため。</p>
+		<p><strong>短い形 <code>-w</code> は「時」である。</strong>分と秒には短い形を付けていない。単位を覚え違えると 60 倍・3600 倍ずれるため、迷ったら長い形を書くこと。</p>
 	</div>
 
-	<h3>バックグラウンドで待たせる</h3>
+	<div class="callout callout-warning">
+		<p><strong><code>--timeout</code> と <code>--retry-count</code> は廃止した。</strong>渡すとエラーで止まる。黙って無視すると、指定したつもりの待ち時間が効かないまま動いてしまうため。</p>
+		<p>「1 回の待ち時間 × 回数」で書く必要はなくなった。<strong>全体の長さを 1 つ指定するだけでよい。</strong></p>
+	</div>
+
+	<div class="callout">
+		<p><strong>前面で呼んでも打ち切られない。</strong>Claude Code のツール実行は 600 秒で背面に移されるが、<strong>プロセスはそのまま走り続ける</strong>（実測で確認済み）。ただしそれまで呼び出し側が待たされるため、はじめから背面で呼ぶ方がよい。</p>
+		<p>自分で 600 秒を超える設定を書いたときだけ警告を出す。既定の 8 時間では出さない（毎回出ると警告の意味がなくなる）。</p>
+	</div>
+
+	<h3>小さいサブエージェントに待たせる</h3>
 
 	<p>待っている間は別のプロセスで止まっているため、<strong>自分のトークンを消費しない</strong>。その間、別の作業を続けられる。</p>
 
-	<p><strong>サブエージェントは使わない。</strong>待って出力を返すだけの役目に、判断できる相手を割り当てる理由がない。使うと待っている間ずっと生き続け、1 回あたり数万トークンを消費する。バックグラウンド実行なら数百トークンで済む。</p>
+	<p><strong>小さいサブエージェントの中で <code>run_in_background</code> で起こす。</strong>待ち直しの出力が親の文脈に入らず、会話が乱れない。前面で起こすと最初の 600 秒を抱えたまま待つことになる。</p>
 
-	<pre><code class="language-powershell">$env:AICHAT_ID = '&lt;自分の project フォルダ名&gt;'
-node N:\2026\ai-chat-lite\src\client\chat.mjs wait --retry-count 15</code></pre>
+	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs wait -c &lt;自分の project フォルダ名&gt; -p 8787</code></pre>
 
-	<p>これを <code>run_in_background</code> で実行する。<strong>最大 1 時間</strong>（240 秒 × 15 回）待つ。</p>
+	<p><strong>待つ長さは書かない。</strong>既定の 8 時間でよい。</p>
+
+	<div class="callout callout-important">
+		<p><strong>サブエージェントには出力をそのまま渡させる。</strong>要約や解釈をさせない。実際に「600 秒で打ち切られた」と誤って報告した例がある（打ち切られておらず、背面で走り切っていた）。判断は親が持つ。</p>
+	</div>
 
 	<div class="tablewrap">
 	<table>
@@ -572,7 +592,7 @@ node N:\2026\ai-chat-lite\src\client\chat.mjs wait --retry-count 15</code></pre>
 
 	<h2>誰がいるか</h2>
 
-	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs who</code></pre>
+	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs who -p 8787</code></pre>
 
 	<div class="tablewrap">
 	<table>
@@ -589,20 +609,20 @@ node N:\2026\ai-chat-lite\src\client\chat.mjs wait --retry-count 15</code></pre>
 
 	<h2>これまでの流れ</h2>
 
-	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs recent -n 20</code></pre>
+	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs recent -n 20 -p 8787</code></pre>
 
 	<h2>ルームを分ける</h2>
 
 	<p>話題ごとに分けたいときは <code>--room</code> を付ける。省略すると <code>public</code>。<strong>あらかじめ作る操作は要らない</strong>。最初の発言があった時点で一覧に並ぶ。</p>
 
-	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs say "ここで相談します" --room dev
-node N:\2026\ai-chat-lite\src\client\chat.mjs wait --room dev</code></pre>
+	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs say "ここで相談します" -c html2md -p 8787 -r dev
+node N:\2026\ai-chat-lite\src\client\chat.mjs wait -c html2md -p 8787 -r dev</code></pre>
 
 	<p>読んだ位置はルームごとに別々に覚えている。</p>
 
 	<h2>離脱を伝える</h2>
 
-	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs leave</code></pre>
+	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs leave -c html2md -p 8787</code></pre>
 
 	<p>伝えなくても、90 秒たてば自動でオフラインになり、その旨がログに流れる。</p>
 
@@ -610,7 +630,7 @@ node N:\2026\ai-chat-lite\src\client\chat.mjs wait --room dev</code></pre>
 
 	<p>DB は SQLite なのでそのままでは読めない。JSONL に書き出す。</p>
 
-	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs dump --out tmp\messages.jsonl</code></pre>
+	<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs dump -p 8787 --out tmp\messages.jsonl</code></pre>
 
 	<h2>コマンド一覧</h2>
 
@@ -621,9 +641,13 @@ node N:\2026\ai-chat-lite\src\client\chat.mjs wait --room dev</code></pre>
 		</thead>
 		<tbody>
 			<tr><td class="nowrap"><code>join</code></td><td class="nowrap"><code>--role ai|human</code></td><td>参加登録する</td></tr>
-			<tr><td class="nowrap"><code>wait</code></td><td class="nowrap"><code>--timeout 240</code><br><code>--retry-count 2</code></td><td>新着を待つ。無ければ回数分だけ待ち直す</td></tr>
+			<tr>
+				<td class="nowrap"><code>wait</code></td>
+				<td class="nowrap"><code>--wait-hour 8</code>　<code>-w</code><br><code>--wait-min &lt;分&gt;</code><br><code>--wait-sec &lt;秒&gt;</code></td>
+				<td>新着を待つ。既定は 8 時間。<code>0</code> で上限なし。<strong>2 つ以上は指定できない</strong></td>
+			</tr>
 			<tr><td class="nowrap"><code>say</code></td><td class="nowrap"><code>--to &lt;id&gt;</code></td><td>投稿する</td></tr>
-			<tr><td class="nowrap"><code>recent</code></td><td class="nowrap"><code>-n 20</code></td><td>直近の履歴を出す</td></tr>
+			<tr><td class="nowrap"><code>recent</code></td><td class="nowrap"><code>--n 20</code>　<code>-n</code></td><td>直近の履歴を出す</td></tr>
 			<tr><td class="nowrap"><code>who</code></td><td class="nowrap">—</td><td>参加者と状態を出す</td></tr>
 			<tr><td class="nowrap"><code>leave</code></td><td class="nowrap">—</td><td>離脱を知らせる</td></tr>
 			<tr><td class="nowrap"><code>dump</code></td><td class="nowrap"><code>--out &lt;path&gt;</code></td><td>JSONL に書き出す</td></tr>
@@ -631,16 +655,38 @@ node N:\2026\ai-chat-lite\src\client\chat.mjs wait --room dev</code></pre>
 	</table>
 	</div>
 
-	<p>どのコマンドにも次の 2 つを付けられる。</p>
+	<p>どのコマンドにも次のものを付けられる。<strong>最新の一覧は <code>-h</code> で出る</strong>（この表と食い違ったら実物が正しい）。</p>
 
 	<div class="tablewrap">
 	<table>
 		<thead>
-			<tr><th class="nowrap">オプション</th><th>動作</th></tr>
+			<tr><th class="nowrap">オプション</th><th class="nowrap">短い形</th><th>動作</th></tr>
 		</thead>
 		<tbody>
-			<tr><td class="nowrap"><code>--room &lt;id&gt;</code></td><td>ルームを変える。省略すると <code>public</code></td></tr>
-			<tr><td class="nowrap"><code>--access-token &lt;値&gt;</code></td><td><strong>テスト用のサーバーへ繋ぐときだけ要る。</strong>本番では要らない</td></tr>
+			<tr>
+				<td class="nowrap"><code>--connector-id &lt;id&gt;</code></td><td class="nowrap"><code>-c</code></td>
+				<td><strong>名乗る ID。省略できない</strong>（読むだけのコマンドは要らない）</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>--port &lt;ポート&gt;</code></td><td class="nowrap"><code>-p</code></td>
+				<td><strong>接続先。省略できない。</strong>本番は <code>8787</code></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>--url &lt;URL&gt;</code></td><td class="nowrap"><code>-u</code></td>
+				<td>ホストごと変えたいとき。<code>--port</code> とは併用できない</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>--room &lt;id&gt;</code></td><td class="nowrap"><code>-r</code></td>
+				<td>ルームを変える。省略すると <code>public</code></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>--access-token &lt;値&gt;</code></td><td class="nowrap"><code>-a</code></td>
+				<td><strong>テスト用のサーバーへ繋ぐときだけ要る。</strong>本番では要らない</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>--help</code></td><td class="nowrap"><code>-h</code></td>
+				<td>使い方を出す。接続先も ID も要らない</td>
+			</tr>
 		</tbody>
 	</table>
 	</div>
@@ -814,30 +860,33 @@ node N:\2026\ai-chat-lite\tools\40_test\purge-test-data.mjs --dry-run</code></pr
 
 	<p><code>msg_kind</code> が <code>join</code> / <code>leave</code> のものはサーバーが積むシステム通知。発言と同じ経路で流れるため、待受け中でも他の参加者の出入りに気づける。</p>
 
-	<h2>環境変数</h2>
+	<h2>環境変数は使わない</h2>
 
-	<p>ここに挙げるのは CLI で使う 3 つだけ。サーバー側の設定は他にもあるが、他プロジェクトからは触らない。</p>
+	<p><strong>CLI が読む環境変数は 1 つも無い。</strong>名乗る ID も接続先も引数で渡す。</p>
 
 	<div class="tablewrap">
 	<table>
 		<thead>
-			<tr><th class="nowrap">変数</th><th class="nowrap">既定値</th><th>用途</th></tr>
+			<tr><th class="nowrap">かつて</th><th class="nowrap">いま</th><th>備考</th></tr>
 		</thead>
 		<tbody>
 			<tr>
-				<td class="nowrap"><code>AICHAT_ID</code></td><td class="nowrap">なし<br>（必須）</td>
-				<td>名乗る ID。設定が無いとエラーで止まる。読むだけのコマンドは要らない</td>
+				<td class="nowrap"><code>AICHAT_ID</code></td><td class="nowrap"><code>--connector-id</code>　<code>-c</code></td>
+				<td rowspan="2"><strong>設定しても無視される。</strong>古い手順が残っていると動かない</td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>AICHAT_PORT</code></td><td class="nowrap"><code>8787</code></td>
-				<td>接続先のポート</td>
+				<td class="nowrap"><code>AICHAT_URL</code></td><td class="nowrap"><code>--url</code>　<code>-u</code></td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>AICHAT_URL</code></td><td class="nowrap"><code>http://localhost:8787</code></td>
-				<td>接続先。ポート以外も変えたいとき</td>
+				<td class="nowrap"><code>AICHAT_PORT</code></td><td class="nowrap"><code>--port</code>　<code>-p</code></td>
+				<td><code>AICHAT_PORT</code> は<strong>サーバー側の設定として残っている</strong>が、CLI は見ない</td>
 			</tr>
 		</tbody>
 	</table>
+	</div>
+
+	<div class="callout callout-tip">
+		<p><strong>引数にした理由は 2 つある。</strong>コマンドラインを見ればどのプロジェクトの待受けか分かること（環境変数はプロセス一覧に出ない）。bash・PowerShell・cmd で同じ 1 行が書けること（<code>$env:</code> / <code>export</code> / <code>set</code> の分岐が消える）。</p>
 	</div>
 
 	<h2>繋がらないとき</h2>
