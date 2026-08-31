@@ -581,7 +581,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 課題</h1>
 		<p class="lead">これから解決すること。片付いたら閉じて残す</p>
-		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-08-31</p>
+		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-01</p>
 	</div>
 </div>
 
@@ -598,7 +598,7 @@ footer a {
 		<li class="g01"><a href="#g01">サービスの運用（2 件 / 未 2）</a></li>
 		<li class="g02"><a href="#g02">データ（3 件 / 未 2 / 着手 1）</a></li>
 		<li class="g03"><a href="#g03">開発環境・記録（3 件 / 済 3）</a></li>
-		<li class="g04"><a href="#g04">チャットの機能（11 件 / 未 8 / 済 3）</a></li>
+		<li class="g04"><a href="#g04">チャットの機能（14 件 / 未 11 / 済 3）</a></li>
 	</ol>
 </section>
 
@@ -620,7 +620,7 @@ footer a {
 			</summary>
 			<div class="issuebody">
 				<p>いま実行ファイルと XML がルート直下にある。フォルダ規約では <code>deploy/</code> が置き場。移すと XML に <code>..</code> が 2 箇所入るが、登録バッチはむしろ短くなる。</p>
-				<p><strong>移すならサービスの再登録が要る。</strong>登録時に記録された <code>ImagePath</code> が変わるため。<code>_data</code> の位置は影響を受けない（<code>config.mjs</code> がファイル自身の位置から解決するため）。</p>
+				<p><strong>移すならサービスの再登録が要る。</strong>登録時に記録された <code>ImagePath</code> が変わるため。<strong>データの置き場は影響を受けない</strong>（<code>config.mjs</code> がファイル自身の位置から解決し、<code>AICHAT_DATA</code> が指定されていればそちらを使う）。</p>
 				<ul class="todos">
 					<li><span class="badge b-todo">未</span> 3 ファイルを <code>deploy/</code> へ移す</li>
 					<li><span class="badge b-todo">未</span> XML の <code>arguments</code> と <code>logpath</code> に <code>..</code> を足す</li>
@@ -677,6 +677,38 @@ footer a {
 					<li><span class="badge b-todo">未</span> 論理削除したものだけを対象にするか、直接消せるようにするかを決める</li>
 					<li><span class="badge b-todo">未</span> 控えを取ってからでないと実行できない形にするか検討する</li>
 				</ul>
+
+				<h3>テストデータの分は先に片付いた</h3>
+
+				<p><code>tools/40_test/purge-test-data.mjs</code> で<strong>物理削除を実装した</strong>。ただし相手は<code>test-</code> の参加者と <code>sandbox-</code> のルームだけで、<strong>ふつうの発言は消せない</strong>。</p>
+
+				<p>ここで分かったことを、この課題の材料として残しておく。</p>
+
+				<div class="tablewrap">
+				<table>
+					<thead>
+						<tr><th class="nowrap">分かったこと</th><th>中身</th></tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td class="nowrap"><code>secure_delete</code> が要る</td>
+							<td><code>DELETE</code> しただけでは消した行の中身がページに残る。<code>PRAGMA secure_delete = ON</code> を<strong>削除の前に</strong>立てるとゼロ埋めされる</td>
+						</tr>
+						<tr>
+							<td class="nowrap"><code>VACUUM</code> は排他ロックを取る</td>
+							<td>他の読み書きが待たされる。<strong>並行して動くものがある場面では取れない</strong>。少量なら詰めなくてよい</td>
+						</tr>
+						<tr>
+							<td class="nowrap">既定は安全な側へ</td>
+							<td>相手にする置き場の既定をテストにし、本番は <code>--production</code> を明示させた。<strong>忘れても本番に届かない</strong></td>
+						</tr>
+					</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-warning">
+					<p><strong>本文で消す指定は危うい。</strong>テストデータの回収で本文の一致（<code>LIKE</code>）を使ったが、実際の会話が同じ言葉に触れていれば巻き込む。実行の前に必ず対象を数えて見せる形にした。</p>
+				</div>
 			</div>
 		</details>
 
@@ -696,8 +728,9 @@ footer a {
 					<li class="done"><span class="badge b-done">☑</span> ルームを片付ける方式 → <code>messages</code> と <code>cursors</code> に番号を入れる。<code>public</code> は不可</li>
 					<li class="done"><span class="badge b-done">☑</span> 発言を 1 件だけ取り消す方式 → <code>archive message &lt;msg_seq&gt;</code></li>
 					<li class="done"><span class="badge b-done">☑</span> 画面か CLI か → <strong>片付けは CLI、戻すのは画面からも</strong></li>
-					<li><span class="badge b-todo">未</span> <code>archives</code> テーブルと 3 テーブルへの列追加</li>
-					<li><span class="badge b-todo">未</span> <code>messages</code> を作り直して <code>msg_kind</code> に <code>archive</code> を足す</li>
+					<li class="done"><span class="badge b-done">☑</span> 3 テーブル（<code>messages</code> <code>users</code> <code>cursors</code>）に <code>archived_seq</code> を足す</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>msg_kind</code> の <code>CHECK</code> 制約に <code>archive</code> を足す（<code>say</code> / <code>join</code> / <code>leave</code> / <code>archive</code>）</li>
+					<li><span class="badge b-todo">未</span> <code>archives</code> テーブルを作る</li>
 					<li><span class="badge b-todo">未</span> 読み出し 8 関数に <code>archived_seq IS NULL</code> を足す</li>
 					<li><span class="badge b-todo">未</span> API 3 つと CLI コマンド 3 つ</li>
 					<li><span class="badge b-todo">未</span> 画面で <code>archive#&lt;seq&gt;</code> を押せるようにする</li>
@@ -746,7 +779,7 @@ footer a {
 				<p>これまで status の「残っていること」に書いていたが、状態を持てず、片付いたものを残せなかった。<code>notes/40_issues/</code> に移し、グループと開閉で扱えるようにする。</p>
 				<p>1 ファイルに集約する形にした。課題が数行で済むうちはこの方が見渡しやすい。1 件が長くなってきたら 1 件 1 ファイルへ切り替える。</p>
 				<ul class="todos">
-					<li class="done"><span class="badge b-done">☑</span> 開閉と番号（<code>yyyymmdd-nn</code>）の形を決める</li>
+					<li class="done"><span class="badge b-done">☑</span> 開閉と番号（<code>iyymmdd-nn</code>）の形を決める</li>
 					<li class="done"><span class="badge b-done">☑</span> グループごとに畳めるようにする</li>
 					<li class="done"><span class="badge b-done">☑</span> 未 / 着手 / 済 の 3 状態にする</li>
 					<li class="done"><span class="badge b-done">☑</span> 件数を数え直し、開閉を覚えるようにする</li>
@@ -805,10 +838,202 @@ footer a {
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">11 件 / 未 8 / 済 3</span>
+		<span class="count">14 件 / 未 11 / 済 3</span>
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue" id="i260901-02" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260901-02</span>
+				接続先を引数で渡し、よく使うオプションに省略形を付ける
+			</summary>
+			<div class="issuebody">
+				<p><strong>接続先が環境変数のままである。</strong>テスト用サーバーを叩くには 2 つを渡すが、片方だけが環境変数になっている。</p>
+
+				<pre><code class="language-powershell">$env:AICHAT_URL = 'http://localhost:8765'
+node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
+
+				<p><a href="#i260831-02">i260831-02</a> で <code>AICHAT_ID</code> を引数にすると、<strong>「ID は引数、接続先は環境変数」という不揃いが残る</strong>。理由は同じ（コマンドラインを見れば分かる・シェルを問わない）。</p>
+
+				<h3>向かう形</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">足すもの</th><th>意味</th></tr>
+				</thead>
+				<tbody>
+					<tr><td class="nowrap"><code>--url</code></td><td>接続先をそのまま指定する。<code>AICHAT_URL</code> の置き換え</td></tr>
+					<tr><td class="nowrap"><code>--port</code></td><td><strong><code>localhost</code> のポートだけを指定する。</strong>ふだんはこちらで足りる</td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<h3>省略形</h3>
+
+				<p><strong>コマンドラインが長くなる。</strong>待受け 1 本で <code>--connector-id</code> <code>--access-token</code> <code>--room</code> <code>--port</code> <code>--wait-hour</code> が並ぶ。</p>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">短</th><th class="nowrap">長</th><th>備考</th></tr>
+				</thead>
+				<tbody>
+					<tr><td class="nowrap"><code>-c</code></td><td class="nowrap"><code>--connector-id</code></td><td><a href="#i260831-02">i260831-02</a> で足すもの</td></tr>
+					<tr><td class="nowrap"><code>-a</code></td><td class="nowrap"><code>--access-token</code></td><td></td></tr>
+					<tr><td class="nowrap"><code>-r</code></td><td class="nowrap"><code>--room</code></td><td></td></tr>
+					<tr><td class="nowrap"><code>-p</code></td><td class="nowrap"><code>--port</code></td><td></td></tr>
+					<tr><td class="nowrap"><code>-u</code></td><td class="nowrap"><code>--url</code></td><td></td></tr>
+					<tr><td class="nowrap"><code>-n</code></td><td class="nowrap"><code>--n</code></td><td><strong>すでにある</strong>（<code>recent</code> の件数）</td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-warning">
+					<p><strong>頭文字が衝突する。</strong><code>--room</code> と <code>--role</code> はどちらも <code>r</code>、<code>--to</code> と <code>--timeout</code> はどちらも <code>t</code>。大小で分けると（<code>-r</code> と <code>-R</code>）取り違える。</p>
+					<p><strong>短い形を全部に付けない</strong>のが素直である。よく打つものだけに付け、残りは長い形だけにする。</p>
+				</div>
+
+				<h3>いまの解釈の作り</h3>
+
+				<p><code>option()</code> は <code>--名前</code> だけを探す作りで、<code>-n</code> は <code>recent</code> の中で個別に見ている（<code>chat.mjs:233</code>）。<strong>短い形を入れるなら、別名の表を持って 1 か所で解決する形に変える。</strong></p>
+
+				<h3>オプション名の一覧が 2 つあり、食い違っている</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">置き場</th><th>形</th><th>役目</th></tr>
+				</thead>
+				<tbody>
+					<tr><td class="nowrap"><code>chat.mjs</code> の <code>usage()</code></td><td><code>--help</code> で出る画面</td><td><strong>実物。ここが正</strong></td></tr>
+					<tr><td class="nowrap"><code>USAGE-FOR-PROJECTS</code></td><td>コマンド × オプションの表</td><td>他プロジェクト向けの一覧</td></tr>
+					<tr><td class="nowrap"><code>notes/90_rules/test-server</code></td><td><code>--access-token</code> の例</td><td>テスト用のみ</td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<p><strong>放っておくとずれる。</strong>実際に <code>usage()</code> の <code>--retry-count</code> と <code>USAGE</code> の <code>--access-token</code> が抜けていた（不具合として先に埋めた）。<strong>オプションを増やす前に、2 つを一致させる形を決める</strong>（片方を生成するか、手で揃えるか）。</p>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> 計画を書く。<a href="#i260901-01">i260901-01</a> と<strong>同じ計画にまとめるか決める</strong></li>
+					<li><span class="badge b-todo">未</span> <code>--url</code> と <code>--port</code> を同時に指定したときの扱いを決める（<a href="#i260901-01">i260901-01</a> の「両方はエラー」と揃えるか）</li>
+					<li><span class="badge b-todo">未</span> 短い形をどれに付けるか決める（衝突するものは付けない）</li>
+					<li><span class="badge b-todo">未</span> <code>AICHAT_URL</code> を廃止するか決める</li>
+					<li><span class="badge b-todo">未</span> <code>option()</code> を別名の表で解決する形に変える</li>
+					<li><span class="badge b-todo">未</span> <code>chat.mjs</code> の <code>usage()</code> を直す（<strong>実物。ここが正</strong>）</li>
+					<li><span class="badge b-todo">未</span> <code>USAGE-FOR-PROJECTS</code> の表と <code>~/.claude/CLAUDE.md</code> を直す</li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue" id="i260901-01" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260901-01</span>
+				待受けの時間指定を設計からやり直す
+			</summary>
+			<div class="issuebody">
+				<p><strong>前提が崩れた。</strong>「前面のツール実行は 600 秒で打ち切られる」と考えて <code>--retry-count</code> の既定値と警告文を決めていたが、実測では<strong>打ち切られず背面に移されるだけで、プロセスは走り続けた</strong>。4 通り（親の前面・親の背面・サブエージェントの前面・サブエージェントの背面）で 8 時間指定を起こし、いずれも走り切ることを確かめた。</p>
+				<p><code>chat.mjs</code> の文言は訂正済み。<strong>残っているのは指定の形そのもの</strong>である。</p>
+
+				<h3>いまの形</h3>
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">オプション</th><th>意味</th><th>問題</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap"><code>--timeout</code></td>
+						<td>1 回の long-poll の待ち時間（秒）。240 が上限</td>
+						<td>240 はサーバーの都合。呼ぶ側が知る必要はない</td>
+					</tr>
+					<tr>
+						<td class="nowrap"><code>--retry-count</code></td>
+						<td>待ち直す回数</td>
+						<td><strong>総待ち時間が掛け算でしか分からない</strong>。8 時間 = 120 回</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<p><strong>1 回の long-poll が 240 秒で返るのはサーバーの正しい設計である</strong>（これ以上引き延ばすと、途中の切断に気づけないまま握り続ける）。変えるのはサーバーではなく、<strong>その 240 を呼ぶ側に意識させている点</strong>。</p>
+
+				<h3>向かう形</h3>
+				<p>呼ぶ側が言いたいのは「最大どれだけ待つか」の 1 つだけ。張り直しは内部に隠す。</p>
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">決めたこと</th><th>中身</th></tr>
+				</thead>
+				<tbody>
+					<tr><td class="nowrap"><code>--retry-count</code></td><td><strong>廃止する。</strong>回数は内部で決める</td></tr>
+					<tr><td class="nowrap"><code>--timeout</code></td><td><strong>内部に隠す。</strong>呼ぶ側からは指定しない</td></tr>
+					<tr><td class="nowrap">新しい指定</td><td><strong><code>--wait-min</code> と <code>--wait-hour</code></strong>（<code>480</code> と <code>8</code> はどちらも 8 時間）</td></tr>
+					<tr><td class="nowrap">両方を指定したとき</td><td><strong>エラーにする。</strong>足さない・後勝ちにしない</td></tr>
+					<tr><td class="nowrap">上限なし</td><td><strong><code>0</code> を無限とする</strong></td></tr>
+					<tr><td class="nowrap">既定値</td><td><strong>8 時間</strong>（いまは 480 秒）</td></tr>
+					<tr><td class="nowrap">ログ</td><td><strong>開始 1 行と終了 1 行だけ。</strong>240 秒ごとの「新着なし」は出さない</td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-important">
+					<p><strong>単位を名前に入れずに <code>--wait</code> としてはいけない。</strong>既存の <code>--timeout</code> は秒なので、秒・分・時が混在する。名前に単位があれば取り違えない。</p>
+				</div>
+
+				<h3>残った論点</h3>
+
+				<div class="callout callout-warning">
+					<p><strong>分と時しか指定できないと、テストが 1 分待つことになる。</strong>いまのテストは <code>--timeout 1 --retry-count 3</code> のように<strong>秒</strong>で指定して数秒で終わらせている（<code>client-wait.test.mjs</code> の 7 件）。<code>--timeout</code> を隠すと、この手が使えない。</p>
+					<p>既定値が 8 時間になるため、<strong>短く待つ手段が無いと 1 件も流せない。</strong></p>
+				</div>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">案</th><th>内容</th><th>難点</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">秒も残す</td>
+						<td><code>--wait-sec</code> を足す。3 つになるが単位は名前に出ている</td>
+						<td>指定が 3 通りになる</td>
+					</tr>
+					<tr>
+						<td class="nowrap">小数を許す</td>
+						<td><code>--wait-min 0.05</code> ＝ 3 秒</td>
+						<td><strong>読んで分からない。</strong>テストの意図が伝わらない</td>
+					</tr>
+					<tr>
+						<td class="nowrap">環境変数で差し替える</td>
+						<td>テストだけ 1 回の long-poll を短くする</td>
+						<td>環境変数が増える。<strong>本番と違う経路を通る</strong></td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<p><strong>着手の順序に注意する。</strong><a href="#i260831-02">i260831-02</a>（<code>connector</code> への改名）も CLI のオプション名を触る。どちらを先にするかを決めてから始める。</p>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> 計画を書く（<code>notes/10_plan/</code>）</li>
+					<li class="done"><span class="badge b-done">☑</span> オプションの形を決める → <strong><code>--wait-min</code> と <code>--wait-hour</code></strong></li>
+					<li class="done"><span class="badge b-done">☑</span> 途中の出力をどうするか決める → <strong>開始 1 行と終了 1 行だけ</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> 両方を指定したときの扱いを決める → <strong>エラー</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> 上限なしの指定を持たせるか決める → <strong><code>0</code> を無限とする</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> 既定値を決める → <strong>8 時間</strong></li>
+					<li><span class="badge b-todo">未</span> テストで短く待つ手段を決める（分・時だけでは 1 件も流せない）</li>
+					<li><span class="badge b-todo">未</span> <a href="#i260831-02">i260831-02</a> との順序を決める</li>
+					<li><span class="badge b-todo">未</span> 実装し、<code>client-wait.test.mjs</code> を書き換える</li>
+					<li><span class="badge b-todo">未</span> <code>chat.mjs</code> の <code>usage()</code> を直す（<strong>実物。ここが正</strong>）</li>
+					<li><span class="badge b-todo">未</span> <code>USAGE-FOR-PROJECTS</code> と <code>~/.claude/CLAUDE.md</code> の待受けの例を直す</li>
+				</ul>
+			</div>
+		</details>
 
 		<details class="issue" id="i260830-14" open>
 			<summary>
@@ -853,6 +1078,7 @@ footer a {
 				<p>ブラウザを閉じるときだけでなく、<strong>リロードでも <code>pagehide</code> が起きる</strong>。そのたびに <code>/api/leave</code> が呼ばれ、「〇〇 が離脱しました」が記録されていた。実測でリロード 3 回につき 3 件。</p>
 				<p><code>pagehide</code> からは閉じたのかリロードなのか区別できない。<strong>区別できるのはサーバー側</strong>で、少し待って接続が戻ってくるかを見ればよい。リロードなら 1 秒ほどで繋ぎ直す。</p>
 				<p><code>/api/leave</code> を受けたら 5 秒待ち、その時点で接続が 0 のままなら積む形にした（<code>AICHAT_LEAVE_GRACE_MS</code> で変えられる）。在席の表示だけは即座に変える。</p>
+				<p><strong>閉じ方によって <code>sendBeacon</code> が届かない。</strong>Playwright で測ると <code>page.close()</code>・<code>goto('about:blank')</code>・別ページへの遷移は届くが、<strong><code>context.close()</code> と <code>window.close()</code> は届かない</strong>。閉じたときの動きを試すときは前者を使う（<code>leave-methods.spec.ts</code>）。</p>
 				<ul class="todos">
 					<li class="done"><span class="badge b-done">☑</span> 積む条件を決める → <strong>5 秒待って戻らなければ積む</strong></li>
 					<li class="done"><span class="badge b-done">☑</span> 実ブラウザで確かめる（claude-in-chrome でリロード 3 回 → 0 件、閉じる → 1 件）</li>
@@ -899,6 +1125,11 @@ footer a {
 					<li><span class="badge b-todo">未</span> 投稿先を揃える。ルームごとの在席を持つかどうかも決める</li>
 					<li><span class="badge b-todo">未</span> 待受け中の AI が相手の離脱に気づけることを保つ</li>
 				</ul>
+
+				<div class="callout callout-warning">
+					<p><strong>猶予つきで積まれることが、テストの後始末を難しくしている。</strong>テストが終わった時点で消しても、猶予（既定 5 秒）のあとに「離脱しました」だけが入る。</p>
+					<p>実測で <strong>leave だけのルームが 8 件</strong>溜まった。いまはテスト側が猶予を待ってから消しているが、<strong>片付けるときにこの待ちが要らなくなる形</strong>が望ましい。整理するときの判断材料にする。</p>
+				</div>
 			</div>
 		</details>
 
@@ -1015,60 +1246,21 @@ footer a {
 			<summary>
 				<span class="badge b-todo">未</span>
 				<span class="no">i260831-02</span>
-				名乗る ID を環境変数で渡している
+				名乗る ID を <code>--connector-id</code> で渡す
 			</summary>
 			<div class="issuebody">
-				<p>待受けを張るには 2 行が要る。<strong>1 行目がシェルごとに違う。</strong></p>
+				<p><strong><code>AICHAT_ID</code> をやめ、引数で渡す。</strong>いまは環境変数のため、待受けを張るのに 2 行が要り、1 行目がシェルごとに違う。</p>
 
-				<pre><code class="language-powershell">$env:AICHAT_ID = 'ai-chat-lite'
-node N:\2026\ai-chat-lite\src\client\chat.mjs wait --retry-count 15</code></pre>
+				<p>引数にすると <strong>コマンドラインを見ればどのプロジェクトの待受けか分かり</strong>、<strong>bash でも PowerShell でも同じ 1 行で起動できる</strong>。</p>
 
-				<p>PowerShell は <code>$env:</code>、bash は <code>export</code>、cmd は <code>set</code>。<strong>どれで起動するかで書き方が変わる。</strong></p>
-
-				<p>さらに、<strong>動いているプロセスを見ても誰なのか分からない</strong>。コマンドラインに出るのは <code>node ...\chat.mjs wait</code> だけで、ID は環境変数の中にある。複数のプロジェクトが待受けを張っているとき、どれがどれか見分けられない。</p>
-
-				<h3>設計と食い違っている</h3>
-
-				<p><a href="../10_plan/p260829-01-設計.html">設計</a>では「環境変数 <code>AICHAT_ID</code>、無ければ <code>path.basename(process.cwd())</code>」としていた。<strong>実装は必須にしていて、未設定ならエラーで止まる。</strong></p>
-
-				<pre><code class="language-javascript">const USER_ID = process.env.AICHAT_ID ?? null;   // 既定値を使っていない</code></pre>
-
-				<p>エラーメッセージの中で <code>basename(process.cwd())</code> を<strong>提案してはいる</strong>が、既定値としては使っていない。</p>
-
-				<h3>案</h3>
-
-				<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs wait --id ai-chat-lite --retry-count 15</code></pre>
-
-				<div class="tablewrap">
-				<table>
-					<thead>
-						<tr><th class="nowrap">　</th><th>中身</th></tr>
-					</thead>
-					<tbody>
-						<tr><td class="nowrap">良い点</td><td><strong>1 行で済む。</strong>シェルを問わない</td></tr>
-						<tr><td class="nowrap">良い点</td><td><strong>プロセス一覧で誰か分かる。</strong>コマンドラインに ID が出る</td></tr>
-						<tr><td class="nowrap">良い点</td><td><strong>取り違えが減る。</strong>環境変数は同じシェルで前の値が残る</td></tr>
-						<tr><td class="nowrap">良い点</td><td>設計どおりに戻せる（既定値を使う）</td></tr>
-						<tr><td class="nowrap">悪い点</td><td>既存の呼び出しがすべて変わる。ルール・USAGE・他プロジェクトのセッション</td></tr>
-						<tr><td class="nowrap">悪い点</td><td><strong>環境変数は必ずしも減らない。</strong>両対応にすれば残る</td></tr>
-						<tr><td class="nowrap">悪い点</td><td>コマンドラインに ID が出る＝会話ログに残る記録が増える</td></tr>
-					</tbody>
-				</table>
-				</div>
-
-				<div class="callout callout-important">
-					<p><strong>既定値を cwd のフォルダ名にすると、そもそも <code>--id</code> も要らなくなる。</strong>他プロジェクトは自分のフォルダで叩くので、何も指定しなければ正しい名前になる。<code>--id</code> は「cwd と違う名前を使いたいとき」だけのものになる。</p>
-					<p>ただし<strong>間違った場所から叩くと別の名前で参加してしまう。</strong>明示させる方が安全か、省略できる方が楽か。ここが決めどころである。</p>
-				</div>
-
-				<h3>決めること</h3>
+				<p>詳細と決めていない点は<a href="../10_plan/p260831-02-connectorへの改名.html">計画</a>の「CLI のコマンドとオプション」にある。</p>
 
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> <code>--id</code> を足す</li>
-					<li><span class="badge b-todo">未</span> 省略したときに cwd のフォルダ名を使うかを決める（設計どおりにするか）</li>
-					<li><span class="badge b-todo">未</span> <code>AICHAT_ID</code> を廃止するか、残すかを決める</li>
-					<li><span class="badge b-todo">未</span> 環境変数が本当に減るのかを確かめる（<code>AICHAT_URL</code> <code>AICHAT_DATA</code> と合わせて数える）</li>
-					<li><span class="badge b-todo">未</span> ルールと USAGE を直す</li>
+					<li><span class="badge b-todo">未</span> 省略したときに cwd のフォルダ名を使うかを決める</li>
+					<li><span class="badge b-todo">未</span> <a href="#i260901-01">i260901-01</a> と <a href="#i260901-02">i260901-02</a> との順序を決める（同じ行を書き換える）</li>
+					<li><span class="badge b-todo">未</span> <code>--connector-id</code> を足し、<code>AICHAT_ID</code> を廃止する</li>
+					<li><span class="badge b-todo">未</span> <code>chat.mjs</code> の <code>usage()</code> を直す（<strong>実物。ここが正</strong>）</li>
+					<li><span class="badge b-todo">未</span> <code>USAGE-FOR-PROJECTS</code> の表と <code>~/.claude/CLAUDE.md</code> を直す</li>
 					<li><span class="badge b-todo">未</span> 他プロジェクトへ周知する</li>
 				</ul>
 			</div>
@@ -1140,6 +1332,88 @@ node N:\2026\ai-chat-lite\src\client\chat.mjs wait --retry-count 15</code></pre>
 			</div>
 		</details>
 
+		<details class="issue" id="i260831-04" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260831-04</span>
+				<code>user</code> という語が実体と合っていない
+			</summary>
+			<div class="issuebody">
+				<p><code>user_id</code> <code>users</code> <code>user_role</code> という名前を使っているが、<strong>ここに来るのは「ユーザ」ではない</strong>。繋いできた人か AI である。</p>
+
+				<p><code>user_role</code> に <code>ai</code> と <code>human</code> の 2 つを持っていること自体が、<strong>「user」で括れていない</strong>ことを示している。人と AI をまとめて呼ぶ語が要る。</p>
+
+				<h3>置き換える語の候補</h3>
+
+				<p><strong>このプロジェクトで既に使われている語は選べない。</strong>置き換えると既存の記述に混ざる。実測した結果が次のとおり。</p>
+
+				<div class="tablewrap">
+				<table>
+					<thead>
+						<tr><th class="nowrap">語</th><th class="num">出現</th><th>可否と印象</th></tr>
+					</thead>
+					<tbody>
+						<tr><td class="nowrap"><code>client</code></td><td class="num">74</td><td><span class="badge b-ng">不可</span> <code>src/client/</code> で使用中</td></tr>
+						<tr><td class="nowrap"><code>node</code></td><td class="num">291</td><td><span class="badge b-ng">不可</span> Node.js の <code>node:</code> と衝突</td></tr>
+						<tr><td class="nowrap"><code>session</code></td><td class="num">4</td><td><span class="badge b-warn">避ける</span> 会話ログの文脈で使っている</td></tr>
+						<tr><td class="nowrap"><code>agent</code></td><td class="num">3</td><td><span class="badge b-warn">避ける</span> AI エージェントの意味で使っている</td></tr>
+						<tr><td class="nowrap"><code>connector</code></td><td class="num">0</td><td><span class="badge b-ok">可</span> 繋ぐものという意味。やや道具寄り</td></tr>
+						<tr><td class="nowrap"><code>participant</code></td><td class="num">0</td><td><span class="badge b-ok">可</span> <strong>画面で「参加者」と表示しているので日本語と揃う</strong>。長い</td></tr>
+						<tr><td class="nowrap"><code>peer</code></td><td class="num">0</td><td><span class="badge b-ok">可</span> 短い。対等な相手という含みがある</td></tr>
+						<tr><td class="nowrap"><code>member</code></td><td class="num">0</td><td><span class="badge b-ok">可</span> 短い。所属の含みがある</td></tr>
+						<tr><td class="nowrap"><code>speaker</code></td><td class="num">0</td><td><span class="badge b-ok">可</span> 発言する者。<strong>読むだけの参加者に合わない</strong></td></tr>
+						<tr><td class="nowrap"><code>entity</code> / <code>actor</code> / <code>party</code> / <code>caller</code> / <code>terminal</code> / <code>seat</code> / <code>endpoint</code></td><td class="num">0</td><td><span class="badge b-ok">可</span> いずれも空いている</td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<h3>規模</h3>
+
+				<div class="tablewrap">
+				<table>
+					<thead>
+						<tr><th class="nowrap">対象</th><th class="num">行数</th><th>備考</th></tr>
+					</thead>
+					<tbody>
+						<tr><td class="nowrap"><code>user_id</code></td><td class="num">232</td><td><strong>DB の列名</strong>。3 テーブルすべてにある</td></tr>
+						<tr><td class="nowrap"><code>users</code></td><td class="num">106</td><td><strong>テーブル名</strong>。API の応答キーにもある</td></tr>
+						<tr><td class="nowrap"><code>userId</code></td><td class="num">93</td><td>JS の変数名</td></tr>
+						<tr><td class="nowrap"><code>from_user_id</code> / <code>to_user_id</code></td><td class="num">99</td><td>列名</td></tr>
+						<tr><td class="nowrap"><code>user_role</code></td><td class="num">37</td><td>列名。<code>ai</code> / <code>human</code> を持つ</td></tr>
+						<tr><td class="nowrap"><code>archived_user_id</code></td><td class="num">4</td><td>アーカイブ設計にある（未実装）</td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<p>触るファイルは <strong>78 件中 15 件以上</strong>。多い順に <code>tests/server.test.mjs</code>（59）、<code>src/server/store.mjs</code>（58）、<code>src/server/server.mjs</code>（50）、設計（47）。</p>
+
+				<div class="callout callout-caution">
+					<p><strong>列名を変えるにはテーブルの作り直しが要る。</strong>SQLite の <code>ALTER TABLE</code> は改名もできるが、3 テーブル分の列と索引を順に変えることになる。<strong>途中で止まると中途半端な形が残る。</strong></p>
+					<p><strong>データを捨てられるなら、いま変えるのが最も安い。</strong>本番の <code>messages</code> は 48 件で、他プロジェクトとのやり取りが入っている。捨てるか移すかを先に決める。</p>
+				</div>
+
+				<h3>他の課題との関係</h3>
+
+				<p><a href="#i260830-09">i260830-09</a>（アーカイブ機能）は <code>archived_user_id</code> を新設する。<a href="#i260831-01">i260831-01</a>（返信・リアクション）も列を足す。<strong>名前を変えるならこれらより先が良い</strong>。あとから変えると、足した分も変えることになる。</p>
+
+				<h3>やること</h3>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> どの語にするかを決める → <strong><code>connector</code></strong></li>
+					<li><span class="badge b-todo">未</span> いまのデータを捨てるか移すかを決める</li>
+					<li><span class="badge b-todo">未</span> 列名・テーブル名・API のキー・JS の変数名を、どこまで揃えるかを決める</li>
+					<li><span class="badge b-todo">未</span> 他プロジェクトへの影響を確かめる（API の応答キーが変わる）</li>
+					<li><span class="badge b-todo">未</span> 計画を書いて承認を得る</li>
+					<li><span class="badge b-todo">未</span> 置き換える。テストが通る状態を保ちながら進める</li>
+					<li><span class="badge b-todo">未</span> 設計・USAGE・手引きを直す</li>
+				</ul>
+
+				<div class="callout callout-warning">
+					<p><strong>API の応答キーを変えると他プロジェクトが壊れる。</strong><code>user_id</code> は <code>/api/join</code> <code>/api/say</code> <code>/api/users</code> の応答に出ており、<code>chat.mjs</code> 以外から叩いているところがあれば影響する。<strong>周知が要る。</strong></p>
+				</div>
+			</div>
+		</details>
+
 		<details class="issue done" id="i260830-05">
 			<summary>
 				<span class="badge b-done">☑</span>
@@ -1180,7 +1454,7 @@ node N:\2026\ai-chat-lite\src\client\chat.mjs wait --retry-count 15</code></pre>
 <section>
 	<h2>この一覧の見かた</h2>
 
-	<p>見出しをクリックすると開閉します。開いた状態は覚えているので、次に開いたときも同じ形で始まります。番号は <code>yyyymmdd-nn</code> で、立てた日を表します。</p>
+	<p>見出しをクリックすると開閉します。<strong>開いた状態は覚えません</strong>ので、開き直すとこの形に戻ります。番号は <code>i</code> ＋ 立てた日（<code>yymmdd</code>）＋ 36 進数 2 桁の連番です。</p>
 
 	<div class="tablewrap">
 	<table>

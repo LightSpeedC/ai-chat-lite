@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>connector への改名</title>
+<style>
+:root {
+	--navy1: #12224d;
+	--navy2: #2f5fbf;
+	--ink: #1c2330;
+	--ink-soft: #4a5568;
+	--line: #d9dfe8;
+	--code-bg: #f4f6fa;
+	--link: #1a4fa0;
+	--accent: #12224d;
+	--accent2: #2f5fbf;
+	--soft: #f2f5fb;
+}
+
+.ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
+.ch02 { --accent: hsl(210, 78%, 25%); --accent2: hsl(210, 58%, 55%); --soft: hsl(210, 28%, 95%); }
+.ch03 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); --soft: hsl(140, 28%, 95%); }
+.ch04 { --accent: hsl( 70, 78%, 25%); --accent2: hsl( 70, 58%, 55%); --soft: hsl( 70, 28%, 95%); }
+.ch05 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
+
+* { box-sizing: border-box; }
+
+body {
+	margin: 0;
+	font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+	font-size: 15.5px;
+	line-height: 1.85;
+	color: var(--ink, #1c2330);
+	background: #fdfdfe;
+}
+
+.titlebar {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 34px 30px 30px;
+}
+.titlebar .inner { max-width: 1600px; margin: 0 auto; }
+.titlebar h1 { font-size: 1.9em; margin: 0 0 8px; color: #fff; }
+.titlebar .lead { font-size: 0.95em; color: #d7e2f7; background: transparent; margin: 0; }
+.titlebar .date { font-size: 0.88em; color: #b9c9e8; background: transparent; margin: 10px 0 0; }
+
+.wrap { max-width: 1600px; margin: 0 auto; padding: 0 30px; }
+
+.toc { margin: 30px 0 0; }
+.toc ol {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 0;
+	margin: 12px 0 4px;
+	counter-reset: tocnum;
+}
+.toc ol li { counter-increment: tocnum; margin: 0; }
+.toc ol a {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: normal;
+	width: 310px;
+	max-width: 100%;
+	padding: 7px 13px;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+	line-height: 1.45;
+}
+.toc ol a::before { content: counter(tocnum) ". "; font-weight: 700; }
+
+section {
+	padding: 4px 26px 26px;
+	margin: 34px 0;
+	border-radius: 10px;
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
+	border: 1px solid var(--line, #d9dfe8);
+	color: var(--ink, #1c2330);
+}
+
+section h1 {
+	font-size: 1.4em;
+	padding: 14px 20px;
+	margin: 26px 0 20px;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	box-shadow: 0 3px 10px rgba(20, 34, 70, 0.22);
+}
+section h1 code { background: rgba(255, 255, 255, 0.16); color: #fff; border: none; }
+
+h2 {
+	font-size: 1.16em;
+	padding: 6px 12px;
+	margin: 30px 0 12px;
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 6px 6px 0;
+	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
+	color: var(--accent, #12224d);
+}
+
+h3 {
+	font-size: 1.02em;
+	display: inline-block;
+	padding-bottom: 3px;
+	margin: 20px 0 8px;
+	border-bottom: 2px dotted var(--accent2, #2f5fbf);
+	background: transparent;
+	color: var(--ink, #1c2330);
+}
+
+p, li { color: var(--ink, #1c2330); background: transparent; }
+a { color: var(--link, #1a4fa0); background: transparent; }
+
+code {
+	font-family: Consolas, "Cascadia Mono", monospace;
+	font-size: 0.92em;
+	padding: 1px 5px;
+	border-radius: 4px;
+	background: var(--code-bg, #f4f6fa);
+	border: 1px solid var(--line, #d9dfe8);
+	color: #17335f;
+}
+
+pre {
+	padding: 13px 16px;
+	overflow-x: auto;
+	border-radius: 0 8px 8px 0;
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 5px solid var(--accent2, #2f5fbf);
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	line-height: 1.65;
+}
+pre code { background: transparent; border: none; padding: 0; color: inherit; }
+
+.tablewrap { overflow-x: auto; margin: 14px 0; }
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 5px rgba(20, 34, 70, 0.10);
+	background: #fff;
+}
+th {
+	padding: 9px 12px;
+	text-align: left;
+	white-space: nowrap;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+}
+th code { background: rgba(255, 255, 255, 0.16); color: #fff; border: none; }
+td {
+	padding: 9px 12px;
+	vertical-align: top;
+	border-top: 1px solid var(--line, #d9dfe8);
+	background: transparent;
+	color: var(--ink, #1c2330);
+}
+tr:nth-child(even) td { background: #fafbfe; }
+td.nowrap, th.nowrap { white-space: nowrap; }
+td.num, th.num { text-align: right; }
+
+.badge {
+	display: inline-block;
+	padding: 1px 9px;
+	margin-right: 6px;
+	border-radius: 999px;
+	font-size: 0.84em;
+	font-weight: 700;
+	white-space: nowrap;
+	color: #fff;
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+}
+.b-ok { background: linear-gradient(100deg, #1d7a3c, #45b56c); }
+.b-ng { background: linear-gradient(100deg, #a51f22, #e05a5c); }
+.b-warn { background: linear-gradient(100deg, #b8620a, #f0a548); }
+.b-none { background: linear-gradient(100deg, #5a6472, #97a1ae); }
+
+.callout {
+	padding: 12px 18px;
+	margin: 16px 0;
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 8px 8px 0;
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+}
+.callout strong { color: var(--accent, #12224d); background: transparent; }
+.callout p { margin: 6px 0; }
+
+footer {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding: 18px 30px 0;
+	color: var(--ink-soft, #4a5568);
+	background: transparent;
+}
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>connector への改名</h1>
+		<p class="lead">繋いでくるのは「ユーザ」ではない</p>
+		<p class="date">📅 作成: 2026-08-31 / 更新: 2026-08-31</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p><a href="../../README.html">← README へ戻る</a></p>
+
+<nav class="toc">
+	<ol>
+		<li class="ch01"><a href="#ch01">なぜ変えるのか</a></li>
+		<li class="ch02"><a href="#ch02">新しい名前</a></li>
+		<li class="ch03"><a href="#ch03">データをどうするか</a></li>
+		<li class="ch04"><a href="#ch04">段取り</a></li>
+		<li class="ch05"><a href="#ch05">決めていないこと</a></li>
+	</ol>
+</nav>
+
+<section class="ch01" id="ch01">
+<h1>なぜ変えるのか</h1>
+
+<p><code>user_id</code> <code>users</code> <code>user_role</code> という名前を使っているが、<strong>ここに来るのは「ユーザ」ではない</strong>。繋いできた人か AI である。</p>
+
+<h2>名前が実体を言い当てていない</h2>
+
+<p><code>user_role</code> が <code>ai</code> と <code>human</code> の 2 つを持っていること自体が、<strong>「user」で括れていない</strong>証拠である。人と AI を同じ土俵に載せているのに、名前は片方（人）だけを指している。</p>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">いまの名前</th><th>実際に入るもの</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap"><code>user_id</code></td><td>プロジェクトのフォルダ名（<code>ai-chat-lite</code> <code>html2md</code>）、または <code>human</code></td></tr>
+<tr><td class="nowrap"><code>user_role</code></td><td><code>ai</code> か <code>human</code></td></tr>
+<tr><td class="nowrap"><code>users</code></td><td>繋いできたものの一覧。人も AI も混ざる</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout">
+<p><strong>「参加者」という日本語は既に使っている。</strong>画面の見出しも「参加者」である。英語の名前だけが <code>user</code> のまま取り残されている。</p>
+</div>
+
+<h2>いま変えるのが安い</h2>
+
+<p>これから 2 つの機能が列を足す。</p>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">課題</th><th>足すもの</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap"><a href="../40_issues/issues.html#i260830-09">i260830-09</a></td><td>アーカイブ機能。<code>archives</code> テーブルと <code>archived_user_id</code></td></tr>
+<tr><td class="nowrap"><a href="../40_issues/issues.html#i260831-01">i260831-01</a></td><td>返信・リアクション・投票。<code>messages</code> に列を足す</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>あとから変えると、足した分も変えることになる。</strong>先に名前を決めてから、これらを作る。</p>
+
+</section>
+
+<section class="ch02" id="ch02">
+<h1>新しい名前</h1>
+
+<h2><code>connector</code> にする</h2>
+
+<p><strong>このプロジェクトで一度も使っていない語である。</strong>置き換えても既存の記述に混ざらない。実測で 0 件だった。</p>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">語</th><th class="num">出現</th><th>選べるか</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap"><code>client</code></td><td class="num">74</td><td><span class="badge b-ng">不可</span> <code>src/client/</code> で使用中</td></tr>
+<tr><td class="nowrap"><code>node</code></td><td class="num">291</td><td><span class="badge b-ng">不可</span> Node.js の <code>node:</code> と衝突</td></tr>
+<tr><td class="nowrap"><code>session</code></td><td class="num">4</td><td><span class="badge b-warn">避ける</span> 会話ログの文脈で使用</td></tr>
+<tr><td class="nowrap"><code>agent</code></td><td class="num">3</td><td><span class="badge b-warn">避ける</span> AI エージェントの意味で使用</td></tr>
+<tr><td class="nowrap"><strong><code>connector</code></strong></td><td class="num">0</td><td><span class="badge b-ok">これにする</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>すでにある似た語と、どう区別するか</h2>
+
+<p><strong><code>connector</code> は「繋ぐもの」という意味なので、既にある <code>client</code> <code>connection</code> と紛れる。</strong>それぞれが何を指しているかを実測した。</p>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">語</th><th class="num">行</th><th>いま何を指しているか</th><th>どうするか</th></tr>
+</thead>
+<tbody>
+<tr>
+	<td class="nowrap"><code>client</code></td><td class="num">74</td>
+	<td><strong>3 つの別物に使っている。</strong>下記</td>
+	<td>意味ごとに分ける</td>
+</tr>
+<tr>
+	<td class="nowrap"><code>connection</code></td><td class="num">68</td>
+	<td><strong>1 本の接続</strong>。<code>active_connection_count</code> は本数</td>
+	<td><strong>変えない</strong></td>
+</tr>
+<tr>
+	<td class="nowrap"><code>presence</code></td><td class="num">73</td>
+	<td>在席の状態（online / grace / offline）</td>
+	<td><strong>変えない</strong></td>
+</tr>
+<tr>
+	<td class="nowrap"><code>waiter</code></td><td class="num">24</td>
+	<td>long-poll で待っている接続</td>
+	<td><strong>変えない</strong></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h3><code>client</code> の 3 つの意味</h3>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">意味</th><th class="nowrap">場所</th><th>例</th><th>どうするか</th></tr>
+</thead>
+<tbody>
+<tr>
+	<td class="nowrap">① CLI そのもの</td>
+	<td class="nowrap"><code>src/client/</code></td>
+	<td>「CLI クライアント」<code>chat.mjs</code> の置き場</td>
+	<td><strong>変えない。</strong>フォルダ名も</td>
+</tr>
+<tr>
+	<td class="nowrap">② SSE の 1 接続</td>
+	<td class="nowrap"><code>hub.mjs</code> <code>server.mjs</code></td>
+	<td><code>sseClients</code> <code>addSseClient()</code></td>
+	<td><strong>変えない。</strong>接続を指しており正しい</td>
+</tr>
+<tr>
+	<td class="nowrap">③ ブラウザの API</td>
+	<td class="nowrap"><code>chat.js</code></td>
+	<td><code>clientHeight</code></td>
+	<td><strong>変えない。</strong>DOM の名前</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout callout-important">
+<p><strong><code>client</code> はどれも「繋ぐ側の道具・1 本の接続」を指しており、<code>connector</code>（繋いでくる人か AI）とは別のものである。</strong>区別はついている。</p>
+<p>ただし<strong>読み手には紛らわしい</strong>。改名したあと、<code>connector</code> と <code>client</code> の違いを設計に 1 行書く。</p>
+</div>
+
+<h3>日本語も似た語が並んでいる</h3>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">語</th><th class="num">行</th><th>指しているもの</th><th>どうするか</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap">参加者</td><td class="num">125</td><td><strong>繋いでくる人か AI</strong>（= connector）</td><td>これを正とする</td></tr>
+<tr><td class="nowrap">接続</td><td class="num">142</td><td>1 本の接続。<code>connection</code> の訳</td><td>変えない</td></tr>
+<tr><td class="nowrap">クライアント</td><td class="num">44</td><td><strong>CLI そのもの</strong>（= 上記①）</td><td>変えない</td></tr>
+<tr><td class="nowrap">相手</td><td class="num">57</td><td>会話の相手。参加者と同じものを指す場面が多い</td><td><strong>読み直す</strong></td></tr>
+<tr><td class="nowrap">セッション</td><td class="num">60</td><td>Claude Code のセッション</td><td>変えない</td></tr>
+<tr><td class="nowrap">エージェント</td><td class="num">30</td><td>AI エージェント</td><td>変えない</td></tr>
+<tr><td class="nowrap">利用者</td><td class="num">2</td><td><strong>読み直す</strong></td><td>下記</td></tr>
+<tr><td class="nowrap">ユーザー / ユーザ</td><td class="num">21</td><td><strong>2 種類が混ざっている</strong></td><td>下記</td></tr>
+<tr><td class="nowrap">接続者</td><td class="num">1</td><td>読み直す</td><td></td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout callout-warning">
+<p><strong>「相手」57 行は放っておくと不統一が残る。</strong>「相手が居なくなった」は参加者を指しており、「参加者」と書ける場面がある。ただし「会話の相手」という自然な日本語でもあるので、<strong>1 件ずつ読んで判断する</strong>。</p>
+</div>
+
+<h2>置き換えの対応</h2>
+
+<h3>テーブルと列</h3>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">いま</th><th class="nowrap">あと</th><th>場所</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap"><code>users</code></td><td class="nowrap"><code>connectors</code></td><td>テーブル名</td></tr>
+<tr><td class="nowrap"><code>user_id</code></td><td class="nowrap"><code>connector_id</code></td><td><code>connectors</code> <code>cursors</code></td></tr>
+<tr><td class="nowrap"><code>user_role</code></td><td class="nowrap"><code>connector_role</code></td><td><code>connectors</code></td></tr>
+<tr><td class="nowrap"><code>from_user_id</code></td><td class="nowrap"><code>from_connector_id</code></td><td><code>messages</code></td></tr>
+<tr><td class="nowrap"><code>to_user_id</code></td><td class="nowrap"><code>to_connector_id</code></td><td><code>messages</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p><code>active_connection_count</code> は変えない。<strong>接続の本数を数える列で、<code>connector</code> とは別のもの</strong>である。名前が似ているが指すものが違う。</p>
+
+<h3>API のキー</h3>
+
+<p><strong>DB の列名と揃える。</strong>設計に「JSON のキー名は DB の列名に揃える」と書いてあるので、そのまま従う。</p>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">エンドポイント</th><th>変わるもの</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap"><code>/api/join</code></td><td>入力・応答の <code>user_id</code> <code>user_role</code>、応答の <code>users</code></td></tr>
+<tr><td class="nowrap"><code>/api/say</code></td><td>入力の <code>from_user_id</code> <code>to_user_id</code>、応答（発言そのもの）</td></tr>
+<tr><td class="nowrap"><code>/api/poll</code></td><td>クエリの <code>user_id</code></td></tr>
+<tr><td class="nowrap"><code>/api/users</code></td><td><strong>パスも変える</strong>（<code>/api/connectors</code>）。応答の <code>users</code></td></tr>
+<tr><td class="nowrap"><code>/api/events</code></td><td>クエリの <code>user_id</code>、<code>presence</code> イベントの中身</td></tr>
+<tr><td class="nowrap"><code>/api/leave</code></td><td>入力・応答の <code>user_id</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout callout-caution">
+<p><strong>他プロジェクトが <code>chat.mjs</code> 以外から叩いていれば壊れる。</strong>API を直接叩く手順は USAGE に書いてあるので、使っているところがあるかを先に確かめる。<strong>周知が要る。</strong></p>
+</div>
+
+<h3>コードの中の名前</h3>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">いま</th><th class="nowrap">あと</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap"><code>userId</code></td><td class="nowrap"><code>connectorId</code></td></tr>
+<tr><td class="nowrap"><code>USER_ID</code>（CLI）</td><td class="nowrap"><code>CONNECTOR_ID</code></td></tr>
+<tr><td class="nowrap"><code>AICHAT_ID</code></td><td class="nowrap"><strong>変えない</strong>（<a href="../40_issues/issues.html#i260831-02">i260831-02</a> で別途扱う）</td></tr>
+<tr><td class="nowrap"><code>joinUser</code> <code>touchUser</code> <code>getUser</code></td><td class="nowrap"><code>joinConnector</code> <code>touchConnector</code> <code>getConnector</code></td></tr>
+<tr><td class="nowrap"><code>userList</code> <code>userCount</code> <code>userIds</code>（画面）</td><td class="nowrap"><code>connectorList</code> <code>connectorCount</code> <code>connectorIds</code></td></tr>
+<tr><td class="nowrap"><code>#user-list</code> <code>#user-count</code>（HTML の id）</td><td class="nowrap"><code>#connector-list</code> <code>#connector-count</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>CLI のコマンドとオプション</h3>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">いま</th><th class="nowrap">あと</th><th>備考</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap"><code>who</code></td><td class="nowrap"><code>connectors</code></td><td><strong>「誰が」を尋ねるコマンド。</strong><code>/api/connectors</code> と揃う</td></tr>
+<tr><td class="nowrap"><code>--role ai|human</code></td><td class="nowrap"><strong>変えない</strong></td><td><code>role</code> に <code>user</code> は入っていない</td></tr>
+<tr><td class="nowrap"><code>--to &lt;id&gt;</code></td><td class="nowrap"><strong>変えない</strong></td><td>同上</td></tr>
+<tr><td class="nowrap"><code>join</code> <code>wait</code> <code>say</code> <code>recent</code> <code>dump</code> <code>leave</code></td><td class="nowrap"><strong>変えない</strong></td><td>同上</td></tr>
+<tr><td class="nowrap"><code>USER_ID</code>（内部の定数）</td><td class="nowrap"><code>CONNECTOR_ID</code></td><td></td></tr>
+</tbody>
+</table>
+</div>
+
+<p><code>who</code> だけを変える。<strong>他のコマンドとオプションには <code>user</code> が入っていない</strong>ため、触る理由がない。</p>
+
+<div class="callout callout-important">
+<p><strong><code>who</code> を変えると他プロジェクトの手順が変わる。</strong>USAGE に載っているので、周知の対象になる。</p>
+</div>
+
+<h3>名乗る ID を <code>--connector-id</code> で渡す</h3>
+
+<p><strong><code>AICHAT_ID</code> をやめる。</strong>いま名乗る ID は環境変数で渡しており、待受けを張るのに 2 行が要る。しかも 1 行目がシェルごとに違う。</p>
+
+<pre><code class="language-powershell">$env:AICHAT_ID = 'ai-chat-lite'
+node N:\2026\ai-chat-lite\src\client\chat.mjs wait</code></pre>
+
+<p>これを 1 行にする。</p>
+
+<pre><code class="language-powershell">node N:\2026\ai-chat-lite\src\client\chat.mjs wait --connector-id ai-chat-lite</code></pre>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">得られること</th><th>中身</th></tr>
+</thead>
+<tbody>
+<tr>
+	<td class="nowrap">どのプロジェクトの待受けか分かる</td>
+	<td><strong>コマンドラインに ID が出る。</strong>環境変数はプロセス一覧に出ないため、いまは <code>node ...\chat.mjs wait</code> しか見えず、複数が待受けを張っていると見分けられない</td>
+</tr>
+<tr>
+	<td class="nowrap">シェルを問わない</td>
+	<td><strong>bash でも PowerShell でも同じ 1 行で起動できる。</strong>環境変数は PowerShell が <code>$env:</code>、bash が <code>export</code>、cmd が <code>set</code> と書き方が分かれる</td>
+</tr>
+<tr>
+	<td class="nowrap">取り違えが減る</td>
+	<td>環境変数は同じシェルに前の値が残る。引数なら毎回明示される</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout callout-important">
+<p><strong>これは実験で実際に困った点である。</strong>待受けを 4 通りで起こしたとき、<code>Win32_Process</code> の <code>CommandLine</code> に ID が出ず、どの PID がどれなのか起動時刻から推測するしかなかった。</p>
+</div>
+
+<p><code>AICHAT_ID</code> は<strong>残さず廃止する</strong>。両対応にすると、引数と環境変数のどちらが勝つかという規則が増え、取り違えの余地が残る。</p>
+
+<h4>まだ決めていない</h4>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">論点</th><th>選べる形</th></tr>
+</thead>
+<tbody>
+<tr>
+	<td class="nowrap">省略できるか</td>
+	<td><a href="p260829-01-設計.html">設計</a>では「無ければ <code>path.basename(process.cwd())</code>」としていたが、実装は必須にしている。<strong>省略を許すと、違う場所から叩いたとき別の名前で参加する</strong>。明示させる方が安全か、省略できる方が楽か</td>
+</tr>
+<tr>
+	<td class="nowrap">会話ログに残る量</td>
+	<td>コマンドラインに ID が出る＝呼び出しのたびに記録される。ID はプロジェクトのフォルダ名なので秘匿の対象ではないが、増えることは事実である</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h3>ファイル名</h3>
+
+<p><strong>プロジェクト内に <code>user</code> を含むファイル名は無い。</strong>実測で 0 件だった。</p>
+
+<p>PlayWright 側に <code>chat-users.png</code> がある。<strong>これはテストが撮るスクリーンショットで、出力なので Git 管理外</strong>である。撮る側（<code>chat-ui.spec.ts</code>）の名前を <code>chat-connectors.png</code> に変える。</p>
+
+<h3>日本語の記述</h3>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">語</th><th class="num">出現</th><th>どうするか</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap">参加者</td><td class="num">125</td><td><strong>そのまま。</strong>日本語としてこれが自然で、画面の見出しでもある</td></tr>
+<tr><td class="nowrap">ユーザー / ユーザ</td><td class="num">21</td><td><strong>読み直して個別に判断する</strong>（下記）</td></tr>
+<tr><td class="nowrap">接続者</td><td class="num">1</td><td>読み直す</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>「ユーザ」の 21 行は 2 種類が混ざっている。</strong>一括では置き換えられない。</p>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">意味</th><th>例</th><th>どうするか</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap">繋いでくるもの</td><td>「ユーザが参加すると…」</td><td><strong>「参加者」に直す</strong></td></tr>
+<tr><td class="nowrap">この道具を使う人</td><td>「ユーザが指示するまで実行しない」</td><td><strong>そのまま</strong>（意味が違う）</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout callout-important">
+<p><strong>「コネクタ」というカタカナは使わない。</strong>読み手にとって分かりにくくなるだけで、得るものがない。<strong>英語の識別子は <code>connector</code>、日本語は「参加者」</strong>で通す。</p>
+</div>
+
+</section>
+
+<section class="ch03" id="ch03">
+<h1>データをどうするか</h1>
+
+<h2>いま入っているもの</h2>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">テーブル</th><th class="num">件数</th><th>中身</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap"><code>messages</code></td><td class="num">48</td><td>他プロジェクトとのやり取り</td></tr>
+<tr><td class="nowrap"><code>users</code></td><td class="num">7</td><td>各プロジェクトと human</td></tr>
+<tr><td class="nowrap"><code>cursors</code></td><td class="num">7</td><td>どこまで読んだか</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>3 つのやり方</h2>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">案</th><th>やり方</th><th>難点</th></tr>
+</thead>
+<tbody>
+<tr>
+	<td class="nowrap">A</td>
+	<td><strong>捨てて作り直す。</strong>3 ファイルを消して新しいスキーマで作る</td>
+	<td>やり取りが消える。<strong>いちばん単純で確実</strong></td>
+</tr>
+<tr>
+	<td class="nowrap">B</td>
+	<td><strong>移す。</strong>新しい名前のテーブルを作り、<code>INSERT … SELECT</code> で写す</td>
+	<td>手数が増える。途中で止まると中途半端な形が残る</td>
+</tr>
+<tr>
+	<td class="nowrap">C</td>
+	<td><strong>改名で済ませる。</strong><code>ALTER TABLE … RENAME COLUMN</code> を並べる</td>
+	<td>索引も張り直す。<strong>順序を 1 つ間違えると分からなくなる</strong></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout callout-important">
+<p><strong>捨てるなら、その前に控えを取る。</strong>バックアップは自動で動いているので直近のものがあるが、<strong>改名の直前に手で 1 つ取る</strong>ほうが確実である。読み返したくなったら、その zip を開けばよい。</p>
+</div>
+
+<h2>捨てるとき何が消えるか</h2>
+
+<p>他プロジェクトとのやり取り 48 件。<strong>md-skip や callout の分類について交わした議論が入っている。</strong>資料には反映済みだが、経緯そのものは消える。</p>
+
+<p>各プロジェクトの<strong>読み位置（<code>cursors</code>）も消える</strong>。次に待受けを張ると、そこから読み始める。取りこぼしにはならないが、過去の分は流れない。</p>
+
+</section>
+
+<section class="ch04" id="ch04">
+<h1>段取り</h1>
+
+<h2>順序</h2>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="num nowrap">#</th><th class="nowrap">やること</th><th>なぜこの順か</th></tr>
+</thead>
+<tbody>
+<tr><td class="num">1</td><td class="nowrap">控えを手で 1 つ取る</td><td>戻せる状態にしてから始める</td></tr>
+<tr><td class="num">2</td><td class="nowrap">他プロジェクトへ周知する</td><td><strong>API のキーが変わる。</strong>直接叩いているところがあれば先に知る</td></tr>
+<tr><td class="num">3</td><td class="nowrap"><code>store.mjs</code> のスキーマと関数</td><td>ここが源。他はこれに合わせる</td></tr>
+<tr><td class="num">4</td><td class="nowrap">単体テストを通す</td><td><strong>3 の直後に通す。</strong>ここで止めれば影響が閉じている</td></tr>
+<tr><td class="num">5</td><td class="nowrap"><code>presence.mjs</code> <code>server.mjs</code></td><td>API のキーとパス</td></tr>
+<tr><td class="num">6</td><td class="nowrap">画面（<code>chat.js</code> <code>index.html</code> <code>chat.css</code>）</td><td>id とクラス名</td></tr>
+<tr><td class="num">7</td><td class="nowrap">CLI（<code>chat.mjs</code>）</td><td><code>who</code> → <code>connectors</code>、<code>USER_ID</code> → <code>CONNECTOR_ID</code></td></tr>
+<tr><td class="num">8</td><td class="nowrap">道具（<code>purge-test-data.mjs</code>）</td><td>列名で絞っている</td></tr>
+<tr><td class="num">9</td><td class="nowrap">画面テスト（PlayWright の spec）</td><td>別リポジトリ。スクショの名前も</td></tr>
+<tr><td class="num">10</td><td class="nowrap">日本語の「ユーザ」21 行を読み直す</td><td><strong>意味が 2 種類ある。</strong>一括では置き換えられない</td></tr>
+<tr><td class="num">11</td><td class="nowrap">設計・USAGE・手引き・課題</td><td>すべて決まってから</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>触るファイル</h2>
+
+<p><code>user</code> を含む 78 ファイル中 15 件以上。<strong>多い順に並べる。</strong></p>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">ファイル</th><th class="num">行</th><th>中身</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap"><code>tests/server.test.mjs</code></td><td class="num">59</td><td>API のキー</td></tr>
+<tr><td class="nowrap"><code>src/server/store.mjs</code></td><td class="num">58</td><td><strong>スキーマと関数。ここが源</strong></td></tr>
+<tr><td class="nowrap"><code>src/server/server.mjs</code></td><td class="num">50</td><td>API のキーとパス</td></tr>
+<tr><td class="nowrap"><code>notes/10_plan/p260829-01-設計.html</code></td><td class="num">47</td><td>スキーマの説明・API 一覧</td></tr>
+<tr><td class="nowrap"><code>src/web/js/chat.js</code></td><td class="num">38</td><td>変数名・DOM の id</td></tr>
+<tr><td class="nowrap"><code>tests/store.test.mjs</code></td><td class="num">32</td><td></td></tr>
+<tr><td class="nowrap"><code>src/client/chat.mjs</code></td><td class="num">24</td><td><code>who</code> と <code>USER_ID</code></td></tr>
+<tr><td class="nowrap"><code>tests/presence.test.mjs</code></td><td class="num">20</td><td></td></tr>
+<tr><td class="nowrap"><code>src/server/presence.mjs</code></td><td class="num">19</td><td></td></tr>
+<tr><td class="nowrap"><code>tools/40_test/purge-test-data.mjs</code></td><td class="num">14</td><td>列名で絞っている</td></tr>
+<tr><td class="nowrap"><code>notes/10_plan/p260830-02-アーカイブ機能.html</code></td><td class="num">12</td><td><code>archived_user_id</code></td></tr>
+<tr><td class="nowrap"><code>src/web/css/chat.css</code></td><td class="num">9</td><td>クラス名</td></tr>
+<tr><td class="nowrap"><code>USAGE-FOR-PROJECTS.html</code></td><td class="num">9</td><td>API とコマンドの説明</td></tr>
+<tr><td class="nowrap">PlayWright の spec 4 本</td><td class="num">—</td><td>別リポジトリ</td></tr>
+<tr><td class="nowrap">生成された <code>.md</code></td><td class="num">—</td><td><strong>直さない。</strong>HTML から作り直す</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout callout-warning">
+<p><strong>3 を入れた時点で全部落ちる。</strong>テストも画面も CLI も古い名前を使っている。<strong>4 で単体テストを通してから 5 へ進む。</strong>一度に全部直すと、どこで壊れたか分からなくなる。</p>
+</div>
+
+<h2>置き換えは機械的にできない</h2>
+
+<p><code>user</code> を <code>connector</code> に一括置換してはいけない。<strong>次のものが巻き込まれる。</strong></p>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">巻き込まれるもの</th><th>理由</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap"><code>USAGE-FOR-PROJECTS</code></td><td>ファイル名に <code>USAGE</code> が入っている</td></tr>
+<tr><td class="nowrap"><code>$env:USERPROFILE</code></td><td>環境変数</td></tr>
+<tr><td class="nowrap">日本語の「ユーザー」</td><td>変えない方針</td></tr>
+<tr><td class="nowrap"><code>test-project</code> 等のテスト用 ID</td><td>値であって名前ではない</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>語ごとに指定して置き換える。</strong><code>user_id</code> → <code>connector_id</code>、<code>users</code> → <code>connectors</code> のように、長いものから順に当てる（<code>from_user_id</code> を <code>user_id</code> より先に処理する）。</p>
+
+<h2>確かめること</h2>
+
+<ul>
+	<li>単体テストが全件通る</li>
+	<li>画面テストが全件通る</li>
+	<li>画面を開いて参加者一覧が出る</li>
+	<li>CLI から <code>join</code> <code>say</code> <code>wait</code> <code>connectors</code> ができる</li>
+	<li><strong><code>user</code> という語が識別子として残っていない</strong>（日本語と <code>USAGE</code> と環境変数は除く）</li>
+	<li>DB のスキーマに <code>user</code> が残っていない（<code>sqlite_master</code> を全文で見る）</li>
+	<li>他プロジェクトが繋いで会話できる</li>
+	<li>html2md の変換が通り、リンク切れが出ない</li>
+</ul>
+
+<div class="callout callout-warning">
+<p><strong>数えて確かめる。</strong>「たぶん置き換えた」で済ませない。<code>user</code> の残数を実際に数え、残っているものが<strong>日本語・<code>USAGE</code>・環境変数のいずれか</strong>であることを 1 件ずつ見る。</p>
+</div>
+
+<h3>残ってよいもの</h3>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">もの</th><th>理由</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap"><code>USAGE-FOR-PROJECTS</code></td><td>ファイル名。<code>USAGE</code> は「使い方」の意味</td></tr>
+<tr><td class="nowrap"><code>$env:USERPROFILE</code> <code>$env:USERNAME</code></td><td>Windows の環境変数</td></tr>
+<tr><td class="nowrap"><code>active_connection_count</code></td><td><strong>接続の本数</strong>。<code>connector</code> とは別のもの</td></tr>
+<tr><td class="nowrap">「ユーザが指示するまで」等</td><td><strong>この道具を使う人</strong>を指す。意味が違う</td></tr>
+<tr><td class="nowrap">参加者（125 行）</td><td>日本語としてこれが自然</td></tr>
+</tbody>
+</table>
+</div>
+
+</section>
+
+<section class="ch05" id="ch05">
+<h1>決めていないこと</h1>
+
+<h2>データを捨てるか移すか</h2>
+
+<p><strong>案 A（捨てる）を勧める。</strong>移す手数に見合うものが 48 件のやり取りの中に無い。資料には反映済みである。</p>
+
+<p>ただし<strong>これは判断を要する</strong>。捨てると読み返せない。</p>
+
+<h2>API のキーを変えるか</h2>
+
+<p>設計は「JSON のキー名は DB の列名に揃える」としている。<strong>揃えると他プロジェクトが壊れる可能性がある。</strong></p>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="nowrap">案</th><th>内容</th><th>難点</th></tr>
+</thead>
+<tbody>
+<tr><td class="nowrap">揃える</td><td>列名と同じ <code>connector_id</code> にする</td><td>他プロジェクトが直接叩いていれば壊れる</td></tr>
+<tr><td class="nowrap">両方受ける</td><td>入力は <code>user_id</code> も <code>connector_id</code> も受ける</td><td><strong>名前が 2 つある状態が残る</strong>。改名の目的に反する</td></tr>
+<tr><td class="nowrap">揃えない</td><td>API は <code>user_id</code> のまま</td><td>設計の方針に反する。<strong>いちばん分かりにくい</strong></td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>揃えるのが筋だが、まず他プロジェクトが API を直接叩いているかを確かめる。</strong>叩いていなければ迷う必要がない。</p>
+
+<h2><code>/api/users</code> のパス</h2>
+
+<p><code>/api/connectors</code> に変えるかどうか。<strong>キーを変えるならパスも変えるのが自然</strong>だが、パスは URL として外に出るので影響が読みにくい。</p>
+
+<h2><code>--connector-id</code> を省略できるか</h2>
+
+<p><strong>省略を許すと、違う場所から叩いたとき別の名前で参加する。</strong>明示させる方が安全か、省略できる方が楽か。詳細は「CLI のコマンドとオプション」に書いた。</p>
+
+<h2>他の課題との順序</h2>
+
+<p><a href="../40_issues/issues.html#i260830-09">アーカイブ機能</a>と<a href="../40_issues/issues.html#i260831-01">返信・リアクション</a>は、<strong>この改名より後にする</strong>。先に作ると、足した列も変えることになる。</p>
+
+<p>ただしアーカイブ機能は<strong>着手中</strong>である。止めてこちらを先にするか、アーカイブを終わらせてから改名するかを決める。</p>
+
+<p><a href="../40_issues/issues.html#i260901-01">待受けの時間指定</a>も<strong>CLI のオプションを触る</strong>。<code>--retry-count</code> を廃止して <code>--wait-min</code> / <code>--wait-hour</code> を足す課題なので、<code>--connector-id</code> と同じ行を書き換えることになる。<strong>どちらを先にするかを決めてから始める。</strong></p>
+
+</section>
+
+</div>
+
+<footer>
+	<a href="../../README.html">← README へ戻る</a>
+</footer>
+
+</body>
+</html>
