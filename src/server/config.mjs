@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url';
+import { randomUUID } from 'node:crypto';
 import { dirname, join } from 'node:path';
 
 import { nowJst } from './time.mjs';
@@ -21,8 +22,38 @@ export const VERSION =
 /** プロジェクトのルート（src/server から 2 つ上） */
 export const ROOT = join(here, '..', '..');
 
-/** DB ファイルの置き場。_data は Git 管理外。動作確認では環境変数で差し替える */
-export const DB_PATH = process.env.AICHAT_DB ?? join(ROOT, '_data', 'chat.db');
+/** 本番のデータの置き場。ここかどうかで本番かテストかが決まる */
+const PRODUCTION_DATA_DIR = join(ROOT, '_data');
+
+/**
+ * データの置き場。DB も、バックアップ・メンテナンスの印も、すべてこの下に置く。
+ *
+ * DB だけを差し替えられる作りにしていたが、印は本番側に残っていた。
+ * テスト中に置いた印が本番のバックアップを止めるため、フォルダごと分ける。
+ */
+export const DATA_DIR = process.env.AICHAT_DATA ?? PRODUCTION_DATA_DIR;
+
+/**
+ * テスト用として動いているか。
+ *
+ * 環境を表す変数を別に持たない。置き場が本番でなければテスト、と決めれば足りる。
+ * 分けて持つと「DB はテスト、印は本番」という危うい組み合わせを作れてしまう。
+ */
+export const IS_TEST = DATA_DIR !== PRODUCTION_DATA_DIR;
+
+/** DB ファイル。_data は Git 管理外 */
+export const DB_PATH = join(DATA_DIR, 'chat.db');
+
+/**
+ * テスト用として立ったときのアクセストークン。
+ *
+ * 他プロジェクトがテスト環境へ繋いでくると、テスト中のデータに他人の発言が混ざる。
+ * ポートを見つけて叩かれても、これを知らなければ弾ける。
+ *
+ * 起動するたびに変わる。本番では使わない（IS_TEST が false のときは空）。
+ * 値は起動時に置き場の server.json へ書き、テストはそれを読んで付ける。
+ */
+export const TEST_ACCESS_TOKEN = IS_TEST ? randomUUID() : '';
 
 /** ブラウザ UI の置き場 */
 export const WEB_DIR = join(ROOT, 'src', 'web');
@@ -74,12 +105,13 @@ export const MAX_HISTORY_LIMIT = 500;
 // 由来は値と同じタイミング（読み込み時）に確定させる。呼び出し時に process.env を
 // 見に行くと、その間に環境変数が変わった場合に値と表示がずれる。
 const PORT_FROM_ENV = process.env.AICHAT_PORT !== undefined;
-const DB_FROM_ENV = process.env.AICHAT_DB !== undefined;
+const DATA_FROM_ENV = process.env.AICHAT_DATA !== undefined;
 
 export function describeEnv() {
 	const rows = [
 		{ name: 'AICHAT_PORT', value: String(PORT), fromEnv: PORT_FROM_ENV },
-		{ name: 'AICHAT_DB', value: DB_PATH, fromEnv: DB_FROM_ENV },
+		{ name: 'AICHAT_DATA', value: DATA_DIR, fromEnv: DATA_FROM_ENV },
+		{ name: '環境', value: IS_TEST ? 'テスト' : '本番', fromEnv: DATA_FROM_ENV },
 	];
 	const nameWidth = Math.max(...rows.map((r) => r.name.length));
 	const valueWidth = Math.max(...rows.map((r) => r.value.length));

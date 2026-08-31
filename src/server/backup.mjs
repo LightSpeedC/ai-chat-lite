@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, wri
 import { join, dirname } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 
-import { ROOT, DB_PATH } from './config.mjs';
+import { DATA_DIR, DB_PATH } from './config.mjs';
 import { nowJst } from './time.mjs';
 import { MAINTENANCE_FILE } from './maintenance.mjs';
 
@@ -96,7 +96,7 @@ export function vacuumInto(dest, src = DB_PATH) {
 // --- 取ってはいけないときに取らないためのしくみ ---
 
 /** バックアップ中を表す印 */
-export const RUNNING_FILE = join(ROOT, '_data', 'BACKUP-RUNNING');
+export const RUNNING_FILE = join(DATA_DIR, 'BACKUP-RUNNING');
 
 /**
  * 印を見に行く間隔と、諦めるまでの回数。30 秒 × 10 回 = 最大 5 分。

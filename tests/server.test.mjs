@@ -5,19 +5,20 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const TEST_DB = join(here, '..', 'tmp', 'test-server.db');
+const TEST_DATA = join(here, '..', 'tmp', '_data', 'unit-server');
 
-process.env.AICHAT_DB = TEST_DB;
+process.env.AICHAT_DATA = TEST_DATA;
 // admin/exit を叩いてもテストのプロセスを落とさない
 process.env.AICHAT_NO_EXIT = '1';
 // 離脱を積むまでの猶予。既定の 5 秒だとテストが待たされる
 process.env.AICHAT_LEAVE_GRACE_MS = '150';
-for (const suffix of ['', '-wal', '-shm']) rmSync(TEST_DB + suffix, { force: true });
+rmSync(TEST_DATA, { recursive: true, force: true });
 
 const { startServers, stopServers, sweepOffline } = await import('../src/server/server.mjs');
 const hub = await import('../src/server/hub.mjs');
 const store = await import('../src/server/store.mjs');
 const { jstBefore } = await import('../src/server/time.mjs');
+const { TEST_ACCESS_TOKEN } = await import('../src/server/config.mjs');
 
 let servers;
 let base;
@@ -33,17 +34,25 @@ after(async () => {
 	await stopServers(servers);
 });
 
+/*
+ * 合図を付けて叩く。
+ *
+ * このテストは置き場を差し替えて動くのでテスト用として立ち、
+ * サーバーは合図を持たない相手を断る。付けないと 403 になる。
+ */
+const AUTH = { 'X-AiChat-Access-Token': TEST_ACCESS_TOKEN };
+
 async function post(path, body) {
 	const res = await fetch(base + path, {
 		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
+		headers: { 'Content-Type': 'application/json', ...AUTH },
 		body: JSON.stringify(body),
 	});
 	return { status: res.status, json: await res.json() };
 }
 
 async function get(path) {
-	const res = await fetch(base + path);
+	const res = await fetch(base + path, { headers: AUTH });
 	return { status: res.status, json: await res.json() };
 }
 
@@ -214,6 +223,7 @@ test('SSE で受け取れる', async () => {
 	const controller = new AbortController();
 	const res = await fetch(`${base}/api/events?user_id=browser&room_id=public&since=99999`, {
 		signal: controller.signal,
+		headers: AUTH,
 	});
 	assert.equal(res.headers.get('content-type'), 'text/event-stream; charset=utf-8');
 
@@ -267,7 +277,7 @@ test('不正な user_role は 400', async () => {
 test('壊れた JSON は 400', async () => {
 	const res = await fetch(base + '/api/say', {
 		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
+		headers: { 'Content-Type': 'application/json', ...AUTH },
 		body: '{壊れている',
 	});
 	assert.equal(res.status, 400);
@@ -446,4 +456,16 @@ test('戻ってきてまた落ちれば、もう一度流す', async () => {
 	store.setLastActiveAt('vanisher', jstBefore(300 * 1000));
 	const gone = sweepOffline();
 	assert.deepEqual(gone, ['vanisher']);
+});
+
+/*
+ * どちらの環境かを名乗る。
+ *
+ * 繋いだ側が自分の居場所を確かめられないと、本番へ向けたまま投稿してしまう。
+ * このテストは AICHAT_DATA を差し替えて動いているので test になる。
+ */
+test('/api/version が環境を名乗る', async () => {
+	const { json } = await get('/api/version');
+	assert.equal(json.env, 'test', '置き場を差し替えているので test のはず');
+	assert.ok(json.version, '版も返る');
 });

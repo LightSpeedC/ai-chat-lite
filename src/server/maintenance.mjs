@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, watch } from 'node:fs';
 import { join, dirname, basename } from 'node:path';
 
-import { ROOT } from './config.mjs';
+import { DATA_DIR } from './config.mjs';
 import { log } from './log.mjs';
 
 /**
@@ -17,7 +17,7 @@ import { log } from './log.mjs';
  *   3. DB を好きに触る
  *   4. 印を消す → 数秒で自分から起動する
  */
-export const MAINTENANCE_FILE = join(ROOT, '_data', 'MAINTENANCE');
+export const MAINTENANCE_FILE = join(DATA_DIR, 'MAINTENANCE');
 
 /** 印があるか */
 export function isUnderMaintenance(file = MAINTENANCE_FILE) {

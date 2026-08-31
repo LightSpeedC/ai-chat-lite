@@ -4,13 +4,19 @@ import { writeFileSync, rmSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
+/*
+ * 印の場所は毎回引数で渡す。既定の MAINTENANCE_FILE は使わない。
+ *
+ * 既定を使うと本番の _data を触ることになる。config.mjs は読み込んだ時点で
+ * 置き場を確定するため、静的 import のあとで環境変数を変えても効かない。
+ */
 import { isUnderMaintenance, readReason, waitUntilCleared } from '../src/server/maintenance.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const TMP = join(here, '..', 'tmp');
-const MARK = join(TMP, 'test-MAINTENANCE');
+const WORK = join(here, '..', 'tmp', '_data', 'unit-maintenance');
+const MARK = join(WORK, 'MAINTENANCE');
 
-mkdirSync(TMP, { recursive: true });
+mkdirSync(WORK, { recursive: true });
 
 function put(body = '') {
 	writeFileSync(MARK, body, 'utf8');

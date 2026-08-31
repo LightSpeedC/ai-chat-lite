@@ -10,7 +10,7 @@ import { dirname, join } from 'node:path';
  */
 async function loadConfig(env = {}) {
 	const saved = { ...process.env };
-	for (const key of ['AICHAT_PORT', 'AICHAT_DB']) delete process.env[key];
+	for (const key of ['AICHAT_PORT', 'AICHAT_DATA']) delete process.env[key];
 	Object.assign(process.env, env);
 	const mod = await import(`../src/server/config.mjs?case=${Math.random()}`);
 	process.env = saved;
@@ -27,8 +27,9 @@ test('AICHAT_PORT で上書きできる', async () => {
 	assert.equal(PORT, 9000);
 });
 
-test('DB の既定は _data/chat.db', async () => {
-	const { DB_PATH, ROOT } = await loadConfig();
+test('置き場の既定は _data、DB はその下', async () => {
+	const { DATA_DIR, DB_PATH, ROOT } = await loadConfig();
+	assert.equal(DATA_DIR, join(ROOT, '_data'));
 	assert.equal(DB_PATH, join(ROOT, '_data', 'chat.db'));
 });
 
@@ -39,9 +40,19 @@ test('DB のパスはカレントディレクトリに依存しない', async ()
 	assert.equal(ROOT, join(here, '..'));
 });
 
-test('AICHAT_DB で上書きできる', async () => {
-	const { DB_PATH } = await loadConfig({ AICHAT_DB: 'X:\\somewhere\\other.db' });
-	assert.equal(DB_PATH, 'X:\\somewhere\\other.db');
+test('AICHAT_DATA で置き場ごと上書きできる', async () => {
+	const { DATA_DIR, DB_PATH } = await loadConfig({ AICHAT_DATA: 'X:\\somewhere' });
+	assert.equal(DATA_DIR, 'X:\\somewhere');
+	assert.equal(DB_PATH, join('X:\\somewhere', 'chat.db'));
+});
+
+// 置き場が本番でなければテスト。環境を表す変数を別に持たない
+test('既定なら本番、差し替えたらテスト', async () => {
+	const prod = await loadConfig();
+	assert.equal(prod.IS_TEST, false);
+
+	const t = await loadConfig({ AICHAT_DATA: 'X:\\somewhere' });
+	assert.equal(t.IS_TEST, true);
 });
 
 test('待ち受けは ::1 と 127.0.0.1 の両方', async () => {
@@ -57,9 +68,10 @@ test('long-poll の上限は PowerShell ツールの 600 秒制限の内側', as
 test('起動ログに環境変数の名前と値が並ぶ', async () => {
 	const { describeEnv } = await loadConfig();
 	const lines = describeEnv();
-	assert.equal(lines.length, 2);
+	assert.equal(lines.length, 3);
 	assert.match(lines[0], /^AICHAT_PORT = 8787\s+\(既定\)$/);
-	assert.match(lines[1], /^AICHAT_DB\s+= .+chat\.db\s+\(既定\)$/);
+	assert.match(lines[1], /^AICHAT_DATA\s+= .+_data\s+\(既定\)$/);
+	assert.match(lines[2], /^環境\s+= 本番\s+\(既定\)$/);
 });
 
 test('環境変数で上書きしたことがログで分かる', async () => {

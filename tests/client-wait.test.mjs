@@ -8,14 +8,15 @@ import { promisify } from 'node:util';
 
 const run = promisify(execFile);
 const here = dirname(fileURLToPath(import.meta.url));
-const TEST_DB = join(here, '..', 'tmp', 'test-client-wait.db');
+const TEST_DATA = join(here, '..', 'tmp', '_data', 'unit-client-wait');
 const CLIENT = join(here, '..', 'src', 'client', 'chat.mjs');
 
-process.env.AICHAT_DB = TEST_DB;
+process.env.AICHAT_DATA = TEST_DATA;
 process.env.AICHAT_NO_EXIT = '1';
-for (const suffix of ['', '-wal', '-shm']) rmSync(TEST_DB + suffix, { force: true });
+rmSync(TEST_DATA, { recursive: true, force: true });
 
 const { startServers, stopServers } = await import('../src/server/server.mjs');
+const { TEST_ACCESS_TOKEN } = await import('../src/server/config.mjs');
 
 let servers;
 let base;
@@ -27,7 +28,8 @@ let base;
  * 実際に人や AI が呼ぶのと同じ形で確かめる。
  */
 function chat(args, extraEnv = {}) {
-	return run(process.execPath, [CLIENT, ...args], {
+	// テスト用として立っているので、アクセストークンを渡さないと 403 になる
+	return run(process.execPath, [CLIENT, ...args, '--access-token', TEST_ACCESS_TOKEN], {
 		env: {
 			...process.env,
 			AICHAT_URL: base,

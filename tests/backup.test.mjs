@@ -1,16 +1,26 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, rmSync, writeFileSync, existsSync, readdirSync, utimesSync } from 'node:fs';
-import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
-import { ROOT } from '../src/server/config.mjs';
+/*
+ * ROOT を config.mjs から取らない。
+ *
+ * config.mjs は読み込んだ時点で置き場を確定する。先に import すると、
+ * そのあとで環境変数を変えても効かず、本番の _data を掴んだままになる。
+ * バックアップの印（BACKUP-RUNNING）は置き場から決まるので、
+ * 本番側に印を置いてしまう恐れがある。
+ */
+const here = dirname(fileURLToPath(import.meta.url));
+const ROOT = join(here, '..');
 
-const WORK = join(ROOT, 'tmp', 'test-backup');
+const WORK = join(ROOT, 'tmp', '_data', 'unit-backup');
 const SRC = join(WORK, 'source.db');
 
-// 本番の DB を触らないよう、環境変数で差し替えてから読み込む
-process.env.AICHAT_DB = SRC;
+// 本番を触らないよう、置き場を差し替えてから読み込む
+process.env.AICHAT_DATA = WORK;
 const {
 	backupBaseName,
 	vacuumInto,

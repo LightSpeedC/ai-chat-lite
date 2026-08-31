@@ -11,10 +11,10 @@ import { dirname, join } from 'node:path';
  * 環境変数の変更は他のテストに影響しない。
  */
 const here = dirname(fileURLToPath(import.meta.url));
-const TEST_DB = join(here, '..', 'tmp', 'test-store.db');
+const TEST_DATA = join(here, '..', 'tmp', '_data', 'unit-store');
 
-process.env.AICHAT_DB = TEST_DB;
-for (const suffix of ['', '-wal', '-shm']) rmSync(TEST_DB + suffix, { force: true });
+process.env.AICHAT_DATA = TEST_DATA;
+rmSync(TEST_DATA, { recursive: true, force: true });
 
 const store = await import('../src/server/store.mjs');
 
