@@ -5,7 +5,7 @@ import { extname, join, normalize } from 'node:path';
 import {
 	PORT, HOSTS, WEB_DIR, DEFAULT_ROOM, MAX_WAIT_SEC, OFFLINE_CHECK_MS,
 	MAX_ID_LENGTH, MAX_BODY_LENGTH, DEFAULT_HISTORY_LIMIT,
-	VERSION, STARTED_AT,
+	VERSION, STARTED_AT, IS_TEST, TEST_ACCESS_TOKEN,
 } from './config.mjs';
 import { log } from './log.mjs';
 import {
@@ -257,12 +257,20 @@ function handleRooms(res) {
 	sendJson(res, 200, { rooms: listRooms(), default_room: DEFAULT_ROOM });
 }
 
+/*
+ * どちらの環境として動いているか。
+ *
+ * 繋いだ側が自分の居場所を確かめられるようにする。テストは投稿の直前にこれを見て、
+ * 本番だったら投稿せずに止まる。画面はこれで色を変える。
+ */
+const ENV_NAME = IS_TEST ? 'test' : 'production';
+
 /**
  * サーバーの版。起動するたびに変わる。
  * ブラウザはこれを見て、中身が入れ替わったら自分を読み直す。
  */
 function handleVersion(res) {
-	sendJson(res, 200, { version: VERSION, started_at: STARTED_AT });
+	sendJson(res, 200, { version: VERSION, started_at: STARTED_AT, env: ENV_NAME });
 }
 
 /**
@@ -422,7 +430,7 @@ function handleEvents(req, res, url) {
 		for (const message of getSince(roomId, since)) client.send('message', message);
 	}
 	// 版を先に伝える。前と違えばブラウザ側が読み直す
-	client.send('version', { version: VERSION, started_at: STARTED_AT });
+	client.send('version', { version: VERSION, started_at: STARTED_AT, env: ENV_NAME });
 	client.send('presence', listPresence());
 	broadcastPresence();
 
@@ -460,6 +468,7 @@ async function handleStatic(res, pathname) {
 	}
 	try {
 		const content = await readFile(full);
+
 		res.writeHead(200, {
 			'Content-Type': CONTENT_TYPES[extname(full)] ?? 'application/octet-stream',
 			'Content-Length': content.length,
@@ -473,9 +482,36 @@ async function handleStatic(res, pathname) {
 
 // --- ルーティング ---
 
+/*
+ * テスト用として立っているとき、アクセストークンを持たない相手を断る。
+ *
+ * 他プロジェクトがポートを見つけて繋いでくると、テスト中のデータに他人の発言が
+ * 混ざる。本番では何も求めない（IS_TEST が false のときは素通り）ので、
+ * 他プロジェクトの使い方は変わらない。
+ *
+ * /api/version だけは通す。繋ぐ前に「ここはテスト用だ」と知るための入口で、
+ * ここを閉じると取り違えに気づけない。
+ */
+function isAllowed(url, req) {
+	if (!IS_TEST) return true;
+	if (url.pathname === '/api/version') return true;
+
+	// SSE（EventSource）はヘッダを付けられないため、クエリも見る
+	return (
+		req.headers['x-aichat-access-token'] === TEST_ACCESS_TOKEN ||
+		url.searchParams.get('access_token') === TEST_ACCESS_TOKEN
+	);
+}
+
 export async function handleRequest(req, res) {
 	const url = new URL(req.url, 'http://localhost');
 	const path = url.pathname;
+
+	// 画面（HTML・CSS・JS）はアクセストークンなしで返す。開いた先でアクセストークンを受け取る
+	if (path.startsWith('/api/') && !isAllowed(url, req)) {
+		sendJson(res, 403, { error: 'テスト用のサーバーです。アクセストークンがありません' });
+		return;
+	}
 
 	try {
 		if (req.method === 'POST') {

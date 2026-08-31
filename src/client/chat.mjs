@@ -95,10 +95,27 @@ const ROOM = option('room', DEFAULT_ROOM);
 
 // --- 通信 ---
 
+/*
+ * テスト用のサーバーへ繋ぐためのアクセストークン。
+ *
+ * テスト環境はアクセストークンを持たない相手を断る。他プロジェクトが誤って
+ * テスト環境へ繋いでも、テスト中のデータに混ざらないようにするため。
+ *
+ * 値は起動のたびに変わり、テスト用サーバーの置き場の server.json に書かれる。
+ * それを読まないと分からないので、知らない相手は繋げない。
+ *
+ * 引数で渡す。環境変数にしないのは、口を増やさないため。
+ * 本番では要らないので、渡さなければ何も付かない。
+ */
+const ACCESS_TOKEN = option('access-token', '');
+
 async function call(path, init) {
+	const headers = { ...(init?.headers ?? {}) };
+	if (ACCESS_TOKEN) headers['X-AiChat-Access-Token'] = ACCESS_TOKEN;
+
 	let res;
 	try {
-		res = await fetch(BASE + path, init);
+		res = await fetch(BASE + path, { ...init, headers });
 	} catch (err) {
 		console.error(`サーバーに繋がりません: ${BASE}`);
 		console.error('  サービスが動いているか確認してください');
@@ -284,6 +301,10 @@ function usage() {
 サーバーの操作（管理者権限は要らない）:
   restart                    落として起動し直させる（ソース修正の反映に使う）
   stop                       止める。起動し直すには winsw の start が要る
+
+どのコマンドにも付けられるもの:
+  --room <id>                ルームを変える
+  --access-token <値>        テスト用のサーバーへ繋ぐときだけ要る。本番では要らない
 `);
 }
 
