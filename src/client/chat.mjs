@@ -2,6 +2,14 @@ import { basename, join } from 'node:path';
 import { writeFileSync, mkdirSync } from 'node:fs';
 
 import { ROOT, PORT, DEFAULT_ROOM, MAX_WAIT_SEC } from '../server/config.mjs';
+import {
+	WAIT_UNITS,
+	DEFAULT_WAIT_SEC,
+	OPTIONS,
+	COMMANDS,
+	ADMIN_COMMANDS,
+	REMOVED,
+} from './options.mjs';
 
 /**
  * ai-chat-lite の CLI クライアント。
@@ -11,43 +19,10 @@ import { ROOT, PORT, DEFAULT_ROOM, MAX_WAIT_SEC } from '../server/config.mjs';
  * そのままサブエージェントに渡せるようにするため。
  */
 
-const BASE = process.env.AICHAT_URL ?? `http://localhost:${PORT}`;
-
-/**
- * 名乗る ID。
- *
- * 環境変数での明示を必須にしている。カレントのフォルダ名を自動で使うと、
- * 想定と違う場所から実行したときに意図しない ID で参加してしまい、
- * その名前が users とログに残る。取り違えは後から消せないため、
- * 手軽さより確実さを採る。
- */
-const USER_ID = process.env.AICHAT_ID ?? null;
-
 /** ID を使わないコマンド。読むだけなので名乗る必要がない */
 const READ_ONLY = new Set(['recent', 'who', 'dump']);
 
-function requireUserId() {
-	if (USER_ID) return USER_ID;
-
-	console.error('AICHAT_ID が設定されていません。');
-	console.error('');
-	console.error('  名乗る ID を環境変数で指定してください:');
-	console.error(`    $env:AICHAT_ID = '${basename(process.cwd())}'`);
-	console.error('');
-	console.error('  自分の project フォルダ名にしておくと、誰の発言か分かりやすくなります。');
-	console.error('  環境変数はセッションごとに消えるため、開くたびに設定してください。');
-	process.exit(1);
-}
-
 const STATUS_MARK = { online: '●', grace: '◐', offline: '○' };
-
-/**
- * wait を既定で何回繰り返すか。
- *
- * 240 秒 × 2 回 = 480 秒。前面で呼ばれても背面に移される前に終わる長さにしてある。
- * 長く待つときは --retry-count で増やし、run_in_background で呼ぶ。
- */
-const DEFAULT_WAIT_ROUNDS = 2;
 
 /**
  * 前面のツール実行が背面に移されるまでの秒数。
@@ -61,25 +36,154 @@ const FOREGROUND_SEC = 600;
 
 const [, , command, ...rest] = process.argv;
 
-/** --name value 形式のオプションを取り出す */
+/**
+ * コマンドを含めた引数の全体。
+ *
+ * 値を取らない旗（--help）と廃止したオプションは、ここを見る。
+ * `chat.mjs -h` のように旗を先頭に置くと command 側に入り、rest には来ない。
+ */
+const WORDS = process.argv.slice(2);
+
+/** 長い名前から短い名前を引く。定義に無い名前を渡したら気づけるよう、引く側で例外にする */
+const SHORT_OF = new Map(OPTIONS.map((o) => [o.long, o.short]));
+
+for (const [name, hint] of REMOVED) {
+	if (WORDS.includes(`--${name}`)) {
+		console.error(`--${name} は廃止されました。`);
+		console.error(`  ${hint}`);
+		process.exit(2);
+	}
+}
+
+/**
+ * --name value 形式のオプションを取り出す。短い形（-x）も同じ値として受ける。
+ *
+ * 長い形を先に見る。両方書かれたときは長い形が勝つ。
+ */
 function option(name, fallback = null) {
-	const i = rest.indexOf(`--${name}`);
-	if (i >= 0 && rest[i + 1] !== undefined) return rest[i + 1];
+	if (!SHORT_OF.has(name)) throw new Error(`OPTIONS に無いオプションです: ${name}`);
+	const short = SHORT_OF.get(name);
+	const flags = short ? [`--${name}`, `-${short}`] : [`--${name}`];
+	for (const flag of flags) {
+		const i = rest.indexOf(flag);
+		if (i >= 0 && rest[i + 1] !== undefined) return rest[i + 1];
+	}
 	return fallback;
 }
 
 /**
- * 待ち直す回数として受け取った値を解釈する。
+ * 値を取らないオプション（--help など）が渡されたかを見る。
+ *
+ * option() は「次の引数が値」という前提なので、旗として使うものはこちらで見る。
+ */
+function hasFlag(name) {
+	if (!SHORT_OF.has(name)) throw new Error(`OPTIONS に無いオプションです: ${name}`);
+	const short = SHORT_OF.get(name);
+	return WORDS.includes(`--${name}`) || (short ? WORDS.includes(`-${short}`) : false);
+}
+
+/**
+ * 接続先を決める。
+ *
+ * --url はホストごと、--port は localhost のポートだけを変える。
+ * 同じことを 2 通りで書けるため、両方あればエラーにする。片方を黙って
+ * 優先すると、書いたつもりの側が効かずに気づけない。
+ *
+ * 既定値を持たない。環境変数も見ない。指定が無ければ null を返し、
+ * 繋ぐ直前にエラーで止める。既定を本番のポートにすると、
+ * テストのつもりで叩いたものが本番に入る。実際にそれが起きた。
+ *
+ * ここで止めずに null を返すのは、--help を接続先なしで出せるようにするため。
+ */
+function resolveBase() {
+	const url = option('url');
+	const port = option('port');
+	if (url !== null && port !== null) {
+		console.error('--url と --port は同時に指定できません。どちらか一方にしてください。');
+		process.exit(2);
+	}
+	if (url !== null) return url.replace(/\/+$/, '');
+	if (port !== null) {
+		if (!/^\d+$/.test(port)) {
+			console.error(`--port には数だけを渡してください: ${port}`);
+			process.exit(2);
+		}
+		return `http://localhost:${port}`;
+	}
+	return null;
+}
+
+const BASE = resolveBase();
+
+/**
+ * 名乗る ID。
+ *
+ * --connector-id での明示を必須にしている。カレントのフォルダ名を自動で使うと、
+ * 想定と違う場所から実行したときに意図しない ID で参加してしまい、
+ * その名前が users とログに残る。取り違えは後から消せないため、
+ * 手軽さより確実さを採る。
+ *
+ * 環境変数ではなく引数で受ける。環境変数はプロセス一覧に出ないため、
+ * 動いている待受けがどのプロジェクトのものか分からない。引数なら
+ * コマンドラインに出るし、シェルごとの書き方の違いもなくなる。
+ */
+const USER_ID = option('connector-id');
+
+function requireUserId() {
+	if (USER_ID) return USER_ID;
+
+	console.error('名乗る ID が指定されていません。');
+	console.error('');
+	console.error('  --connector-id で指定してください:');
+	console.error(`    --connector-id ${basename(process.cwd())}`);
+	console.error('');
+	console.error('  自分の project フォルダ名にしておくと、誰の発言か分かりやすくなります。');
+	console.error('  短い形は -c です。');
+	process.exit(1);
+}
+
+/** 繋ぐ前に接続先を確かめる。既定値を持たないので、指定が無ければここで止まる */
+function requireBase() {
+	if (BASE) return BASE;
+	console.error('接続先が指定されていません。--port <ポート> か --url <URL> を渡してください。');
+	console.error(`  本番: --port ${PORT}`);
+	console.error('  テスト用: 置き場の server.json の port を使う');
+	process.exit(2);
+}
+
+/**
+ * 最大どれだけ待つかを秒で返す。0 は上限なし。
+ *
+ * 単位ごとにオプションを持つので、2 つ以上あればエラーにする。足したり
+ * 後勝ちにしたりすると、書いたつもりの側が効かずに気づけない。
  *
  * `Number(x) || 既定値` と書いてはいけない。0 は falsy なので、
- * 「0 回」と書いたつもりが既定値に化ける。ここでは 0 や負の数を
- * 「1 回」に丸め、数として読めないときだけ既定値に戻す。
+ * 「上限なし」と書いたつもりが既定の 8 時間に化ける。
  */
-function roundsOf(raw) {
-	if (raw === null || raw === undefined || raw === '') return DEFAULT_WAIT_ROUNDS;
-	const n = Number(raw);
-	if (!Number.isFinite(n)) return DEFAULT_WAIT_ROUNDS;
-	return Math.max(1, Math.trunc(n));
+function resolveWaitSec() {
+	const given = WAIT_UNITS.map((u) => ({ ...u, raw: option(u.long) })).filter((u) => u.raw !== null);
+
+	if (given.length > 1) {
+		const names = given.map((u) => `--${u.long}`).join(' と ');
+		console.error(`待つ長さは 1 つだけ指定してください: ${names} が両方あります。`);
+		process.exit(2);
+	}
+	if (given.length === 0) return { sec: DEFAULT_WAIT_SEC, fromDefault: true };
+
+	const [u] = given;
+	if (!/^\d+$/.test(u.raw)) {
+		console.error(`--${u.long} には 0 以上の数だけを渡してください: ${u.raw}`);
+		process.exit(2);
+	}
+	return { sec: Number(u.raw) * u.sec, fromDefault: false };
+}
+
+/** 待つ長さを人が読む形にする。0 は上限なし */
+function describeWait(sec) {
+	if (sec === 0) return '上限なし';
+	if (sec % 3600 === 0) return `${sec / 3600} 時間`;
+	if (sec % 60 === 0) return `${sec / 60} 分`;
+	return `${sec} 秒`;
 }
 
 /** オプションでない最初の引数（本文など） */
@@ -114,14 +218,15 @@ const ROOM = option('room', DEFAULT_ROOM);
 const ACCESS_TOKEN = option('access-token', '');
 
 async function call(path, init) {
+	const base = requireBase();
 	const headers = { ...(init?.headers ?? {}) };
 	if (ACCESS_TOKEN) headers['X-AiChat-Access-Token'] = ACCESS_TOKEN;
 
 	let res;
 	try {
-		res = await fetch(BASE + path, { ...init, headers });
+		res = await fetch(base + path, { ...init, headers });
 	} catch (err) {
-		console.error(`サーバーに繋がりません: ${BASE}`);
+		console.error(`サーバーに繋がりません: ${base}`);
 		console.error('  サービスが動いているか確認してください');
 		console.error('  例: node-ai-chat-lite-winsw.exe status');
 		console.error(`  詳細: ${err?.cause?.code ?? err?.message ?? err}`);
@@ -183,54 +288,55 @@ async function cmdSay() {
 }
 
 async function cmdWait() {
-	const timeout = Math.min(Number(option('timeout', MAX_WAIT_SEC)) || MAX_WAIT_SEC, MAX_WAIT_SEC);
-	const rounds = roundsOf(option('retry-count'));
-	const totalSec = timeout * rounds;
+	const { sec: limitSec, fromDefault } = resolveWaitSec();
+	const unlimited = limitSec === 0;
+	const label = describeWait(limitSec);
 
 	/*
-	 * 待ち直す理由。
-	 *
 	 * 1 回の long-poll は MAX_WAIT_SEC（240 秒）で必ず返る。サーバー側で
 	 * これ以上引き延ばすと、途中の切断に気づけないまま握り続けることになる。
-	 * 代わりに、返ってきたら黙って待ち直す。呼ぶ側から見ると 1 回の実行で
-	 * 長く待てる。
+	 * 代わりに、返ってきたら黙って張り直す。呼ぶ側から見ると 1 回の実行で
+	 * 長く待てる。何回に分かれたかは呼ぶ側には関係がないので出さない。
 	 */
-	if (totalSec > FOREGROUND_SEC) {
-		console.error(`合計 ${totalSec} 秒（${Math.round(totalSec / 60)} 分）待つ設定です。`);
+	if (!fromDefault && !unlimited && limitSec > FOREGROUND_SEC) {
+		console.error(`${label}（${limitSec} 秒）待つ設定です。`);
 		console.error(`  前面で呼ぶと ${FOREGROUND_SEC} 秒で背面に移されます。プロセスは走り続けますが、`);
 		console.error('  それまでの間、呼び出し側は待たされます。');
 		console.error('  はじめから run_in_background で呼んでください。');
 		console.error('');
 	}
 
+	// 出すのは開始と終了の 2 行だけ。8 時間を 240 秒ごとに知らせると 120 行になる
+	console.log(`待受け開始（最大 ${label}、ルーム ${ROOM}、${USER_ID}）`);
+
+	let waited = 0;
 	let last = null;
-	for (let round = 1; round <= rounds; round++) {
+	while (unlimited || waited < limitSec) {
+		const wait = unlimited ? MAX_WAIT_SEC : Math.min(MAX_WAIT_SEC, limitSec - waited);
+
 		/*
 		 * since は渡さない。どこまで読んだかはサーバーが覚えている。
 		 * 一度も読んでいなければ、参加した時点から待つ扱いになる（過去ログは recent で取る）。
 		 * 受け取った分は返答と同時に記録されるので、次はその続きから届く。
 		 */
 		last = await call(
-			`/api/poll?user_id=${encodeURIComponent(USER_ID)}&room_id=${encodeURIComponent(ROOM)}&wait=${timeout}`
+			`/api/poll?user_id=${encodeURIComponent(USER_ID)}&room_id=${encodeURIComponent(ROOM)}&wait=${wait}`
 		);
+		waited += wait;
 
 		if (last.messages.length > 0) {
 			console.log(`新着 ${last.messages.length} 件:`);
 			printMessages(last.messages);
 			return;
 		}
-
-		// 最後の回は下でまとめて出す。途中経過だけをここで知らせる
-		if (round < rounds) {
-			console.log(`新着なし（${round}/${rounds} 回目、${timeout} 秒）。待ち直します`);
-		}
 	}
 
-	console.log(`新着なし（${rounds} 回・合計 ${totalSec} 秒待機、現在位置 ${last.msg_seq}）`);
+	console.log(`新着なし（${label}待機、現在位置 ${last.msg_seq}）`);
 }
 
 async function cmdRecent() {
-	const limit = Number(option('n', rest.includes('-n') ? rest[rest.indexOf('-n') + 1] : 20)) || 20;
+	// -n も --n も option() が解決する。ここで個別に見る必要はない
+	const limit = Number(option('n', 20)) || 20;
 	const result = await call(`/api/history?room_id=${encodeURIComponent(ROOM)}&limit=${limit}`);
 	if (result.messages.length === 0) {
 		console.log(`${ROOM} にはまだ何もありません`);
@@ -287,30 +393,63 @@ async function cmdExit(exitCode) {
 	}
 }
 
+/**
+ * 説明を桁で揃える。
+ *
+ * 日本語は半角 2 つ分の幅で表示されるため、文字数ではなく表示幅で数える。
+ * 文字数で揃えると、日本語を含む行だけ右にずれる。
+ */
+const HELP_COLUMN = 40;
+
+function width(s) {
+	let w = 0;
+	for (const ch of s) w += /[ -~]/.test(ch) ? 1 : 2;
+	return w;
+}
+
+function helpLine(indent, left, desc) {
+	const head = ' '.repeat(indent) + left;
+	const pad = Math.max(1, HELP_COLUMN - width(head));
+	return head + ' '.repeat(pad) + desc;
+}
+
+/** オプション 1 つを「--long <arg>  -s」の形にする */
+function optionLabel(o) {
+	const long = `--${o.long}${o.arg ? ' ' + o.arg : ''}`;
+	return o.short ? `${long}  -${o.short}` : long;
+}
+
+/** コマンドと、そのコマンドだけのオプションを並べる */
+function commandBlock(list) {
+	const lines = [];
+	for (const c of list) {
+		lines.push(helpLine(2, c.arg ? `${c.name} ${c.arg}` : c.name, c.desc));
+		for (const o of OPTIONS.filter((x) => x.cmd === c.name)) {
+			lines.push(helpLine(6, optionLabel(o), o.desc));
+		}
+	}
+	return lines.join('\n');
+}
+
 function usage() {
+	const globals = OPTIONS.filter((o) => o.cmd === null)
+		.map((o) => helpLine(2, optionLabel(o), o.desc))
+		.join('\n');
+
 	console.log(`ai-chat-lite クライアント
 
-  接続先: ${BASE}
-  名乗る ID: ${USER_ID ?? '(未設定)  ← $env:AICHAT_ID で指定してください'}
+  接続先: ${BASE ?? `(未指定)  ← --port ${PORT} か --url <URL> を渡してください`}
+  名乗る ID: ${USER_ID ?? '(未指定)  ← --connector-id <id> を渡してください'}
   ルーム: ${ROOM}         （--room で変更できる）
 
 コマンド:
-  join   [--role ai|human]   参加登録する
-  wait   [--timeout ${MAX_WAIT_SEC}]      新着を待つ。届いたら出して終わる
-         [--retry-count ${DEFAULT_WAIT_ROUNDS}]    新着が無いとき待ち直す回数。--timeout × 回数だけ待つ
-  say    "本文" [--to <id>]  投稿する
-  recent [-n 20]             直近の履歴を出す
-  who                        参加者と状態を出す
-  dump   [--out <path>]      JSONL に書き出す
-  leave                      離脱を知らせる
+${commandBlock(COMMANDS)}
 
 サーバーの操作（管理者権限は要らない）:
-  restart                    落として起動し直させる（ソース修正の反映に使う）
-  stop                       止める。起動し直すには winsw の start が要る
+${commandBlock(ADMIN_COMMANDS)}
 
 どのコマンドにも付けられるもの:
-  --room <id>                ルームを変える
-  --access-token <値>        テスト用のサーバーへ繋ぐときだけ要る。本番では要らない
+${globals}
 `);
 }
 
@@ -326,10 +465,18 @@ const commands = {
 	stop: () => cmdExit(0),
 };
 
+/*
+ * 使い方を出して終わるのは 3 通り。
+ *   コマンドを付けない / -h・--help を付ける / 知らないコマンドを渡す
+ *
+ * 知らないコマンドだけは終了コード 1 にする。書き間違いに気づけるようにするため。
+ */
 const run = commands[command];
-if (!run) {
+const wantsHelp = hasFlag('help');
+if (wantsHelp || !run) {
 	usage();
-	process.exit(command ? 1 : 0);
+	// 旗で呼んだときと、何も付けないときは 0。知らないコマンドだけ 1
+	process.exit(!wantsHelp && command ? 1 : 0);
 }
 
 // 読むだけのコマンド以外は、名乗る ID が要る

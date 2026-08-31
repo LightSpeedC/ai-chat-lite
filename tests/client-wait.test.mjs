@@ -27,16 +27,14 @@ let base;
  * chat.mjs はトップレベルで実行される作りなので、import では試せない。
  * 実際に人や AI が呼ぶのと同じ形で確かめる。
  */
-function chat(args, extraEnv = {}) {
-	// テスト用として立っているので、アクセストークンを渡さないと 403 になる
-	return run(process.execPath, [CLIENT, ...args, '--access-token', TEST_ACCESS_TOKEN], {
-		env: {
-			...process.env,
-			AICHAT_URL: base,
-			AICHAT_ID: 'user1',
-			...extraEnv,
-		},
-	});
+function chat(args, connectorId = 'user1') {
+	// テスト用として立っているので、アクセストークンを渡さないと 403 になる。
+	// 接続先と名乗る ID は引数で渡す（環境変数では渡せない）
+	return run(
+		process.execPath,
+		[CLIENT, ...args, '--url', base, '--access-token', TEST_ACCESS_TOKEN, '--connector-id', connectorId],
+		{ env: { ...process.env } }
+	);
 }
 
 before(async () => {
@@ -44,79 +42,155 @@ before(async () => {
 	base = `http://127.0.0.1:${servers[0].address().port}`;
 	await chat(['join']);
 	// 参加の記録を読み終えた状態にする。以降は新着なしから始まる
-	await chat(['wait', '--timeout', '1', '--retry-count', '1']);
+	await chat(['wait', '--wait-sec', '1']);
 });
 
 after(async () => {
 	await stopServers(servers);
 });
 
-describe('wait の自動リトライ', () => {
-	test('新着が無ければ指定した回数だけ待ち直す', async () => {
-		const { stdout } = await chat(['wait', '--timeout', '1', '--retry-count', '3']);
-
-		assert.match(stdout, /1\/3 回目/);
-		assert.match(stdout, /2\/3 回目/);
-		assert.match(stdout, /3 回・合計 3 秒待機/);
-		// 最後の回は「待ち直します」を出さない。もう待たないため
-		assert.doesNotMatch(stdout, /3\/3 回目/);
-	});
-
-	test('指定しなければ 2 回待つ', async () => {
-		// 240 秒 × 2 = 480 秒。前面で呼ばれても背面に移される前に終わる既定値
-		const { stdout } = await chat(['wait', '--timeout', '1']);
-
-		assert.match(stdout, /1\/2 回目/);
-		assert.match(stdout, /2 回・合計 2 秒待機/);
-	});
-
-	test('新着があれば残りの回数を待たずに返る', async () => {
+describe('wait の待つ長さ', () => {
+	test('指定した長さだけ待って、新着が無ければ終わる', async () => {
 		const startedAt = Date.now();
-		// 5 秒 × 5 回 = 25 秒の設定。すぐ届けば数秒で戻るはず
-		const waiting = chat(['wait', '--timeout', '5', '--retry-count', '5']);
-		await chat(['say', 'いま届く'], { AICHAT_ID: 'user2' });
+		const { stdout } = await chat(['wait', '--wait-sec', '3']);
+		const elapsed = Date.now() - startedAt;
+
+		assert.match(stdout, /待受け開始（最大 3 秒/);
+		assert.match(stdout, /新着なし（3 秒待機/);
+		assert.ok(elapsed >= 2500, `待たずに返っている（${elapsed}ms）`);
+	});
+
+	test('新着があれば残りを待たずに返る', async () => {
+		const startedAt = Date.now();
+		// 25 秒待つ設定。すぐ届けば数秒で戻るはず
+		const waiting = chat(['wait', '--wait-sec', '25']);
+		await chat(['say', 'いま届く'], 'user2');
 
 		const { stdout } = await waiting;
 		const elapsed = Date.now() - startedAt;
 
 		assert.match(stdout, /新着 1 件/);
 		assert.match(stdout, /いま届く/);
-		assert.ok(elapsed < 20000, `残りの回数を待ってしまっている（${elapsed}ms）`);
+		assert.ok(elapsed < 20000, `残りを待ってしまっている（${elapsed}ms）`);
 	});
 
-	test('回数に 0 や負の数を渡しても最低 1 回は待つ', async () => {
-		// 0 を「待たない」と解釈すると、何も返さず即終了して使い道がなくなる
-		for (const value of ['0', '-3']) {
-			const { stdout } = await chat(['wait', '--timeout', '1', '--retry-count', value]);
-			assert.match(stdout, /1 回・合計 1 秒待機/, `--retry-count ${value} で 1 回にならない`);
+	test('何も指定しなければ 8 時間になる', async () => {
+		/*
+		 * 8 時間を実際に待たせるわけにいかないので、先に発言を置いて
+		 * 1 回目で返るようにする。開始の行に長さが出る
+		 */
+		await chat(['say', '既定の確認'], 'user2');
+		const { stdout } = await chat(['wait']);
+
+		assert.match(stdout, /待受け開始（最大 8 時間/);
+		assert.match(stdout, /新着 1 件/);
+	});
+
+	test('0 を渡すと上限なしになる', async () => {
+		// 上限なしは止まらないので、先に発言を置いて返らせる
+		await chat(['say', '上限なしの確認'], 'user2');
+		const { stdout } = await chat(['wait', '--wait-sec', '0']);
+
+		assert.match(stdout, /待受け開始（最大 上限なし/);
+		assert.match(stdout, /新着 1 件/);
+	});
+
+	test('分と時でも同じ長さを指定できる', async () => {
+		await chat(['say', '単位の確認'], 'user2');
+		const byMin = await chat(['wait', '--wait-min', '60']);
+		assert.match(byMin.stdout, /待受け開始（最大 1 時間/);
+
+		await chat(['say', '単位の確認 2'], 'user2');
+		const byHour = await chat(['wait', '--wait-hour', '1']);
+		assert.match(byHour.stdout, /待受け開始（最大 1 時間/);
+	});
+
+	test('短い形 -w は --wait-hour と同じ', async () => {
+		await chat(['say', '短い形の確認'], 'user2');
+		const { stdout } = await chat(['wait', '-w', '2']);
+
+		assert.match(stdout, /待受け開始（最大 2 時間/);
+	});
+});
+
+describe('wait の指定を誤ったとき', () => {
+	/** 失敗する呼び出しを、終了コードと標準エラーごと受け取る */
+	async function failing(args) {
+		try {
+			await chat(args);
+			assert.fail('エラーにならなかった');
+		} catch (err) {
+			return { code: err.code, stderr: err.stderr };
+		}
+	}
+
+	test('単位を 2 つ指定するとエラーになる', async () => {
+		const { code, stderr } = await failing(['wait', '--wait-hour', '1', '--wait-min', '30']);
+
+		assert.equal(code, 2);
+		assert.match(stderr, /1 つだけ指定してください/);
+		assert.match(stderr, /--wait-hour/);
+		assert.match(stderr, /--wait-min/);
+	});
+
+	test('数でない値を渡すとエラーになる', async () => {
+		const { code, stderr } = await failing(['wait', '--wait-min', 'たくさん']);
+
+		assert.equal(code, 2);
+		assert.match(stderr, /0 以上の数だけを渡してください/);
+	});
+
+	test('廃止した --retry-count と --timeout はエラーで知らせる', async () => {
+		// 他プロジェクトの手順に古い形が残っている。黙って無視すると気づけない
+		for (const name of ['--retry-count', '--timeout']) {
+			const { code, stderr } = await failing(['wait', name, '2']);
+
+			assert.equal(code, 2, `${name} が終了コード 2 にならない`);
+			assert.match(stderr, new RegExp(`${name} は廃止されました`));
+			assert.match(stderr, /--wait-hour/);
 		}
 	});
+});
 
-	test('回数に数でない値を渡すと既定に戻る', async () => {
-		const { stdout } = await chat(['wait', '--timeout', '1', '--retry-count', 'たくさん']);
-		assert.match(stdout, /2 回・合計 2 秒待機/);
+describe('wait のログ', () => {
+	test('出るのは開始と終了の 2 行だけ', async () => {
+		/*
+		 * 240 秒ごとに「新着なし」を出していたため、8 時間で 120 行になっていた。
+		 * 何回に分けて待ったかは呼ぶ側に関係がないので出さない
+		 */
+		const { stdout } = await chat(['wait', '--wait-sec', '1']);
+		const lines = stdout.trim().split('\n');
+
+		assert.equal(lines.length, 2, `2 行ではない:\n${stdout}`);
+		assert.match(lines[0], /^待受け開始（/);
+		assert.match(lines[1], /^新着なし（/);
+		assert.doesNotMatch(stdout, /回目/);
 	});
 
-	test('合計が 600 秒を超えるとバックグラウンド実行を促す', async () => {
+	test('長く待つ設定を自分で書いたときはバックグラウンド実行を促す', async () => {
 		/*
-		 * バックグラウンド実行かどうかは、走っている側からは判別できない。
-		 * 環境変数も TTY も通常の実行と同じ値になることを実測で確かめてある。
-		 * そのため止めることはせず、警告を出したうえで続行する。
-		 *
 		 * 601 秒を実際に待たせるわけにいかないので、先に発言を置いて
 		 * 1 回目で返るようにする。警告は待ち始める前に出る
 		 */
-		await chat(['say', '警告の確認'], { AICHAT_ID: 'user2' });
-		const { stdout, stderr } = await chat(['wait', '--timeout', '1', '--retry-count', '601']);
+		await chat(['say', '警告の確認'], 'user2');
+		const { stdout, stderr } = await chat(['wait', '--wait-min', '11']);
 
-		assert.match(stderr, /合計 601 秒/);
+		assert.match(stderr, /11 分/);
 		assert.match(stderr, /run_in_background/);
 		// 警告を出すだけで、待つこと自体は妨げない
 		assert.match(stdout, /新着 1 件/);
 	});
 
-	test('合計が 600 秒に収まるうちは警告を出さない', async () => {
-		const { stderr } = await chat(['wait', '--timeout', '1', '--retry-count', '2']);
+	test('短い設定では警告を出さない', async () => {
+		const { stderr } = await chat(['wait', '--wait-sec', '1']);
+		assert.equal(stderr, '');
+	});
+
+	test('既定の 8 時間では警告を出さない', async () => {
+		// 既定が 600 秒を超えているため、毎回出すと警告の意味がなくなる
+		await chat(['say', '既定では黙る'], 'user2');
+		const { stderr } = await chat(['wait']);
+
 		assert.equal(stderr, '');
 	});
 });

@@ -38,6 +38,11 @@ $dbPath      = Join-Path $dataDir 'chat.db'
 $lockPath    = Join-Path $dataDir 'MAINTENANCE'
 $workDir     = Join-Path $root 'tmp\restore-work'
 $clientPath  = Join-Path $root 'src\client\chat.mjs'
+
+# CLI は接続先の既定値を持たない。テストのつもりの操作が本番へ入るのを防ぐため、
+# --port か --url を必ず渡す作りにしてある。ここは本番を戻すスクリプトなので本番のポート。
+# 既定 8787 は config.mjs と同じ値。片方だけ変えると噛み合わなくなる
+$serverPort  = if ($env:AICHAT_PORT) { $env:AICHAT_PORT } else { 8787 }
 $logsDir     = Join-Path $root 'logs'
 
 # 記録は others のログへ。復旧は頻度が低いので hourly と分ける必要がない
@@ -102,11 +107,10 @@ try {
 	#
 	# chat.mjs は名乗る ID を求めるため、ここで与える。誰が落としたかが
 	# サーバーのログに残る。参加登録はされない
-	$env:AICHAT_ID = 'restore'
 
 	# & node は終了コードが非ゼロでも例外を投げない。catch では拾えないので
 	# $LASTEXITCODE を見る。握りつぶすと、止まっていないのに次へ進んでしまう
-	$stopOutput = & node $clientPath restart 2>&1
+	$stopOutput = & node $clientPath restart --port $serverPort --connector-id restore 2>&1
 	if ($LASTEXITCODE -eq 0) {
 		Write-Host '[2/5] サーバーを落としました（10 秒後に起動し直します）'
 	} else {
