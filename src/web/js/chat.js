@@ -155,11 +155,60 @@ function refreshMessageMarks() {
 
 // --- 通信 ---
 
+/*
+ * テスト用のサーバーへ繋ぐためのアクセストークン。
+ *
+ * テスト環境はアクセストークンを持たない相手を断る。他プロジェクトがポートを見つけて
+ * 繋いでも、テスト中のデータに混ざらないようにするため。
+ *
+ *   http://localhost:8765/?access_token=xxxx
+ *
+ * URL から受け取り、そのタブで覚えておく。2 回目以降はクエリが要らない。
+ * 起動するたびに値が変わるので、タブを閉じたら消える sessionStorage に置く。
+ * 本番では渡されないので空になり、何も付かない。
+ */
+const ACCESS_TOKEN = (() => {
+	const fromUrl = new URLSearchParams(location.search).get('access_token');
+	try {
+		if (fromUrl) {
+			sessionStorage.setItem('aichat.access_token', fromUrl);
+			return fromUrl;
+		}
+		return sessionStorage.getItem('aichat.access_token') ?? '';
+	} catch {
+		// プライベートウィンドウなどで使えないことがある。URL の分だけで動かす
+		return fromUrl ?? '';
+	}
+})();
+
+/** アクセストークンがあればクエリに足す。SSE（EventSource）はヘッダを付けられないため */
+function withAccessToken(path) {
+	if (!ACCESS_TOKEN) return path;
+	return path + (path.includes('?') ? '&' : '?') + 'access_token=' + encodeURIComponent(ACCESS_TOKEN);
+}
+
 async function api(path, init) {
-	const res = await fetch(path, init);
+	const headers = { ...(init?.headers ?? {}) };
+	if (ACCESS_TOKEN) headers['X-AiChat-Access-Token'] = ACCESS_TOKEN;
+
+	const res = await fetch(path, { ...init, headers });
 	const json = await res.json().catch(() => ({}));
 	if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
 	return json;
+}
+
+/*
+ * どちらの環境に繋いでいるかを見た目に出す。
+ *
+ * 本番とテストで画面が同じだと、人が取り違える。色を変え、名札も出す。
+ * 色だけに頼らないのは、見分けがつきにくい場合や白黒で印刷した場合のため。
+ */
+function applyEnv(env) {
+	if (!env) return;
+	document.body.dataset.env = env;
+
+	const badge = document.getElementById('env-badge');
+	if (badge) badge.hidden = env !== 'test';
 }
 
 function showBanner(text) {
@@ -177,8 +226,9 @@ function hideBanner() {
  * サーバーは起動するたびに版が変わる。SSE は切れると自動で繋ぎ直すため、
  * 入れ替えのあとは新しい版がここへ届く。前と違っていれば画面も古いので読み直す。
  */
-function checkVersion({ version }) {
+function checkVersion({ version, env }) {
 	el.version.textContent = version;
+	applyEnv(env);
 
 	if (serverVersion === null) {
 		serverVersion = version;
@@ -194,7 +244,7 @@ function checkVersion({ version }) {
 function connectEvents() {
 	if (source) source.close();
 	source = new EventSource(
-		`/api/events?user_id=${encodeURIComponent(userId)}&room_id=${encodeURIComponent(room)}&since=${cursor}`
+		withAccessToken(`/api/events?user_id=${encodeURIComponent(userId)}&room_id=${encodeURIComponent(room)}&since=${cursor}`)
 	);
 
 	source.addEventListener('message', (e) => appendMessages([JSON.parse(e.data)]));
@@ -331,10 +381,15 @@ el.roomDialog.addEventListener('close', () => {
 	if (name) switchRoom(name);
 });
 
-// 画面を閉じるときに離脱を伝える。届かなくても猶予の後にオフラインになる
+/*
+ * 画面を閉じるときに離脱を伝える。届かなくても猶予の後にオフラインになる。
+ *
+ * sendBeacon はヘッダを付けられないため、アクセストークンはクエリに載せる。
+ * 付け忘れるとテスト環境では 403 で弾かれ、離脱が積まれない。
+ */
 window.addEventListener('pagehide', () => {
 	navigator.sendBeacon?.(
-		'/api/leave',
+		withAccessToken('/api/leave'),
 		new Blob([JSON.stringify({ user_id: userId, room_id: room })], { type: 'application/json' })
 	);
 });

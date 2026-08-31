@@ -23,6 +23,21 @@
 	--offline2: #97a1ae;
 }
 
+/*
+ * テスト用のサーバーに繋いだときは色を変える。
+ *
+ * 本番とテストで画面が同じだと、人が取り違える。
+ * 色相だけを変え、彩度と明度は紺と揃えてある（226/220° → 26/24°）ので、
+ * 見た目の重さは変わらず、色だけが違って見える。
+ *
+ * 変数を差し替えるだけにする。個別に上書きすると、要素を足したときに
+ * 書き忘れる。この 2 つを見ている箇所がまとめて変わる。
+ */
+body[data-env="test"] {
+	--navy1: #4d2c12;
+	--navy2: #c0682f;
+}
+
 * {
 	box-sizing: border-box;
 }
@@ -66,6 +81,23 @@ body {
 	font-size: 1.2em;
 	color: #fff;
 	background: transparent;
+}
+
+/*
+ * テスト環境の名札。色だけに頼らず文字でも示す。
+ *
+ * 色の見分けがつきにくい場合や、白黒で印刷した場合にも分かるようにする。
+ * 出すかどうかは chat.js が env を見て決める（本番では hidden のまま）。
+ */
+.titlebar .env-badge {
+	background: rgba(255, 255, 255, 0.22);
+	color: #fff;
+	padding: 1px 10px;
+	border: 1px solid rgba(255, 255, 255, 0.55);
+	border-radius: 999px;
+	font-size: 0.78em;
+	font-weight: 700;
+	white-space: nowrap;
 }
 
 .titlebar .room {
