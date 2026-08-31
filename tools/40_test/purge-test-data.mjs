@@ -13,12 +13,15 @@
  *   node tools/40_test/purge-test-data.mjs                消す（接頭辞に当たる全部）
  *   node tools/40_test/purge-test-data.mjs --dry-run      数えるだけ
  *   node tools/40_test/purge-test-data.mjs --names a,b,c  その名前だけ消す
+ *   node tools/40_test/purge-test-data.mjs --production   本番を相手にする
  *
  * --names は、テストが自分で作った分だけを消すためにある。接頭辞で全部消すと、
  * 同時に走っている別のテストのデータまで巻き込む。名前は user_id と room_id の
  * どちらとしても照合する。
  *
- * DB の場所は AICHAT_DB で差し替えられる。
+ * 【既定はテスト側】
+ *   何も指定しなければ tmp/_data を相手にする。忘れて本番を消す事故を防ぐため、
+ *   本番のパスをこのファイルに書かない。本番を触るには --production が要る。
  */
 import { DatabaseSync } from 'node:sqlite';
 import { dirname, join, resolve } from 'node:path';
@@ -30,8 +33,19 @@ export const USER_PREFIX = 'test-';
 export const ROOM_PREFIX = 'sandbox-';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const dbPath = process.env.AICHAT_DB ?? join(root, '_data', 'chat.db');
 const dryRun = process.argv.includes('--dry-run');
+const toProduction = process.argv.includes('--production');
+
+/*
+ * 相手にする置き場。
+ *
+ * 既定はテスト。--production を渡したときだけ本番になる。
+ * AICHAT_DATA が立っていればそちらを使う（run-ui-tests から渡される）。
+ */
+const dataDir = toProduction
+	? join(root, '_data')
+	: (process.env.AICHAT_DATA ?? join(root, 'tmp', '_data'));
+const dbPath = join(dataDir, 'chat.db');
 
 /** --names で渡された名前。空なら接頭辞で全部を対象にする */
 const namesArg = process.argv[process.argv.indexOf('--names') + 1];
@@ -40,9 +54,12 @@ const names =
 		? namesArg.split(',').map((s) => s.trim()).filter(Boolean)
 		: [];
 
+const where = dbPath.replace(root, '.');
+console.log(`相手: ${where}${toProduction ? '  ← 本番' : ''}`);
+
 if (!existsSync(dbPath)) {
-	console.error(`DB がありません: ${dbPath.replace(root, '.')}`);
-	process.exit(1);
+	console.log('DB がありません。消すものもありません。');
+	process.exit(0);
 }
 
 const db = new DatabaseSync(dbPath);
@@ -74,9 +91,9 @@ const build = () => {
 	};
 };
 
-const where = build();
+const conditions = build();
 const count = (table) => {
-	const [cond, args] = where[table];
+	const [cond, args] = conditions[table];
 	return Number(db.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE ${cond}`).get(...args).n);
 };
 
@@ -100,7 +117,7 @@ if (dryRun) {
 
 db.exec('BEGIN IMMEDIATE');
 for (const table of ['messages', 'cursors', 'users']) {
-	const [cond, args] = where[table];
+	const [cond, args] = conditions[table];
 	db.prepare(`DELETE FROM ${table} WHERE ${cond}`).run(...args);
 }
 db.exec('COMMIT');
