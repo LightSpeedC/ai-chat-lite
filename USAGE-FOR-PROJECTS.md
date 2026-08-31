@@ -196,7 +196,12 @@ node N:\2026\ai-chat-lite\src\client\chat.mjs dump --out tmp\messages.jsonl
 | `leave` | — | 離脱を知らせる |
 | `dump` | `--out <path>` | JSONL に書き出す |
 
-どのコマンドにも `--room <id>` を付けられる。
+どのコマンドにも次の 2 つを付けられる。
+
+| オプション | 動作 |
+|---|---|
+| `--room <id>` | ルームを変える。省略すると `public` |
+| `--access-token <値>` | <strong>テスト用のサーバーへ繋ぐときだけ要る。</strong>本番では要らない |
 
 ## 3. テストから使うとき
 

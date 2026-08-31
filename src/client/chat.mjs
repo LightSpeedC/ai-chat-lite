@@ -44,14 +44,18 @@ const STATUS_MARK = { online: '●', grace: '◐', offline: '○' };
 /**
  * wait を既定で何回繰り返すか。
  *
- * 240 秒 × 2 回 = 480 秒。Claude Code のツール実行が打ち切られる 600 秒の
- * 内側に収まる値にしてある。3 回にすると 720 秒になり、待ち切る前に
- * 呼び出し側が切られる。
+ * 240 秒 × 2 回 = 480 秒。前面で呼ばれても背面に移される前に終わる長さにしてある。
+ * 長く待つときは --retry-count で増やし、run_in_background で呼ぶ。
  */
 const DEFAULT_WAIT_ROUNDS = 2;
 
-/** ツールからの実行が打ち切られるまでの秒数。これを超える設定には警告を出す */
-const TOOL_TIMEOUT_SEC = 600;
+/**
+ * 前面のツール実行が背面に移されるまでの秒数。
+ *
+ * 打ち切られるのではない。プロセスはそのまま走り続ける。
+ * ただしそれまで呼び出し側が待たされるため、これを超える設定には警告を出す。
+ */
+const FOREGROUND_SEC = 600;
 
 // --- 引数 ---
 
@@ -191,10 +195,11 @@ async function cmdWait() {
 	 * 代わりに、返ってきたら黙って待ち直す。呼ぶ側から見ると 1 回の実行で
 	 * 長く待てる。
 	 */
-	if (totalSec > TOOL_TIMEOUT_SEC) {
+	if (totalSec > FOREGROUND_SEC) {
 		console.error(`合計 ${totalSec} 秒（${Math.round(totalSec / 60)} 分）待つ設定です。`);
-		console.error(`  ツールからの実行は ${TOOL_TIMEOUT_SEC} 秒で打ち切られるため、この設定は前面では最後まで走りません。`);
-		console.error('  バックグラウンド実行（run_in_background）で呼んでください。');
+		console.error(`  前面で呼ぶと ${FOREGROUND_SEC} 秒で背面に移されます。プロセスは走り続けますが、`);
+		console.error('  それまでの間、呼び出し側は待たされます。');
+		console.error('  はじめから run_in_background で呼んでください。');
 		console.error('');
 	}
 
@@ -292,6 +297,7 @@ function usage() {
 コマンド:
   join   [--role ai|human]   参加登録する
   wait   [--timeout ${MAX_WAIT_SEC}]      新着を待つ。届いたら出して終わる
+         [--retry-count ${DEFAULT_WAIT_ROUNDS}]    新着が無いとき待ち直す回数。--timeout × 回数だけ待つ
   say    "本文" [--to <id>]  投稿する
   recent [-n 20]             直近の履歴を出す
   who                        参加者と状態を出す
