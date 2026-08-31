@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CLI のオプションを整える</title>
+<style>
+/* 共通のスタイル。docs\css\style.css と同じ内容を持たせている */
+@charset "UTF-8";
+
+/* ===================================================================
+   ai-chat-lite 共通スタイル
+   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   =================================================================== */
+
+:root {
+	/* 章に依存しない共通色 */
+	--navy1: #12224d;
+	--navy2: #2f5fbf;
+	--ink: #1c2330;
+	--ink-soft: #4a5568;
+	--line: #d9dfe8;
+	--code-bg: #f4f6fa;
+	--link: #1a4fa0;
+
+	/* 章クラスの外に置いた要素が色を失わないための既定値 */
+	--accent: #12224d;
+	--accent2: #2f5fbf;
+	--soft: #f2f5fb;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: #fdfdfe;
+	color: var(--ink, #1c2330);
+	font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+	font-size: 15.5px;
+	line-height: 1.85;
+}
+
+a {
+	color: var(--link, #1a4fa0);
+}
+
+/* ---------- タイトルバー ---------- */
+
+.titlebar {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 34px 30px 30px;
+}
+
+.titlebar .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+}
+
+.titlebar h1 {
+	font-size: 1.85em;
+	margin: 0 0 8px;
+	color: #fff;
+}
+
+.titlebar .lead {
+	margin: 0;
+	color: #d7e2f7;
+	font-size: 0.95em;
+}
+
+.titlebar .date {
+	margin: 10px 0 0;
+	color: #b9caea;
+	font-size: 0.88em;
+}
+
+.titlebar a {
+	color: #cfe0ff;
+}
+
+.titlebar code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+/* ---------- 本文の器 ---------- */
+
+.wrap {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding: 0 30px;
+}
+
+section {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 10px;
+	padding: 4px 26px 26px;
+	margin: 34px 0;
+}
+
+/* ---------- 見出し ---------- */
+
+section h1 {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-size: 1.4em;
+	padding: 14px 20px;
+	margin: 26px 0 20px;
+	border-radius: 8px;
+	box-shadow: 0 3px 10px rgba(20, 34, 70, 0.22);
+}
+
+section h1 code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+h2 {
+	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
+	color: var(--accent, #12224d);
+	font-size: 1.16em;
+	padding: 6px 12px;
+	margin: 30px 0 12px;
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 6px 6px 0;
+}
+
+h3 {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	font-size: 1.02em;
+	display: inline-block;
+	padding-bottom: 3px;
+	margin: 20px 0 8px;
+	border-bottom: 2px dotted var(--accent2, #2f5fbf);
+}
+
+/* ---------- 表 ---------- */
+
+.tablewrap {
+	overflow-x: auto;
+	margin: 14px 0;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 5px rgba(20, 34, 70, 0.10);
+}
+
+th {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	text-align: left;
+	padding: 9px 12px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+th code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+td {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	padding: 9px 12px;
+	border-top: 1px solid var(--line, #d9dfe8);
+	vertical-align: top;
+}
+
+tr:nth-child(even) td {
+	background: #fafbfe;
+	color: var(--ink, #1c2330);
+}
+
+td.num,
+th.num {
+	text-align: right;
+}
+
+td.nowrap,
+th.nowrap {
+	white-space: nowrap;
+}
+
+/* ---------- コード ---------- */
+
+code {
+	background: var(--code-bg, #f4f6fa);
+	color: #17335f;
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 4px;
+	padding: 1px 5px;
+	font-family: "Consolas", "Cascadia Mono", monospace;
+	font-size: 0.92em;
+}
+
+pre {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 5px solid var(--accent2, #2f5fbf);
+	border-radius: 0 8px 8px 0;
+	padding: 13px 16px;
+	overflow-x: auto;
+	line-height: 1.65;
+}
+
+pre code {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	border: none;
+	padding: 0;
+	font-size: 0.92em;
+}
+
+/* ---------- バッジ ---------- */
+
+.badge {
+	display: inline-block;
+	padding: 1px 9px;
+	margin-right: 6px;
+	border-radius: 11px;
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+	font-size: 0.84em;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.badge.b-ok {
+	background: linear-gradient(100deg, #1d7a3c, #45b56c);
+	color: #fff;
+}
+
+.badge.b-ng {
+	background: linear-gradient(100deg, #a51f22, #e05a5c);
+	color: #fff;
+}
+
+.badge.b-warn {
+	background: linear-gradient(100deg, #b8620a, #f0a548);
+	color: #fff;
+}
+
+.badge.b-none {
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+}
+
+/* ---------- callout ---------- */
+
+.callout {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 8px 8px 0;
+	padding: 12px 18px;
+	margin: 16px 0;
+}
+
+.callout strong {
+	color: var(--accent, #12224d);
+	background: transparent;
+}
+
+.callout p {
+	margin: 6px 0;
+}
+
+/* ---------- 目次 ---------- */
+
+.toc ol {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 0;
+	margin: 12px 0 4px;
+}
+
+.toc ul a {
+	color: var(--link, #1a4fa0);
+	background: transparent;
+}
+
+.toc ol li {
+	counter-increment: tocnum;
+	margin: 0;
+}
+
+.toc ol a {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: normal;
+	width: 310px;
+	max-width: 100%;
+	padding: 7px 13px;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+	line-height: 1.45;
+}
+
+.toc ol a::before {
+	content: counter(tocnum) ". ";
+	font-weight: 700;
+}
+
+/* ---------- 資料リンク・戻るリンク ---------- */
+
+.navlinks {
+	margin: 20px 0 0;
+}
+
+/*
+ * 幅は文字数で決まる（固定幅にしない）。
+ * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
+ * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
+ */
+a.doclink {
+	display: inline-block;
+	padding: 3px 12px;
+	margin: 0 8px 6px 0;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	font-size: 0.9em;
+	text-decoration: none;
+}
+
+/* ---------- SVG図 ---------- */
+
+.fig {
+	margin: 18px 0;
+	text-align: center;
+}
+
+.fig svg {
+	max-width: 100%;
+	height: auto;
+}
+
+.fig figcaption {
+	color: var(--ink-soft, #4a5568);
+	background: transparent;
+	font-size: 0.88em;
+	margin-top: 6px;
+}
+
+/* ---------- フッター ---------- */
+
+footer {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 18px 30px 0;
+	margin-top: 40px;
+}
+
+footer .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding-bottom: 18px;
+}
+
+footer a {
+	color: #cfe0ff;
+}
+</style>
+<style>
+/* この資料だけのもの: 章のアクセント色（5章 / 色相 280→0 を 70 刻み）と目次の採番 */
+.ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
+.ch02 { --accent: hsl(210, 78%, 25%); --accent2: hsl(210, 58%, 55%); --soft: hsl(210, 28%, 95%); }
+.ch03 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); --soft: hsl(140, 28%, 95%); }
+.ch04 { --accent: hsl( 70, 78%, 25%); --accent2: hsl( 70, 58%, 55%); --soft: hsl( 70, 28%, 95%); }
+.ch05 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
+.toc ol { counter-reset: tocnum; }
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>CLI のオプションを整える</h1>
+		<p class="lead">3 つの課題が同じコードを書き換えるため、1 本にまとめて通す</p>
+		<p class="date">📅 作成: 2026-09-01 / 更新: 2026-09-01</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+<section class="toc">
+<h2>目次</h2>
+<ol>
+	<li class="ch01"><a href="#ch01">なぜ 1 本にまとめるか</a></li>
+	<li class="ch02"><a href="#ch02">決まっていること</a></li>
+	<li class="ch03"><a href="#ch03">選んだ形と、その理由</a></li>
+	<li class="ch04"><a href="#ch04">新しいオプション</a></li>
+	<li class="ch05"><a href="#ch05">段取り</a></li>
+</ol>
+</section>
+
+<!-- ================= 01 ================= -->
+<section class="ch01" id="ch01">
+<h1>なぜ 1 本にまとめるか</h1>
+
+<p><strong>3 つの課題が、いずれも同じ 1 つの関数を書き換える。</strong></p>
+
+<div class="tablewrap">
+<table>
+<thead>
+	<tr><th class="nowrap">課題</th><th>変えるもの</th><th class="nowrap">触る場所</th></tr>
+</thead>
+<tbody>
+	<tr>
+		<td class="nowrap"><a class="doclink" href="../40_issues/issues.html#i260831-02">i260831-02</a></td>
+		<td><code>AICHAT_ID</code> → <code>--connector-id</code></td>
+		<td class="nowrap"><code>option()</code> ・ <code>usage()</code></td>
+	</tr>
+	<tr>
+		<td class="nowrap"><a class="doclink" href="../40_issues/issues.html#i260901-01">i260901-01</a></td>
+		<td><code>--retry-count</code> 廃止 → <code>--wait-min</code> / <code>--wait-hour</code></td>
+		<td class="nowrap"><code>option()</code> ・ <code>usage()</code></td>
+	</tr>
+	<tr>
+		<td class="nowrap"><a class="doclink" href="../40_issues/issues.html#i260901-02">i260901-02</a></td>
+		<td><code>AICHAT_URL</code> → <code>--url</code> / <code>--port</code>、短い形</td>
+		<td class="nowrap"><code>option()</code> ・ <code>usage()</code></td>
+	</tr>
+</tbody>
+</table>
+</div>
+
+<p>別々に進めると、<strong>後の 2 件が前の書き直しになる</strong>。<code>option()</code> は <code>--名前</code> だけを探す作りで、短い形を入れるには別名の表を持つ形へ変える必要がある。3 件のうちどれを先にしても、この書き換えが 1 回目に含まれ、残り 2 件はその上に載る。</p>
+
+<div class="callout callout-important">
+<p><strong>課題は 3 件のまま残す。</strong>計画だけを 1 本にする。課題は「何を解決するか」の単位、計画は「どう通すか」の単位であり、一致させる必要はない。</p>
+</div>
+
+<h2>いま 1 行がどれだけ長いか</h2>
+
+<p>テスト用サーバーへ繋いで待受けを張ると、環境変数 2 つとオプション 2 つに分かれる。</p>
+
+<pre><code class="language-powershell">$env:AICHAT_ID = 'ai-chat-lite'
+$env:AICHAT_URL = 'http://localhost:8765'
+node N:\2026\ai-chat-lite\src\client\chat.mjs wait --access-token 3f9c1e8a-... --retry-count 120</code></pre>
+
+<p><strong>環境変数はプロセス一覧に出ない。</strong>待受けを 4 本起こして PID を照合しようとしたとき、<code>Win32_Process</code> の <code>CommandLine</code> には <code>node ...\chat.mjs wait</code> しか出ず、どれがどれか起動時刻から推測するしかなかった。</p>
+</section>
+
+<!-- ================= 02 ================= -->
+<section class="ch02" id="ch02">
+<h1>決まっていること</h1>
+
+<div class="tablewrap">
+<table>
+<thead>
+	<tr><th class="nowrap">項目</th><th>決めたこと</th></tr>
+</thead>
+<tbody>
+	<tr><td class="nowrap"><code>--retry-count</code></td><td><strong>廃止する。</strong>回数は内部で決める</td></tr>
+	<tr><td class="nowrap"><code>--timeout</code></td><td><strong>内部に隠す。</strong>呼ぶ側からは指定しない</td></tr>
+	<tr><td class="nowrap">待つ長さ</td><td><strong><code>--wait-min</code> と <code>--wait-hour</code></strong>（<code>480</code> と <code>8</code> はどちらも 8 時間）</td></tr>
+	<tr><td class="nowrap">両方を指定</td><td><strong>エラーにする。</strong>足さない・後勝ちにしない</td></tr>
+	<tr><td class="nowrap">上限なし</td><td><strong><code>0</code> を無限とする</strong></td></tr>
+	<tr><td class="nowrap">既定値</td><td><strong>8 時間</strong>（いまは 480 秒）</td></tr>
+	<tr><td class="nowrap">ログ</td><td><strong>開始 1 行と終了 1 行だけ。</strong>240 秒ごとの「新着なし」は出さない</td></tr>
+	<tr><td class="nowrap">名乗る ID</td><td><strong><code>AICHAT_ID</code> をやめ <code>--connector-id</code> にする。</strong>両対応にしない</td></tr>
+	<tr><td class="nowrap">接続先</td><td><strong><code>--url</code> と <code>--port</code> を足す。</strong><code>--port</code> は <code>localhost</code> のポートだけを指定する</td></tr>
+	<tr><td class="nowrap">短い形</td><td><code>-c</code> <code>-a</code> <code>-r</code> <code>-p</code> <code>-u</code> <code>-w</code> を付ける（<code>-w</code> は <code>--wait-hour</code>）</td></tr>
+	<tr><td class="nowrap">テスト用の指定</td><td><strong><code>--wait-sec</code> を足す</strong></td></tr>
+	<tr><td class="nowrap"><code>--url</code> と <code>--port</code> の同時指定</td><td><strong>エラーにする</strong></td></tr>
+	<tr><td class="nowrap"><code>--connector-id</code> の省略</td><td><strong>エラーにする。</strong>既定値を持たせない</td></tr>
+	<tr><td class="nowrap"><code>AICHAT_URL</code></td><td><strong>廃止する</strong></td></tr>
+	<tr><td class="nowrap">一覧の保ち方</td><td><strong>別名の表から <code>usage()</code> を組み立てる</strong></td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>なぜ引数にするのか</h2>
+
+<div class="tablewrap">
+<table>
+<thead>
+	<tr><th class="nowrap">得られること</th><th>中身</th></tr>
+</thead>
+<tbody>
+	<tr>
+		<td class="nowrap">どれが誰か分かる</td>
+		<td><strong>コマンドラインに出る。</strong>環境変数はプロセス一覧に出ない</td>
+	</tr>
+	<tr>
+		<td class="nowrap">シェルを問わない</td>
+		<td><strong>bash でも PowerShell でも同じ 1 行。</strong><code>$env:</code> / <code>export</code> / <code>set</code> の分岐が消える</td>
+	</tr>
+	<tr>
+		<td class="nowrap">取り違えが減る</td>
+		<td>環境変数は同じシェルに前の値が残る。引数なら毎回明示される</td>
+	</tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout callout-important">
+<p><strong>単位を名前に入れずに <code>--wait</code> としてはいけない。</strong>いま <code>--timeout</code> は秒なので、秒・分・時が混ざる。名前に単位があれば取り違えない。</p>
+</div>
+</section>
+
+<!-- ================= 03 ================= -->
+<section class="ch03" id="ch03">
+<h1>選んだ形と、その理由</h1>
+
+<h2>1. テストで短く待つ手段</h2>
+
+<div class="callout callout-warning">
+<p><strong>分と時しか指定できないと、テストが 1 件も流せない。</strong>いまのテストは <code>--timeout 1 --retry-count 3</code> のように<strong>秒</strong>で指定して数秒で終わらせている（<code>client-wait.test.mjs</code> 7 件）。既定値が 8 時間になるため、短く待つ手段が無いと 1 件ごとに待たされる。</p>
+</div>
+
+<div class="tablewrap">
+<table>
+<thead>
+	<tr><th class="nowrap">案</th><th>内容</th><th>難点</th></tr>
+</thead>
+<tbody>
+	<tr>
+		<td class="nowrap"><strong>A（採る）</strong></td>
+		<td><code>--wait-sec</code> を足す。単位は名前に出ている</td>
+		<td>指定が 3 通りになる</td>
+	</tr>
+	<tr>
+		<td class="nowrap">B</td>
+		<td>小数を許す（<code>--wait-min 0.05</code> ＝ 3 秒）</td>
+		<td><strong>読んで分からない。</strong>テストの意図が伝わらない</td>
+	</tr>
+	<tr>
+		<td class="nowrap">C</td>
+		<td>環境変数でテストだけ long-poll を短くする</td>
+		<td>環境変数が増える。<strong>本番と違う経路を通る</strong></td>
+	</tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>案 A に決めた。</strong>「単位ごとに 1 つ」という形は <code>--wait-min</code> と <code>--wait-hour</code> を持つと決めた時点で既に選ばれている。3 つ目が増えても規則は変わらず、テストが本番と同じ経路を通る。</p>
+
+<h2>2. <code>--url</code> と <code>--port</code> を同時に指定したとき</h2>
+
+<p><strong>エラーにする。</strong><code>--wait-min</code> と <code>--wait-hour</code> の扱いと揃う。同じ意味を 2 通りで書けるオプションは、すべて同じ規則にした方が覚えることが減る。</p>
+
+<h2>3. 短い形をどれに付けるか</h2>
+
+<div class="callout callout-warning">
+<p><strong>頭文字が衝突する。</strong><code>--room</code> と <code>--role</code> はどちらも <code>r</code>、<code>--to</code> と <code>--timeout</code> はどちらも <code>t</code>。大小で分けると（<code>-r</code> と <code>-R</code>）取り違える。</p>
+</div>
+
+<div class="tablewrap">
+<table>
+<thead>
+	<tr><th class="nowrap">短</th><th class="nowrap">長</th><th>判断</th></tr>
+</thead>
+<tbody>
+	<tr><td class="nowrap"><code>-c</code></td><td class="nowrap"><code>--connector-id</code></td><td>付ける。毎回打つ</td></tr>
+	<tr><td class="nowrap"><code>-a</code></td><td class="nowrap"><code>--access-token</code></td><td>付ける。値が長い</td></tr>
+	<tr><td class="nowrap"><code>-r</code></td><td class="nowrap"><code>--room</code></td><td>付ける。<strong><code>--role</code> には付けない</strong>（<code>join</code> でしか使わない）</td></tr>
+	<tr><td class="nowrap"><code>-p</code></td><td class="nowrap"><code>--port</code></td><td>付ける</td></tr>
+	<tr><td class="nowrap"><code>-u</code></td><td class="nowrap"><code>--url</code></td><td>付ける</td></tr>
+	<tr><td class="nowrap"><code>-n</code></td><td class="nowrap"><code>--n</code></td><td><strong>すでにある</strong>（<code>recent</code> の件数）</td></tr>
+	<tr><td class="nowrap">—</td><td class="nowrap"><code>--to</code> <code>--out</code> <code>--role</code></td><td><strong>付けない。</strong>衝突するか、打つ回数が少ない</td></tr>
+	<tr><td class="nowrap"><code>-w</code></td><td class="nowrap"><code>--wait-hour</code></td><td>付ける。<strong>3 つとも <code>w</code> で始まるので、時にだけ割り当てる</strong></td></tr>
+	<tr><td class="nowrap">—</td><td class="nowrap"><code>--wait-min</code> <code>--wait-sec</code></td><td><strong>付けない。</strong><code>-w</code> は時が取った</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>短い形を全部に付けない。</strong>よく打つものだけに付け、残りは長い形だけにする。</p>
+
+<div class="callout callout-important">
+<p><strong><code>-w</code> は <code>--wait-hour</code> に割り当てる。</strong>時が既定の単位であり、いちばん打つ。分と秒には短い形を付けない。<strong><code>-w</code> が何の単位かを覚え違えると 60 倍・3600 倍ずれる</strong>ため、迷ったら長い形を書く。</p>
+</div>
+
+<h2>4. <code>--connector-id</code> を省略できるか</h2>
+
+<div class="tablewrap">
+<table>
+<thead>
+	<tr><th class="nowrap">案</th><th>内容</th><th>難点</th></tr>
+</thead>
+<tbody>
+	<tr>
+		<td class="nowrap"><strong>A（採る）</strong></td>
+		<td>必須にする。無ければエラーで止める</td>
+		<td>毎回打つ</td>
+	</tr>
+	<tr>
+		<td class="nowrap">B</td>
+		<td><a href="p260829-01-設計.html">設計</a>どおり <code>path.basename(process.cwd())</code> を既定にする</td>
+		<td><strong>違う場所から叩くと別の名前で参加する。</strong>気づきにくい</td>
+	</tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>案 A に決めた。</strong>いまの実装も必須になっている（設計とは食い違っているが、動きとしてはこちら）。名乗る名前は取り違えると他プロジェクトの記録に混ざるので、暗黙の既定値を持たせない方が安全である。<strong>設計側の記述を実装に合わせて直す。</strong></p>
+
+<h2>5. 環境変数を廃止するか</h2>
+
+<div class="tablewrap">
+<table>
+<thead>
+	<tr><th class="nowrap">変数</th><th>いまの用途</th><th>どうするか</th></tr>
+</thead>
+<tbody>
+	<tr><td class="nowrap"><code>AICHAT_ID</code></td><td>名乗る ID</td><td><strong>廃止</strong>（決定済み）</td></tr>
+	<tr><td class="nowrap"><code>AICHAT_URL</code></td><td>接続先</td><td><strong>廃止する。</strong><code>--url</code> / <code>--port</code> で足りる</td></tr>
+	<tr><td class="nowrap"><code>AICHAT_PORT</code></td><td><strong>サーバー側</strong>の待ち受けポート</td><td><strong>残す。</strong>CLI のものではない</td></tr>
+	<tr><td class="nowrap"><code>AICHAT_DATA</code></td><td><strong>サーバー側</strong>の置き場</td><td><strong>残す。</strong>同上</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>CLI 側の環境変数は 2 つとも消え、0 になる。</strong>サーバー側の 2 つは役目が違うので触らない。</p>
+
+<h2>6. 一覧を 2 か所で保つ方法</h2>
+
+<p>オプション名の一覧は 2 か所にある。<strong>放っておくとずれる</strong>（実際に <code>usage()</code> の <code>--retry-count</code> と <code>USAGE</code> の <code>--access-token</code> が抜けていた）。</p>
+
+<div class="tablewrap">
+<table>
+<thead>
+	<tr><th class="nowrap">案</th><th>内容</th><th>難点</th></tr>
+</thead>
+<tbody>
+	<tr>
+		<td class="nowrap"><strong>A（採る）</strong></td>
+		<td>別名の表を 1 つ持ち、<code>usage()</code> はそこから組み立てる</td>
+		<td><code>USAGE</code> の HTML は手で揃えたままになる</td>
+	</tr>
+	<tr>
+		<td class="nowrap">B</td>
+		<td><code>USAGE</code> の表も生成する</td>
+		<td>HTML を機械が書く仕組みが増える。<strong>他が手書きなのに 1 か所だけ生成になる</strong></td>
+	</tr>
+	<tr>
+		<td class="nowrap">C</td>
+		<td>両方とも手で揃える</td>
+		<td>いまと同じ。<strong>また抜ける</strong></td>
+	</tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>案 A に決めた。</strong>短い形を入れるために別名の表はどうせ持つことになる。その表から <code>usage()</code> を組み立てれば、実物とヘルプが食い違うことはなくなる。<code>USAGE</code> は他プロジェクト向けの説明文なので、表だけを機械が書く形にはしない。</p>
+
+<div class="callout callout-tip">
+<p><strong>テストで守れる。</strong>「<code>usage()</code> に出る名前が別名の表と一致する」というテストを 1 件書けば、増やしたときに書き忘れても落ちる。</p>
+</div>
+</section>
+
+<!-- ================= 04 ================= -->
+<section class="ch04" id="ch04">
+<h1>新しいオプション</h1>
+
+<div class="tablewrap">
+<table>
+<thead>
+	<tr><th class="nowrap">いま</th><th class="nowrap">あと</th><th>備考</th></tr>
+</thead>
+<tbody>
+	<tr><td class="nowrap"><code>$env:AICHAT_ID</code></td><td class="nowrap"><code>--connector-id</code> <code>-c</code></td><td>必須</td></tr>
+	<tr><td class="nowrap"><code>$env:AICHAT_URL</code></td><td class="nowrap"><code>--url</code> <code>-u</code></td><td>接続先をそのまま</td></tr>
+	<tr><td class="nowrap">—</td><td class="nowrap"><code>--port</code> <code>-p</code></td><td><code>localhost</code> のポートだけ。<code>--url</code> とは併用できない</td></tr>
+	<tr><td class="nowrap"><code>--access-token</code></td><td class="nowrap"><code>--access-token</code> <code>-a</code></td><td>短い形を足すだけ</td></tr>
+	<tr><td class="nowrap"><code>--room</code></td><td class="nowrap"><code>--room</code> <code>-r</code></td><td>同上</td></tr>
+	<tr><td class="nowrap"><code>--timeout</code></td><td class="nowrap"><strong>消える</strong></td><td>内部で 240 秒に固定</td></tr>
+	<tr><td class="nowrap"><code>--retry-count</code></td><td class="nowrap"><strong>消える</strong></td><td>回数は内部で計算</td></tr>
+	<tr><td class="nowrap">—</td><td class="nowrap"><code>--wait-hour</code></td><td>既定 8。<code>0</code> で無限</td></tr>
+	<tr><td class="nowrap">—</td><td class="nowrap"><code>--wait-min</code></td><td>分で指定する</td></tr>
+	<tr><td class="nowrap">—</td><td class="nowrap"><code>--wait-sec</code></td><td>テスト・確認用（案 A を採るなら）</td></tr>
+	<tr><td class="nowrap"><code>--role</code> <code>--to</code> <code>--out</code> <code>-n</code></td><td class="nowrap"><strong>変えない</strong></td><td>短い形も付けない</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>1 行がどうなるか</h2>
+
+<p>テスト用サーバーへ繋いで 8 時間待つ場合。</p>
+
+<pre><code class="language-text">いま（PowerShell 専用・3 行）
+  $env:AICHAT_ID = 'ai-chat-lite'
+  $env:AICHAT_URL = 'http://localhost:8765'
+  node ...\chat.mjs wait --access-token 3f9c1e8a-... --retry-count 120
+
+あと（bash でも PowerShell でも同じ 1 行）
+  node ...\chat.mjs wait -c ai-chat-lite -p 8765 -a 3f9c1e8a-...</code></pre>
+
+<p><strong><code>--wait-hour</code> は書かない。</strong>既定が 8 時間になるため、ふだんの待受けでは省ける。</p>
+
+<p>本番で待受けを張る場合はさらに短くなる。</p>
+
+<pre><code class="language-text">node ...\chat.mjs wait -c ai-chat-lite</code></pre>
+</section>
+
+<!-- ================= 05 ================= -->
+<section class="ch05" id="ch05">
+<h1>段取り</h1>
+
+<h2>順序</h2>
+
+<div class="tablewrap">
+<table>
+<thead>
+	<tr><th class="num nowrap">#</th><th class="nowrap">やること</th><th>理由</th></tr>
+</thead>
+<tbody>
+	<tr>
+		<td class="num">1</td><td class="nowrap">別名の表で <code>option()</code> を解決する形に変える</td>
+		<td><strong>土台。</strong>これが無いと短い形が入らない。この段では動きを変えない</td>
+	</tr>
+	<tr>
+		<td class="num">2</td><td class="nowrap"><code>--url</code> / <code>--port</code> を足し <code>AICHAT_URL</code> を廃止</td>
+		<td>接続先が引数になる。テストが叩く経路がここで変わる</td>
+	</tr>
+	<tr>
+		<td class="num">3</td><td class="nowrap"><code>--connector-id</code> を足し <code>AICHAT_ID</code> を廃止</td>
+		<td>CLI 側の環境変数が 0 になる</td>
+	</tr>
+	<tr>
+		<td class="num">4</td><td class="nowrap"><code>--wait-*</code> を足し <code>--timeout</code> / <code>--retry-count</code> を廃止</td>
+		<td><strong>いちばん動きが変わる。</strong>既定値が 480 秒から 8 時間になる</td>
+	</tr>
+	<tr>
+		<td class="num">5</td><td class="nowrap"><code>usage()</code> を表から組み立て、一致を守るテストを書く</td>
+		<td>ここまでの追加をまとめて反映できる</td>
+	</tr>
+	<tr>
+		<td class="num">6</td><td class="nowrap">資料とルールを直し、他プロジェクトへ周知する</td>
+		<td>外に出る変更なので最後にまとめる</td>
+	</tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>1 段ずつ、その都度テストを全件通す。</strong>2〜4 はどれも既存の呼び出しを壊すため、まとめて変えると原因が分からなくなる。</p>
+
+<h2>触るファイル</h2>
+
+<div class="tablewrap">
+<table>
+<thead>
+	<tr><th class="nowrap">ファイル</th><th>何を</th></tr>
+</thead>
+<tbody>
+	<tr><td class="nowrap"><code>src/client/chat.mjs</code></td><td><strong>本体。</strong><code>option()</code> ・ <code>usage()</code> ・ <code>cmdWait()</code> ・ <code>BASE</code> ・ <code>USER_ID</code></td></tr>
+	<tr><td class="nowrap"><code>tests/client-wait.test.mjs</code></td><td>7 件。<code>--timeout</code> / <code>--retry-count</code> を使っている</td></tr>
+	<tr><td class="nowrap"><code>tests/server.test.mjs</code></td><td><code>AICHAT_ID</code> を渡している箇所</td></tr>
+	<tr><td class="nowrap"><code>tools/40_test/</code></td><td>テスト用サーバーの起動と後始末</td></tr>
+	<tr><td class="nowrap"><code>USAGE-FOR-PROJECTS.html</code></td><td>コマンド × オプションの表と例</td></tr>
+	<tr><td class="nowrap"><code>notes/90_rules/test-server.html</code></td><td><code>--access-token</code> の例</td></tr>
+	<tr><td class="nowrap"><code>notes/10_plan/p260829-01-設計.html</code></td><td>「無ければ cwd のフォルダ名」を実装に合わせる</td></tr>
+	<tr><td class="nowrap"><code>~/.claude/CLAUDE.md</code></td><td>待受けの例（<strong>ユーザーの指示を待って直す</strong>）</td></tr>
+	<tr><td class="nowrap">PlayWright 側</td><td><code>ACCESS_TOKEN_ARGS</code> と CLI を叩く箇所</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>確かめること</h2>
+
+<ul>
+	<li><code>--wait-min</code> と <code>--wait-hour</code> を<strong>同時に指定するとエラーになる</strong></li>
+	<li><code>--url</code> と <code>--port</code> を<strong>同時に指定するとエラーになる</strong></li>
+	<li><code>0</code> を渡すと<strong>無限に待つ</strong>（回数で止まらない）</li>
+	<li>何も指定しないと<strong>8 時間</strong>になる</li>
+	<li>ログが<strong>開始 1 行と終了 1 行だけ</strong>になる</li>
+	<li><code>--connector-id</code> を省くと<strong>エラーで止まる</strong></li>
+	<li>短い形と長い形が<strong>同じ結果になる</strong></li>
+	<li><code>usage()</code> に出る名前が<strong>別名の表と一致する</strong></li>
+</ul>
+
+<h2><code>connector</code> への改名との関係</h2>
+
+<p><a href="p260831-02-connectorへの改名.html">connector への改名</a>は、DB の列名・API のキー・内部の変数名を <code>user_id</code> から <code>connector_id</code> へ変える計画である。<strong>この計画とは切り離して進められる。</strong></p>
+
+<div class="callout callout-important">
+<p><strong>CLI の名前だけを先に変えてよい。</strong><code>--connector-id</code> で受けた値を内部の <code>USER_ID</code> に渡すだけなので、DB と API はそのまま動く。<strong>先に外から見える名前を正しくしておけば、後の改名で他プロジェクトの手順を二度変えずに済む。</strong></p>
+</div>
+
+<p>ただし <code>who</code> → <code>connectors</code> のコマンド改名は<strong>あちらの計画に残す</strong>。API のパスと揃えて変える方が筋が通るためである。</p>
+</section>
+
+</div>
+
+<footer>
+	<div class="inner">
+		<a class="doclink" href="../../README.html">README へ戻る</a>
+	</div>
+</footer>
+
+</body>
+</html>
