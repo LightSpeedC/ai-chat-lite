@@ -4,15 +4,17 @@ import { rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
+import { prepareTestDb } from './helpers/prepare-db.mjs';
+
 const here = dirname(fileURLToPath(import.meta.url));
 const TEST_DATA = join(here, '..', 'tmp', '_data', 'unit-server');
 
-process.env.AICHAT_DATA = TEST_DATA;
+// 版を当ててから store を読み込む（store.mjs は形を作らない）
 // admin/exit を叩いてもテストのプロセスを落とさない
 process.env.AICHAT_NO_EXIT = '1';
 // 離脱を積むまでの猶予。既定の 5 秒だとテストが待たされる
 process.env.AICHAT_LEAVE_GRACE_MS = '150';
-rmSync(TEST_DATA, { recursive: true, force: true });
+await prepareTestDb(TEST_DATA);
 
 const { startServers, stopServers, sweepOffline } = await import('../src/server/server.mjs');
 const hub = await import('../src/server/hub.mjs');

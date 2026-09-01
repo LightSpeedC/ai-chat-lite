@@ -4,6 +4,8 @@ import { rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
+import { prepareTestDb } from './helpers/prepare-db.mjs';
+
 /**
  * store.mjs は読み込んだ時点で DB を開くため、その前にテスト用の DB を指定し、
  * 前回の実行結果を消しておく。何度実行しても同じ結果になるようにするため。
@@ -13,8 +15,8 @@ import { dirname, join } from 'node:path';
 const here = dirname(fileURLToPath(import.meta.url));
 const TEST_DATA = join(here, '..', 'tmp', '_data', 'unit-store');
 
-process.env.AICHAT_DATA = TEST_DATA;
-rmSync(TEST_DATA, { recursive: true, force: true });
+// 版を当ててから store を読み込む（store.mjs は形を作らない）
+await prepareTestDb(TEST_DATA);
 
 const store = await import('../src/server/store.mjs');
 

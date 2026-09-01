@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+
+import { prepareTestDb } from './helpers/prepare-db.mjs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
@@ -11,9 +13,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 const TEST_DATA = join(here, '..', 'tmp', '_data', 'unit-client-wait');
 const CLIENT = join(here, '..', 'src', 'client', 'chat.mjs');
 
-process.env.AICHAT_DATA = TEST_DATA;
+// 版を当ててから store を読み込む（store.mjs は形を作らない）
 process.env.AICHAT_NO_EXIT = '1';
-rmSync(TEST_DATA, { recursive: true, force: true });
+await prepareTestDb(TEST_DATA);
 
 const { startServers, stopServers } = await import('../src/server/server.mjs');
 const { TEST_ACCESS_TOKEN } = await import('../src/server/config.mjs');

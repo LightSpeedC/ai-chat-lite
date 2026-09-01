@@ -4,11 +4,13 @@ import { rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
+import { prepareTestDb } from './helpers/prepare-db.mjs';
+
 const here = dirname(fileURLToPath(import.meta.url));
 const TEST_DATA = join(here, '..', 'tmp', '_data', 'unit-presence');
 
-process.env.AICHAT_DATA = TEST_DATA;
-rmSync(TEST_DATA, { recursive: true, force: true });
+// 版を当ててから store を読み込む（store.mjs は形を作らない）
+await prepareTestDb(TEST_DATA);
 
 const store = await import('../src/server/store.mjs');
 const presence = await import('../src/server/presence.mjs');

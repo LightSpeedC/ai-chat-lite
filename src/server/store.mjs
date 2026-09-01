@@ -19,106 +19,50 @@ if (journalMode.journal_mode !== 'wal') {
 }
 
 /*
+ * 形は作らない。版の SQL（src/scripts/20_migrate/）だけが形の出どころである。
+ *
+ * かつてはここに CREATE TABLE IF NOT EXISTS を並べていたが、2 つの困りごとが
+ * あったのでやめた。
+ *
+ *   1. 定義が 2 か所になる。ここと版の SQL が食い違っても静かに動き、
+ *      「空の DB から起動したときだけ形が違う」ことになる
+ *   2. 読み込むだけで本番の DB にテーブルが作られる。AICHAT_DATA を立てずに
+ *      import すると、版が当たっていない DB に版 3 の形だけが先にできて、
+ *      次の起動で「already exists」になり、サーバーが起動しなくなった
+ *
+ * 版を当てるのは main.mjs の migrate()。この store.mjs が読まれるより前に走る。
+ * ここでは「揃っているか」を確かめるだけにする。
+ */
+const REQUIRED_TABLES = ['messages', 'cursors', 'connectors', 'archives'];
+
+const found = new Set(
+	db
+		.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('messages','cursors','connectors','archives','users')")
+		.all()
+		.map((r) => r.name)
+);
+
+/*
  * 古い名前のままの DB を見つけたら、そこで止める。
  *
- * CREATE TABLE IF NOT EXISTS は既にあるテーブルを作り替えない。改名の前の DB を
- * そのまま開くと、テーブルはあるのに列が無い状態で動き出し、最初の読み書きで
- * 「no such column」になる。何が起きたか分かりにくいので、開いた時点で止める。
- *
- * 移すには tools\80_ops\migrate-connector.ps1 を使う。
+ * 改名の前の DB をそのまま開くと、テーブルはあるのに列が無い状態で動き出し、
+ * 最初の読み書きで「no such column」になる。何が起きたか分かりにくい。
  */
-const oldTable = db
-	.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'users'")
-	.get();
-if (oldTable) {
+if (found.has('users')) {
 	throw new Error(
 		'この DB は改名前の形です（users テーブルがあります）。' +
-			'tools\\80_ops\\migrate-connector.ps1 を実行して connector_id へ移してください。'
+			'サーバーを起動し直すと版が当たります（src/server/migrate.mjs）。'
 	);
 }
 
-/*
- * archived_seq は「片付けた操作の番号」を指す。NULL なら生きている。
- *
- * 消すのではなく archive する形にしてある。1 回の操作を 1 件として記録し、
- * まとめて戻せるようにするため。操作を記録する archives テーブルと、
- * 実際に片付ける処理はまだ作っていない（notes/10_plan/p260830-02-アーカイブ機能.html）。
- *
- * 列だけ先に置くのは、後から足すと messages を作り直すことになるため。
- * SQLite の ALTER TABLE は列の追加と改名しかできず、CHECK の変更もできない。
- */
-db.exec(`
-CREATE TABLE IF NOT EXISTS messages (
-  msg_seq      INTEGER PRIMARY KEY AUTOINCREMENT,
-  room_id      TEXT    NOT NULL DEFAULT 'public'
-                 CHECK (length(room_id) BETWEEN 1 AND 64),
-  sent_at      TEXT    NOT NULL
-                 CHECK (length(sent_at) = 23),
-  from_connector_id TEXT    NOT NULL
-                 CHECK (length(from_connector_id) BETWEEN 1 AND 64),
-  msg_kind     TEXT    NOT NULL
-                 CHECK (msg_kind IN ('say','join','leave','archive','notice')),
-  to_connector_id   TEXT
-                 CHECK (to_connector_id IS NULL
-                        OR length(to_connector_id) BETWEEN 1 AND 64),
-  msg_body     TEXT    NOT NULL
-                 CHECK (length(msg_body) BETWEEN 1 AND 32000),
-  archived_seq INTEGER
-);
-
-CREATE INDEX IF NOT EXISTS messages_ix_room_id_msg_seq ON messages(room_id, msg_seq);
-
--- どこまで読んだか。参加者とルームの組ごとに 1 行。
--- クライアント側のファイルに置くと、実行した場所に縛られて位置を見失う。
--- サーバーが覚えておけば、どこから繋いでも続きから受け取れる。
-CREATE TABLE IF NOT EXISTS cursors (
-  connector_id      TEXT    NOT NULL
-                 CHECK (length(connector_id) BETWEEN 1 AND 64),
-  room_id      TEXT    NOT NULL
-                 CHECK (length(room_id) BETWEEN 1 AND 64),
-  msg_seq      INTEGER NOT NULL
-                 CHECK (msg_seq >= 0),
-  updated_at   TEXT    NOT NULL
-                 CHECK (length(updated_at) = 23),
-  archived_seq INTEGER,
-  PRIMARY KEY (connector_id, room_id)
-);
-
-CREATE TABLE IF NOT EXISTS connectors (
-  connector_id                 TEXT    PRIMARY KEY
-                            CHECK (length(connector_id) BETWEEN 1 AND 64),
-  connector_role               TEXT    NOT NULL
-                            CHECK (connector_role IN ('ai','human')),
-  first_joined_at         TEXT    NOT NULL
-                            CHECK (length(first_joined_at) = 23),
-  last_active_at          TEXT    NOT NULL
-                            CHECK (length(last_active_at) = 23),
-  active_connection_count INTEGER NOT NULL DEFAULT 0
-                            CHECK (active_connection_count >= 0),
-  archived_seq            INTEGER
-);
-
--- 1 回の片付けを 1 行として記録する。片付けたものは、その行の番号を指す。
--- archive_kind と archive_id は、description が書き換えられても対象が追える
--- ようにするための列。archive_id は 3 種を 1 列で持つため TEXT にしている。
-CREATE TABLE IF NOT EXISTS archives (
-  archived_seq          INTEGER PRIMARY KEY AUTOINCREMENT,
-  archived_at           TEXT    NOT NULL
-                          CHECK (length(archived_at) = 23),
-  archived_connector_id TEXT    NOT NULL
-                          CHECK (length(archived_connector_id) BETWEEN 1 AND 64),
-  archive_kind          TEXT    NOT NULL
-                          CHECK (archive_kind IN ('message', 'connector', 'room')),
-  archive_id            TEXT    NOT NULL
-                          CHECK (length(archive_id) BETWEEN 1 AND 64),
-  description           TEXT    NOT NULL
-                          CHECK (length(description) BETWEEN 1 AND 200)
-);
-
-CREATE INDEX IF NOT EXISTS messages_ix_archived_seq ON messages(archived_seq);
-CREATE INDEX IF NOT EXISTS cursors_ix_archived_seq ON cursors(archived_seq);
-CREATE INDEX IF NOT EXISTS connectors_ix_archived_seq ON connectors(archived_seq);
-`);
+const missing = REQUIRED_TABLES.filter((t) => !found.has(t));
+if (missing.length > 0) {
+	throw new Error(
+		`DB の形が揃っていません（足りないテーブル: ${missing.join(' ')}）。` +
+			'版を当ててから開いてください。サーバーは main.mjs が起動時に当てます。' +
+			'テストから使うときは store.mjs を読み込む前に migrate() を呼んでください。'
+	);
+}
 
 // 接続数は起動した瞬間に実態と合わなくなるため 0 に戻す。
 // 履歴と最終在席時刻は残す。

@@ -200,9 +200,9 @@ describe('控え', () => {
 describe('実際に置いてある版', () => {
 	test('空の DB に全部当てると、いまの形になる', () => {
 		/*
-		 * store.mjs の CREATE TABLE IF NOT EXISTS と、版の SQL で定義が 2 か所に
-		 * なっている。食い違うと、空の DB から起動したときだけ形が違うことになる。
-		 * ここで一致を見ておく。
+		 * 版の SQL だけが形の出どころである。store.mjs は形を作らず、
+		 * 揃っているかを確かめるだけ。ここが通らなければ、空の DB から
+		 * 起動したときに store.mjs が「形が揃っていません」で止まる。
 		 */
 		const dbPath = newDbPath();
 		const result = migrate({ dbPath, dir: REAL_DIR });
