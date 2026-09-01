@@ -855,10 +855,105 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-todo">未</span>
 		データ
-		<span class="count">4 件 / 未 2 / 着手 1 / 済 1</span>
+		<span class="count">5 件 / 未 2 / 着手 1 / 済 2</span>
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue done" id="i260902-01" open>
+			<summary>
+				<span class="badge b-done">☑</span>
+				<span class="no">i260902-01</span>
+				<code>store.mjs</code> を読み込むだけで本番の DB を掴んでしまう
+			</summary>
+			<div class="issuebody">
+				<p><strong><code>store.mjs</code> は読み込んだ瞬間に DB を開き、<code>CREATE TABLE IF NOT EXISTS</code> を実行する。</strong>置き場は <code>AICHAT_DATA</code> が無ければ本番の <code>_data</code> になるため、<strong>環境変数を立て忘れると必ず本番を掴む</strong>。</p>
+
+				<div class="callout callout-caution">
+					<p><strong>実際に起きた。</strong>版 3 を当てる前に <code>node -e "import('./src/server/server.mjs')"</code> で読み込めるかを確かめたところ、<strong>本番の DB に <code>archives</code> テーブルと索引 3 つが作られた</strong>。</p>
+					<p><code>versions</code> には記録が残らないため、<strong>次の起動で版 3 が「already exists」で止まり、サーバーが起動しない状態</strong>になっていた。気づいたのは版を上げる直前で、気づかなければ再起動で落ちていた。</p>
+				</div>
+
+				<h3>なぜ気づきにくいか</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">性質</th><th>中身</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">黙って成功する</td>
+						<td><code>IF NOT EXISTS</code> なので、<strong>すでにあれば何も起きず、無ければ作られる</strong>。どちらでもエラーにならない</td>
+					</tr>
+					<tr>
+						<td class="nowrap">読み込むだけで走る</td>
+						<td>関数を呼ばなくても、<code>import</code> した時点で実行される。<strong>構文の確認のつもりでも走る</strong></td>
+					</tr>
+					<tr>
+						<td class="nowrap">既定が本番</td>
+						<td>忘れたときに向かう先が本番になっている。<strong>安全側に倒れていない</strong></td>
+					</tr>
+					<tr>
+						<td class="nowrap">接続数も書き換わる</td>
+						<td>読み込み時に <code>UPDATE connectors SET active_connection_count = 0</code> も走る</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<h3>考えられる直し方</h3>
+
+				<p>まだ決めていない。<strong>どれも一長一短がある</strong>ので、決めてから着手する。</p>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">案</th><th>中身</th><th>気になる点</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">A: 開くのを遅らせる</td>
+						<td>読み込みでは開かず、最初に使うときに開く</td>
+						<td>すべての関数が「開いているか」を気にすることになる</td>
+					</tr>
+					<tr>
+						<td class="nowrap">B: 本番には合図を要る形にする</td>
+						<td>本番の置き場を開くときだけ <code>AICHAT_PRODUCTION=1</code> のような明示を求める</td>
+						<td>サービスの起動設定にも足すことになる。<strong>忘れるとサーバーが起動しない</strong></td>
+					</tr>
+					<tr>
+						<td class="nowrap">C: 形を作るのをやめる</td>
+						<td><code>CREATE TABLE IF NOT EXISTS</code> を捨て、<strong>版の SQL だけを形の出どころにする</strong></td>
+						<td>定義が 1 か所になる利点は大きいが、空の DB から起動する経路が版に依存する</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<h3>C で直した</h3>
+
+				<p><code>store.mjs</code> から <code>CREATE TABLE IF NOT EXISTS</code> を外し、<strong>版の SQL だけを形の出どころにした</strong>。読み込んだときは <code>REQUIRED_TABLES</code> が揃っているかを確かめ、足りなければ何をすべきかを添えて止める。</p>
+
+				<pre><code class="language-text">DB の形が揃っていません（足りないテーブル: messages cursors connectors archives）。
+版を当ててから開いてください。サーバーは main.mjs が起動時に当てます。
+テストから使うときは store.mjs を読み込む前に migrate() を呼んでください。</code></pre>
+
+				<p>テストは <code>tests/helpers/prepare-db.mjs</code> の <code>prepareTestDb()</code> を先に呼ぶ。置き場を作り直して版を当てるところまでを 1 つにまとめてある。</p>
+
+				<div class="callout callout-tip">
+					<p><strong>食い違いも同時に消えた。</strong>定義が 1 か所になったので、「空の DB から起動したときだけ形が違う」ことが起こり得なくなった。</p>
+				</div>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> どの案で直すかを決める → <strong>C</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> 直す（<code>store.mjs</code>、テスト 5 本、<code>prepare-db.mjs</code> を新設）</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>読み込んだだけでは本番の DB が作られない</strong>ことを確かめた（置き場を指定せず読み込むと止まる）</li>
+				</ul>
+
+				<p>手順の側にも書いた。<a class="doclink" href="../90_rules/db-version.html">DB の版を上げる手引き</a>を見ること。</p>
+			</div>
+		</details>
 
 		<details class="issue done" id="i260901-04" open>
 			<summary>

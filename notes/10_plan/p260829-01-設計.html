@@ -406,7 +406,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 設計</h1>
 		<p class="lead">ローカルPC内で AI セッションと人間が同席する簡易チャットの設計</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-01</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-02</p>
 	</div>
 </div>
 
@@ -1977,7 +1977,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 		<tbody>
 			<tr><td class="num">1</td><td><code>src/scripts/20_migrate/ver_000003/</code> を作る。<strong>番号は連続させる</strong>（飛んでいると起動が止まる）</td></tr>
 			<tr><td class="num">2</td><td>その下に <code>001-なにをするか.sql</code> を置く。<strong>1 つの版に複数置ける</strong>（名前順に当たる）</td></tr>
-			<tr><td class="num">3</td><td><code>store.mjs</code> の <code>CREATE TABLE IF NOT EXISTS</code> も新しい形に合わせる</td></tr>
+			<tr><td class="num">3</td><td>テーブルを増やしたときは <code>store.mjs</code> の <code>REQUIRED_TABLES</code> に足す。<strong>形そのものは書かない</strong></td></tr>
 			<tr><td class="num">4</td><td>テストを流す。<strong>空の DB から全部当てて最新の形になるか</strong>を <code>migrate.test.mjs</code> が見る</td></tr>
 			<tr><td class="num">5</td><td>サーバーを起動し直す。<strong>起動時に自動で当たる</strong></td></tr>
 		</tbody>
@@ -2025,9 +2025,9 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 	</table>
 	</div>
 
-	<div class="callout">
-		<p><strong>定義が 2 か所にある。</strong><code>store.mjs</code> の <code>CREATE TABLE IF NOT EXISTS</code> と、版の SQL である。いずれ SQL 側へ一本化するのが筋だが、枠組みの新設と改名を同時に通したため今回は残した。</p>
-		<p>食い違いを防ぐため、<strong>空の DB に版を全部当てた形が期待どおりかをテストで見ている</strong>。</p>
+	<div class="callout callout-important">
+		<p><strong>定義は版の SQL だけにある。</strong><code>store.mjs</code> は形を作らず、開いたときに<strong>揃っているかを確かめて、足りなければ止める</strong>。</p>
+		<p>はじめは <code>store.mjs</code> の <code>CREATE TABLE IF NOT EXISTS</code> を残していたが、<strong>2 つの困りごとが出たのでやめた</strong>。定義が 2 か所にあると食い違っても静かに動くこと、そして<strong><code>AICHAT_DATA</code> を立てずに読み込むと本番の DB にテーブルが作られること</strong>である（<a href="../40_issues/issues.html#i260902-01">i260902-01</a>）。後者は実際に起き、版 3 を当てられない状態になった。</p>
 	</div>
 
 	<h3>版の SQL に古い名前が残るのは正しい</h3>

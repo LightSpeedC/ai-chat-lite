@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DB の版を上げる手引き</title>
+<style>
+/* 共通のスタイル。docs\css\style.css と同じ内容を持たせている */
+@charset "UTF-8";
+
+/* ===================================================================
+   ai-chat-lite 共通スタイル
+   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   =================================================================== */
+
+:root {
+	/* 章に依存しない共通色 */
+	--navy1: #12224d;
+	--navy2: #2f5fbf;
+	--ink: #1c2330;
+	--ink-soft: #4a5568;
+	--line: #d9dfe8;
+	--code-bg: #f4f6fa;
+	--link: #1a4fa0;
+
+	/* 章クラスの外に置いた要素が色を失わないための既定値 */
+	--accent: #12224d;
+	--accent2: #2f5fbf;
+	--soft: #f2f5fb;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: #fdfdfe;
+	color: var(--ink, #1c2330);
+	font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+	font-size: 15.5px;
+	line-height: 1.85;
+}
+
+a {
+	color: var(--link, #1a4fa0);
+}
+
+/* ---------- タイトルバー ---------- */
+
+.titlebar {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 34px 30px 30px;
+}
+
+.titlebar .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+}
+
+.titlebar h1 {
+	font-size: 1.85em;
+	margin: 0 0 8px;
+	color: #fff;
+}
+
+.titlebar .lead {
+	margin: 0;
+	color: #d7e2f7;
+	font-size: 0.95em;
+}
+
+.titlebar .date {
+	margin: 10px 0 0;
+	color: #b9caea;
+	font-size: 0.88em;
+}
+
+.titlebar a {
+	color: #cfe0ff;
+}
+
+.titlebar code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+/* ---------- 本文の器 ---------- */
+
+.wrap {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding: 0 30px;
+}
+
+section {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 10px;
+	padding: 4px 26px 26px;
+	margin: 34px 0;
+}
+
+/* ---------- 見出し ---------- */
+
+section h1 {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-size: 1.4em;
+	padding: 14px 20px;
+	margin: 26px 0 20px;
+	border-radius: 8px;
+	box-shadow: 0 3px 10px rgba(20, 34, 70, 0.22);
+}
+
+section h1 code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+h2 {
+	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
+	color: var(--accent, #12224d);
+	font-size: 1.16em;
+	padding: 6px 12px;
+	margin: 30px 0 12px;
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 6px 6px 0;
+}
+
+h3 {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	font-size: 1.02em;
+	display: inline-block;
+	padding-bottom: 3px;
+	margin: 20px 0 8px;
+	border-bottom: 2px dotted var(--accent2, #2f5fbf);
+}
+
+/* ---------- 表 ---------- */
+
+.tablewrap {
+	overflow-x: auto;
+	margin: 14px 0;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 5px rgba(20, 34, 70, 0.10);
+}
+
+th {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	text-align: left;
+	padding: 9px 12px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+th code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+td {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	padding: 9px 12px;
+	border-top: 1px solid var(--line, #d9dfe8);
+	vertical-align: top;
+}
+
+tr:nth-child(even) td {
+	background: #fafbfe;
+	color: var(--ink, #1c2330);
+}
+
+td.num,
+th.num {
+	text-align: right;
+}
+
+td.nowrap,
+th.nowrap {
+	white-space: nowrap;
+}
+
+/* ---------- コード ---------- */
+
+code {
+	background: var(--code-bg, #f4f6fa);
+	color: #17335f;
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 4px;
+	padding: 1px 5px;
+	font-family: "Consolas", "Cascadia Mono", monospace;
+	font-size: 0.92em;
+}
+
+pre {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 5px solid var(--accent2, #2f5fbf);
+	border-radius: 0 8px 8px 0;
+	padding: 13px 16px;
+	overflow-x: auto;
+	line-height: 1.65;
+}
+
+pre code {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	border: none;
+	padding: 0;
+	font-size: 0.92em;
+}
+
+/* ---------- バッジ ---------- */
+
+.badge {
+	display: inline-block;
+	padding: 1px 9px;
+	margin-right: 6px;
+	border-radius: 11px;
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+	font-size: 0.84em;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.badge.b-ok {
+	background: linear-gradient(100deg, #1d7a3c, #45b56c);
+	color: #fff;
+}
+
+.badge.b-ng {
+	background: linear-gradient(100deg, #a51f22, #e05a5c);
+	color: #fff;
+}
+
+.badge.b-warn {
+	background: linear-gradient(100deg, #b8620a, #f0a548);
+	color: #fff;
+}
+
+.badge.b-none {
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+}
+
+/* ---------- callout ---------- */
+
+.callout {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 8px 8px 0;
+	padding: 12px 18px;
+	margin: 16px 0;
+}
+
+.callout strong {
+	color: var(--accent, #12224d);
+	background: transparent;
+}
+
+.callout p {
+	margin: 6px 0;
+}
+
+/* ---------- 目次 ---------- */
+
+.toc ol {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 0;
+	margin: 12px 0 4px;
+}
+
+.toc ul a {
+	color: var(--link, #1a4fa0);
+	background: transparent;
+}
+
+.toc ol li {
+	counter-increment: tocnum;
+	margin: 0;
+}
+
+.toc ol a {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: normal;
+	width: 310px;
+	max-width: 100%;
+	padding: 7px 13px;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+	line-height: 1.45;
+}
+
+.toc ol a::before {
+	content: counter(tocnum) ". ";
+	font-weight: 700;
+}
+
+/* ---------- 資料リンク・戻るリンク ---------- */
+
+.navlinks {
+	margin: 20px 0 0;
+}
+
+/*
+ * 幅は文字数で決まる（固定幅にしない）。
+ * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
+ * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
+ */
+a.doclink {
+	display: inline-block;
+	padding: 3px 12px;
+	margin: 0 8px 6px 0;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	font-size: 0.9em;
+	text-decoration: none;
+}
+
+/* ---------- SVG図 ---------- */
+
+.fig {
+	margin: 18px 0;
+	text-align: center;
+}
+
+.fig svg {
+	max-width: 100%;
+	height: auto;
+}
+
+.fig figcaption {
+	color: var(--ink-soft, #4a5568);
+	background: transparent;
+	font-size: 0.88em;
+	margin-top: 6px;
+}
+
+/* ---------- フッター ---------- */
+
+footer {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 18px 30px 0;
+	margin-top: 40px;
+}
+
+footer .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding-bottom: 18px;
+}
+
+footer a {
+	color: #cfe0ff;
+}
+</style>
+<style>
+/* この資料だけのもの: 章のアクセント色（3章 / 色相 280→0 を 140 刻み）と目次の採番 */
+.ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
+.ch02 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); --soft: hsl(140, 28%, 95%); }
+.ch03 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
+.toc ol { counter-reset: tocnum; }
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>DB の版を上げる手引き</h1>
+		<p class="lead">版は起動時に自動で当たる。本番へ当てる前に、写しで予行する</p>
+		<p class="date">📅 作成: 2026-09-02 / 更新: 2026-09-02</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+<p>DB の形を変えるときは <code>src/scripts/20_migrate/ver_NNNNNN/*.sql</code> を足す。<strong>起動時に足りない分だけが当たる</strong>ので、当てる操作は要らない。仕組みは<a class="doclink" href="../10_plan/p260829-01-設計.html">設計</a>の版管理の章にある。</p>
+
+<p>この手引きは<strong>本番の DB に当てるときの手順</strong>だけを書く。</p>
+
+<section class="toc md-skip">
+	<h2>目次</h2>
+	<ol>
+		<li class="ch01"><a href="#ch01">当てる前に予行する</a></li>
+		<li class="ch02"><a href="#ch02">本番に当てる</a></li>
+		<li class="ch03"><a href="#ch03">つまずいたとき</a></li>
+	</ol>
+</section>
+
+<!-- ================= 01 ================= -->
+<section class="ch01" id="ch01">
+	<h1>当てる前に予行する</h1>
+
+	<div class="callout callout-caution">
+		<p><strong>本番の写しで予行してから当てる。</strong>いきなり本番へ当てない。</p>
+		<p>版の SQL は<strong>当て済みの環境では二度と実行されない</strong>。失敗すれば巻き戻るが、当たったあとで間違いに気づいても、その版を書き換えることはできない（指紋が食い違って起動が止まる）。新しい版で打ち消すしかなくなる。</p>
+	</div>
+
+	<h2>1. 控えを取る</h2>
+
+	<pre><code class="language-powershell">node tools/80_ops/snapshot.mjs ver3</code></pre>
+
+	<pre><code class="language-text">相手: .\_data\chat.db
+控え: .\_backup\20260902-070632-ver3.db
+取りました:
+  messages   : 77 件
+  connectors : 8 件
+  cursors    : 8 件
+  版         : 2</code></pre>
+
+	<p><strong><code>VACUUM INTO</code> で取るので 1 ファイルで完結する。</strong><code>-wal</code> に残っている分も本体に統合される。サーバーは止めなくてよい。</p>
+
+	<div class="callout callout-important">
+		<p><strong>取れたことと、中身が入っていることは別である。</strong><code>snapshot.mjs</code> は取ったあとに控えの側を数えて出す。<strong>件数が 0 なら本体だけを写している</strong>ので、そのまま進めない。</p>
+	</div>
+
+	<h2>2. 写しをテスト環境へ置く</h2>
+
+	<pre><code class="language-powershell">$dir = 'N:/2026/ai-chat-lite/tmp/_data/rehearsal'
+New-Item -ItemType Directory -Force $dir
+Copy-Item '_backup/20260902-070632-ver3.db' (Join-Path $dir 'chat.db')</code></pre>
+
+	<p><strong>控えをそのまま使う。</strong>本番の <code>chat.db</code> を直接コピーしない。<code>-wal</code> を置いてくることになり、写した先の中身が本番と違う。</p>
+
+	<h2>3. 予行する</h2>
+
+	<pre><code class="language-powershell">$env:AICHAT_DATA = 'N:/2026/ai-chat-lite/tmp/_data/rehearsal'
+$env:AICHAT_PORT = '8796'
+node src/server/main.mjs</code></pre>
+
+	<p>起動のログに版が上がったことが出る。</p>
+
+	<pre><code class="language-text">DB の版を上げます: 2 → 3
+版を上げる前の控えを取りました: .\tmp\_data\rehearsal\pre-ver-000002-20260902070715.db
+DB の版を 2 から 3 へ上げました
+通常の応答に切り替えました</code></pre>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">確かめること</th><th>やり方</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap">版が上がったか</td><td>起動ログ。<code>versions</code> テーブルにも記録される</td></tr>
+			<tr><td class="nowrap">中身が残っているか</td><td><strong>件数を上げる前と見比べる。</strong>発言・参加者・読んだ位置</td></tr>
+			<tr><td class="nowrap">既存の発言が読めるか</td><td><code>recent</code> で直近を出す</td></tr>
+			<tr><td class="nowrap">新しい機能が動くか</td><td>その版で足したものを実際に使ってみる</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>4. 全テストを流す</h2>
+
+	<pre><code class="language-powershell">node --test tests/</code></pre>
+
+	<p><strong>1 件でも落ちたら本番へ進まない。</strong>予行が通っても、テストが落ちるなら形が想定と違っている。</p>
+</section>
+
+<!-- ================= 02 ================= -->
+<section class="ch02" id="ch02">
+	<h1>本番に当てる</h1>
+
+	<p>版は起動時に当たるので、<strong>やることは「落として、また起動する」だけ</strong>である。ただし落としている間に手を入れる必要があるときは、印を置いて止める。</p>
+
+	<h2>そのまま起動し直すだけでよいとき</h2>
+
+	<pre><code class="language-powershell">node src/client/chat.mjs restart -c &lt;自分の ID&gt; -p 8787</code></pre>
+
+	<p>終了コード 1 で落ちるため、サービスが 10 秒後に起動し直す。<strong>その起動で版が当たる。</strong></p>
+
+	<h2>落としている間に手を入れたいとき</h2>
+
+	<p>印を置くと、サービスが起動し直しても <strong>DB を開かずに待つ</strong>。その間に作業できる。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="num nowrap">#</th><th>やること</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="num">1</td><td><code>_data\MAINTENANCE</code> を作る。<strong>中身に理由を書くと <code>/api/version</code> に出る</strong></td></tr>
+			<tr><td class="num">2</td><td><code>chat.mjs restart</code> で落とす</td></tr>
+			<tr><td class="num">3</td><td>DB が離されたことを確かめる（ファイルが開けるか）</td></tr>
+			<tr><td class="num">4</td><td>作業する</td></tr>
+			<tr><td class="num">5</td><td>印を消す。<strong>数秒で自分から起動し、版が当たる</strong></td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-tip">
+		<p><strong>止まっている間もポートは開いている。</strong><code>/api/version</code> は 200 で理由を返し、それ以外は 503 になる。待受け中のクライアントは 10 分粘って繋ぎ直すので、<strong>短い作業なら誰も気づかない</strong>。</p>
+		<p>再開すると <code>public</code> に「運用を再開しました。約 N 分止まっていました」と流れる。読んだ位置は保たれているので取りこぼしはない。</p>
+	</div>
+
+	<h2>当たったことを確かめる</h2>
+
+	<pre><code class="language-powershell">node src/client/chat.mjs recent -n 3 -p 8787</code></pre>
+
+	<p><strong>件数を上げる前と見比べる。</strong>発言が 1 件増えているのは、再開の案内が積まれたためである。</p>
+</section>
+
+<!-- ================= 03 ================= -->
+<section class="ch03" id="ch03">
+	<h1>つまずいたとき</h1>
+
+	<h2>当てるのに失敗した</h2>
+
+	<pre><code class="language-text">失敗: ver_000003 を当てられませんでした: table archives already exists</code></pre>
+
+	<p><strong>1 つの版は 1 つのトランザクションで当たる。</strong>途中で失敗すれば巻き戻り、版も上がらない。<strong>DB は壊れない。</strong></p>
+
+	<p>ただし <code>main.mjs</code> はここで例外を投げるため、<strong>サーバーが起動しない</strong>。サービスが再起動を繰り返す状態になるので、印を置いて止めてから原因を直す。</p>
+
+	<h2>形が揃っていないと言われる</h2>
+
+	<pre><code class="language-text">DB の形が揃っていません（足りないテーブル: messages cursors connectors archives）。
+版を当ててから開いてください。</code></pre>
+
+	<p><strong><code>store.mjs</code> は形を作らない。</strong>版の SQL だけが形の出どころで、<code>store.mjs</code> は開いたときに揃っているかを確かめるだけである。<strong>版を当てる前に読み込むと、ここで止まる。</strong></p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">どこから読んだか</th><th>やること</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap">サーバー（<code>main.mjs</code>）</td><td>起動時に <code>migrate()</code> が走るので、通常は出ない。<strong>出たら版の SQL を疑う</strong></td></tr>
+			<tr><td class="nowrap">テスト</td><td><code>tests/helpers/prepare-db.mjs</code> の <code>prepareTestDb()</code> を、<code>store.mjs</code> を読み込む前に呼ぶ</td></tr>
+			<tr><td class="nowrap">手元の確認</td><td><code>node -e "import(…)"</code> のような読み込みは<strong>止まるのが正しい</strong>。置き場を指定して版を当ててから読む</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-important">
+		<p><strong>かつては読み込むだけで DB ができていた。</strong><code>store.mjs</code> に <code>CREATE TABLE IF NOT EXISTS</code> があった頃、<code>AICHAT_DATA</code> を立てずに読み込むと本番の DB にテーブルが作られた。</p>
+		<p>実際に起き、版 3 で足すはずの <code>archives</code> が先にできてしまい、<strong>版 3 を当てると「already exists」で止まる</strong>状態になった（<a href="../40_issues/issues.html#i260902-01">i260902-01</a>）。いまは止まるので、同じことは起きない。</p>
+	</div>
+
+	<div class="callout callout-caution">
+		<p><strong>版の SQL を <code>IF NOT EXISTS</code> に書き換えて逃げない。</strong>指紋が変わるため、すでに当て済みの環境（テスト環境など）で「書き換えられています」と出て起動が止まる。</p>
+	</div>
+
+	<h2>当てたあとで間違いに気づいた</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">状況</th><th>やること</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">まだ本番へ当てていない</td>
+				<td><strong>その版を直してよい。</strong>当て済みのテスト環境は DB を作り直す</td>
+			</tr>
+			<tr>
+				<td class="nowrap">本番へ当てた</td>
+				<td><strong>新しい版で打ち消す。</strong>当てた版は書き換えない</td>
+			</tr>
+			<tr>
+				<td class="nowrap">中身が壊れた</td>
+				<td>控えから戻す。<a class="doclink" href="backup.html">バックアップの手引き</a>を見る</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>下り（元に戻す SQL）は持たない。<strong>戻すなら控えから戻す。</strong>SQLite では列の削除もできず、下りを正しく書き続けるのは重い。</p>
+</section>
+
+</div>
+
+<footer>
+	<div class="inner">
+		<a class="doclink" href="../../README.html">README へ戻る</a>
+	</div>
+</footer>
+
+</body>
+</html>
