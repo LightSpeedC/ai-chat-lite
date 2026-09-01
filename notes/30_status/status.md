@@ -63,7 +63,7 @@
 
 ### ブラウザ画面
 
-`N:\2026\PlayWright` の共有環境で、実際に動かして確かめる（サーバーが起動していること）。
+`N:/2026/PlayWright` の共有環境で、実際に動かして確かめる（サーバーが起動していること）。
 
 ```powershell
 $env:PW_PROJECT = 'ai-chat-lite'

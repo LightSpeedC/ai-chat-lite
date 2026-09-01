@@ -650,13 +650,13 @@ export const DB_PATH = join(DATA_DIR, 'chat.db');</code></pre>
 		<tbody>
 			<tr>
 				<td class="nowrap">手動（<code>N:</code> から）</td>
-				<td class="nowrap"><code>N:\2026\ai-chat-lite</code></td>
-				<td class="nowrap"><code>N:\2026\ai-chat-lite\_data\chat.db</code></td>
+				<td class="nowrap"><code>N:/2026/ai-chat-lite</code></td>
+				<td class="nowrap"><code>N:/2026/ai-chat-lite/_data/chat.db</code></td>
 			</tr>
 			<tr>
 				<td class="nowrap">別のカレントから</td>
 				<td class="nowrap"><code>C:\Windows\System32</code></td>
-				<td class="nowrap"><code>N:\2026\ai-chat-lite\_data\chat.db</code></td>
+				<td class="nowrap"><code>N:/2026/ai-chat-lite/_data/chat.db</code></td>
 			</tr>
 			<tr>
 				<td class="nowrap">実体パス経由<br>（サービスと同じ）</td>
@@ -1587,7 +1587,7 @@ LIMIT ?;</code></pre>
 
 	<h2>CLI クライアント</h2>
 
-	<p>AI と人間で同じものを使う。<code>node N:\2026\ai-chat-lite\src\client\chat.mjs &lt;command&gt;</code> の形で呼ぶ。</p>
+	<p>AI と人間で同じものを使う。<code>node N:/2026/ai-chat-lite/src/client/chat.mjs &lt;command&gt;</code> の形で呼ぶ。</p>
 
 	<div class="tablewrap">
 	<table>
@@ -1759,7 +1759,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 
 	<h2>フォルダ構成</h2>
 
-	<pre><code class="language-text">N:\2026\ai-chat-lite\
+	<pre><code class="language-text">N:/2026/ai-chat-lite/
   README.html                      … 概要・セットアップ・資料へのリンク
   USAGE-FOR-PROJECTS.html          … 他プロジェクトからの使い方（AI が読む）
   .gitignore
@@ -2025,7 +2025,7 @@ if (waited) announceResumed(info.since);</code></pre>
 
 	<pre><code class="language-text">2026-08-29 23:23:37.262 INFO  ai-chat-lite サーバーを起動しました
 2026-08-29 23:23:37.264 INFO  AICHAT_PORT = 8787                        (既定)
-2026-08-29 23:23:37.264 INFO  AICHAT_DATA = N:\2026\ai-chat-lite\_data  (既定)
+2026-08-29 23:23:37.264 INFO  AICHAT_DATA = N:/2026/ai-chat-lite/_data  (既定)
 2026-08-29 23:23:37.264 INFO  環境          = 本番                          (既定)
 2026-08-29 23:23:37.264 INFO  待ち受け: http://localhost:8787/  [::1, 127.0.0.1]</code></pre>
 
@@ -2329,7 +2329,7 @@ node-ai-chat-lite-winsw.exe start</code></pre>
 
 	<h2>ドキュメントの検証</h2>
 
-	<p>この資料は <code>N:\2026\PlayWright</code> の <code>contrast.spec.ts</code> でコントラスト比を実測し、1.5:1 未満が 0 件であることを確認する。</p>
+	<p>この資料は <code>N:/2026/PlayWright</code> の <code>contrast.spec.ts</code> でコントラスト比を実測し、1.5:1 未満が 0 件であることを確認する。</p>
 </section>
 
 </div>

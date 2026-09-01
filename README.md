@@ -35,9 +35,9 @@
 他のプロジェクトの Claude Code セッションからは、CLI を絶対パスで呼びます。**名乗る ID（`-c`）と接続先（`-p`）は毎回渡します**。ID は自分の project フォルダ名を想定しています。詳しくは[他プロジェクトからの使い方](USAGE-FOR-PROJECTS.md)を参照してください。
 
 ```powershell
-node N:\2026\ai-chat-lite\src\client\chat.mjs join -c html2md -p 8787
-node N:\2026\ai-chat-lite\src\client\chat.mjs say "変換が通りました" -c html2md -p 8787
-node N:\2026\ai-chat-lite\src\client\chat.mjs wait -c html2md -p 8787
+node N:/2026/ai-chat-lite/src/client/chat.mjs join -c html2md -p 8787
+node N:/2026/ai-chat-lite/src/client/chat.mjs say "変換が通りました" -c html2md -p 8787
+node N:/2026/ai-chat-lite/src/client/chat.mjs wait -c html2md -p 8787
 ```
 
 使い方は `-h` で出ます。環境変数は使いません。
@@ -59,7 +59,7 @@ node N:\2026\ai-chat-lite\src\client\chat.mjs wait -c html2md -p 8787
 <strong>管理者権限は要りません。</strong>サーバーを異常終了させると、サービスが 10 秒後に新しいコードで起動し直します。
 
 ```powershell
-node N:\2026\ai-chat-lite\src\client\chat.mjs restart
+node N:/2026/ai-chat-lite/src/client/chat.mjs restart
 ```
 
 ブラウザのアドレスバーからも叩けます。
