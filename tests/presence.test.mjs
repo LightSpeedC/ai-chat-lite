@@ -15,11 +15,11 @@ const presence = await import('../src/server/presence.mjs');
 const { STATUS } = presence;
 const { jstBefore, nowJst } = await import('../src/server/time.mjs');
 
-/** 判定だけを試すための、users の行を模した値 */
+/** 判定だけを試すための、connectors の行を模した値 */
 function row({ connections = 0, lastActiveAt = nowJst() }) {
 	return {
-		user_id: 'x',
-		user_role: 'ai',
+		connector_id: 'test-x',
+		connector_role: 'ai',
 		first_joined_at: lastActiveAt,
 		last_active_at: lastActiveAt,
 		active_connection_count: connections,
@@ -78,7 +78,7 @@ test('online と connected は status から導かれる', () => {
 		{ user: row({ lastActiveAt: jstBefore(120 * 1000) }), status: STATUS.OFFLINE, online: false, connected: false },
 	];
 	for (const c of cases) {
-		const d = presence.describeUser(c.user);
+		const d = presence.describeConnector(c.user);
 		assert.equal(d.status, c.status);
 		assert.equal(d.online, c.online, `${c.status} の online`);
 		assert.equal(d.connected, c.connected, `${c.status} の connected`);
@@ -86,25 +86,25 @@ test('online と connected は status から導かれる', () => {
 });
 
 test('接続中と一時切断を区別できる', () => {
-	store.joinUser('connected-user', 'ai');
-	store.addConnection('connected-user');
-	const p = presence.getPresence('connected-user');
+	store.joinConnector('test-connected-connector', 'ai');
+	store.addConnection('test-connected-connector');
+	const p = presence.getPresence('test-connected-connector');
 	assert.equal(p.status, STATUS.ONLINE);
 	assert.equal(p.active_connection_count, 1);
 
-	store.removeConnection('connected-user');
-	const after = presence.getPresence('connected-user');
+	store.removeConnection('test-connected-connector');
+	const after = presence.getPresence('test-connected-connector');
 	assert.equal(after.status, STATUS.GRACE, '切れた直後は grace');
 	assert.equal(after.online, true, 'grace もオフラインではない');
 	assert.equal(after.connected, false, 'ただし接続は保持していない');
 });
 
 test('一覧は online → grace → offline の順に並ぶ', () => {
-	store.joinUser('offline-user', 'ai');
-	store.setLastActiveAt('offline-user', jstBefore(300 * 1000));
+	store.joinConnector('test-offline-connector', 'ai');
+	store.setLastActiveAt('test-offline-connector', jstBefore(300 * 1000));
 
-	store.joinUser('online-user', 'human');
-	store.addConnection('online-user');
+	store.joinConnector('test-online-connector', 'human');
+	store.addConnection('test-online-connector');
 
 	// connected-user は前のテストで grace になっている
 	const order = presence.listPresence().map((u) => u.status);
@@ -135,17 +135,17 @@ test('countOnline は online と grace の合計', () => {
 });
 
 test('表示に必要な項目が揃っている', () => {
-	const p = presence.getPresence('online-user');
+	const p = presence.getPresence('test-online-connector');
 	assert.deepEqual(Object.keys(p).sort(), [
 		'active_connection_count',
 		'connected',
+		'connector_id',
+		'connector_role',
 		'first_joined_at',
 		'last_active_at',
 		'online',
 		'status',
 		'status_label',
-		'user_id',
-		'user_role',
 	]);
 	assert.equal(p.status_label, '接続中');
 });

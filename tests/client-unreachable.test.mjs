@@ -52,7 +52,7 @@ describe('繋ぎ直す回数の決め', () => {
 describe('繋がらないとき', () => {
 	test('粘らないコマンドは即座に終了コード 3 で終わる', async () => {
 		// 誰も待ち受けていないポートを使う
-		const { code, stderr } = await failing(['stop', '--port', '1', '--connector-id', 'user1']);
+		const { code, stderr } = await failing(['stop', '--port', '1', '--connector-id', 'test-connector1']);
 
 		assert.equal(code, EXIT_UNREACHABLE, '終了コードが 3 でない');
 		assert.match(stderr, /諦めました/);
@@ -61,7 +61,7 @@ describe('繋がらないとき', () => {
 
 	test('終了コードで「使い方の誤り」と区別できる', async () => {
 		// 2 は使い方の誤り、3 は向こうの都合。呼ぶ側がどちらか分かるようにしてある
-		const wrongUsage = await failing(['wait', '--wait-hour', '1', '--wait-min', '30', '--connector-id', 'user1', '--port', '1']);
+		const wrongUsage = await failing(['wait', '--wait-hour', '1', '--wait-min', '30', '--connector-id', 'test-connector1', '--port', '1']);
 
 		assert.equal(wrongUsage.code, 2);
 		assert.notEqual(wrongUsage.code, EXIT_UNREACHABLE);
@@ -86,7 +86,7 @@ describe('メンテナンス中に叩いたとき', () => {
 	});
 
 	test('503 は「繋がらない」と同じ扱いで、理由が出る', async () => {
-		const { code, stderr } = await failing(['stop', '--port', String(port), '--connector-id', 'user1']);
+		const { code, stderr } = await failing(['stop', '--port', String(port), '--connector-id', 'test-connector1']);
 
 		assert.equal(code, EXIT_UNREACHABLE);
 		assert.match(stderr, /メンテナンス中です/);
@@ -98,7 +98,7 @@ describe('メンテナンス中に叩いたとき', () => {
 		 * 向こうの都合ではなく、こちらの求め方の問題。粘っても直らない。
 		 * 本文が空の POST は 400 になる
 		 */
-		const { code } = await failing(['say', '', '--port', String(port), '--connector-id', 'user1']);
+		const { code } = await failing(['say', '', '--port', String(port), '--connector-id', 'test-connector1']);
 
 		assert.equal(code, 1);
 	});

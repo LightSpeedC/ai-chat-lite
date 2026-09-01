@@ -57,46 +57,46 @@ async function get(path) {
 }
 
 test('join すると現在位置と参加者一覧が返る', async () => {
-	const { status, json } = await post('/api/join', { user_id: 'html2md', user_role: 'ai' });
+	const { status, json } = await post('/api/join', { connector_id: 'test-connector1', connector_role: 'ai' });
 	assert.equal(status, 200);
-	assert.equal(json.user_id, 'html2md');
+	assert.equal(json.connector_id, 'test-connector1');
 	assert.equal(json.room_id, 'public');
 	assert.ok(json.msg_seq >= 1, '参加を知らせるメッセージが積まれている');
-	assert.equal(json.users.length, 1);
+	assert.equal(json.connectors.length, 1);
 	// join は登録するだけで接続は張らない（接続を張るのは poll と events）。
 	// このため直後は grace になる。オフラインではない
-	assert.equal(json.users[0].status, 'grace');
-	assert.equal(json.users[0].online, true);
-	assert.equal(json.users[0].connected, false);
+	assert.equal(json.connectors[0].status, 'grace');
+	assert.equal(json.connectors[0].online, true);
+	assert.equal(json.connectors[0].connected, false);
 });
 
 test('参加はログにも残る', async () => {
 	const { json } = await get('/api/history?limit=10');
 	const joined = json.messages.find((m) => m.msg_kind === 'join');
 	assert.ok(joined, 'join のメッセージが無い');
-	assert.equal(joined.msg_body, 'html2md が参加しました');
+	assert.equal(joined.msg_body, 'test-connector1 が参加しました');
 });
 
 test('say で投稿できる', async () => {
 	const { status, json } = await post('/api/say', {
-		from_user_id: 'html2md',
+		from_connector_id: 'test-connector1',
 		msg_body: '変換が通りました',
 	});
 	assert.equal(status, 200);
-	assert.equal(json.from_user_id, 'html2md');
+	assert.equal(json.from_connector_id, 'test-connector1');
 	assert.equal(json.msg_kind, 'say');
 	assert.equal(json.room_id, 'public');
-	assert.equal(json.to_user_id, null);
+	assert.equal(json.to_connector_id, null);
 	assert.match(json.sent_at, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/);
 });
 
 test('名指しできる', async () => {
 	const { json } = await post('/api/say', {
-		from_user_id: 'html2md',
-		to_user_id: 'human',
+		from_connector_id: 'test-connector1',
+		to_connector_id: 'test-human',
 		msg_body: '確認をお願いします',
 	});
-	assert.equal(json.to_user_id, 'human');
+	assert.equal(json.to_connector_id, 'test-human');
 });
 
 test('poll は新着があれば待たずに返る', async () => {
@@ -112,13 +112,13 @@ test('poll は新着が無ければ待ち、投稿があると起きる', async 
 	const since = latest.messages[0].msg_seq;
 
 	const started = Date.now();
-	const polling = get(`/api/poll?user_id=waiter&room_id=public&since=${since}&wait=10`);
+	const polling = get(`/api/poll?connector_id=test-waiter&room_id=public&since=${since}&wait=10`);
 
 	// 待ち始めたことを確かめてから投稿する
 	await new Promise((r) => setTimeout(r, 150));
 	assert.equal(hub.stats().waiters, 1, '待機に入っていない');
 
-	await post('/api/say', { from_user_id: 'html2md', msg_body: '起こします' });
+	await post('/api/say', { from_connector_id: 'test-connector1', msg_body: '起こします' });
 	const { json } = await polling;
 
 	assert.equal(json.messages.length, 1);
@@ -141,25 +141,26 @@ test('poll は時間切れでも空で返る（着信なしと区別できる）
 });
 
 test('待っている間はオンライン扱いになる', async () => {
-	const polling = get('/api/poll?user_id=waiter&room_id=public&since=99999&wait=2');
+	const polling = get('/api/poll?connector_id=test-waiter&room_id=public&since=99999&wait=2');
 	await new Promise((r) => setTimeout(r, 150));
 
-	const { json } = await get('/api/users');
-	const waiter = json.users.find((u) => u.user_id === 'waiter');
+	const { json } = await get('/api/connectors');
+	const waiter = json.connectors.find((u) => u.connector_id === 'test-waiter');
 	assert.equal(waiter.status, 'online');
 	assert.equal(waiter.connected, true);
 
 	await polling;
 
-	const { json: after } = await get('/api/users');
-	const gone = after.users.find((u) => u.user_id === 'waiter');
+	const { json: after } = await get('/api/connectors');
+	const gone = after.connectors.find((c) => c.connector_id === 'test-waiter');
 	assert.equal(gone.connected, false, '待機が終われば接続は無い');
 	assert.equal(gone.status, 'grace', 'ただし猶予の内なのでオフラインではない');
 });
 
 test('別のルームには届かない', async () => {
-	await post('/api/say', { room_id: 'other', from_user_id: 'html2md', msg_body: '別室' });
-	const { json } = await get('/api/history?room_id=other&limit=10');
+	// ルーム名の接頭辞は sandbox-（テストデータの規約）
+	await post('/api/say', { room_id: 'sandbox-other', from_connector_id: 'test-connector1', msg_body: '別室' });
+	const { json } = await get('/api/history?room_id=sandbox-other&limit=10');
 	assert.equal(json.messages.length, 1);
 	assert.equal(json.messages[0].msg_body, '別室');
 });
@@ -177,19 +178,19 @@ test('history は before で遡れる', async () => {
 });
 
 test('leave は猶予のあとログに残る', async () => {
-	const { status, json: res } = await post('/api/leave', { user_id: 'html2md' });
+	const { status, json: res } = await post('/api/leave', { connector_id: 'test-connector1' });
 	assert.equal(status, 200);
 	assert.equal(res.grace_ms, 150);
 
 	// 猶予の前は積まれていない
 	const before = await get('/api/history?limit=1');
-	assert.notEqual(before.json.messages[0]?.msg_body, 'html2md が離脱しました');
+	assert.notEqual(before.json.messages[0]?.msg_body, 'test-connector1 が離脱しました');
 
 	await new Promise((r) => setTimeout(r, 300));
 
 	const { json } = await get('/api/history?limit=1');
 	assert.equal(json.messages[0].msg_kind, 'leave');
-	assert.equal(json.messages[0].msg_body, 'html2md が離脱しました');
+	assert.equal(json.messages[0].msg_body, 'test-connector1 が離脱しました');
 });
 
 test('猶予のうちに戻ってきたら離脱を積まない', async () => {
@@ -198,30 +199,30 @@ test('猶予のうちに戻ってきたら離脱を積まない', async () => {
 	 * リロードでも起きるため、呼ばれた時点で積むと並んでしまう。
 	 * 実測でリロード 3 回につき 3 件積まれていた。
 	 */
-	const userId = 'reloader';
-	await post('/api/join', { user_id: userId, user_role: 'human' });
+	const connectorId = 'reloader';
+	await post('/api/join', { connector_id: connectorId, connector_role: 'human' });
 
 	const before = (await get('/api/history?limit=500')).json.messages.filter(
-		(m) => m.msg_kind === 'leave' && m.from_user_id === userId
+		(m) => m.msg_kind === 'leave' && m.from_connector_id === connectorId
 	).length;
 
-	await post('/api/leave', { user_id: userId });
+	await post('/api/leave', { connector_id: connectorId });
 	// すぐ繋ぎ直す。リロードでは 1 秒ほどで戻ってくる
-	store.addConnection(userId);
+	store.addConnection(connectorId);
 
 	await new Promise((r) => setTimeout(r, 300));
 
 	const after = (await get('/api/history?limit=500')).json.messages.filter(
-		(m) => m.msg_kind === 'leave' && m.from_user_id === userId
+		(m) => m.msg_kind === 'leave' && m.from_connector_id === connectorId
 	).length;
 	assert.equal(after, before, '戻ってきたのに離脱が積まれている');
 
-	store.removeConnection(userId);
+	store.removeConnection(connectorId);
 });
 
 test('SSE で受け取れる', async () => {
 	const controller = new AbortController();
-	const res = await fetch(`${base}/api/events?user_id=browser&room_id=public&since=99999`, {
+	const res = await fetch(`${base}/api/events?connector_id=browser&room_id=public&since=99999`, {
 		signal: controller.signal,
 		headers: AUTH,
 	});
@@ -246,31 +247,31 @@ test('SSE で受け取れる', async () => {
 	const presence = await readEvent('presence');
 	assert.ok(Array.isArray(presence));
 
-	await post('/api/say', { from_user_id: 'html2md', msg_body: 'SSE のテスト' });
+	await post('/api/say', { from_connector_id: 'test-connector1', msg_body: 'SSE のテスト' });
 	const message = await readEvent('message');
 	assert.equal(message.msg_body, 'SSE のテスト');
 
 	controller.abort();
 });
 
-test('user_id が無いと 400', async () => {
+test('connector_id が無いと 400', async () => {
 	const { status, json } = await post('/api/join', {});
 	assert.equal(status, 400);
-	assert.match(json.error, /user_id/);
+	assert.match(json.error, /connector_id/);
 });
 
 test('空の本文は 400', async () => {
-	const { status } = await post('/api/say', { from_user_id: 'x', msg_body: '' });
+	const { status } = await post('/api/say', { from_connector_id: 'test-x', msg_body: '' });
 	assert.equal(status, 400);
 });
 
 test('長すぎる本文は 400', async () => {
-	const { status } = await post('/api/say', { from_user_id: 'x', msg_body: 'a'.repeat(32001) });
+	const { status } = await post('/api/say', { from_connector_id: 'test-x', msg_body: 'a'.repeat(32001) });
 	assert.equal(status, 400);
 });
 
-test('不正な user_role は 400', async () => {
-	const { status } = await post('/api/join', { user_id: 'x', user_role: 'robot' });
+test('不正な connector_role は 400', async () => {
+	const { status } = await post('/api/join', { connector_id: 'test-x', connector_role: 'robot' });
 	assert.equal(status, 400);
 });
 
@@ -291,21 +292,21 @@ test('知らないパスは 404', async () => {
 test('exit は既定で終了コード 1（再起動される側）', async () => {
 	// 取り違えたときの被害が小さい方を既定にしている。
 	// 0 で止めてしまうと、動かし直すのに管理者権限が要る
-	const { status, json } = await post('/api/admin/exit', { user_id: 'tester' });
+	const { status, json } = await post('/api/admin/exit', { connector_id: 'test-tester' });
 	assert.equal(status, 200);
 	assert.equal(json.exit_code, 1);
 	assert.match(json.note, /起動し直します|このまま終了します/);
 });
 
 test('exit_code 0 は再起動されない', async () => {
-	const { json } = await post('/api/admin/exit', { user_id: 'tester', exit_code: 0 });
+	const { json } = await post('/api/admin/exit', { connector_id: 'test-tester', exit_code: 0 });
 	assert.equal(json.exit_code, 0);
 	assert.equal(json.will_restart, false);
 });
 
 test('サービス経由でなければ再起動されないと分かる', async () => {
 	// テストは直接起動なので AICHAT_MANAGED が無い
-	const { json } = await post('/api/admin/exit', { user_id: 'tester', exit_code: 1 });
+	const { json } = await post('/api/admin/exit', { connector_id: 'test-tester', exit_code: 1 });
 	assert.equal(json.managed_by, null);
 	assert.equal(json.will_restart, false, 'サービス経由でなければ落ちるだけ');
 });
@@ -316,7 +317,7 @@ test('範囲外の終了コードは 400', async () => {
 });
 
 test('GET でも叩ける（ブラウザのアドレスバーから）', async () => {
-	const { status, json } = await get('/api/admin/exit?exit_code=1&user_id=browser');
+	const { status, json } = await get('/api/admin/exit?exit_code=1&connector_id=browser');
 	assert.equal(status, 200);
 	assert.equal(json.exit_code, 1);
 });
@@ -346,7 +347,7 @@ test('wait を省略しても即座に返らない（既定が効いている）
 	assert.equal(hub.stats().waiters, 1, 'wait の既定が効かず即座に返っている');
 
 	// 投稿して起こし、待ちっぱなしにしない
-	await post('/api/say', { from_user_id: 'html2md', msg_body: '既定の wait を確かめる' });
+	await post('/api/say', { from_connector_id: 'test-connector1', msg_body: '既定の wait を確かめる' });
 	await polling;
 	assert.ok(Date.now() - started < 5000);
 });
@@ -360,48 +361,48 @@ test('web の外は参照できない', async () => {
 
 test('since を省略すると、参加した時点から待つ', async () => {
 	// 過去ログを流し込まないようにするため、初参加は「今から」になる
-	await post('/api/join', { user_id: 'reader', user_role: 'ai' });
-	const { json } = await get('/api/poll?user_id=reader&wait=0');
+	await post('/api/join', { connector_id: 'test-reader', connector_role: 'ai' });
+	const { json } = await get('/api/poll?connector_id=test-reader&wait=0');
 	assert.deepEqual(json.messages, [], '過去のぶんは返らない');
 });
 
 test('受け取ったら位置が進み、次は続きから届く', async () => {
-	await post('/api/say', { from_user_id: 'html2md', msg_body: 'カーソルの確認 1' });
+	await post('/api/say', { from_connector_id: 'test-connector1', msg_body: 'カーソルの確認 1' });
 
-	const first = await get('/api/poll?user_id=reader&wait=0');
+	const first = await get('/api/poll?connector_id=test-reader&wait=0');
 	assert.equal(first.json.messages.length, 1);
 	assert.equal(first.json.messages[0].msg_body, 'カーソルの確認 1');
 
 	// 同じ呼び方でも、もう一度は返らない
-	const again = await get('/api/poll?user_id=reader&wait=0');
+	const again = await get('/api/poll?connector_id=test-reader&wait=0');
 	assert.deepEqual(again.json.messages, [], '受け取った分が繰り返し返っている');
 
-	await post('/api/say', { from_user_id: 'html2md', msg_body: 'カーソルの確認 2' });
-	const next = await get('/api/poll?user_id=reader&wait=0');
+	await post('/api/say', { from_connector_id: 'test-connector1', msg_body: 'カーソルの確認 2' });
+	const next = await get('/api/poll?connector_id=test-reader&wait=0');
 	assert.equal(next.json.messages.length, 1);
 	assert.equal(next.json.messages[0].msg_body, 'カーソルの確認 2');
 });
 
 test('位置はルームごとに別々', async () => {
-	await post('/api/say', { room_id: 'dev', from_user_id: 'html2md', msg_body: 'dev の発言' });
+	await post('/api/say', { room_id: 'dev', from_connector_id: 'test-connector1', msg_body: 'dev の発言' });
 
 	// public 側の位置は進んでいるが、dev は初めてなので参加時点から
-	const dev = await get('/api/poll?user_id=reader&room_id=dev&wait=0');
+	const dev = await get('/api/poll?connector_id=test-reader&room_id=dev&wait=0');
 	assert.deepEqual(dev.json.messages, [], 'dev は初めてなので今から');
 
-	await post('/api/say', { room_id: 'dev', from_user_id: 'html2md', msg_body: 'dev の 2 つ目' });
-	const devNext = await get('/api/poll?user_id=reader&room_id=dev&wait=0');
+	await post('/api/say', { room_id: 'dev', from_connector_id: 'test-connector1', msg_body: 'dev の 2 つ目' });
+	const devNext = await get('/api/poll?connector_id=test-reader&room_id=dev&wait=0');
 	assert.equal(devNext.json.messages.length, 1);
 	assert.equal(devNext.json.messages[0].msg_body, 'dev の 2 つ目');
 });
 
 test('since を明示すれば、そちらが優先される', async () => {
 	// ブラウザは自分で位置を持っているため、記録に左右されない
-	const { json } = await get('/api/poll?user_id=reader&since=0&wait=0');
+	const { json } = await get('/api/poll?connector_id=test-reader&since=0&wait=0');
 	assert.ok(json.messages.length > 1, '記録を無視して 0 から返るはず');
 });
 
-test('user_id が無ければ記録しない', async () => {
+test('connector_id が無ければ記録しない', async () => {
 	const a = await get('/api/poll?since=0&wait=0');
 	const b = await get('/api/poll?since=0&wait=0');
 	assert.equal(a.json.messages.length, b.json.messages.length, '毎回同じ結果になる');
@@ -409,10 +410,10 @@ test('user_id が無ければ記録しない', async () => {
 
 test('再び join しても位置は巻き戻らない', async () => {
 	// 未読を飛ばさないため、すでに記録があれば触らない
-	await post('/api/say', { from_user_id: 'html2md', msg_body: '再 join の前' });
-	await post('/api/join', { user_id: 'reader', user_role: 'ai' });
+	await post('/api/say', { from_connector_id: 'test-connector1', msg_body: '再 join の前' });
+	await post('/api/join', { connector_id: 'test-reader', connector_role: 'ai' });
 
-	const { json } = await get('/api/poll?user_id=reader&wait=0');
+	const { json } = await get('/api/poll?connector_id=test-reader&wait=0');
 	assert.equal(json.messages.length, 1);
 	assert.equal(json.messages[0].msg_body, '再 join の前', '未読が飛ばされている');
 });
@@ -421,26 +422,26 @@ test('再び join しても位置は巻き戻らない', async () => {
 
 test('初めて見る相手には離脱を流さない', async () => {
 	// 起動直後に、もともと居なかった全員分の離脱が流れるのを防ぐため
-	store.joinUser('ghost', 'ai');
-	store.setLastActiveAt('ghost', jstBefore(300 * 1000));
+	store.joinConnector('test-ghost', 'ai');
+	store.setLastActiveAt('test-ghost', jstBefore(300 * 1000));
 
 	const gone = sweepOffline();
-	assert.ok(!gone.includes('ghost'), '初回は対象外のはず');
+	assert.ok(!gone.includes('test-ghost'), '初回は対象外のはず');
 });
 
 test('オンラインから落ちた相手の離脱をログに積む', async () => {
-	store.joinUser('vanisher', 'ai');
+	store.joinConnector('test-vanisher', 'ai');
 	sweepOffline(); // ここで grace として覚える
 
 	// 猶予を過ぎた状態にする
-	store.setLastActiveAt('vanisher', jstBefore(300 * 1000));
+	store.setLastActiveAt('test-vanisher', jstBefore(300 * 1000));
 
 	const gone = sweepOffline();
-	assert.deepEqual(gone, ['vanisher']);
+	assert.deepEqual(gone, ['test-vanisher']);
 
 	const { json } = await get('/api/history?limit=1');
 	assert.equal(json.messages[0].msg_kind, 'leave');
-	assert.equal(json.messages[0].msg_body, 'vanisher がオフラインになりました');
+	assert.equal(json.messages[0].msg_body, 'test-vanisher がオフラインになりました');
 });
 
 test('落ちたままの相手を何度も流さない', async () => {
@@ -450,12 +451,12 @@ test('落ちたままの相手を何度も流さない', async () => {
 });
 
 test('戻ってきてまた落ちれば、もう一度流す', async () => {
-	store.setLastActiveAt('vanisher', jstBefore(0));
+	store.setLastActiveAt('test-vanisher', jstBefore(0));
 	sweepOffline(); // grace として覚え直す
 
-	store.setLastActiveAt('vanisher', jstBefore(300 * 1000));
+	store.setLastActiveAt('test-vanisher', jstBefore(300 * 1000));
 	const gone = sweepOffline();
-	assert.deepEqual(gone, ['vanisher']);
+	assert.deepEqual(gone, ['test-vanisher']);
 });
 
 /*

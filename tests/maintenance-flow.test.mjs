@@ -122,7 +122,7 @@ describe('メンテナンスの通し', () => {
 	});
 
 	test('API は 503 で、印に書いた理由と見込みが出る', async () => {
-		const res = await fetch(`${base}/api/users?access_token=${token}`);
+		const res = await fetch(`${base}/api/connectors?access_token=${token}`);
 		const json = await res.json();
 
 		assert.equal(res.status, 503);
@@ -145,8 +145,8 @@ describe('メンテナンスの通し', () => {
 		assert.ok(json.started_at, '起動した時刻が入っていない');
 
 		// 切り替わったあとは API が通る
-		const users = await fetch(`${base}/api/users?access_token=${token}`);
-		assert.equal(users.status, 200);
+		const res = await fetch(`${base}/api/connectors?access_token=${token}`);
+		assert.equal(res.status, 200);
 	});
 
 	test('再開したことを既定のルームに知らせる', async () => {
@@ -164,7 +164,7 @@ describe('メンテナンスの通し', () => {
 		// 【メンテナンス】で始める。say の間はセッションの発言と名前で区別できないため
 		assert.match(notice.msg_body, /^【メンテナンス】/);
 		// 名乗るのはこのプロジェクトのフォルダ名。専用の名前にすると参加者一覧に増える
-		assert.equal(notice.from_user_id, 'ai-chat-lite');
+		assert.equal(notice.from_connector_id, 'ai-chat-lite');
 		// 読んだ位置は保たれるので取りこぼしは無いが、遅れたことは書かないと分からない
 		assert.match(notice.msg_body, /止まっていました/);
 	});
@@ -243,7 +243,7 @@ describe('メンテナンスの通し', () => {
 			let outText = '';
 			let errText = '';
 			const waiter = spawn(process.execPath, [
-				CLIENT, 'wait', '--port', String(p), '--access-token', tok, '--connector-id', 'user1', '--wait-sec', '45',
+				CLIENT, 'wait', '--port', String(p), '--access-token', tok, '--connector-id', 'test-connector1', '--wait-sec', '45',
 			]);
 			waiter.stdout.setEncoding('utf8');
 			waiter.stderr.setEncoding('utf8');
@@ -271,10 +271,10 @@ describe('メンテナンスの通し', () => {
 			 */
 			await until(
 				async () => {
-					const r = await fetch(`http://127.0.0.1:${p}/api/users?access_token=${tok}`);
+					const r = await fetch(`http://127.0.0.1:${p}/api/connectors?access_token=${tok}`);
 					if (!r.ok) return false;
-					const { users } = await r.json();
-					return users.some((u) => u.user_id === 'user1' && u.status === 'online');
+					const { connectors } = await r.json();
+					return connectors.some((c) => c.connector_id === 'test-connector1' && c.status === 'online');
 				},
 				{ what: '待受けの繋ぎ直し', timeoutMs: 30000 }
 			);
@@ -282,7 +282,7 @@ describe('メンテナンスの通し', () => {
 			const posted = await fetch(`http://127.0.0.1:${p}/api/say`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json', 'X-AiChat-Access-Token': tok },
-				body: JSON.stringify({ from_user_id: 'user2', msg_body: 'メンテ明けの発言' }),
+				body: JSON.stringify({ from_connector_id: 'test-connector2', msg_body: 'メンテ明けの発言' }),
 			});
 			assert.ok(posted.ok, '投稿できなかった');
 

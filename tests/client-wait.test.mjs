@@ -27,7 +27,7 @@ let base;
  * chat.mjs はトップレベルで実行される作りなので、import では試せない。
  * 実際に人や AI が呼ぶのと同じ形で確かめる。
  */
-function chat(args, connectorId = 'user1') {
+function chat(args, connectorId = 'test-connector1') {
 	// テスト用として立っているので、アクセストークンを渡さないと 403 になる。
 	// 接続先と名乗る ID は引数で渡す（環境変数では渡せない）
 	return run(
@@ -64,7 +64,7 @@ describe('wait の待つ長さ', () => {
 		const startedAt = Date.now();
 		// 25 秒待つ設定。すぐ届けば数秒で戻るはず
 		const waiting = chat(['wait', '--wait-sec', '25']);
-		await chat(['say', 'いま届く'], 'user2');
+		await chat(['say', 'いま届く'], 'test-connector2');
 
 		const { stdout } = await waiting;
 		const elapsed = Date.now() - startedAt;
@@ -79,7 +79,7 @@ describe('wait の待つ長さ', () => {
 		 * 8 時間を実際に待たせるわけにいかないので、先に発言を置いて
 		 * 1 回目で返るようにする。開始の行に長さが出る
 		 */
-		await chat(['say', '既定の確認'], 'user2');
+		await chat(['say', '既定の確認'], 'test-connector2');
 		const { stdout } = await chat(['wait']);
 
 		assert.match(stdout, /待受け開始（最大 8 時間/);
@@ -88,7 +88,7 @@ describe('wait の待つ長さ', () => {
 
 	test('0 を渡すと上限なしになる', async () => {
 		// 上限なしは止まらないので、先に発言を置いて返らせる
-		await chat(['say', '上限なしの確認'], 'user2');
+		await chat(['say', '上限なしの確認'], 'test-connector2');
 		const { stdout } = await chat(['wait', '--wait-sec', '0']);
 
 		assert.match(stdout, /待受け開始（最大 上限なし/);
@@ -96,17 +96,17 @@ describe('wait の待つ長さ', () => {
 	});
 
 	test('分と時でも同じ長さを指定できる', async () => {
-		await chat(['say', '単位の確認'], 'user2');
+		await chat(['say', '単位の確認'], 'test-connector2');
 		const byMin = await chat(['wait', '--wait-min', '60']);
 		assert.match(byMin.stdout, /待受け開始（最大 1 時間/);
 
-		await chat(['say', '単位の確認 2'], 'user2');
+		await chat(['say', '単位の確認 2'], 'test-connector2');
 		const byHour = await chat(['wait', '--wait-hour', '1']);
 		assert.match(byHour.stdout, /待受け開始（最大 1 時間/);
 	});
 
 	test('短い形 -w は --wait-hour と同じ', async () => {
-		await chat(['say', '短い形の確認'], 'user2');
+		await chat(['say', '短い形の確認'], 'test-connector2');
 		const { stdout } = await chat(['wait', '-w', '2']);
 
 		assert.match(stdout, /待受け開始（最大 2 時間/);
@@ -172,7 +172,7 @@ describe('wait のログ', () => {
 		 * 601 秒を実際に待たせるわけにいかないので、先に発言を置いて
 		 * 1 回目で返るようにする。警告は待ち始める前に出る
 		 */
-		await chat(['say', '警告の確認'], 'user2');
+		await chat(['say', '警告の確認'], 'test-connector2');
 		const { stdout, stderr } = await chat(['wait', '--wait-min', '11']);
 
 		assert.match(stderr, /11 分/);
@@ -188,7 +188,7 @@ describe('wait のログ', () => {
 
 	test('既定の 8 時間では警告を出さない', async () => {
 		// 既定が 600 秒を超えているため、毎回出すと警告の意味がなくなる
-		await chat(['say', '既定では黙る'], 'user2');
+		await chat(['say', '既定では黙る'], 'test-connector2');
 		const { stderr } = await chat(['wait']);
 
 		assert.equal(stderr, '');

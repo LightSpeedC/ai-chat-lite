@@ -46,10 +46,10 @@ function createSourceDb() {
 	db.exec(`CREATE TABLE messages (
 		msg_seq      INTEGER PRIMARY KEY AUTOINCREMENT,
 		room_id      TEXT NOT NULL DEFAULT 'public',
-		from_user_id TEXT NOT NULL,
+		from_connector_id TEXT NOT NULL,
 		msg_body     TEXT NOT NULL)`);
-	const insert = db.prepare('INSERT INTO messages (from_user_id, msg_body) VALUES (?, ?)');
-	for (let i = 1; i <= 30; i++) insert.run('user1', `本文 ${i}`);
+	const insert = db.prepare('INSERT INTO messages (from_connector_id, msg_body) VALUES (?, ?)');
+	for (let i = 1; i <= 30; i++) insert.run('test-connector1', `本文 ${i}`);
 	// close せずに返す。WAL に載ったまま複製できるかを見たいため
 	return db;
 }

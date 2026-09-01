@@ -81,7 +81,7 @@ describe('メンテナンス中の応答', () => {
 	});
 
 	test('ほかの API は 503 で、理由と Retry-After を返す', async () => {
-		for (const path of ['/api/users', '/api/poll', '/api/rooms']) {
+		for (const path of ['/api/connectors', '/api/poll', '/api/rooms']) {
 			const res = await fetch(`${base}${path}`);
 			const json = await res.json();
 
@@ -108,7 +108,7 @@ describe('メンテナンス中の応答', () => {
 
 	test('見込みが渡されなければ Retry-After は 60 になる', async () => {
 		const local = await startListening(createMaintenanceHandler({ reason: '' }), 0, ['127.0.0.1']);
-		const url = `http://127.0.0.1:${local[0].address().port}/api/users`;
+		const url = `http://127.0.0.1:${local[0].address().port}/api/connectors`;
 		try {
 			const res = await fetch(url);
 
@@ -140,7 +140,7 @@ describe('受け口の差し替え', () => {
 		 * 別のサーバーを立てて差し替えると、閉じてから開くまでの間にポートが空く。
 		 * その隙に繋いだ側は ECONNREFUSED を受け、メンテナンスと区別できない。
 		 */
-		assert.equal((await fetch(`${base}/api/users`)).status, 503);
+		assert.equal((await fetch(`${base}/api/connectors`)).status, 503);
 
 		setHandler(servers, (req, res) => {
 			res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -149,7 +149,7 @@ describe('受け口の差し替え', () => {
 
 		assert.equal(servers[0].address().port, port, 'ポートが変わっている');
 
-		const res = await fetch(`${base}/api/users`);
+		const res = await fetch(`${base}/api/connectors`);
 		assert.equal(res.status, 200);
 		assert.deepEqual(await res.json(), { ok: true });
 	});
@@ -162,7 +162,7 @@ describe('受け口の差し替え', () => {
 		});
 		setHandler(servers, (req, res) => res.end('new'));
 
-		const text = await (await fetch(`${base}/api/users`)).text();
+		const text = await (await fetch(`${base}/api/connectors`)).text();
 
 		assert.equal(text, 'new');
 		assert.equal(oldCalled, false, '古い受け口が残っている');
