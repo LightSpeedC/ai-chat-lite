@@ -207,8 +207,8 @@ describe('実際に置いてある版', () => {
 		const dbPath = newDbPath();
 		const result = migrate({ dbPath, dir: REAL_DIR });
 
-		assert.ok(result.to >= 2, `版が上がっていない（${result.to}）`);
-		assert.deepEqual(tables(dbPath), ['connectors', 'cursors', 'messages', 'versions']);
+		assert.ok(result.to >= 3, `版が上がっていない（${result.to}）`);
+		assert.deepEqual(tables(dbPath), ['archives', 'connectors', 'cursors', 'messages', 'versions']);
 	});
 
 	test('改名後の列名になっている', () => {

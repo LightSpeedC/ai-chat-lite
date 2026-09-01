@@ -7,10 +7,12 @@ import {
 	VERSION, STARTED_AT, IS_TEST, TEST_ACCESS_TOKEN,
 } from './config.mjs';
 import { log } from './log.mjs';
+import { nowJst } from './time.mjs';
 import {
 	addMessage, getSince, getLatest, getBefore, getMaxSeq,
 	joinConnector, touchConnector, addConnection, removeConnection, listRooms,
 	getCursor, setCursor, closeDb, getConnector,
+	previewArchive, archive, restore, listArchives, getAllMessages,
 } from './store.mjs';
 import { listPresence, getPresence, STATUS } from './presence.mjs';
 import {
@@ -248,6 +250,21 @@ function handleHistory(res, url) {
 	sendJson(res, 200, { room_id: roomId, messages });
 }
 
+/**
+ * 全件を書き出す。ルームで絞らず、片付けたものも含める。
+ *
+ * /api/history とは用途が違う。history は読むための道で、片付けたものを
+ * 出さない絞り込みがそこに掛かっている。同じ入口に「含める」旗を足すと、
+ * 旗の付け忘れ・付きすぎで結果が変わる経路が読む道の中にできてしまう。
+ *
+ * こちらは中身を目視・grep するためのもの。archived_seq も一緒に返すので、
+ * どれが片付けられたものかは受け取った側で分かる。
+ */
+function handleDump(res) {
+	const messages = getAllMessages();
+	sendJson(res, 200, { messages, count: messages.length });
+}
+
 function handleConnectors(res) {
 	sendJson(res, 200, { connectors: listPresence() });
 }
@@ -376,6 +393,117 @@ const MANAGED_BY = process.env.AICHAT_MANAGED ?? null;
  * 既定を 1（再起動される側）にしているのは、取り違えたときの被害が小さいため。
  * 0 で止めてしまうと、動かし直すのに管理者権限が要る。
  */
+// --- 片付ける（archive） ---
+
+/** 片付けられる対象の種類 */
+const ARCHIVE_KINDS = new Set(['message', 'connector', 'room']);
+
+/**
+ * 片付けたことを説明する文を組み立てる。
+ *
+ * 毎回入力を求めない。求めると面倒で、結局は中身のない文字列が並ぶ。
+ * --description で書き換えられる。
+ */
+function describeArchive(kind, id, counts, byConnectorId) {
+	const when = nowJst().slice(0, 16);
+	const label = { message: '発言', connector: '参加者', room: 'ルーム' }[kind];
+	const detail =
+		kind === 'message'
+			? `（msg_seq ${id}）`
+			: kind === 'room'
+				? `（発言 ${counts.messages} 件 / 読んだ位置 ${counts.cursors} 件）`
+				: counts.messages > 0
+					? `（発言 ${counts.messages} 件も含む）`
+					: '（発言は残す）';
+
+	return `${when} に ${byConnectorId} が ${label} ${id} を片付けた${detail}`;
+}
+
+async function handleArchive(req, res) {
+	const input = await readJsonBody(req);
+	const kind = String(input.kind ?? '');
+	if (!ARCHIVE_KINDS.has(kind)) throw new BadRequest('kind は message / connector / room です');
+
+	const id = requireId(input.id, 'id');
+	const byConnectorId = requireId(input.connector_id, 'connector_id');
+	const withMessages = Boolean(input.with_messages);
+
+	/*
+	 * 既定のルームは片付けられない。
+	 *
+	 * 参加時の行き先になっているため、片付けると誰も参加できなくなる。
+	 */
+	if (kind === 'room' && id === DEFAULT_ROOM) {
+		throw new BadRequest(`${DEFAULT_ROOM} は片付けられません（参加時の行き先です）`);
+	}
+
+	/*
+	 * confirm に対象の名前を求める。
+	 *
+	 * スクリプトからの誤爆を防ぐため。y や true では通さない。
+	 */
+	if (String(input.confirm ?? '') !== id) {
+		throw new BadRequest(`confirm に "${id}" を入れてください（誤って片付けるのを防ぐため）`);
+	}
+
+	const counts = previewArchive(kind, id, withMessages);
+	if (counts.messages + counts.cursors + counts.connectors === 0) {
+		throw new BadRequest(`片付けるものがありません: ${kind} ${id}`);
+	}
+
+	const description = String(input.description ?? '').trim() || describeArchive(kind, id, counts, byConnectorId);
+	if (description.length > 200) throw new BadRequest('description は 200 文字までです');
+
+	const result = archive({ kind, id, withMessages, byConnectorId, description });
+
+	// 後から「消えている」と気づいたときに経緯を追えるようにする
+	log.warn(`片付けました（archived_seq ${result.archived_seq}）: ${description}`);
+
+	/*
+	 * 黙って消えると、他の参加者は何が起きたか分からない。
+	 *
+	 * 片付けたルーム自身に積んでも見えなくなるため、既定のルームに積む。
+	 */
+	postSystemMessage(DEFAULT_ROOM, byConnectorId, 'archive', description);
+	broadcastPresence();
+
+	sendJson(res, 200, result);
+}
+
+async function handleRestore(req, res) {
+	const input = await readJsonBody(req);
+	const seq = Math.trunc(numberOf(input.archived_seq, NaN));
+	if (!Number.isInteger(seq) || seq < 1) throw new BadRequest('archived_seq は 1 以上の整数です');
+
+	const byConnectorId = requireId(input.connector_id, 'connector_id');
+	const result = restore(seq);
+	if (!result) throw new BadRequest(`archived_seq ${seq} はありません`);
+
+	log.warn(`戻しました（archived_seq ${seq} / ${result.restored} 件）: ${result.row.description}`);
+	postSystemMessage(
+		DEFAULT_ROOM,
+		byConnectorId,
+		'archive',
+		`${nowJst().slice(0, 16)} に ${byConnectorId} が archived_seq ${seq} を戻した（${result.restored} 件）`
+	);
+	broadcastPresence();
+
+	sendJson(res, 200, { archived_seq: seq, restored: result.restored, description: result.row.description });
+}
+
+function handleArchives(res) {
+	sendJson(res, 200, { archives: listArchives() });
+}
+
+async function handleArchivePreview(req, res, url) {
+	const kind = String(url.searchParams.get('kind') ?? '');
+	if (!ARCHIVE_KINDS.has(kind)) throw new BadRequest('kind は message / connector / room です');
+	const id = requireId(url.searchParams.get('id'), 'id');
+	const withMessages = url.searchParams.get('with_messages') === '1';
+
+	sendJson(res, 200, { kind, id, ...previewArchive(kind, id, withMessages) });
+}
+
 async function handleExit(req, res, url) {
 	// GET でも受ける。ブラウザのアドレスバーから直接叩けるようにするため。
 	// 副作用のある GET は本来避けるところだが、localhost 限定で認証も無い前提なので
@@ -494,13 +622,20 @@ export async function handleRequest(req, res) {
 			if (path === '/api/leave') return await handleLeave(req, res);
 			// 落とす。うっかり叩かないよう /api/admin/ に分けている
 			if (path === '/api/admin/exit') return await handleExit(req, res, url);
+			// 片付けと戻しは GET では受けない。先読みや履歴からの再実行で起きては困る
+			if (path === '/api/admin/archive') return await handleArchive(req, res);
+			if (path === '/api/admin/restore') return await handleRestore(req, res);
 		}
 		if (req.method === 'GET') {
 			if (path === '/api/poll') return await handlePoll(req, res, url);
 			if (path === '/api/history') return handleHistory(res, url);
+			if (path === '/api/dump') return handleDump(res);
 			if (path === '/api/connectors') return handleConnectors(res);
 			if (path === '/api/rooms') return handleRooms(res);
 			if (path === '/api/version') return handleVersion(res);
+			// 一覧と下見は読むだけなので GET でよい
+			if (path === '/api/admin/archives') return handleArchives(res);
+			if (path === '/api/admin/archive-preview') return await handleArchivePreview(req, res, url);
 			if (path === '/api/events') return handleEvents(req, res, url);
 			// ブラウザのアドレスバーから叩けるよう GET も受ける
 			if (path === '/api/admin/exit') return await handleExit(req, res, url);

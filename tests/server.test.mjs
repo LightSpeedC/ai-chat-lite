@@ -1,4 +1,4 @@
-import { test, before, after } from 'node:test';
+import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -163,6 +163,66 @@ test('別のルームには届かない', async () => {
 	const { json } = await get('/api/history?room_id=sandbox-other&limit=10');
 	assert.equal(json.messages.length, 1);
 	assert.equal(json.messages[0].msg_body, '別室');
+});
+
+describe('片付けたものの見え方', () => {
+	/*
+	 * history と dump で見え方が違うことを確かめる。
+	 *
+	 * history は読むための道なので片付けたものを出さない。dump は中身を
+	 * 確かめるためのものなので出す。同じ入口に旗で分けると、旗の付け忘れで
+	 * 読む側に混ざる。
+	 */
+	let seq;
+
+	before(async () => {
+		await post('/api/say', {
+			room_id: 'sandbox-archived',
+			from_connector_id: 'test-connector1',
+			msg_body: '片付ける発言',
+		});
+		const { json } = await post('/api/admin/archive', {
+			kind: 'room',
+			id: 'sandbox-archived',
+			connector_id: 'test-connector1',
+			confirm: 'sandbox-archived',
+			description: '対象が消えない説明',
+		});
+		seq = json.archived_seq;
+	});
+
+	test('history には出ない', async () => {
+		const { json } = await get('/api/history?room_id=sandbox-archived&limit=10');
+		assert.deepEqual(json.messages, []);
+	});
+
+	test('dump には出る。ルームで絞らず全件返る', async () => {
+		const { status, json } = await get('/api/dump');
+		assert.equal(status, 200);
+		assert.equal(json.count, json.messages.length);
+
+		const gone = json.messages.filter((m) => m.room_id === 'sandbox-archived');
+		assert.equal(gone.length, 1, 'dump から消えている');
+		assert.equal(gone[0].archived_seq, seq, 'archived_seq が入っていない');
+
+		// 全ルームが混ざっていること（room_id で絞っていない）
+		assert.ok(new Set(json.messages.map((m) => m.room_id)).size >= 2);
+	});
+
+	test('archives には対象が説明とは別に残る', async () => {
+		const { json } = await get('/api/admin/archives');
+		const row = json.archives.find((a) => a.archived_seq === seq);
+
+		assert.equal(row.archive_kind, 'room');
+		assert.equal(row.archive_id, 'sandbox-archived');
+		assert.equal(row.description, '対象が消えない説明');
+	});
+
+	test('戻せば history に出る', async () => {
+		await post('/api/admin/restore', { archived_seq: seq, connector_id: 'test-connector1' });
+		const { json } = await get('/api/history?room_id=sandbox-archived&limit=10');
+		assert.equal(json.messages.length, 1);
+	});
 });
 
 test('history は before で遡れる', async () => {

@@ -97,6 +97,27 @@ CREATE TABLE IF NOT EXISTS connectors (
                             CHECK (active_connection_count >= 0),
   archived_seq            INTEGER
 );
+
+-- 1 回の片付けを 1 行として記録する。片付けたものは、その行の番号を指す。
+-- archive_kind と archive_id は、description が書き換えられても対象が追える
+-- ようにするための列。archive_id は 3 種を 1 列で持つため TEXT にしている。
+CREATE TABLE IF NOT EXISTS archives (
+  archived_seq          INTEGER PRIMARY KEY AUTOINCREMENT,
+  archived_at           TEXT    NOT NULL
+                          CHECK (length(archived_at) = 23),
+  archived_connector_id TEXT    NOT NULL
+                          CHECK (length(archived_connector_id) BETWEEN 1 AND 64),
+  archive_kind          TEXT    NOT NULL
+                          CHECK (archive_kind IN ('message', 'connector', 'room')),
+  archive_id            TEXT    NOT NULL
+                          CHECK (length(archive_id) BETWEEN 1 AND 64),
+  description           TEXT    NOT NULL
+                          CHECK (length(description) BETWEEN 1 AND 200)
+);
+
+CREATE INDEX IF NOT EXISTS messages_ix_archived_seq ON messages(archived_seq);
+CREATE INDEX IF NOT EXISTS cursors_ix_archived_seq ON cursors(archived_seq);
+CREATE INDEX IF NOT EXISTS connectors_ix_archived_seq ON connectors(archived_seq);
 `);
 
 // 接続数は起動した瞬間に実態と合わなくなるため 0 に戻す。
@@ -110,19 +131,19 @@ const stmt = {
 	`),
 	selectSince: db.prepare(`
 		SELECT * FROM messages
-		WHERE room_id = ? AND msg_seq > ?
+		WHERE archived_seq IS NULL AND room_id = ? AND msg_seq > ?
 		ORDER BY msg_seq ASC
 		LIMIT ?
 	`),
 	selectLatest: db.prepare(`
 		SELECT * FROM messages
-		WHERE room_id = ?
+		WHERE archived_seq IS NULL AND room_id = ?
 		ORDER BY msg_seq DESC
 		LIMIT ?
 	`),
 	selectBefore: db.prepare(`
 		SELECT * FROM messages
-		WHERE room_id = ? AND msg_seq < ?
+		WHERE archived_seq IS NULL AND room_id = ? AND msg_seq < ?
 		ORDER BY msg_seq DESC
 		LIMIT ?
 	`),
@@ -130,10 +151,13 @@ const stmt = {
 	selectRooms: db.prepare(`
 		SELECT room_id, COUNT(*) AS msg_count, MAX(msg_seq) AS last_msg_seq
 		FROM messages
+		WHERE archived_seq IS NULL
 		GROUP BY room_id
 		ORDER BY room_id
 	`),
-	maxSeq: db.prepare('SELECT COALESCE(MAX(msg_seq), 0) AS max_seq FROM messages WHERE room_id = ?'),
+	maxSeq: db.prepare(
+		'SELECT COALESCE(MAX(msg_seq), 0) AS max_seq FROM messages WHERE archived_seq IS NULL AND room_id = ?'
+	),
 	upsertConnector: db.prepare(`
 		INSERT INTO connectors (connector_id, connector_role, first_joined_at, last_active_at, active_connection_count)
 		VALUES (?, ?, ?, ?, 0)
@@ -156,10 +180,10 @@ const stmt = {
 		SET active_connection_count = MAX(0, active_connection_count - 1), last_active_at = ?
 		WHERE connector_id = ?
 	`),
-	selectConnectors: db.prepare('SELECT * FROM connectors ORDER BY last_active_at DESC'),
-	selectConnector: db.prepare('SELECT * FROM connectors WHERE connector_id = ?'),
+	selectConnectors: db.prepare('SELECT * FROM connectors WHERE archived_seq IS NULL ORDER BY last_active_at DESC'),
+	selectConnector: db.prepare('SELECT * FROM connectors WHERE archived_seq IS NULL AND connector_id = ?'),
 	setLastActiveAt: db.prepare('UPDATE connectors SET last_active_at = ? WHERE connector_id = ?'),
-	selectCursor: db.prepare('SELECT msg_seq FROM cursors WHERE connector_id = ? AND room_id = ?'),
+	selectCursor: db.prepare('SELECT msg_seq FROM cursors WHERE archived_seq IS NULL AND connector_id = ? AND room_id = ?'),
 	upsertCursor: db.prepare(`
 		INSERT INTO cursors (connector_id, room_id, msg_seq, updated_at)
 		VALUES (?, ?, ?, ?)
@@ -167,7 +191,7 @@ const stmt = {
 			msg_seq    = excluded.msg_seq,
 			updated_at = excluded.updated_at
 	`),
-	selectCursorsOf: db.prepare('SELECT * FROM cursors WHERE connector_id = ? ORDER BY room_id'),
+	selectCursorsOf: db.prepare('SELECT * FROM cursors WHERE archived_seq IS NULL AND connector_id = ? ORDER BY room_id'),
 };
 
 /** 取得件数を 1〜上限に収める */
@@ -287,6 +311,154 @@ export function listCursors(connectorId) {
 /** 参加者を 1 人取得する */
 export function getConnector(connectorId) {
 	return stmt.selectConnector.get(connectorId);
+}
+
+// --- 片付ける（archive） ---
+
+/**
+ * 片付ける前に、何がどれだけ消えるかを数える。
+ *
+ * 先に見せてから確かめさせるため。件数が思っていたより多ければ、そこで気づける。
+ *
+ * @param {'message'|'connector'|'room'} kind
+ * @param {string} id 対象。message なら msg_seq、connector なら ID、room ならルーム名
+ * @param {boolean} withMessages connector のとき、その参加者の発言も含めるか
+ */
+export function previewArchive(kind, id, withMessages = false) {
+	if (kind === 'message') {
+		const row = db
+			.prepare('SELECT * FROM messages WHERE archived_seq IS NULL AND msg_seq = ?')
+			.get(Number(id));
+		return { messages: row ? 1 : 0, cursors: 0, connectors: 0, first: row?.sent_at ?? null, last: row?.sent_at ?? null };
+	}
+
+	if (kind === 'room') {
+		const m = db
+			.prepare(
+				'SELECT COUNT(*) AS n, MIN(sent_at) AS first, MAX(sent_at) AS last FROM messages WHERE archived_seq IS NULL AND room_id = ?'
+			)
+			.get(id);
+		const c = db
+			.prepare('SELECT COUNT(*) AS n FROM cursors WHERE archived_seq IS NULL AND room_id = ?')
+			.get(id);
+		return { messages: Number(m.n), cursors: Number(c.n), connectors: 0, first: m.first, last: m.last };
+	}
+
+	// connector
+	const c = db
+		.prepare('SELECT COUNT(*) AS n FROM connectors WHERE archived_seq IS NULL AND connector_id = ?')
+		.get(id);
+	const cur = db
+		.prepare('SELECT COUNT(*) AS n FROM cursors WHERE archived_seq IS NULL AND connector_id = ?')
+		.get(id);
+	const m = withMessages
+		? db
+				.prepare(
+					'SELECT COUNT(*) AS n, MIN(sent_at) AS first, MAX(sent_at) AS last FROM messages WHERE archived_seq IS NULL AND from_connector_id = ?'
+				)
+				.get(id)
+		: { n: 0, first: null, last: null };
+
+	return {
+		messages: Number(m.n),
+		cursors: Number(cur.n),
+		connectors: Number(c.n),
+		first: m.first,
+		last: m.last,
+	};
+}
+
+/**
+ * 片付ける。archives に 1 行足し、対象の archived_seq にその番号を入れる。
+ *
+ * 1 回の操作を 1 つの番号で束ねる。戻すときはその番号を指定すれば済む。
+ * すべて 1 つのトランザクションで行う。途中で失敗したら何も片付かない。
+ *
+ * @returns {{archived_seq: number, counts: object, description: string}}
+ */
+export function archive({ kind, id, withMessages = false, byConnectorId, description }) {
+	const counts = previewArchive(kind, id, withMessages);
+	const at = nowJst();
+
+	db.exec('BEGIN IMMEDIATE');
+	try {
+		const inserted = db
+			.prepare(
+				`INSERT INTO archives (archived_at, archived_connector_id, archive_kind, archive_id, description)
+				 VALUES (?, ?, ?, ?, ?)`
+			)
+			.run(at, byConnectorId, kind, String(id), description);
+		const seq = Number(inserted.lastInsertRowid);
+
+		if (kind === 'message') {
+			db.prepare('UPDATE messages SET archived_seq = ? WHERE archived_seq IS NULL AND msg_seq = ?').run(
+				seq,
+				Number(id)
+			);
+		} else if (kind === 'room') {
+			db.prepare('UPDATE messages SET archived_seq = ? WHERE archived_seq IS NULL AND room_id = ?').run(seq, id);
+			db.prepare('UPDATE cursors SET archived_seq = ? WHERE archived_seq IS NULL AND room_id = ?').run(seq, id);
+		} else {
+			db.prepare('UPDATE connectors SET archived_seq = ? WHERE archived_seq IS NULL AND connector_id = ?').run(
+				seq,
+				id
+			);
+			db.prepare('UPDATE cursors SET archived_seq = ? WHERE archived_seq IS NULL AND connector_id = ?').run(seq, id);
+			if (withMessages) {
+				db.prepare(
+					'UPDATE messages SET archived_seq = ? WHERE archived_seq IS NULL AND from_connector_id = ?'
+				).run(seq, id);
+			}
+		}
+
+		db.exec('COMMIT');
+		return { archived_seq: seq, counts, description, archived_at: at };
+	} catch (err) {
+		db.exec('ROLLBACK');
+		throw err;
+	}
+}
+
+/**
+ * 戻す。その番号で片付けたものを、まとめて生かし直す。
+ *
+ * archives の行も消す。番号が残っていると「戻したのにまだある」ことになる。
+ *
+ * @returns {{restored: number, row: object} | null} 番号が無ければ null
+ */
+export function restore(archivedSeq) {
+	const seq = Number(archivedSeq);
+	const row = db.prepare('SELECT * FROM archives WHERE archived_seq = ?').get(seq);
+	if (!row) return null;
+
+	db.exec('BEGIN IMMEDIATE');
+	try {
+		let restored = 0;
+		for (const table of ['messages', 'cursors', 'connectors']) {
+			const r = db.prepare(`UPDATE ${table} SET archived_seq = NULL WHERE archived_seq = ?`).run(seq);
+			restored += Number(r.changes);
+		}
+		db.prepare('DELETE FROM archives WHERE archived_seq = ?').run(seq);
+		db.exec('COMMIT');
+		return { restored, row };
+	} catch (err) {
+		db.exec('ROLLBACK');
+		throw err;
+	}
+}
+
+/** 片付けたものの一覧。新しい順。件数も添える */
+export function listArchives() {
+	return db
+		.prepare(
+			`SELECT a.*,
+			        (SELECT COUNT(*) FROM messages   WHERE archived_seq = a.archived_seq) AS msg_count,
+			        (SELECT COUNT(*) FROM cursors    WHERE archived_seq = a.archived_seq) AS cursor_count,
+			        (SELECT COUNT(*) FROM connectors WHERE archived_seq = a.archived_seq) AS connector_count
+			 FROM archives a
+			 ORDER BY a.archived_seq DESC`
+		)
+		.all();
 }
 
 export function closeDb() {

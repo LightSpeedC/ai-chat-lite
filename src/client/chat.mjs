@@ -12,6 +12,7 @@ import {
 	RETRY_INTERVAL_SEC,
 	RETRY_TIMES,
 	EXIT_UNREACHABLE,
+	FLAGS,
 } from './options.mjs';
 
 /**
@@ -23,7 +24,7 @@ import {
  */
 
 /** ID を使わないコマンド。読むだけなので名乗る必要がない */
-const READ_ONLY = new Set(['recent', 'who', 'dump']);
+const READ_ONLY = new Set(['recent', 'who', 'dump', 'archives']);
 
 const STATUS_MARK = { online: '●', grace: '◐', offline: '○' };
 
@@ -190,16 +191,22 @@ function describeWait(sec) {
 }
 
 /** オプションでない最初の引数（本文など） */
-function positional() {
+function positionals() {
 	const args = [];
 	for (let i = 0; i < rest.length; i++) {
 		if (rest[i].startsWith('--') || rest[i].startsWith('-')) {
-			i++; // 値も飛ばす
+			// 旗（値を取らないもの）は値を飛ばさない。飛ばすと次の位置引数が消える
+			if (!FLAGS.has(rest[i])) i++;
 			continue;
 		}
 		args.push(rest[i]);
 	}
-	return args[0] ?? null;
+	return args;
+}
+
+/** オプションでない最初の引数（本文など） */
+function positional() {
+	return positionals()[0] ?? null;
 }
 
 const ROOM = option('room', DEFAULT_ROOM);
@@ -414,10 +421,15 @@ async function cmdWho() {
 
 async function cmdDump() {
 	const out = option('out', join(ROOT, 'tmp', 'messages.jsonl'));
-	const result = await call(`/api/history?room_id=${encodeURIComponent(ROOM)}&limit=500`);
+	/*
+	 * /api/dump はルームで絞らず、片付けたものも含めて全件を返す。
+	 * 切り分けに使うものなので、見えているものだけでは足りない。
+	 */
+	const result = await call('/api/dump');
 	mkdirSync(join(ROOT, 'tmp'), { recursive: true });
 	writeFileSync(out, result.messages.map((m) => JSON.stringify(m)).join('\n') + '\n', 'utf8');
-	console.log(`${result.messages.length} 件を書き出しました: ${out}`);
+	const archived = result.messages.filter((m) => m.archived_seq !== null).length;
+	console.log(`${result.messages.length} 件を書き出しました（片付けたもの ${archived} 件を含む）: ${out}`);
 }
 
 async function cmdLeave() {
@@ -503,6 +515,135 @@ ${globals}
 `);
 }
 
+// --- 片付ける（archive） ---
+
+/** 何件片付くかを先に出す。件数が思っていたより多ければ、そこで気づける */
+function printPreview(kind, id, counts) {
+	const label = { message: '発言', connector: '参加者', room: 'ルーム' }[kind];
+	console.log(`${label} ${id} を片付けると、次が見えなくなります。`);
+	if (counts.messages > 0) {
+		const span = counts.first && counts.last ? `（${counts.first.slice(5, 16)} 〜 ${counts.last.slice(5, 16)}）` : '';
+		console.log(`  発言       ${String(counts.messages).padStart(4)} 件${span}`);
+	}
+	if (counts.cursors > 0) console.log(`  読んだ位置 ${String(counts.cursors).padStart(4)} 件`);
+	if (counts.connectors > 0) console.log(`  参加者     ${String(counts.connectors).padStart(4)} 件`);
+	console.log('archives に記録され、restore で戻せます。');
+}
+
+/**
+ * 標準入力から 1 行読む。
+ *
+ * y では通さず、対象の名前を打たせる。勢いで確定させないため。
+ * 前面で人が打つとき用。パイプで渡されていれば、その 1 行を使う。
+ */
+function readLine(prompt) {
+	process.stdout.write(prompt);
+	return new Promise((resolve) => {
+		let buf = '';
+		process.stdin.setEncoding('utf8');
+		const onData = (chunk) => {
+			buf += chunk;
+			const nl = buf.indexOf('\n');
+			if (nl < 0) return;
+			process.stdin.off('data', onData);
+			process.stdin.pause();
+			resolve(buf.slice(0, nl).trim());
+		};
+		process.stdin.on('data', onData);
+		process.stdin.resume();
+	});
+}
+
+async function cmdArchive() {
+	const [kind, id] = positionals();
+	if (!kind || !id) {
+		console.error('対象を指定してください: archive message|connector|room <対象>');
+		process.exit(2);
+	}
+	if (!['message', 'connector', 'room'].includes(kind)) {
+		console.error(`kind は message / connector / room です: ${kind}`);
+		process.exit(2);
+	}
+
+	/*
+	 * 既定のルームはサーバー側でも弾くが、ここでも先に弾く。
+	 * 下見を出して名前まで打たせてから断るのは、手間をかけさせるだけになる。
+	 */
+	if (kind === 'room' && id === DEFAULT_ROOM) {
+		console.error(`${DEFAULT_ROOM} は片付けられません（参加時の行き先です）`);
+		process.exit(2);
+	}
+
+	const withMessages = hasFlag('with-messages');
+	const query = `/api/admin/archive-preview?kind=${kind}&id=${encodeURIComponent(id)}${withMessages ? '&with_messages=1' : ''}`;
+	const counts = await call(query);
+
+	if (counts.messages + counts.cursors + counts.connectors === 0) {
+		console.error(`片付けるものがありません: ${kind} ${id}`);
+		process.exit(1);
+	}
+
+	printPreview(kind, id, counts);
+	const answer = await readLine(`本当に片付ける場合は「${id}」と入力してください: `);
+	if (answer !== id) {
+		console.log('中止しました。');
+		process.exit(1);
+	}
+
+	const result = await postJson('/api/admin/archive', {
+		kind,
+		id,
+		with_messages: withMessages,
+		description: option('description') ?? undefined,
+		connector_id: requireConnectorId(),
+		confirm: id,
+	});
+
+	console.log(`片付けました（archived_seq ${result.archived_seq}）`);
+	console.log(`  ${result.description}`);
+	console.log(`戻すには: restore ${result.archived_seq}`);
+}
+
+async function cmdArchives() {
+	const { archives } = await call('/api/admin/archives');
+	if (archives.length === 0) {
+		console.log('片付けたものはありません。');
+		return;
+	}
+	/*
+	 * 対象（kind と id）を説明とは別の列で出す。
+	 * 説明は --description で書き換えられるため、そこだけ見ても対象が分からない。
+	 */
+	const label = { message: '発言', connector: '参加者', room: 'ルーム' };
+	const targets = archives.map((a) => `${label[a.archive_kind] ?? a.archive_kind} ${a.archive_id}`);
+	const width = Math.max(4, ...targets.map((t) => [...t].length));
+
+	console.log(`  seq  片付けた日時             ${'対象'.padEnd(width)}  件数  説明`);
+	for (const [i, a] of archives.entries()) {
+		const count = Number(a.msg_count) + Number(a.cursor_count) + Number(a.connector_count);
+		console.log(
+			`${String(a.archived_seq).padStart(5)}  ${a.archived_at}  ${targets[i].padEnd(width)}  ` +
+				`${String(count).padStart(4)}  ${a.description}`
+		);
+	}
+}
+
+async function cmdRestore() {
+	const seq = positional();
+	if (!seq || !/^\d+$/.test(seq)) {
+		console.error('戻す番号を指定してください: restore <archived_seq>');
+		process.exit(2);
+	}
+
+	const result = await postJson('/api/admin/restore', {
+		archived_seq: Number(seq),
+		connector_id: requireConnectorId(),
+	});
+
+	console.log(`archived_seq ${result.archived_seq} を戻しました（${result.restored} 件）`);
+	console.log(`  ${result.description}`);
+}
+
 const commands = {
 	join: cmdJoin,
 	wait: cmdWait,
@@ -511,6 +652,9 @@ const commands = {
 	who: cmdWho,
 	dump: cmdDump,
 	leave: cmdLeave,
+	archive: cmdArchive,
+	archives: cmdArchives,
+	restore: cmdRestore,
 	restart: () => cmdExit(1),
 	stop: () => cmdExit(0),
 };

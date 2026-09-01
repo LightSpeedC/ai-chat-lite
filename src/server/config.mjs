@@ -51,7 +51,11 @@ export const DB_PATH = join(DATA_DIR, 'chat.db');
  * ポートを見つけて叩かれても、これを知らなければ弾ける。
  *
  * 起動するたびに変わる。本番では使わない（IS_TEST が false のときは空）。
- * 値は起動時に置き場の server.json へ書き、テストはそれを読んで付ける。
+ *
+ * サーバーは起動ログに 1 行出すだけで、ファイルには書かない。/api/version でも
+ * 返さない（誰でも読めてしまう）。ログから拾って置き場の server.json に書くのは
+ * tools/40_test/start-test-server.mjs で、テストはその server.json を読む。
+ * main.mjs を直に起動したときは server.json が無いので、ログから拾うことになる。
  */
 export const TEST_ACCESS_TOKEN = IS_TEST ? randomUUID() : '';
 

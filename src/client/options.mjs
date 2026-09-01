@@ -43,6 +43,8 @@ export const DEFAULT_WAIT_SEC = 8 * 3600;
  */
 export const OPTIONS = [
 	{ long: 'help', short: 'h', arg: '', cmd: null, desc: 'この使い方を出す。コマンドを付けなくても出る' },
+	{ long: 'with-messages', short: null, arg: '', cmd: 'archive', desc: '参加者を片付けるとき、その参加者の発言も含める' },
+	{ long: 'description', short: null, arg: '<説明>', cmd: 'archive', desc: '何をなぜ片付けたか。省略すると自動で組み立てる' },
 	{ long: 'connector-id', short: 'c', arg: '<id>', cmd: null, desc: '名乗る ID。読むだけのコマンド以外では省略できない' },
 	{ long: 'port', short: 'p', arg: '<ポート>', cmd: null, desc: 'localhost のポートだけを変える' },
 	{ long: 'url', short: 'u', arg: '<URL>', cmd: null, desc: '接続先。ホストごと変える（--port とは併用できない）' },
@@ -64,8 +66,11 @@ export const COMMANDS = [
 	{ name: 'say', arg: '"本文"', desc: '投稿する' },
 	{ name: 'recent', arg: '', desc: '直近の履歴を出す' },
 	{ name: 'who', arg: '', desc: '参加者と状態を出す' },
-	{ name: 'dump', arg: '', desc: 'JSONL に書き出す' },
+	{ name: 'dump', arg: '', desc: '全ルームの発言を JSONL に書き出す（片付けたものも含む）' },
 	{ name: 'leave', arg: '', desc: '離脱を知らせる' },
+	{ name: 'archive', arg: 'message|connector|room <対象>', desc: '片付ける。先に件数を出し、対象名の入力を求める' },
+	{ name: 'archives', arg: '', desc: '片付けたものの一覧を出す' },
+	{ name: 'restore', arg: '<archived_seq>', desc: '片付けたものをまとめて戻す' },
 ];
 
 /**
@@ -100,6 +105,16 @@ export const RETRY_TIMES = {
  * のかを区別できるようにするため。
  */
 export const EXIT_UNREACHABLE = 3;
+
+/**
+ * 値を取らないオプション（旗）。
+ *
+ * 位置引数を拾うときに値を飛ばしてはいけない。飛ばすと archive room sandbox の
+ * sandbox が消える。
+ */
+export const FLAGS = new Set(
+	OPTIONS.filter((o) => o.arg === '').flatMap((o) => (o.short ? [`--${o.long}`, `-${o.short}`] : [`--${o.long}`]))
+);
 
 /** サーバーを操作するコマンド。管理者権限は要らない */
 export const ADMIN_COMMANDS = [
