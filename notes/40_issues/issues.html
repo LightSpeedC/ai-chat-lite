@@ -596,8 +596,8 @@ footer a {
 <section class="toc md-skip">
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（3 件 / 未 2 / 済 1）</a></li>
-		<li class="g02"><a href="#g02">データ（4 件 / 未 3 / 着手 1）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（3 件 / 済 3）</a></li>
+		<li class="g02"><a href="#g02">データ（4 件 / 未 2 / 着手 1 / 済 1）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（5 件 / 未 2 / 済 3）</a></li>
 		<li class="g04"><a href="#g04">チャットの機能（14 件 / 未 8 / 済 6）</a></li>
 	</ol>
 </section>
@@ -855,14 +855,14 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-todo">未</span>
 		データ
-		<span class="count">4 件 / 未 3 / 着手 1</span>
+		<span class="count">4 件 / 未 2 / 着手 1 / 済 1</span>
 	</summary>
 
 	<div class="groupbody">
 
-		<details class="issue" id="i260901-04" open>
+		<details class="issue done" id="i260901-04" open>
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260901-04</span>
 				DB の形を版で管理し、上げる手順を自動にする
 			</summary>
@@ -966,12 +966,12 @@ const servers = await startServers();           // 待ち受けを開始</code><
 
 				<ul class="todos">
 					<li class="done"><span class="badge b-done">☑</span> <strong>論点 1〜10 を決めた</strong></li>
-					<li><span class="badge b-todo">未</span> 計画を書く（<code>notes/10_plan/</code>）</li>
-					<li><span class="badge b-todo">未</span> <code>versions</code> テーブルと版を上げる処理を作る</li>
-					<li><span class="badge b-todo">未</span> メンテナンス中の応答と噛み合わせる（上げている間は 503）</li>
-					<li><span class="badge b-todo">未</span> 上げる前に控えを取る</li>
-					<li><span class="badge b-todo">未</span> テストを書く</li>
-					<li><span class="badge b-todo">未</span> 資料に書く（設計・手引き）</li>
+					<li class="done"><span class="badge b-done">☑</span> 計画を書く（<code>notes/10_plan/</code>）</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>versions</code> テーブルと版を上げる処理を作る</li>
+					<li class="done"><span class="badge b-done">☑</span> メンテナンス中の応答と噛み合わせる（上げている間は 503）</li>
+					<li class="done"><span class="badge b-done">☑</span> 上げる前に控えを取る</li>
+					<li class="done"><span class="badge b-done">☑</span> テストを書く</li>
+					<li class="done"><span class="badge b-done">☑</span> 資料に書く（設計・手引き）</li>
 				</ul>
 			</div>
 		</details>
@@ -1079,12 +1079,183 @@ const servers = await startServers();           // 待ち受けを開始</code><
 <!-- ================= グループ 3 ================= -->
 <details class="group g03" id="g03" data-name="開発環境・記録">
 	<summary>
-		<span class="badge b-done">☑</span>
+		<span class="badge b-todo">未</span>
 		開発環境・記録
-		<span class="count">3 件 / 済 3</span>
+		<span class="count">5 件 / 未 2 / 済 3</span>
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue" id="i260901-05" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260901-05</span>
+				待受けのサブエージェントに SECURITY WARNING が付いた
+			</summary>
+			<div class="issuebody">
+				<p>待受けを張ったサブエージェントの結果に、ハーネスから警告が付いた。</p>
+
+				<pre><code class="language-text">SECURITY WARNING: This subagent performed actions that may violate security policy.
+Reason: Blocked by classifier.
+Review the subagent's actions carefully before acting on its output.</code></pre>
+
+				<p><strong>何がブロックされたかは分からない。</strong>出力の中身はチャットの本文（自分が送った周知）だけで、そこから判断できる材料がない。サブエージェントが実行したのは待受けの起動 1 回だけである。</p>
+
+				<h3>調べたこと</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">見たもの</th><th>結果</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap"><code>/</code> と <code>\</code> の混在</td>
+						<td><strong>0 件。</strong><code>src</code> / <code>tools</code> / <code>tests</code> の全ファイルで、同じ行に両方の区切りを含むパスは無い</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<h3>心当たり</h3>
+
+				<p>周知の本文に<strong>エラーメッセージとフルパスを載せた</strong>。分類器がこれを拾った可能性がある。</p>
+
+				<pre><code class="language-text">Cannot find module 'N:\2026\ai-chat-lite\2026ai-chat-litesrcclientchat.mjs'</code></pre>
+
+				<div class="callout callout-warning">
+					<p><strong>警告の理由が分からないままだと、対処もできない。</strong>「分類器がブロックした」以上の情報が出力に無い。同じ操作を繰り返して再現するか、出ない条件を探すかになる。</p>
+				</div>
+
+				<h3>論点</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="num nowrap">#</th><th class="nowrap">論点</th><th>案</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="num">1</td><td class="nowrap">再現するか</td>
+						<td>同じ内容の待受けを何回か張って、警告が毎回出るか・特定の回だけか を見る。<strong>毎回出るなら待受けそのものが原因、1 回だけなら本文が原因</strong>に寄る</td>
+					</tr>
+					<tr>
+						<td class="num">2</td><td class="nowrap">本文が原因か</td>
+						<td>フルパスやエラーメッセージを含まない発言だけが流れている状態で待受けを張り、出るかを見る</td>
+					</tr>
+					<tr>
+						<td class="num">3</td><td class="nowrap">ログに手がかりがあるか</td>
+						<td>セッションの JSONL に、ブロックされた対象が残っていないかを見る</td>
+					</tr>
+					<tr>
+						<td class="num">4</td><td class="nowrap">出たときどうするか</td>
+						<td>いまは張り直して続けている。<strong>止めるべきかを決める。</strong>待受けは待つだけなので害は小さいが、理由が分からないものを流し続けるのは筋が悪い</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> 同じ待受けを何回か張って、再現するかを見る</li>
+					<li><span class="badge b-todo">未</span> セッションの JSONL に手がかりが無いかを見る</li>
+					<li><span class="badge b-todo">未</span> フルパスを含まない状態で試す</li>
+					<li><span class="badge b-todo">未</span> 出たときの扱いを決める（続ける／止める）</li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue" id="i260901-06" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260901-06</span>
+				C# で CLI を書き、node 版と並行して持つ
+			</summary>
+			<div class="issuebody">
+				<p><code>csc</code> で <code>ai-chat-lite-cli.exe</code> を作る。<strong>いまの node 版はそのまま残し、両方を保守する。</strong></p>
+
+				<h3>なぜ検討するか</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">観点</th><th>いまの node 版</th><th>exe にしたら</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">起動</td>
+						<td><code>node ...\chat.mjs</code> と書く。<strong>パスの区切りで 2 回落ちた</strong></td>
+						<td><code>ai-chat-lite-cli.exe</code> だけ。パスを書かせない道もある</td>
+					</tr>
+					<tr>
+						<td class="nowrap">Node への依存</td>
+						<td>要る（v22.5 以降。<code>node:sqlite</code> のため）</td>
+						<td>要らない。<strong>ただし CLI は DB を触らないので、そもそも sqlite は不要</strong></td>
+					</tr>
+					<tr>
+						<td class="nowrap">起動の速さ</td>
+						<td>未実測</td>
+						<td>未実測。<strong>比べる価値がある</strong></td>
+					</tr>
+					<tr>
+						<td class="nowrap">保守</td>
+						<td>1 本</td>
+						<td><strong>2 本になる。</strong>オプションを増やすたび両方を直す</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-warning">
+					<p><strong>2 本を保守すると、必ず食い違う。</strong>今日 <code>usage()</code> と <code>USAGE</code> の一覧が食い違っていたのと同じことが起きる。<strong>食い違いを検出する手立てを先に決める</strong>（同じテストを両方に当てる等）。</p>
+				</div>
+
+				<h3>論点</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="num nowrap">#</th><th class="nowrap">論点</th><th>案</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="num">1</td><td class="nowrap">どこまで作るか</td>
+						<td>全コマンド（<code>join</code> <code>wait</code> <code>say</code> <code>recent</code> <code>who</code> <code>dump</code> <code>leave</code> <code>restart</code> <code>stop</code>）か、<strong>待受けとよく使う分（<code>wait</code> <code>say</code> <code>recent</code>）だけ</strong>か</td>
+					</tr>
+					<tr>
+						<td class="num">2</td><td class="nowrap">食い違いをどう防ぐか</td>
+						<td><strong>同じ振る舞いのテストを両方に当てる</strong>のを勧める。オプションの表（<code>options.mjs</code>）を <strong>2 本の共通の元にできるか</strong>を確かめる（JSON に出す等）</td>
+					</tr>
+					<tr>
+						<td class="num">3</td><td class="nowrap">置き場</td>
+						<td>フォルダ規約では納品するものは <code>src/</code>。<code>src/cli-cs/</code> に <code>.cs</code> を置き、ビルドは <code>tools/20_build/</code>。exe の置き場も決める（ルート直下か <code>dist/</code> か）</td>
+					</tr>
+					<tr>
+						<td class="num">4</td><td class="nowrap">ビルドの前提</td>
+						<td><code>csc</code> はどこにあるか（.NET SDK か、Windows 同梱の <code>Microsoft.NET\Framework64\v4.0.30319\csc.exe</code> か）。<strong>まず実測する</strong></td>
+					</tr>
+					<tr>
+						<td class="num">5</td><td class="nowrap">exe を Git に入れるか</td>
+						<td><code>dist/</code> は Git 管理外という規約がある。<strong>ビルド済みを配るのか、各自でビルドするのか</strong>を決める</td>
+					</tr>
+					<tr>
+						<td class="num">6</td><td class="nowrap">どちらを正とするか</td>
+						<td>資料に書くコマンドはどちらにするか。<strong>両方書くと読み手が迷う</strong></td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> <strong>論点 1〜6 を決める</strong></li>
+					<li><span class="badge b-todo">未</span> <code>csc</code> の在処と版を実測する</li>
+					<li><span class="badge b-todo">未</span> 計画を書く（<code>notes/10_plan/</code>）</li>
+					<li><span class="badge b-todo">未</span> 実装する</li>
+					<li><span class="badge b-todo">未</span> 食い違いを検出するテストを書く</li>
+					<li><span class="badge b-todo">未</span> 起動の速さを node 版と比べる</li>
+					<li><span class="badge b-todo">未</span> 資料に書く</li>
+				</ul>
+			</div>
+		</details>
 
 		<details class="issue done" id="i260830-07">
 			<summary>

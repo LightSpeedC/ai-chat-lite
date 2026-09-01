@@ -1882,6 +1882,119 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 
 	<pre><code class="language-xml">&lt;env name="AICHAT_PORT" value="8787"/&gt;</code></pre>
 
+	<h2>DB の形は版で管理する</h2>
+
+	<p><code>CREATE TABLE IF NOT EXISTS</code> は<strong>既にあるテーブルを作り替えない</strong>。列を足すだけなら <code>ALTER TABLE</code> で済むが、<strong><code>CHECK</code> の変更・列の削除・型の変更はテーブルを作り直すしかない</strong>。そのたびに専用の手順を書くのをやめ、版で管理する形にした。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">置き場</th><th>中身</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000001/</code></td><td>改名前の形。<strong>すでに動いていた DB はこの形</strong></td></tr>
+			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000002/</code></td><td><code>connector</code> への改名</td></tr>
+			<tr><td class="nowrap"><code>src/server/migrate.mjs</code></td><td>版を当てる処理。<strong><code>store.mjs</code> とは別の接続で開く</strong></td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p><code>versions</code> テーブルに、どこまで当てたかを持つ。起動時に足りない分だけを順に当てる。</p>
+
+	<pre><code class="language-sql">CREATE TABLE versions (
+  version_seq INTEGER PRIMARY KEY,
+  applied_at  TEXT    NOT NULL,   -- 当てた時刻
+  script      TEXT    NOT NULL,   -- 実行したファイル名
+  sql_sha256  TEXT    NOT NULL    -- 中身の指紋
+);</code></pre>
+
+	<h3>版を足す手順</h3>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="num nowrap">#</th><th>やること</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="num">1</td><td><code>src/scripts/20_migrate/ver_000003/</code> を作る。<strong>番号は連続させる</strong>（飛んでいると起動が止まる）</td></tr>
+			<tr><td class="num">2</td><td>その下に <code>001-なにをするか.sql</code> を置く。<strong>1 つの版に複数置ける</strong>（名前順に当たる）</td></tr>
+			<tr><td class="num">3</td><td><code>store.mjs</code> の <code>CREATE TABLE IF NOT EXISTS</code> も新しい形に合わせる</td></tr>
+			<tr><td class="num">4</td><td>テストを流す。<strong>空の DB から全部当てて最新の形になるか</strong>を <code>migrate.test.mjs</code> が見る</td></tr>
+			<tr><td class="num">5</td><td>サーバーを起動し直す。<strong>起動時に自動で当たる</strong></td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-caution">
+		<p><strong>当て済みの SQL を書き換えてはいけない。</strong>当て済みの環境では二度と実行されないため、書き換えると<strong>環境ごとに形が違う状態</strong>になる。指紋（<code>sql_sha256</code>）を記録しており、食い違うと起動が止まる。</p>
+		<p>直したいときは<strong>新しい版として足す</strong>。</p>
+	</div>
+
+	<h3>決めたこと</h3>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">項目</th><th>中身</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">失敗したとき</td>
+				<td><strong>1 版 = 1 トランザクション。巻き戻して起動を止める。</strong>版は上がらない。SQLite は DDL もトランザクションに入る（<code>PRAGMA</code> と <code>VACUUM</code> は入らない）</td>
+			</tr>
+			<tr>
+				<td class="nowrap">控え</td>
+				<td><strong>当てる前に自動で取る</strong>（<code>VACUUM INTO</code>）。<code>_data/pre-ver-NNNNNN-yyyymmddhhmmss.db</code>。稼働中でも 24 ミリ秒で終わることを実測している</td>
+			</tr>
+			<tr>
+				<td class="nowrap">下り（元に戻す）</td>
+				<td><strong>持たない。</strong>SQLite では列の削除もできず、下りを正しく書き続けるのは重い。<strong>戻すなら控えから戻す</strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap">すでに使われている DB</td>
+				<td><code>versions</code> を持たない DB は<strong>版 1 として記録するだけ</strong>（当てない）。改名の前から動いている DB はすでに版 1 の形である</td>
+			</tr>
+			<tr>
+				<td class="nowrap">当てる場所</td>
+				<td><strong><code>store.mjs</code> を読み込む前。</strong>読み込んだ時点で DB を開くため、形を変える前に <code>import</code> すると古い形のまま掴んでしまう</td>
+			</tr>
+			<tr>
+				<td class="nowrap">上げている間の応答</td>
+				<td>メンテナンス中の受け口のまま。<strong>503 で「DB の形を更新しています」を返す</strong></td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout">
+		<p><strong>定義が 2 か所にある。</strong><code>store.mjs</code> の <code>CREATE TABLE IF NOT EXISTS</code> と、版の SQL である。いずれ SQL 側へ一本化するのが筋だが、枠組みの新設と改名を同時に通したため今回は残した。</p>
+		<p>食い違いを防ぐため、<strong>空の DB に版を全部当てた形が期待どおりかをテストで見ている</strong>。</p>
+	</div>
+
+	<h3>版の SQL に古い名前が残るのは正しい</h3>
+
+	<p><code>ver_000001</code> には <code>user_id</code> や <code>users</code> が書かれている。<strong>これは仕事である。</strong></p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">版</th><th>役目</th><th>古い名前が要る理由</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>ver_000001</code></td><td>改名前の形を作る</td>
+				<td>版 2 が <code>RENAME COLUMN user_id TO connector_id</code> を当てる<strong>土台</strong>。ここが <code>connector_id</code> だと版 2 が失敗する</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>ver_000002</code></td><td>改名する</td>
+				<td><code>FROM users</code> <code>SELECT from_user_id</code> と<strong>古い名前を読む</strong>のが仕事</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p><strong>最終的な形に古い名前は残らない。</strong>途中の 1 段だけが持つ。</p>
+
 	<h2>メンテナンス中は DB を開かない。ただし応答はする</h2>
 
 	<p>DB を作り替えたり中身を入れ替えたりする間、サービスに勝手に起動されると<strong>ファイルを掴まれて手が出せなくなる</strong>。<code>_data\MAINTENANCE</code> という印を置いておくと、サーバーは <strong>DB を開かずに待つ</strong>。</p>
