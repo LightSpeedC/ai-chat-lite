@@ -4,7 +4,7 @@
  * テストは実際に動いているサーバーへ投稿するため、走らせるたびに参加者とルームが
  * 増える。名前で見分けられるようにしておき、終わったらまとめて消す。
  *
- *   user_id が test-  で始まるもの … users / cursors / messages（発言者・宛先）
+ *   connector_id が test-  で始まるもの … connectors / cursors / messages（発言者・宛先）
  *   room_id が sandbox- で始まるもの … messages / cursors
  *
  * public のように残したいルームへ投稿したものも、発言者が test- なら消える。
@@ -16,7 +16,7 @@
  *   node tools/40_test/purge-test-data.mjs --production   本番を相手にする
  *
  * --names は、テストが自分で作った分だけを消すためにある。接頭辞で全部消すと、
- * 同時に走っている別のテストのデータまで巻き込む。名前は user_id と room_id の
+ * 同時に走っている別のテストのデータまで巻き込む。名前は connector_id と room_id の
  * どちらとしても照合する。
  *
  * 【既定はテスト側】
@@ -29,7 +29,7 @@ import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
 
 /** テストが作るものの目印。ここを変えるときはテスト側の名前も揃える */
-export const USER_PREFIX = 'test-';
+export const CONNECTOR_PREFIX = 'test-';
 export const ROOM_PREFIX = 'sandbox-';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -72,22 +72,22 @@ db.exec('PRAGMA secure_delete = ON');
  */
 const build = () => {
 	if (names.length === 0) {
-		const u = `${USER_PREFIX}%`;
+		const u = `${CONNECTOR_PREFIX}%`;
 		const r = `${ROOM_PREFIX}%`;
 		return {
-			messages: ['from_user_id LIKE ? OR to_user_id LIKE ? OR room_id LIKE ?', [u, u, r]],
-			cursors: ['user_id LIKE ? OR room_id LIKE ?', [u, r]],
-			users: ['user_id LIKE ?', [u]],
+			messages: ['from_connector_id LIKE ? OR to_connector_id LIKE ? OR room_id LIKE ?', [u, u, r]],
+			cursors: ['connector_id LIKE ? OR room_id LIKE ?', [u, r]],
+			connectors: ['connector_id LIKE ?', [u]],
 		};
 	}
 	const marks = names.map(() => '?').join(', ');
 	return {
 		messages: [
-			`from_user_id IN (${marks}) OR to_user_id IN (${marks}) OR room_id IN (${marks})`,
+			`from_connector_id IN (${marks}) OR to_connector_id IN (${marks}) OR room_id IN (${marks})`,
 			[...names, ...names, ...names],
 		],
-		cursors: [`user_id IN (${marks}) OR room_id IN (${marks})`, [...names, ...names]],
-		users: [`user_id IN (${marks})`, [...names]],
+		cursors: [`connector_id IN (${marks}) OR room_id IN (${marks})`, [...names, ...names]],
+		connectors: [`connector_id IN (${marks})`, [...names]],
 	};
 };
 
@@ -97,8 +97,8 @@ const count = (table) => {
 	return Number(db.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE ${cond}`).get(...args).n);
 };
 
-const found = { messages: count('messages'), cursors: count('cursors'), users: count('users') };
-const total = found.messages + found.cursors + found.users;
+const found = { messages: count('messages'), cursors: count('cursors'), connectors: count('connectors') };
+const total = found.messages + found.cursors + found.connectors;
 const scope = names.length === 0 ? '接頭辞に当たる全部' : `指定された ${names.length} 件の名前`;
 
 if (total === 0) {
@@ -107,7 +107,7 @@ if (total === 0) {
 	process.exit(0);
 }
 
-console.log(`テストデータ（${scope}）: messages ${found.messages} / cursors ${found.cursors} / users ${found.users}`);
+console.log(`テストデータ（${scope}）: messages ${found.messages} / cursors ${found.cursors} / connectors ${found.connectors}`);
 
 if (dryRun) {
 	console.log('（--dry-run のため消していません）');
@@ -116,7 +116,7 @@ if (dryRun) {
 }
 
 db.exec('BEGIN IMMEDIATE');
-for (const table of ['messages', 'cursors', 'users']) {
+for (const table of ['messages', 'cursors', 'connectors']) {
 	const [cond, args] = conditions[table];
 	db.prepare(`DELETE FROM ${table} WHERE ${cond}`).run(...args);
 }

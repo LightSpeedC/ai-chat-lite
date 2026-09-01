@@ -9,8 +9,8 @@ import {
 import { log } from './log.mjs';
 import {
 	addMessage, getSince, getLatest, getBefore, getMaxSeq,
-	joinUser, touchUser, addConnection, removeConnection, listRooms,
-	getCursor, setCursor, closeDb, getUser,
+	joinConnector, touchConnector, addConnection, removeConnection, listRooms,
+	getCursor, setCursor, closeDb, getConnector,
 } from './store.mjs';
 import { listPresence, getPresence, STATUS } from './presence.mjs';
 import {
@@ -57,7 +57,7 @@ function requireBody(value) {
 
 function roleOf(value) {
 	const role = String(value ?? 'ai');
-	if (role !== 'ai' && role !== 'human') throw new BadRequest('user_role は ai か human です');
+	if (role !== 'ai' && role !== 'human') throw new BadRequest('connector_role は ai か human です');
 	return role;
 }
 
@@ -107,8 +107,8 @@ function broadcastPresence() {
 }
 
 /** システムメッセージを積んで配る */
-function postSystemMessage(roomId, userId, kind, body) {
-	const message = addMessage({ roomId, fromUserId: userId, kind, body });
+function postSystemMessage(roomId, connectorId, kind, body) {
+	const message = addMessage({ roomId, fromConnectorId: connectorId, kind, body });
 	publish(message);
 	return message;
 }
@@ -129,19 +129,19 @@ const knownStatus = new Map();
  */
 export function sweepOffline() {
 	const gone = [];
-	for (const user of listPresence()) {
-		const before = knownStatus.get(user.user_id);
-		knownStatus.set(user.user_id, user.status);
+	for (const c of listPresence()) {
+		const before = knownStatus.get(c.connector_id);
+		knownStatus.set(c.connector_id, c.status);
 		// 初めて見る相手は対象外。起動直後に全員分の離脱が流れるのを防ぐ
-		if (before && before !== STATUS.OFFLINE && user.status === STATUS.OFFLINE) {
-			gone.push(user.user_id);
+		if (before && before !== STATUS.OFFLINE && c.status === STATUS.OFFLINE) {
+			gone.push(c.connector_id);
 		}
 	}
 
-	for (const userId of gone) {
-		log.info(`${userId} がオフラインになりました`);
+	for (const connectorId of gone) {
+		log.info(`${connectorId} がオフラインになりました`);
 		// ルームごとの在席は持っていないため、既定のルームに積む
-		postSystemMessage(DEFAULT_ROOM, userId, 'leave', `${userId} がオフラインになりました`);
+		postSystemMessage(DEFAULT_ROOM, connectorId, 'leave', `${connectorId} がオフラインになりました`);
 	}
 	if (gone.length > 0) broadcastPresence();
 	return gone;
@@ -151,40 +151,40 @@ export function sweepOffline() {
 
 async function handleJoin(req, res) {
 	const input = await readJsonBody(req);
-	const userId = requireId(input.user_id, 'user_id');
-	const role = roleOf(input.user_role);
+	const connectorId = requireId(input.connector_id, 'connector_id');
+	const role = roleOf(input.connector_role);
 	const roomId = roomOf(input.room_id);
 
-	const before = getPresence(userId);
-	joinUser(userId, role);
+	const before = getPresence(connectorId);
+	joinConnector(connectorId, role);
 
 	// すでにオンラインだった相手の再接続では通知しない（張り直しのたびに流れてしまう）
 	if (!before || before.status === STATUS.OFFLINE) {
-		postSystemMessage(roomId, userId, 'join', `${userId} が参加しました`);
+		postSystemMessage(roomId, connectorId, 'join', `${connectorId} が参加しました`);
 	}
 	// 初めてのときだけ、参加した時点を読み始めの位置にする。
 	// すでに読んでいる位置があれば触らない（未読を飛ばさないため）
-	if (getCursor(userId, roomId) === null) setCursor(userId, roomId, getMaxSeq(roomId));
+	if (getCursor(connectorId, roomId) === null) setCursor(connectorId, roomId, getMaxSeq(roomId));
 
 	broadcastPresence();
 
 	sendJson(res, 200, {
-		user_id: userId,
+		connector_id: connectorId,
 		room_id: roomId,
 		msg_seq: getMaxSeq(roomId),
-		users: listPresence(),
+		connectors: listPresence(),
 	});
 }
 
 async function handleSay(req, res) {
 	const input = await readJsonBody(req);
-	const fromUserId = requireId(input.from_user_id ?? input.user_id, 'from_user_id');
+	const fromConnectorId = requireId(input.from_connector_id ?? input.connector_id, 'from_connector_id');
 	const roomId = roomOf(input.room_id);
-	const toUserId = optionalId(input.to_user_id, 'to_user_id');
+	const toConnectorId = optionalId(input.to_connector_id, 'to_connector_id');
 	const body = requireBody(input.msg_body);
 
-	touchUser(fromUserId);
-	const message = addMessage({ roomId, fromUserId, kind: 'say', toUserId, body });
+	touchConnector(fromConnectorId);
+	const message = addMessage({ roomId, fromConnectorId, kind: 'say', toConnectorId, body });
 	publish(message);
 	broadcastPresence();
 
@@ -192,7 +192,7 @@ async function handleSay(req, res) {
 }
 
 async function handlePoll(req, res, url) {
-	const userId = optionalId(url.searchParams.get('user_id'), 'user_id');
+	const connectorId = optionalId(url.searchParams.get('connector_id'), 'connector_id');
 	const roomId = roomOf(url.searchParams.get('room_id'));
 	const waitSec = Math.min(Math.max(numberOf(url.searchParams.get('wait'), MAX_WAIT_SEC), 0), MAX_WAIT_SEC);
 
@@ -205,14 +205,14 @@ async function handlePoll(req, res, url) {
 	const since =
 		sinceParam !== null && sinceParam !== ''
 			? numberOf(sinceParam, 0)
-			: userId
-				? (getCursor(userId, roomId) ?? getMaxSeq(roomId))
+			: connectorId
+				? (getCursor(connectorId, roomId) ?? getMaxSeq(roomId))
 				: 0;
 
 	// 待っている間も在席とみなす。接続を保持しているので確実にいる
-	if (userId) {
-		touchUser(userId);
-		addConnection(userId);
+	if (connectorId) {
+		touchConnector(connectorId);
+		addConnection(connectorId);
 		broadcastPresence();
 	}
 
@@ -225,12 +225,12 @@ async function handlePoll(req, res, url) {
 
 		const msgSeq = messages.length > 0 ? messages[messages.length - 1].msg_seq : since;
 		// 返した分まで読んだものとして記録する。次は since を省略しても続きから受け取れる
-		if (userId) setCursor(userId, roomId, msgSeq);
+		if (connectorId) setCursor(connectorId, roomId, msgSeq);
 
 		sendJson(res, 200, { room_id: roomId, since, msg_seq: msgSeq, messages });
 	} finally {
-		if (userId) {
-			removeConnection(userId);
+		if (connectorId) {
+			removeConnection(connectorId);
 			broadcastPresence();
 		}
 	}
@@ -248,8 +248,8 @@ function handleHistory(res, url) {
 	sendJson(res, 200, { room_id: roomId, messages });
 }
 
-function handleUsers(res) {
-	sendJson(res, 200, { users: listPresence() });
+function handleConnectors(res) {
+	sendJson(res, 200, { connectors: listPresence() });
 }
 
 function handleRooms(res) {
@@ -304,7 +304,7 @@ const LEAVE_GRACE_MS = Number(process.env.AICHAT_LEAVE_GRACE_MS ?? 5000);
 
 async function handleLeave(req, res) {
 	const input = await readJsonBody(req);
-	const userId = requireId(input.user_id, 'user_id');
+	const connectorId = requireId(input.connector_id, 'connector_id');
 	const roomId = roomOf(input.room_id);
 
 	// 在席の表示だけは即座に変える。記録を待たせるのは積む判断だけ
@@ -312,16 +312,16 @@ async function handleLeave(req, res) {
 
 	const timer = setTimeout(() => {
 		// 戻ってきていれば何もしない。リロードや繋ぎ直しがこれに当たる
-		const user = getUser(userId);
-		if (user && user.active_connection_count > 0) return;
+		const found = getConnector(connectorId);
+		if (found && found.active_connection_count > 0) return;
 
-		postSystemMessage(roomId, userId, 'leave', `${userId} が離脱しました`);
+		postSystemMessage(roomId, connectorId, 'leave', `${connectorId} が離脱しました`);
 		broadcastPresence();
 	}, LEAVE_GRACE_MS);
 	// 終了を妨げない。落とすときに残っていても構わない
 	timer.unref?.();
 
-	sendJson(res, 200, { user_id: userId, left: true, grace_ms: LEAVE_GRACE_MS });
+	sendJson(res, 200, { connector_id: connectorId, left: true, grace_ms: LEAVE_GRACE_MS });
 }
 
 /**
@@ -384,10 +384,10 @@ async function handleExit(req, res, url) {
 		req.method === 'POST'
 			? await readJsonBody(req)
 			: {
-					user_id: url.searchParams.get('user_id'),
+					connector_id: url.searchParams.get('connector_id'),
 					exit_code: url.searchParams.get('exit_code'),
 				};
-	const who = input.user_id ?? '不明';
+	const who = input.connector_id ?? '不明';
 
 	const code = Math.trunc(numberOf(input.exit_code, 1));
 	if (!Number.isInteger(code) || code < 0 || code > 255) {
@@ -410,7 +410,7 @@ async function handleExit(req, res, url) {
 }
 
 function handleEvents(req, res, url) {
-	const userId = optionalId(url.searchParams.get('user_id'), 'user_id');
+	const connectorId = optionalId(url.searchParams.get('connector_id'), 'connector_id');
 	const roomId = roomOf(url.searchParams.get('room_id'));
 	const since = numberOf(url.searchParams.get('since'), null);
 
@@ -428,9 +428,9 @@ function handleEvents(req, res, url) {
 	};
 	addSseClient(client);
 
-	if (userId) {
-		touchUser(userId);
-		addConnection(userId);
+	if (connectorId) {
+		touchConnector(connectorId);
+		addConnection(connectorId);
 	}
 
 	// 履歴を取ってから繋ぐまでの隙間に届いた分を、まず流す
@@ -449,8 +449,8 @@ function handleEvents(req, res, url) {
 	req.on('close', () => {
 		clearInterval(keepAlive);
 		removeSseClient(client);
-		if (userId) {
-			removeConnection(userId);
+		if (connectorId) {
+			removeConnection(connectorId);
 			broadcastPresence();
 		}
 	});
@@ -498,7 +498,7 @@ export async function handleRequest(req, res) {
 		if (req.method === 'GET') {
 			if (path === '/api/poll') return await handlePoll(req, res, url);
 			if (path === '/api/history') return handleHistory(res, url);
-			if (path === '/api/users') return handleUsers(res);
+			if (path === '/api/connectors') return handleConnectors(res);
 			if (path === '/api/rooms') return handleRooms(res);
 			if (path === '/api/version') return handleVersion(res);
 			if (path === '/api/events') return handleEvents(req, res, url);
@@ -566,7 +566,7 @@ export function announceResumed(since) {
 	const body = `【メンテナンス】運用を再開しました。${howLong}読んだ位置は保たれているので、取りこぼしはありません。`;
 
 	try {
-		touchUser(SERVER_ID);
+		touchConnector(SERVER_ID);
 		const message = postSystemMessage(DEFAULT_ROOM, SERVER_ID, 'say', body);
 		broadcastPresence();
 		return message;

@@ -1,6 +1,6 @@
 import { ONLINE_GRACE_MS } from './config.mjs';
 import { jstBefore } from './time.mjs';
-import { listUsers, getUser } from './store.mjs';
+import { listConnectors, getConnector } from './store.mjs';
 
 /**
  * 在席の状態は三段階。
@@ -46,15 +46,15 @@ export function graceThreshold() {
 
 /**
  * 在席の状態を返す。
- * @param user users テーブルの 1 行
+ * @param connector connectors テーブルの 1 行
  * @param threshold graceThreshold() の結果。一覧を回すときは 1 回だけ求めて渡す
  * @returns {'online'|'grace'|'offline'}
  */
-export function getStatus(user, threshold = graceThreshold()) {
-	if (!user) return STATUS.OFFLINE;
-	if (user.active_connection_count > 0) return STATUS.ONLINE;
+export function getStatus(connector, threshold = graceThreshold()) {
+	if (!connector) return STATUS.OFFLINE;
+	if (connector.active_connection_count > 0) return STATUS.ONLINE;
 	// 固定長の JST 文字列同士なので、辞書順の比較がそのまま時刻の前後になる
-	return user.last_active_at >= threshold ? STATUS.GRACE : STATUS.OFFLINE;
+	return connector.last_active_at >= threshold ? STATUS.GRACE : STATUS.OFFLINE;
 }
 
 /**
@@ -64,18 +64,18 @@ export function getStatus(user, threshold = graceThreshold()) {
  * 「いるかどうか」だけを見たい場面と「本当に繋がっているか」を見たい場面が
  * どちらもあるため、判定を呼び出し側で書き直さずに済むよう併せて返す。
  */
-export function describeUser(user, threshold = graceThreshold()) {
-	const status = getStatus(user, threshold);
+export function describeConnector(connector, threshold = graceThreshold()) {
+	const status = getStatus(connector, threshold);
 	return {
-		user_id: user.user_id,
-		user_role: user.user_role,
+		connector_id: connector.connector_id,
+		connector_role: connector.connector_role,
 		status,
 		status_label: STATUS_LABEL[status],
 		online: status !== STATUS.OFFLINE,
 		connected: status === STATUS.ONLINE,
-		active_connection_count: user.active_connection_count,
-		first_joined_at: user.first_joined_at,
-		last_active_at: user.last_active_at,
+		active_connection_count: connector.active_connection_count,
+		first_joined_at: connector.first_joined_at,
+		last_active_at: connector.last_active_at,
 	};
 }
 
@@ -85,8 +85,8 @@ export function describeUser(user, threshold = graceThreshold()) {
  */
 export function listPresence() {
 	const threshold = graceThreshold();
-	return listUsers()
-		.map((u) => describeUser(u, threshold))
+	return listConnectors()
+		.map((u) => describeConnector(u, threshold))
 		.sort((a, b) => {
 			const diff = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
 			if (diff !== 0) return diff;
@@ -95,16 +95,16 @@ export function listPresence() {
 }
 
 /** 1 人分の状態。居なければ null */
-export function getPresence(userId) {
-	const user = getUser(userId);
-	return user ? describeUser(user) : null;
+export function getPresence(connectorId) {
+	const found = getConnector(connectorId);
+	return found ? describeConnector(found) : null;
 }
 
 /** 状態ごとの人数。「3 人が接続中」のような表示に使う */
 export function countByStatus() {
 	const threshold = graceThreshold();
 	const counts = { [STATUS.ONLINE]: 0, [STATUS.GRACE]: 0, [STATUS.OFFLINE]: 0 };
-	for (const user of listUsers()) counts[getStatus(user, threshold)]++;
+	for (const c of listConnectors()) counts[getStatus(c, threshold)]++;
 	return counts;
 }
 

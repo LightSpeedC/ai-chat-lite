@@ -123,17 +123,17 @@ const BASE = resolveBase();
  *
  * --connector-id での明示を必須にしている。カレントのフォルダ名を自動で使うと、
  * 想定と違う場所から実行したときに意図しない ID で参加してしまい、
- * その名前が users とログに残る。取り違えは後から消せないため、
+ * その名前が connectors とログに残る。取り違えは後から消せないため、
  * 手軽さより確実さを採る。
  *
  * 環境変数ではなく引数で受ける。環境変数はプロセス一覧に出ないため、
  * 動いている待受けがどのプロジェクトのものか分からない。引数なら
  * コマンドラインに出るし、シェルごとの書き方の違いもなくなる。
  */
-const USER_ID = option('connector-id');
+const CONNECTOR_ID = option('connector-id');
 
-function requireUserId() {
-	if (USER_ID) return USER_ID;
+function requireConnectorId() {
+	if (CONNECTOR_ID) return CONNECTOR_ID;
 
 	console.error('名乗る ID が指定されていません。');
 	console.error('');
@@ -301,9 +301,9 @@ const postJson = (path, body) =>
 // --- 表示 ---
 
 function formatMessage(m) {
-	const to = m.to_user_id ? ` @${m.to_user_id}` : '';
+	const to = m.to_connector_id ? ` @${m.to_connector_id}` : '';
 	if (m.msg_kind !== 'say') return `${m.sent_at} -- ${m.msg_body}`;
-	return `${m.sent_at} ${m.from_user_id}${to} > ${m.msg_body}`;
+	return `${m.sent_at} ${m.from_connector_id}${to} > ${m.msg_body}`;
 }
 
 function printMessages(messages) {
@@ -314,11 +314,11 @@ function printMessages(messages) {
 
 async function cmdJoin() {
 	const role = option('role', 'ai');
-	const result = await postJson('/api/join', { user_id: USER_ID, user_role: role, room_id: ROOM });
-	console.log(`${USER_ID} として ${result.room_id} に参加しました（現在位置 ${result.msg_seq}）`);
-	console.log(`参加者 ${result.users.length} 人:`);
-	for (const u of result.users) {
-		console.log(`  ${STATUS_MARK[u.status]} ${u.user_id} (${u.status_label})`);
+	const result = await postJson('/api/join', { connector_id: CONNECTOR_ID, connector_role: role, room_id: ROOM });
+	console.log(`${CONNECTOR_ID} として ${result.room_id} に参加しました（現在位置 ${result.msg_seq}）`);
+	console.log(`参加者 ${result.connectors.length} 人:`);
+	for (const u of result.connectors) {
+		console.log(`  ${STATUS_MARK[u.status]} ${u.connector_id} (${u.status_label})`);
 	}
 }
 
@@ -329,9 +329,9 @@ async function cmdSay() {
 		process.exit(1);
 	}
 	const message = await postJson('/api/say', {
-		from_user_id: USER_ID,
+		from_connector_id: CONNECTOR_ID,
 		room_id: ROOM,
-		to_user_id: option('to'),
+		to_connector_id: option('to'),
 		msg_body: body,
 	});
 	console.log(`送信しました（${message.msg_seq}）`);
@@ -357,7 +357,7 @@ async function cmdWait() {
 	}
 
 	// 出すのは開始と終了の 2 行だけ。8 時間を 240 秒ごとに知らせると 120 行になる
-	console.log(`待受け開始（最大 ${label}、ルーム ${ROOM}、${USER_ID}）`);
+	console.log(`待受け開始（最大 ${label}、ルーム ${ROOM}、${CONNECTOR_ID}）`);
 
 	let waited = 0;
 	let last = null;
@@ -370,7 +370,7 @@ async function cmdWait() {
 		 * 受け取った分は返答と同時に記録されるので、次はその続きから届く。
 		 */
 		last = await call(
-			`/api/poll?user_id=${encodeURIComponent(USER_ID)}&room_id=${encodeURIComponent(ROOM)}&wait=${wait}`
+			`/api/poll?connector_id=${encodeURIComponent(CONNECTOR_ID)}&room_id=${encodeURIComponent(ROOM)}&wait=${wait}`
 		);
 		waited += wait;
 
@@ -397,17 +397,17 @@ async function cmdRecent() {
 }
 
 async function cmdWho() {
-	const result = await call('/api/users');
-	if (result.users.length === 0) {
+	const result = await call('/api/connectors');
+	if (result.connectors.length === 0) {
 		console.log('まだ誰も参加していません');
 		return;
 	}
-	const width = Math.max(...result.users.map((u) => u.user_id.length));
+	const width = Math.max(...result.connectors.map((u) => u.connector_id.length));
 	console.log('参加者:');
-	for (const u of result.users) {
+	for (const u of result.connectors) {
 		const conn = u.connected ? `接続 ${u.active_connection_count}` : '';
 		console.log(
-			`  ${STATUS_MARK[u.status]} ${u.user_id.padEnd(width)}  ${u.status_label.padEnd(6)}  ${u.user_role.padEnd(5)}  最終 ${u.last_active_at}  ${conn}`
+			`  ${STATUS_MARK[u.status]} ${u.connector_id.padEnd(width)}  ${u.status_label.padEnd(6)}  ${u.connector_role.padEnd(5)}  最終 ${u.last_active_at}  ${conn}`
 		);
 	}
 }
@@ -421,8 +421,8 @@ async function cmdDump() {
 }
 
 async function cmdLeave() {
-	await postJson('/api/leave', { user_id: USER_ID, room_id: ROOM });
-	console.log(`${USER_ID} として離脱しました`);
+	await postJson('/api/leave', { connector_id: CONNECTOR_ID, room_id: ROOM });
+	console.log(`${CONNECTOR_ID} として離脱しました`);
 }
 
 /**
@@ -433,7 +433,7 @@ async function cmdLeave() {
  * サービスの再起動と違い管理者権限が要らないため、ソースを直したあとの反映に使える。
  */
 async function cmdExit(exitCode) {
-	const result = await postJson('/api/admin/exit', { user_id: USER_ID, exit_code: exitCode });
+	const result = await postJson('/api/admin/exit', { connector_id: CONNECTOR_ID, exit_code: exitCode });
 	console.log(`終了コード ${result.exit_code} で終了します`);
 	console.log(`  ${result.note}`);
 	if (result.will_restart) {
@@ -489,7 +489,7 @@ function usage() {
 	console.log(`ai-chat-lite クライアント
 
   接続先: ${BASE ?? `(未指定)  ← --port ${PORT} か --url <URL> を渡してください`}
-  名乗る ID: ${USER_ID ?? '(未指定)  ← --connector-id <id> を渡してください'}
+  名乗る ID: ${CONNECTOR_ID ?? '(未指定)  ← --connector-id <id> を渡してください'}
   ルーム: ${ROOM}         （--room で変更できる）
 
 コマンド:
@@ -530,6 +530,6 @@ if (wantsHelp || !run) {
 }
 
 // 読むだけのコマンド以外は、名乗る ID が要る
-if (!READ_ONLY.has(command)) requireUserId();
+if (!READ_ONLY.has(command)) requireConnectorId();
 
 await run();

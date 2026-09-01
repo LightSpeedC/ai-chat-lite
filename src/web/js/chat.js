@@ -22,9 +22,9 @@ const el = {
 	roomInput: document.getElementById('room-input'),
 	me: document.getElementById('me-label'),
 	changeId: document.getElementById('change-id'),
-	userList: document.getElementById('user-list'),
-	userCount: document.getElementById('user-count'),
-	userIds: document.getElementById('user-ids'),
+	connectorList: document.getElementById('connector-list'),
+	connectorCount: document.getElementById('connector-count'),
+	connectorIds: document.getElementById('connector-ids'),
 	items: document.getElementById('items'),
 	log: document.getElementById('log'),
 	more: document.getElementById('more'),
@@ -39,7 +39,7 @@ const el = {
 	idInput: document.getElementById('id-input'),
 };
 
-let userId = '';
+let connectorId = '';
 let cursor = 0;        // ここまで受け取った msg_seq
 let oldestSeq = null;  // 画面に出ている中で最も古い msg_seq
 let source = null;     // EventSource
@@ -64,18 +64,18 @@ function messageElement(m) {
 		return wrap;
 	}
 
-	const mine = m.from_user_id === userId;
-	const toMe = m.to_user_id === userId;
+	const mine = m.from_connector_id === connectorId;
+	const toMe = m.to_connector_id === connectorId;
 	wrap.className = 'msg' + (mine ? ' mine' : '') + (toMe ? ' to-me' : '');
 
-	const to = m.to_user_id ? ` <span class="to">@${escapeText(m.to_user_id)}</span>` : '';
+	const to = m.to_connector_id ? ` <span class="to">@${escapeText(m.to_connector_id)}</span>` : '';
 
-	// 参加者一覧と同じ印を出す。data-user は presence が届いたとき塗り直すための目印
-	const status = statusOf.get(m.from_user_id) ?? 'offline';
-	const mark = `<span class="mark ${status}" data-user="${escapeText(m.from_user_id)}"></span>`;
+	// 参加者一覧と同じ印を出す。data-connector は presence が届いたとき塗り直すための目印
+	const status = statusOf.get(m.from_connector_id) ?? 'offline';
+	const mark = `<span class="mark ${status}" data-connector="${escapeText(m.from_connector_id)}"></span>`;
 
 	wrap.innerHTML =
-		`<div class="meta">${mark}<span class="who">${escapeText(m.from_user_id)}</span>${to}` +
+		`<div class="meta">${mark}<span class="who">${escapeText(m.from_connector_id)}</span>${to}` +
 		` ・ ${escapeText(m.sent_at)}</div>` +
 		`<div class="body">${renderBody(m.msg_body)}</div>`;
 	return wrap;
@@ -115,28 +115,28 @@ function prependMessages(messages) {
 
 // --- 参加者 ---
 
-function renderUsers(users) {
-	el.userList.textContent = '';
-	el.userIds.textContent = '';
+function renderConnectors(connectors) {
+	el.connectorList.textContent = '';
+	el.connectorIds.textContent = '';
 
-	for (const u of users) {
+	for (const u of connectors) {
 		const li = document.createElement('li');
 		li.className = u.status;
 		li.title = `${u.status_label} ・ 最終 ${u.last_active_at}`;
 		li.innerHTML =
 			`<span class="mark ${u.status}"></span>` +
-			`<span class="name">${escapeText(u.user_id)}</span>` +
-			`<span class="role">${escapeText(u.user_role)}</span>`;
-		el.userList.appendChild(li);
+			`<span class="name">${escapeText(u.connector_id)}</span>` +
+			`<span class="role">${escapeText(u.connector_role)}</span>`;
+		el.connectorList.appendChild(li);
 
 		const option = document.createElement('option');
-		option.value = u.user_id;
-		el.userIds.appendChild(option);
+		option.value = u.connector_id;
+		el.connectorIds.appendChild(option);
 
-		statusOf.set(u.user_id, u.status);
+		statusOf.set(u.connector_id, u.status);
 	}
 
-	el.userCount.textContent = String(users.filter((u) => u.online).length);
+	el.connectorCount.textContent = String(connectors.filter((u) => u.online).length);
 	refreshMessageMarks();
 }
 
@@ -147,8 +147,8 @@ function renderUsers(users) {
  * presence が届くたびに塗り直す。
  */
 function refreshMessageMarks() {
-	for (const mark of el.log.querySelectorAll('.msg .mark[data-user]')) {
-		const status = statusOf.get(mark.dataset.user) ?? 'offline';
+	for (const mark of el.log.querySelectorAll('.msg .mark[data-connector]')) {
+		const status = statusOf.get(mark.dataset.connector) ?? 'offline';
 		mark.className = `mark ${status}`;
 	}
 }
@@ -265,11 +265,11 @@ function checkVersion({ version, env, maintenance, maintenance_since, maintenanc
 function connectEvents() {
 	if (source) source.close();
 	source = new EventSource(
-		withAccessToken(`/api/events?user_id=${encodeURIComponent(userId)}&room_id=${encodeURIComponent(room)}&since=${cursor}`)
+		withAccessToken(`/api/events?connector_id=${encodeURIComponent(connectorId)}&room_id=${encodeURIComponent(room)}&since=${cursor}`)
 	);
 
 	source.addEventListener('message', (e) => appendMessages([JSON.parse(e.data)]));
-	source.addEventListener('presence', (e) => renderUsers(JSON.parse(e.data)));
+	source.addEventListener('presence', (e) => renderConnectors(JSON.parse(e.data)));
 	source.addEventListener('version', (e) => checkVersion(JSON.parse(e.data)));
 	source.addEventListener('open', hideBanner);
 	source.addEventListener('error', () => {
@@ -314,14 +314,14 @@ async function switchRoom(next) {
 }
 
 async function start() {
-	el.me.textContent = userId;
+	el.me.textContent = connectorId;
 
 	const joined = await api('/api/join', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ user_id: userId, user_role: 'human', room_id: room }),
+		body: JSON.stringify({ connector_id: connectorId, connector_role: 'human', room_id: room }),
 	});
-	renderUsers(joined.users);
+	renderConnectors(joined.connectors);
 
 	const history = await api(`/api/history?room_id=${encodeURIComponent(room)}&limit=${HISTORY_LIMIT}`);
 	if (history.messages.length > 0) {
@@ -351,9 +351,9 @@ el.form.addEventListener('submit', async (e) => {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
-				from_user_id: userId,
+				from_connector_id: connectorId,
 				room_id: room,
-				to_user_id: el.to.value.trim() || null,
+				to_connector_id: el.to.value.trim() || null,
 				msg_body: body,
 			}),
 		});
@@ -411,16 +411,16 @@ el.roomDialog.addEventListener('close', () => {
 window.addEventListener('pagehide', () => {
 	navigator.sendBeacon?.(
 		withAccessToken('/api/leave'),
-		new Blob([JSON.stringify({ user_id: userId, room_id: room })], { type: 'application/json' })
+		new Blob([JSON.stringify({ connector_id: connectorId, room_id: room })], { type: 'application/json' })
 	);
 });
 
 // --- ID の決定 ---
 
 function askId(force) {
-	const saved = localStorage.getItem('aichat.user_id');
+	const saved = localStorage.getItem('aichat.connector_id');
 	if (saved && !force) {
-		userId = saved;
+		connectorId = saved;
 		start();
 		return;
 	}
@@ -434,10 +434,10 @@ el.dialog.addEventListener('close', () => {
 		el.dialog.showModal();
 		return;
 	}
-	localStorage.setItem('aichat.user_id', value);
-	const first = userId === '';
-	userId = value;
-	el.me.textContent = userId;
+	localStorage.setItem('aichat.connector_id', value);
+	const first = connectorId === '';
+	connectorId = value;
+	el.me.textContent = connectorId;
 	if (first) {
 		start();
 	} else {

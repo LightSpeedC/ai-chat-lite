@@ -4,8 +4,9 @@ import { dirname } from 'node:path';
 import { describeEnv, describeListen, VERSION, DB_PATH, IS_TEST, TEST_ACCESS_TOKEN } from './config.mjs';
 import { log } from './log.mjs';
 import { waitUntilCleared, isUnderMaintenance, readMaintenanceInfo } from './maintenance.mjs';
-import { startListening } from './listen.mjs';
+import { startListening, setHandler } from './listen.mjs';
 import { createMaintenanceHandler } from './maintenance-handler.mjs';
+import { migrate } from './migrate.mjs';
 
 /**
  * サーバーの起動口。
@@ -55,6 +56,19 @@ log.info(`待ち受けを開始しました（${servers.length} 個のアドレ�
 if (underMaintenance) log.warn('メンテナンス中として応答します（API は 503）');
 
 const waited = await waitUntilCleared();
+
+/*
+ * 版を上げる。上げている間も 503 のままにしておく。
+ *
+ * 印を待ってから行うのは、印がある間は人が DB を触っているため。
+ * store.mjs より先に済ませる。store.mjs は読み込んだ時点で DB を開くので、
+ * 形を変える前に import すると古い形のまま掴んでしまう。
+ */
+setHandler(servers, createMaintenanceHandler({ reason: 'DB の形を更新しています' }));
+const upgraded = migrate();
+if (upgraded.applied.length > 0) {
+	log.info(`DB の版を ${upgraded.from} から ${upgraded.to} へ上げました`);
+}
 
 // ここで初めて DB が開かれる
 const { takeOver, stopServers, announceResumed } = await import('./server.mjs');

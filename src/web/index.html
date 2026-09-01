@@ -25,9 +25,9 @@
 
 <div class="layout">
 
-	<aside class="users">
-		<h2>参加者 <span class="count" id="user-count">0</span></h2>
-		<ul id="user-list"></ul>
+	<aside class="connectors">
+		<h2>参加者 <span class="count" id="connector-count">0</span></h2>
+		<ul id="connector-list"></ul>
 		<p class="legend">
 			<span class="mark online"></span>接続中
 			<span class="mark grace"></span>一時切断
@@ -46,12 +46,12 @@
 			<div class="composer-side">
 				<label class="to">
 					宛先
-					<input type="text" id="to" list="user-ids" placeholder="全員" size="12">
+					<input type="text" id="to" list="connector-ids" placeholder="全員" size="12">
 				</label>
 				<button type="submit" id="send">送信</button>
 			</div>
 		</form>
-		<datalist id="user-ids"></datalist>
+		<datalist id="connector-ids"></datalist>
 	</main>
 
 </div>

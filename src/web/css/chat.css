@@ -162,7 +162,7 @@ body {
 
 /* ---------- 参加者 ---------- */
 
-.users {
+.connectors {
 	width: 260px;
 	flex-shrink: 0;
 	background: #f2f5fb;
@@ -172,14 +172,14 @@ body {
 	overflow-y: auto;
 }
 
-.users h2 {
+.connectors h2 {
 	margin: 0 0 10px;
 	font-size: 0.95em;
 	color: var(--navy1, #12224d);
 	background: transparent;
 }
 
-.users .count {
+.connectors .count {
 	display: inline-block;
 	min-width: 22px;
 	padding: 0 7px;
@@ -190,13 +190,13 @@ body {
 	text-align: center;
 }
 
-.users ul {
+.connectors ul {
 	list-style: none;
 	margin: 0;
 	padding: 0;
 }
 
-.users li {
+.connectors li {
 	display: flex;
 	align-items: center;
 	gap: 8px;
@@ -206,14 +206,14 @@ body {
 	color: var(--ink, #1c2330);
 }
 
-.users .name {
+.connectors .name {
 	font-weight: 700;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
-.users .role {
+.connectors .role {
 	color: var(--ink-soft, #4a5568);
 	background: transparent;
 	font-size: 0.8em;
@@ -242,7 +242,7 @@ body {
 	background: linear-gradient(100deg, var(--offline1, #5a6472), var(--offline2, #97a1ae));
 }
 
-.users li.offline .name {
+.connectors li.offline .name {
 	color: var(--ink-soft, #4a5568);
 	background: transparent;
 	font-weight: 400;
@@ -571,7 +571,7 @@ dialog button {
 		flex-direction: column;
 	}
 
-	.users {
+	.connectors {
 		width: auto;
 		max-height: 30vh;
 		border-right: none;
