@@ -581,7 +581,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 課題</h1>
 		<p class="lead">これから解決すること。片付いたら閉じて残す</p>
-		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-01</p>
+		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-02</p>
 	</div>
 </div>
 
@@ -597,7 +597,7 @@ footer a {
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（3 件 / 未 2 / 済 1）</a></li>
 		<li class="g02"><a href="#g02">データ（4 件 / 未 2 / 着手 1 / 済 1）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（5 件 / 未 2 / 済 3）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（6 件 / 未 3 / 済 3）</a></li>
 		<li class="g04"><a href="#g04">チャットの機能（14 件 / 未 8 / 済 6）</a></li>
 	</ol>
 </section>
@@ -659,11 +659,11 @@ const servers = await startServers();           // 待ち受けを開始</code><
 					</tr>
 					<tr>
 						<td class="nowrap">名乗る名前</td>
-						<td><strong>このプロジェクトのフォルダ名（<code>ai-chat-lite</code>）を使う。</strong><code>say</code> の間も <code>notice</code> に移した後も変えない。<br><strong>「名乗る ID は project フォルダ名」という決まりに沿う</strong>し、すでに参加者にいるので一覧が増えない</td>
+						<td><strong>このプロジェクトのフォルダ名（<code>ai-chat-lite</code>）を使う。</strong><br><strong>「名乗る ID は project フォルダ名」という決まりに沿う</strong>し、すでに参加者にいるので一覧が増えない</td>
 					</tr>
 					<tr>
 						<td class="nowrap">発言の種類</td>
-						<td><strong>まず <code>say</code> で出す。</strong>テーブルの作り直しが要らない。<br><strong>テーブルを作り直すときに <code>notice</code> へ移す。</strong><code>CHECK (msg_kind IN (…))</code> は <code>ALTER TABLE</code> で変えられないため、作り直しは<a href="#i260830-09">アーカイブ機能</a>と<strong>まとめて 1 回にする</strong></td>
+						<td><strong><code>notice</code> を使う。</strong><code>CHECK (msg_kind IN (…))</code> は <code>ALTER TABLE</code> で変えられないため、<code>say</code> で始めて後から移す案だったが、<a href="#i260830-09">アーカイブ機能</a>で <code>messages</code> を作り直す機会があったので<strong>版 2 でまとめて足した</strong></td>
 					</tr>
 					<tr>
 						<td class="nowrap">メンテナンス中も応答する</td>
@@ -1035,24 +1035,26 @@ const servers = await startServers();           // 待ち受けを開始</code><
 				いらなくなった参加者・ルーム・発言を片付ける手段がない
 			</summary>
 			<div class="issuebody">
-				<p>いちど参加すると <code>users</code> に残り、<code>join</code> のメッセージもログに積まれる。取り消す方法が無い。ルームも同じで、<code>messages</code> に 1 件でも入れば一覧に出続ける。</p>
+				<p>いちど参加すると <code>connectors</code> に残り、<code>join</code> のメッセージもログに積まれる。取り消す方法が無い。ルームも同じで、<code>messages</code> に 1 件でも入れば一覧に出続ける。</p>
 				<p>実際に動作確認で名乗った ID や、<code>sandbox-mteyisfc</code> のような使い捨てのルームが残っている。誤って投稿した発言を消す手段も無い。</p>
-				<p><a class="doclink" href="../10_plan/p260830-02-アーカイブ機能.html">アーカイブ機能の設計</a>を書いた。<strong>消さずに archive する</strong>形で、1 回の操作を <code>archives</code> テーブルの 1 行として記録し、まとめて戻せるようにする。</p>
+				<p><a class="doclink" href="../10_plan/p260830-02-アーカイブ機能.html">アーカイブ機能の設計</a>のとおりに実装した。<strong>消さずに archive する</strong>形で、1 回の操作を <code>archives</code> テーブルの 1 行として記録し、まとめて戻せる。<strong>残っているのは本番 DB への適用と、画面から戻す手段。</strong></p>
 				<ul class="todos">
 					<li class="done"><span class="badge b-done">☑</span> 消すのか隠すのかを決める → <strong>archive（戻せる形）にする</strong></li>
-					<li class="done"><span class="badge b-done">☑</span> 参加者を片付ける方式 → <code>users</code> と <code>cursors</code>。<code>--with-messages</code> で発言も</li>
+					<li class="done"><span class="badge b-done">☑</span> 参加者を片付ける方式 → <code>connectors</code> と <code>cursors</code>。<code>--with-messages</code> で発言も</li>
 					<li class="done"><span class="badge b-done">☑</span> ルームを片付ける方式 → <code>messages</code> と <code>cursors</code> に番号を入れる。<code>public</code> は不可</li>
 					<li class="done"><span class="badge b-done">☑</span> 発言を 1 件だけ取り消す方式 → <code>archive message &lt;msg_seq&gt;</code></li>
 					<li class="done"><span class="badge b-done">☑</span> 画面か CLI か → <strong>片付けは CLI、戻すのは画面からも</strong></li>
-					<li class="done"><span class="badge b-done">☑</span> 3 テーブル（<code>messages</code> <code>users</code> <code>cursors</code>）に <code>archived_seq</code> を足す</li>
+					<li class="done"><span class="badge b-done">☑</span> 3 テーブル（<code>messages</code> <code>connectors</code> <code>cursors</code>）に <code>archived_seq</code> を足す</li>
 					<li class="done"><span class="badge b-done">☑</span> <code>msg_kind</code> の <code>CHECK</code> 制約に <code>archive</code> を足す（<code>say</code> / <code>join</code> / <code>leave</code> / <code>archive</code>）</li>
-					<li><span class="badge b-todo">未</span> テーブルを作り直すなら <a href="#i260901-03">i260901-03</a> の <code>notice</code> も<strong>まとめて足す</strong>（<code>CHECK</code> は <code>ALTER TABLE</code> で変えられない）</li>
-					<li><span class="badge b-todo">未</span> <code>archives</code> テーブルを作る</li>
-					<li><span class="badge b-todo">未</span> 読み出し 8 関数に <code>archived_seq IS NULL</code> を足す</li>
-					<li><span class="badge b-todo">未</span> API 3 つと CLI コマンド 3 つ</li>
+					<li class="done"><span class="badge b-done">☑</span> テーブルの作り直しで <a href="#i260901-03">i260901-03</a> の <code>notice</code> もまとめて足した（版 2）</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>archives</code> テーブルを作る（版 3）。<strong>対象を <code>archive_kind</code> / <code>archive_id</code> の列で持つ</strong>（説明は書き換えられるため）</li>
+					<li class="done"><span class="badge b-done">☑</span> 読み出し 9 関数に <code>archived_seq IS NULL</code> を足す（<code>selectAll</code> だけ足さない）</li>
+					<li class="done"><span class="badge b-done">☑</span> API 4 つ（<code>archive</code> / <code>restore</code> / <code>archives</code> / <code>archive-preview</code>）と CLI コマンド 3 つ</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>/api/dump</code> を足し、CLI の <code>dump</code> を全件（片付けた分も含む）に直した</li>
+					<li class="done"><span class="badge b-done">☑</span> テストを書く（<code>tests/archive.test.mjs</code> 23 件。<strong>絞り込みの足し忘れを SQL から検出する</strong>）</li>
+					<li class="done"><span class="badge b-done">☑</span> USAGE に書く</li>
+					<li><span class="badge b-todo">未</span> 本番 DB を版 3 へ上げる</li>
 					<li><span class="badge b-todo">未</span> 画面で <code>archive#&lt;seq&gt;</code> を押せるようにする</li>
-					<li><span class="badge b-todo">未</span> テストを書く</li>
-					<li><span class="badge b-todo">未</span> USAGE に書く</li>
 				</ul>
 			</div>
 		</details>
@@ -1081,10 +1083,103 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-todo">未</span>
 		開発環境・記録
-		<span class="count">5 件 / 未 2 / 済 3</span>
+		<span class="count">6 件 / 未 3 / 済 3</span>
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue" id="i260901-07" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260901-07</span>
+				待受けが約 38 秒で <code>exit 255</code> で落ちることがある
+			</summary>
+			<div class="issuebody">
+				<p><strong>2 つのプロジェクトで同じ症状が出た。</strong>「待受け開始」の行までは出るが、その約 38 秒後に終了コード 255 で終わる。新着は 0 件。</p>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">見た側</th><th>内容</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">ai-chat-lite</td>
+						<td>1 回。<code>待受け開始（最大 8 時間、ルーム public、ai-chat-lite）</code> のあと約 38 秒で <code>exit 255</code></td>
+					</tr>
+					<tr>
+						<td class="nowrap">html2md</td>
+						<td>2 回連続。同じく約 38 秒。<strong>そのとき待受けが 3 本重複していた</strong>。1 本に絞ってからは 6 回張り直して再現なし</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<h3>そのときのサーバー側</h3>
+
+				<ul>
+					<li><code>who</code> は正常に応答（終了コード 0）。<strong>サーバーは生きていた</strong></li>
+					<li><code>who</code> の接続数が <strong>3 のまま残っていた</strong>。node のプロセスは 3 本とも消えていた</li>
+					<li>19:02 の DB 更新（版 1 → 2）の直後（19:07〜19:08 起動分）だった</li>
+				</ul>
+
+				<h3>接続数が残るのは説明できる</h3>
+
+				<p><code>handlePoll</code> の <code>finally</code> で <code>removeConnection</code> を呼ぶが、<strong><code>await waitForMessages</code> が返るまで <code>finally</code> に到達しない</strong>。クライアントが死んでも、サーバーは最大 240 秒待ち続ける。</p>
+
+				<pre><code class="language-javascript">req.on('close', () =&gt; { closed = true; });   // 印を立てるだけ
+const messages = await waitForMessages(...); // ここで最大 240 秒待つ
+...
+finally { removeConnection(connectorId); }   // 到達はそのあと</code></pre>
+
+				<p><strong>接続数のずれは仕様どおりで、最大 240 秒。</strong>これは <code>exit 255</code> の原因ではなく、症状の 1 つである。</p>
+
+				<div class="callout callout-warning">
+					<p><strong>255 が何を意味するか分かっていない。</strong>Node が自分で 255 を返す場面は限られる。プロセスが外から落とされた可能性もあるが、切り分けていない。</p>
+					<p><strong>約 38 秒という値が 2 プロジェクトで揃っている</strong>のが手がかりになりそうである。240 秒（1 回の long-poll）でも 10 秒（繋ぎ直しの間隔）でもない。</p>
+				</div>
+
+				<h3>論点</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="num nowrap">#</th><th class="nowrap">論点</th><th>案</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="num">1</td><td class="nowrap">38 秒の正体</td>
+						<td>何のタイムアウトなのかを探す。<strong>サブエージェント側の都合か、ハーネスの背面タスクの都合か、node の都合か</strong></td>
+					</tr>
+					<tr>
+						<td class="num">2</td><td class="nowrap">重複が原因か</td>
+						<td>html2md では 3 本重複していた。<strong>わざと複数本立てて再現するかを見る</strong></td>
+					</tr>
+					<tr>
+						<td class="num">3</td><td class="nowrap">DB 更新の直後が絡むか</td>
+						<td>版を上げた直後だった。<strong>切り替えの前後で待受けがどうなるかを確かめる</strong>（受け口の差し替えで既存の接続が切れていないか）</td>
+					</tr>
+					<tr>
+						<td class="num">4</td><td class="nowrap">落ちたことに気づけるか</td>
+						<td>いまは張り直すだけで済んでいる。<strong>取りこぼしは無い</strong>（読んだ位置が保たれる）。それでよいか、原因を追うかを決める</td>
+					</tr>
+					<tr>
+						<td class="num">5</td><td class="nowrap">接続数のずれを直すか</td>
+						<td><code>req.on('close')</code> で待ちを打ち切って <code>finally</code> へ進める案がある。<strong>ただし在席の判定は猶予で吸収しており、実害は小さい</strong></td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> 38 秒が何のタイムアウトかを探す</li>
+					<li><span class="badge b-todo">未</span> わざと複数本立てて再現するかを見る</li>
+					<li><span class="badge b-todo">未</span> 版を上げる前後で待受けがどうなるかを確かめる</li>
+					<li><span class="badge b-todo">未</span> 原因を追うか、張り直しで済ませるかを決める</li>
+					<li><span class="badge b-todo">未</span> 接続数のずれを直すか決める</li>
+				</ul>
+			</div>
+		</details>
 
 		<details class="issue" id="i260901-05" open>
 			<summary>

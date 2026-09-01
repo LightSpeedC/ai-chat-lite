@@ -1663,14 +1663,14 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 		</thead>
 		<tbody>
 			<tr>
-				<td class="nowrap">``` で囲んだ行</td><td class="nowrap"><code>&lt;pre&gt;&lt;code&gt;</code></td>
+				<td class="nowrap"><code>```</code> で囲んだ行</td><td class="nowrap"><code>&lt;pre&gt;&lt;code&gt;</code></td>
 				<td>チャットで最も使う。この中の改行は <code>&lt;br&gt;</code> に置き換えない</td>
 			</tr>
 			<tr>
-				<td class="nowrap">` で囲んだ語</td><td class="nowrap"><code>&lt;code&gt;</code></td><td>—</td>
+				<td class="nowrap"><code>`</code> で囲んだ語</td><td class="nowrap"><code>&lt;code&gt;</code></td><td>—</td>
 			</tr>
 			<tr>
-				<td class="nowrap">** で囲んだ語</td><td class="nowrap"><code>&lt;strong&gt;</code></td><td>—</td>
+				<td class="nowrap"><code>**</code> で囲んだ語</td><td class="nowrap"><code>&lt;strong&gt;</code></td><td>—</td>
 			</tr>
 			<tr>
 				<td class="nowrap">URL</td><td class="nowrap"><code>&lt;a href&gt;</code></td>
@@ -1884,7 +1884,66 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 
 	<h2>DB の形は版で管理する</h2>
 
-	<p><code>CREATE TABLE IF NOT EXISTS</code> は<strong>既にあるテーブルを作り替えない</strong>。列を足すだけなら <code>ALTER TABLE</code> で済むが、<strong><code>CHECK</code> の変更・列の削除・型の変更はテーブルを作り直すしかない</strong>。そのたびに専用の手順を書くのをやめ、版で管理する形にした。</p>
+	<p><code>CREATE TABLE IF NOT EXISTS</code> は<strong>既にあるテーブルを作り替えない</strong>。そのたびに専用の手順を書くのをやめ、版で管理する形にした。</p>
+
+	<h3>変更のコストは <code>ALTER TABLE</code> でできるかで決まる</h3>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">変更</th><th class="nowrap">手段</th><th class="nowrap">コスト</th><th>中身</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">テーブルを足す</td><td class="nowrap"><code>CREATE TABLE</code></td>
+				<td class="nowrap"><span class="badge b-ok">低い</span></td>
+				<td>既にあるものに触らない</td>
+			</tr>
+			<tr>
+				<td class="nowrap">索引を足す</td><td class="nowrap"><code>CREATE INDEX</code></td>
+				<td class="nowrap"><span class="badge b-ok">低い</span></td>
+				<td>同上</td>
+			</tr>
+			<tr>
+				<td class="nowrap">列を足す</td><td class="nowrap"><code>ALTER TABLE ADD COLUMN</code></td>
+				<td class="nowrap"><span class="badge b-ok">低い</span></td>
+				<td>既存の行は <code>NULL</code> になる。移行は要らない</td>
+			</tr>
+			<tr>
+				<td class="nowrap">列名を変える</td><td class="nowrap"><code>ALTER TABLE RENAME COLUMN</code></td>
+				<td class="nowrap"><span class="badge b-ok">低い</span></td>
+				<td><code>CHECK</code> の中の名前も一緒に書き換わる</td>
+			</tr>
+			<tr>
+				<td class="nowrap">テーブル名を変える</td><td class="nowrap"><code>ALTER TABLE RENAME TO</code></td>
+				<td class="nowrap"><span class="badge b-ok">低い</span></td>
+				<td>索引も付いてくる</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><strong><code>CHECK</code> を変える</strong></td><td class="nowrap"><strong>作り直し</strong></td>
+				<td class="nowrap"><span class="badge b-ng">高い</span></td>
+				<td>新しい定義で別名のテーブルを作り、写し、入れ替え、<strong>索引を張り直す</strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><strong>列を削る</strong></td><td class="nowrap"><strong>作り直し</strong></td>
+				<td class="nowrap"><span class="badge b-ng">高い</span></td>
+				<td>同上</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><strong>型を変える・並べ替える</strong></td><td class="nowrap"><strong>作り直し</strong></td>
+				<td class="nowrap"><span class="badge b-ng">高い</span></td>
+				<td>同上</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-important">
+		<p><strong>高いものは 1 回にまとめる。</strong>同じテーブルを 2 回作り直すのは無駄で、途中で落ちたときの切り分けも難しくなる。</p>
+		<p>逆に<strong>低いものは分けて構わない</strong>。<code>archives</code> テーブルを版 3 に分けたのはこれに当たる。作り直しが要る <code>msg_kind</code> の <code>CHECK</code>（<code>archive</code> と <code>notice</code> を足す）は版 2 で済ませてある。</p>
+	</div>
+
+	<p>この見立てがあったため、<code>archived_seq</code> は<strong>使う前から置いてある</strong>。あとから足すと <code>messages</code> の作り直しになるためで、列を足すだけなら安いという判断ではなく、<strong>足す時期を選べたから安く済ませた</strong>ということである。</p>
 
 	<div class="tablewrap">
 	<table>
