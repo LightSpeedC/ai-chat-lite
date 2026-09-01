@@ -9,7 +9,7 @@
  *
  * public のように残したいルームへ投稿したものも、発言者が test- なら消える。
  *
- * 使い方:
+ * 使い方（--help でも出る）:
  *   node tools/40_test/purge-test-data.mjs                消す（接頭辞に当たる全部）
  *   node tools/40_test/purge-test-data.mjs --dry-run      数えるだけ
  *   node tools/40_test/purge-test-data.mjs --names a,b,c  その名前だけ消す
@@ -33,8 +33,55 @@ export const CONNECTOR_PREFIX = 'test-';
 export const ROOM_PREFIX = 'sandbox-';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const dryRun = process.argv.includes('--dry-run');
-const toProduction = process.argv.includes('--production');
+
+const OPTIONS = [
+	['--dry-run', '数えるだけ。消さない'],
+	['--names a,b,c', 'その名前だけ消す。connector_id と room_id のどちらとしても照合する'],
+	['--production', '本番を相手にする。付けなければ tmp/_data'],
+	['--help', 'この使い方を出す（短い形 -h）'],
+];
+
+/*
+ * 知らない引数を渡されたら、消さずに使い方を出して止める。
+ *
+ * 既定の動作が「消す」であるため、黙って無視すると打ち間違いがそのまま
+ * 削除になる。実際に --help と打って 48 件を消した。
+ */
+function usage(exitCode) {
+	const width = Math.max(...OPTIONS.map((o) => o[0].length));
+	console.log('テストが残したデータを消す。');
+	console.log('');
+	console.log('  node tools/40_test/purge-test-data.mjs [オプション]');
+	console.log('');
+	for (const [name, desc] of OPTIONS) console.log(`  ${name.padEnd(width)}  ${desc}`);
+	console.log('');
+	console.log(`  目印: connector_id が ${CONNECTOR_PREFIX} で始まるもの / room_id が ${ROOM_PREFIX} で始まるもの`);
+	console.log('  オプションを何も付けないと、目印に当たるものを全部消す。');
+	process.exit(exitCode);
+}
+
+const KNOWN = new Set(['--dry-run', '--names', '--production', '--help', '-h']);
+const args = process.argv.slice(2);
+
+if (args.includes('--help') || args.includes('-h')) usage(0);
+
+/*
+ * --names の値は引数ではないので、判定から外す。
+ *
+ * --names が無いときは -1 にする。indexOf の -1 に 1 を足して 0 にすると、
+ * 先頭の引数が「値」と見なされて素通りする。
+ */
+const namesIndex = args.indexOf('--names');
+const namesValueIndex = namesIndex < 0 ? -1 : namesIndex + 1;
+const unknown = args.filter((a, i) => a.startsWith('-') && !KNOWN.has(a) && i !== namesValueIndex);
+if (unknown.length > 0) {
+	console.error(`知らないオプションです: ${unknown.join(' ')}`);
+	console.error('');
+	usage(2);
+}
+
+const dryRun = args.includes('--dry-run');
+const toProduction = args.includes('--production');
 
 /*
  * 相手にする置き場。
@@ -48,9 +95,9 @@ const dataDir = toProduction
 const dbPath = join(dataDir, 'chat.db');
 
 /** --names で渡された名前。空なら接頭辞で全部を対象にする */
-const namesArg = process.argv[process.argv.indexOf('--names') + 1];
+const namesArg = args[namesValueIndex];
 const names =
-	process.argv.includes('--names') && namesArg
+	args.includes('--names') && namesArg
 		? namesArg.split(',').map((s) => s.trim()).filter(Boolean)
 		: [];
 
