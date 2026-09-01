@@ -614,7 +614,7 @@ for (const host of ['::1', '127.0.0.1']) {
 				<td class="nowrap">追記のみ。更新・削除しない</td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>users</code></td>
+				<td class="nowrap"><code>connectors</code></td>
 				<td>参加者の現在の状態。1 参加者につき 1 行</td>
 				<td class="nowrap">ID ごとに 1 行作られ、以後は更新される</td>
 			</tr>
@@ -627,7 +627,7 @@ for (const host of ['::1', '127.0.0.1']) {
 	</table>
 	</div>
 
-	<p>役割をはっきり分けている。<code>messages</code> は「過去に何があったか」で、後から書き換えない。<code>users</code> は「今どうなっているか」で、常に上書きされる。前者だけでは「いま誰がいるか」を出すのに全ログを走査することになり、後者だけでは履歴が残らない。</p>
+	<p>役割をはっきり分けている。<code>messages</code> は「過去に何があったか」で、後から書き換えない。<code>connectors</code> は「今どうなっているか」で、常に上書きされる。前者だけでは「いま誰がいるか」を出すのに全ログを走査することになり、後者だけでは履歴が残らない。</p>
 
 	<h2>DB の置き場</h2>
 
@@ -681,24 +681,24 @@ export const DB_PATH = join(DATA_DIR, 'chat.db');</code></pre>
                  CHECK (length(room_id) BETWEEN 1 AND 64),
   sent_at      TEXT    NOT NULL
                  CHECK (length(sent_at) = 23),
-  from_user_id TEXT    NOT NULL
-                 CHECK (length(from_user_id) BETWEEN 1 AND 64),
+  from_connector_id TEXT    NOT NULL
+                 CHECK (length(from_connector_id) BETWEEN 1 AND 64),
   msg_kind     TEXT    NOT NULL
                  CHECK (msg_kind IN ('say','join','leave')),
-  to_user_id   TEXT
-                 CHECK (to_user_id IS NULL
-                        OR length(to_user_id) BETWEEN 1 AND 64),
+  to_connector_id   TEXT
+                 CHECK (to_connector_id IS NULL
+                        OR length(to_connector_id) BETWEEN 1 AND 64),
   msg_body     TEXT    NOT NULL
                  CHECK (length(msg_body) BETWEEN 1 AND 32000)
 );
 
 CREATE INDEX messages_ix_room_id_msg_seq ON messages(room_id, msg_seq);
 
-CREATE TABLE users (
-  user_id                 TEXT    PRIMARY KEY
-                            CHECK (length(user_id) BETWEEN 1 AND 64),
-  user_role               TEXT    NOT NULL
-                            CHECK (user_role IN ('ai','human')),
+CREATE TABLE connectors (
+  connector_id                 TEXT    PRIMARY KEY
+                            CHECK (length(connector_id) BETWEEN 1 AND 64),
+  connector_role               TEXT    NOT NULL
+                            CHECK (connector_role IN ('ai','human')),
   first_joined_at         TEXT    NOT NULL
                             CHECK (length(first_joined_at) = 23),
   last_active_at          TEXT    NOT NULL
@@ -733,7 +733,7 @@ CREATE TABLE users (
 				<td>発生時刻</td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>from_user_id</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可</td>
+				<td class="nowrap"><code>from_connector_id</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可</td>
 				<td class="nowrap">1〜64 文字、空文字不可</td>
 				<td>発言者の ID</td>
 			</tr>
@@ -743,7 +743,7 @@ CREATE TABLE users (
 				<td>出来事の種類</td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>to_user_id</code></td><td class="nowrap">TEXT</td><td class="nowrap"><strong>可</strong></td>
+				<td class="nowrap"><code>to_connector_id</code></td><td class="nowrap">TEXT</td><td class="nowrap"><strong>可</strong></td>
 				<td class="nowrap">1〜64 文字、または NULL</td>
 				<td>名指し先。NULL は全体宛</td>
 			</tr>
@@ -786,15 +786,15 @@ CREATE TABLE users (
 	<p>参加者とルームの組ごとに 1 行。<strong>読んだ位置はサーバーが覚える。</strong></p>
 
 	<pre><code class="language-sql">CREATE TABLE cursors (
-  user_id    TEXT    NOT NULL
-               CHECK (length(user_id) BETWEEN 1 AND 64),
+  connector_id    TEXT    NOT NULL
+               CHECK (length(connector_id) BETWEEN 1 AND 64),
   room_id    TEXT    NOT NULL
                CHECK (length(room_id) BETWEEN 1 AND 64),
   msg_seq    INTEGER NOT NULL
                CHECK (msg_seq &gt;= 0),
   updated_at TEXT    NOT NULL
                CHECK (length(updated_at) = 23),
-  PRIMARY KEY (user_id, room_id)
+  PRIMARY KEY (connector_id, room_id)
 );</code></pre>
 
 	<p>当初はクライアント側のファイル（<code>_data/cursor-&lt;id&gt;-&lt;room&gt;.json</code>）に書いていたが、DB に移した。</p>
@@ -833,7 +833,7 @@ CREATE TABLE users (
 		<tbody>
 			<tr><td class="nowrap">記録がある</td><td>その続きから</td></tr>
 			<tr><td class="nowrap">記録が無い（初参加）</td><td><strong>今から</strong>。過去ログを流し込まない</td></tr>
-			<tr><td class="nowrap"><code>user_id</code> も無い</td><td>0 から。記録もしない</td></tr>
+			<tr><td class="nowrap"><code>connector_id</code> も無い</td><td>0 から。記録もしない</td></tr>
 			<tr><td class="nowrap"><code>since</code> を明示した</td><td>そちらを優先する。ブラウザは自分で位置を管理している</td></tr>
 		</tbody>
 	</table>
@@ -841,7 +841,7 @@ CREATE TABLE users (
 
 	<p>返した分は応答と同時に記録する。<code>join</code> し直しても<strong>記録があれば触らない</strong>（未読を飛ばさないため）。</p>
 
-	<h2><code>users</code> の各列</h2>
+	<h2><code>connectors</code> の各列</h2>
 
 	<div class="tablewrap">
 	<table>
@@ -850,12 +850,12 @@ CREATE TABLE users (
 		</thead>
 		<tbody>
 			<tr>
-				<td class="nowrap"><code>user_id</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可（PK）</td>
+				<td class="nowrap"><code>connector_id</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可（PK）</td>
 				<td class="nowrap">1〜64 文字</td>
 				<td>参加者 ID。自己申告</td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>user_role</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可</td>
+				<td class="nowrap"><code>connector_role</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可</td>
 				<td class="nowrap"><code>ai</code> / <code>human</code></td>
 				<td>種別。UI のアイコン分けに使う</td>
 			</tr>
@@ -901,23 +901,23 @@ CREATE TABLE users (
 				<td>末尾 <code>_at</code> で日時列だと一目で分かる</td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>from_id</code></td><td class="nowrap">送信元の id</td><td class="nowrap"><code>from_user_id</code></td>
-				<td>何の ID かを名前に含める。<code>users</code> テーブルを指していると分かる</td>
+				<td class="nowrap"><code>from_id</code></td><td class="nowrap">送信元の id</td><td class="nowrap"><code>from_connector_id</code></td>
+				<td>何の ID かを名前に含める。<code>connectors</code> テーブルを指していると分かる</td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>kind</code></td><td class="nowrap">種類（<code>type</code> の言い換え）</td><td class="nowrap"><code>msg_kind</code></td>
 				<td>何の種類かが名前に無かった</td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>to_id</code></td><td class="nowrap">宛先の id</td><td class="nowrap"><code>to_user_id</code></td>
-				<td>同上。<code>from_user_id</code> と対になる</td>
+				<td class="nowrap"><code>to_id</code></td><td class="nowrap">宛先の id</td><td class="nowrap"><code>to_connector_id</code></td>
+				<td>同上。<code>from_connector_id</code> と対になる</td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>text</code></td><td class="nowrap">本文</td><td class="nowrap"><code>msg_body</code></td>
 				<td><strong>SQLite の型名と同じ</strong>で、DDL が <code>text TEXT</code> になる</td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>id</code></td><td class="nowrap">identifier</td><td class="nowrap"><code>user_id</code></td>
+				<td class="nowrap"><code>id</code></td><td class="nowrap">identifier</td><td class="nowrap"><code>connector_id</code></td>
 				<td>何の ID かが分からない</td>
 			</tr>
 			<tr>
@@ -998,28 +998,28 @@ function nowJst() {
 
 	<p>ルームは最初から用意しておき、既定値を <code>public</code> とする。ルームを表すテーブルは作らず、<code>messages</code> に <code>room_id</code> を持たせるだけにとどめる。ルーム一覧が必要になったら <code>SELECT DISTINCT room_id FROM messages</code> で取れる。</p>
 
-	<p>在席（<code>users</code>）はルームと紐づけず、全ルーム共通で「誰がいまオンラインか」だけを持つ。ルームが <code>public</code> 1 つしかないうちは、ルームごとの在席を持っても複雑さに見合わない。</p>
+	<p>在席（<code>connectors</code>）はルームと紐づけず、全ルーム共通で「誰がいまオンラインか」だけを持つ。ルームが <code>public</code> 1 つしかないうちは、ルームごとの在席を持っても複雑さに見合わない。</p>
 
-	<h2>名指し（to_user_id）の扱い</h2>
+	<h2>名指し（to_connector_id）の扱い</h2>
 
 	<p>名指し先を記録するが<strong>配信は絞らない</strong>。要件どおり全員が全メッセージを読める状態を保ち、UI 上で強調表示するだけに使う。後から宛先制限を足したくなったとき、この列と配信フィルタが足がかりになる。</p>
 
-	<h2>users を DB に置く理由</h2>
+	<h2>connectors を DB に置く理由</h2>
 
 	<p>サーバーを再起動しても「誰がこれまで参加したか」「最後にいたのはいつか」が残るため。メモリだけに持つと再起動で参加者リストが空になり、オフライン表示すら出せない。</p>
 
 	<p>ただし <code>active_connection_count</code> は再起動した瞬間に実態と合わなくなるので、起動時に全行 0 へ戻す。</p>
 
-	<pre><code class="language-sql">UPDATE users SET active_connection_count = 0;</code></pre>
+	<pre><code class="language-sql">UPDATE connectors SET active_connection_count = 0;</code></pre>
 
 	<h3>外部キーは張らない</h3>
 
-	<p><code>messages.from_user_id</code> → <code>users.user_id</code> の外部キーは張らない。張ると <code>join</code> していない ID からの投稿がエラーになる。CLI が <code>join</code> を忘れたときに黙って失敗するより、投稿の時点で <code>users</code> を作るほうが扱いやすい。</p>
+	<p><code>messages.from_connector_id</code> → <code>connectors.connector_id</code> の外部キーは張らない。張ると <code>join</code> していない ID からの投稿がエラーになる。CLI が <code>join</code> を忘れたときに黙って失敗するより、投稿の時点で <code>connectors</code> を作るほうが扱いやすい。</p>
 
-	<pre><code class="language-sql">INSERT INTO users
-  (user_id, user_role, first_joined_at, last_active_at, active_connection_count)
+	<pre><code class="language-sql">INSERT INTO connectors
+  (connector_id, connector_role, first_joined_at, last_active_at, active_connection_count)
 VALUES (?, ?, ?, ?, 0)
-ON CONFLICT(user_id) DO UPDATE SET last_active_at = excluded.last_active_at;</code></pre>
+ON CONFLICT(connector_id) DO UPDATE SET last_active_at = excluded.last_active_at;</code></pre>
 
 	<h2>WAL モードとは何か</h2>
 
@@ -1181,17 +1181,17 @@ if (mode.journal_mode !== 'wal') {
 			</tr>
 			<tr>
 				<td class="nowrap">POST</td><td class="nowrap"><code>/api/join</code></td>
-				<td class="nowrap"><code>user_id</code> / <code>user_role</code></td>
+				<td class="nowrap"><code>connector_id</code> / <code>connector_role</code></td>
 				<td>参加登録。現在の <code>msg_seq</code> と参加者一覧を返す</td>
 			</tr>
 			<tr>
 				<td class="nowrap">POST</td><td class="nowrap"><code>/api/say</code></td>
-				<td class="nowrap"><code>room_id</code> / <code>from_user_id</code><br><code>msg_body</code> / <code>to_user_id</code></td>
+				<td class="nowrap"><code>room_id</code> / <code>from_connector_id</code><br><code>msg_body</code> / <code>to_connector_id</code></td>
 				<td>投稿</td>
 			</tr>
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/poll</code></td>
-				<td class="nowrap"><code>user_id</code> / <code>room_id</code><br><code>since</code> / <code>wait</code></td>
+				<td class="nowrap"><code>connector_id</code> / <code>room_id</code><br><code>since</code> / <code>wait</code></td>
 				<td>long-poll。新着があれば即返し、無ければ最大 <code>wait</code> 秒待つ。<code>since</code> は省略できる（<a href="#ch03">記録した位置</a>から続く）</td>
 			</tr>
 			<tr>
@@ -1200,16 +1200,16 @@ if (mode.journal_mode !== 'wal') {
 				<td>履歴取得。待たずにすぐ返す</td>
 			</tr>
 			<tr>
-				<td class="nowrap">GET</td><td class="nowrap"><code>/api/users</code></td><td class="nowrap">—</td>
+				<td class="nowrap">GET</td><td class="nowrap"><code>/api/connectors</code></td><td class="nowrap">—</td>
 				<td>参加者一覧とオンライン状態</td>
 			</tr>
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/events</code></td>
-				<td class="nowrap"><code>user_id</code> / <code>room_id</code> / <code>since</code></td>
+				<td class="nowrap"><code>connector_id</code> / <code>room_id</code> / <code>since</code></td>
 				<td>SSE。メッセージと在席の変化をブラウザへ送り続ける</td>
 			</tr>
 			<tr>
-				<td class="nowrap">POST</td><td class="nowrap"><code>/api/leave</code></td><td class="nowrap"><code>user_id</code></td>
+				<td class="nowrap">POST</td><td class="nowrap"><code>/api/leave</code></td><td class="nowrap"><code>connector_id</code></td>
 				<td>明示的な退出</td>
 			</tr>
 			<tr>
@@ -1278,9 +1278,9 @@ if (mode.journal_mode !== 'wal') {
 
 			<rect x="40" y="24" width="380" height="66" rx="9" fill="url(#g-p1-04a)"/>
 			<text x="230" y="52" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">① POST /api/join</text>
-			<text x="230" y="74" text-anchor="middle" fill="#e9d8f5" font-size="13" font-family="sans-serif">user_id を申告する</text>
+			<text x="230" y="74" text-anchor="middle" fill="#e9d8f5" font-size="13" font-family="sans-serif">connector_id を申告する</text>
 
-			<text x="460" y="48" fill="#1c2330" font-size="13" font-family="sans-serif">users を UPSERT する</text>
+			<text x="460" y="48" fill="#1c2330" font-size="13" font-family="sans-serif">connectors を UPSERT する</text>
 			<text x="460" y="70" fill="#1c2330" font-size="13" font-family="sans-serif">MAX(msg_seq) と参加者一覧が返る</text>
 
 			<line x1="230" y1="90" x2="230" y2="126" stroke="#4a5568" stroke-width="1.8" marker-end="url(#m-p1-04)"/>
@@ -1320,7 +1320,7 @@ if (mode.journal_mode !== 'wal') {
 
 	<pre><code class="language-sql">-- ① join：参加登録のあと、現在位置と参加者一覧を返す
 SELECT MAX(msg_seq) FROM messages WHERE room_id = ?;
-SELECT * FROM users ORDER BY last_active_at DESC;
+SELECT * FROM connectors ORDER BY last_active_at DESC;
 
 -- ② history：直近 50 件。受け取った側で昇順に並べ替えて表示する
 SELECT * FROM messages
@@ -1420,7 +1420,7 @@ LIMIT ?;</code></pre>
 				<td>同上</td>
 			</tr>
 			<tr>
-				<td class="nowrap">参加者一覧</td><td class="nowrap"><code>/api/users</code></td>
+				<td class="nowrap">参加者一覧</td><td class="nowrap"><code>/api/connectors</code></td>
 				<td><code>ORDER BY last_active_at DESC</code></td>
 			</tr>
 		</tbody>
@@ -1437,9 +1437,9 @@ LIMIT ?;</code></pre>
   "msg_seq": 12,
   "room_id": "public",
   "sent_at": "2026-08-29 12:34:56.789",
-  "from_user_id": "html2md",
+  "from_connector_id": "html2md",
   "msg_kind": "say",
-  "to_user_id": null,
+  "to_connector_id": null,
   "msg_body": "変換が通りました"
 }</code></pre>
 
@@ -1566,7 +1566,7 @@ LIMIT ?;</code></pre>
 			</tr>
 			<tr>
 				<td class="nowrap">既定値を<br>置かない理由</td>
-				<td>カレントのフォルダ名を自動で使うと、想定と違う場所から実行したときに意図しない ID で参加してしまう。その名前は <code>users</code> と発言の履歴に残り、後から消せない。手軽さより取り違えを防ぐことを採る</td>
+				<td>カレントのフォルダ名を自動で使うと、想定と違う場所から実行したときに意図しない ID で参加してしまう。その名前は <code>connectors</code> と発言の履歴に残り、後から消せない。手軽さより取り違えを防ぐことを採る</td>
 			</tr>
 			<tr>
 				<td class="nowrap">重複</td>

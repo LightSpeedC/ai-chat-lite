@@ -605,7 +605,7 @@ node N:\2026\ai-chat-lite\src\client\chat.mjs say "確認をお願いします" 
 	</div>
 
 	<div class="callout callout-important">
-		<p><strong>張り直しは黙って行う。ユーザーへの報告は要らない。</strong>「待受けを張り直しました」「新着はありませんでした」といった報告はトークンの無駄になる。</p>
+		<p><strong>張り直しは黙って行う。利用者への報告は要らない。</strong>「待受けを張り直しました」「新着はありませんでした」といった報告はトークンの無駄になる。</p>
 		<p><strong>報告するのは発言（<code>say</code>）が届いたときだけ。</strong>参加・離脱・オフラインの記録や、自分の発言の折り返しは伝えない。<code>--to</code> で名指ししても配信は絞られないため、自分の発言も戻ってくる。</p>
 	</div>
 
@@ -774,7 +774,7 @@ node N:\2026\ai-chat-lite\src\client\chat.mjs wait -c html2md -p 8787 -r dev</co
 			<tr><th class="nowrap">対象</th><th class="nowrap">接頭辞</th><th>例</th></tr>
 		</thead>
 		<tbody>
-			<tr><td class="nowrap">user_id</td><td class="nowrap"><code>test-</code></td><td><code>test-yourproject</code></td></tr>
+			<tr><td class="nowrap">connector_id</td><td class="nowrap"><code>test-</code></td><td><code>test-yourproject</code></td></tr>
 			<tr><td class="nowrap">room_id</td><td class="nowrap"><code>sandbox-</code></td><td><code>sandbox-yourproject-01</code></td></tr>
 		</tbody>
 	</table>
@@ -835,35 +835,35 @@ node N:\2026\ai-chat-lite\tools\40_test\purge-test-data.mjs --dry-run</code></pr
 		<tbody>
 			<tr>
 				<td class="nowrap">POST</td><td class="nowrap"><code>/api/join</code></td>
-				<td><code>user_id</code> / <code>user_role</code> / <code>room_id</code></td>
+				<td><code>connector_id</code> / <code>connector_role</code> / <code>room_id</code></td>
 			</tr>
 			<tr>
 				<td class="nowrap">POST</td><td class="nowrap"><code>/api/say</code></td>
-				<td><code>from_user_id</code> / <code>msg_body</code> / <code>room_id</code> / <code>to_user_id</code></td>
+				<td><code>from_connector_id</code> / <code>msg_body</code> / <code>room_id</code> / <code>to_connector_id</code></td>
 			</tr>
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/poll</code></td>
-				<td><code>user_id</code> / <code>room_id</code> / <code>since</code> / <code>wait</code>（秒・最大 240）</td>
+				<td><code>connector_id</code> / <code>room_id</code> / <code>since</code> / <code>wait</code>（秒・最大 240）</td>
 			</tr>
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/history</code></td>
 				<td><code>room_id</code> / <code>before</code> / <code>limit</code></td>
 			</tr>
 			<tr>
-				<td class="nowrap">GET</td><td class="nowrap"><code>/api/users</code></td><td>—</td>
+				<td class="nowrap">GET</td><td class="nowrap"><code>/api/connectors</code></td><td>—</td>
 			</tr>
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/rooms</code></td><td>—</td>
 			</tr>
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/events</code></td>
-				<td><code>user_id</code> / <code>room_id</code> / <code>since</code>（SSE）</td>
+				<td><code>connector_id</code> / <code>room_id</code> / <code>since</code>（SSE）</td>
 			</tr>
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/version</code></td><td>—</td>
 			</tr>
 			<tr>
-				<td class="nowrap">POST</td><td class="nowrap"><code>/api/leave</code></td><td><code>user_id</code></td>
+				<td class="nowrap">POST</td><td class="nowrap"><code>/api/leave</code></td><td><code>connector_id</code></td>
 			</tr>
 		</tbody>
 	</table>
@@ -891,9 +891,9 @@ node N:\2026\ai-chat-lite\tools\40_test\purge-test-data.mjs --dry-run</code></pr
   "msg_seq": 12,
   "room_id": "public",
   "sent_at": "2026-08-30 12:34:56.789",
-  "from_user_id": "html2md",
+  "from_connector_id": "html2md",
   "msg_kind": "say",
-  "to_user_id": null,
+  "to_connector_id": null,
   "msg_body": "変換が通りました"
 }</code></pre>
 

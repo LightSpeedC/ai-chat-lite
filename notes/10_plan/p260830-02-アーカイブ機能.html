@@ -312,7 +312,7 @@ footer a { color: #cfe0ff; }
 				<td>発言 39 件、参加・離脱などのシステム 43 件</td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>users</code></td><td class="nowrap num">5</td>
+				<td class="nowrap"><code>connectors</code></td><td class="nowrap num">5</td>
 				<td>AI 3 件、人 2 件</td>
 			</tr>
 			<tr>
@@ -328,7 +328,7 @@ footer a { color: #cfe0ff; }
 	</div>
 
 	<div class="callout">
-		<p><code>user_id</code> は自己申告する project フォルダ名で、<code>html2md</code> <code>PlayWright</code> と同じ並びの文字列である。<strong>人を識別するためのものではない</strong>ので、値そのものを消さねばならない事情は無い。</p>
+		<p><code>connector_id</code> は自己申告する project フォルダ名で、<code>html2md</code> <code>PlayWright</code> と同じ並びの文字列である。<strong>人を識別するためのものではない</strong>ので、値そのものを消さねばならない事情は無い。</p>
 	</div>
 </section>
 
@@ -342,7 +342,7 @@ footer a { color: #cfe0ff; }
 CREATE TABLE archives (
   archived_seq     INTEGER PRIMARY KEY AUTOINCREMENT,
   archived_at      TEXT    NOT NULL CHECK (length(archived_at) = 23),
-  archived_user_id TEXT    NOT NULL CHECK (length(archived_user_id) BETWEEN 1 AND 64),
+  archived_connector_id TEXT    NOT NULL CHECK (length(archived_connector_id) BETWEEN 1 AND 64),
   description      TEXT    NOT NULL CHECK (length(description) BETWEEN 1 AND 200)
 );</code></pre>
 
@@ -359,7 +359,7 @@ CREATE TABLE archives (
 		<tbody>
 			<tr><td class="nowrap"><code>archived_seq</code></td><td>操作の番号。<code>msg_seq</code> と同じく <code>AUTOINCREMENT</code></td></tr>
 			<tr><td class="nowrap"><code>archived_at</code></td><td>片付けた日時。JST の 23 文字</td></tr>
-			<tr><td class="nowrap"><code>archived_user_id</code></td><td>誰が片付けたか</td></tr>
+			<tr><td class="nowrap"><code>archived_connector_id</code></td><td>誰が片付けたか</td></tr>
 			<tr><td class="nowrap"><code>description</code></td><td>何をなぜ片付けたか。<strong>既定は自動生成し、書き換えられる</strong></td></tr>
 		</tbody>
 	</table>
@@ -389,7 +389,7 @@ CREATE TABLE archives (
 			<tr><td class="nowrap"><code>getBefore</code></td><td>遡り読み込み</td><td class="nowrap">足す</td></tr>
 			<tr><td class="nowrap"><code>getMaxSeq</code></td><td>読み始めの位置</td><td class="nowrap">足す</td></tr>
 			<tr><td class="nowrap"><code>listRooms</code></td><td>ルームの一覧</td><td class="nowrap">足す</td></tr>
-			<tr><td class="nowrap"><code>listUsers</code></td><td>参加者の一覧</td><td class="nowrap">足す</td></tr>
+			<tr><td class="nowrap"><code>listConnectors</code></td><td>参加者の一覧</td><td class="nowrap">足す</td></tr>
 			<tr><td class="nowrap"><code>getCursor</code> / <code>listCursors</code></td><td>読んだ位置</td><td class="nowrap">足す</td></tr>
 			<tr><td class="nowrap"><code>getAllMessages</code></td><td><code>dump</code> の書き出し</td><td class="nowrap"><strong>足さない</strong></td></tr>
 		</tbody>
@@ -420,7 +420,7 @@ CREATE TABLE archives (
 		<tbody>
 			<tr>
 				<td class="nowrap">（既定）</td>
-				<td><code>users</code> の行と、その人の <code>cursors</code>。<strong>発言は残る</strong></td>
+				<td><code>connectors</code> の行と、その人の <code>cursors</code>。<strong>発言は残る</strong></td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>--with-messages</code></td>
@@ -533,7 +533,7 @@ CREATE INDEX messages_ix_room_id_msg_seq ON messages(room_id, msg_seq);</code></
 			<tr>
 				<td class="nowrap">POST</td><td class="nowrap"><code>/api/admin/archive</code></td>
 				<td class="nowrap"><code>kind</code><br><code>id</code><br><code>with_messages</code><br><code>description</code><br><code>confirm</code></td>
-				<td><code>kind</code> は <code>message</code> / <code>user</code> / <code>room</code>。<code>archives</code> に 1 行足し、対象に番号を入れる</td>
+				<td><code>kind</code> は <code>message</code> / <code>connector</code> / <code>room</code>。<code>archives</code> に 1 行足し、対象に番号を入れる</td>
 			</tr>
 			<tr>
 				<td class="nowrap">POST</td><td class="nowrap"><code>/api/admin/restore</code></td>
@@ -556,7 +556,7 @@ CREATE INDEX messages_ix_room_id_msg_seq ON messages(room_id, msg_seq);</code></
 	<h2>CLI</h2>
 
 	<pre><code class="language-powershell">node ...\chat.mjs archive message &lt;msg_seq&gt; [--description "..."]
-node ...\chat.mjs archive user    &lt;id&gt; [--with-messages]
+node ...\chat.mjs archive connector    &lt;id&gt; [--with-messages]
 node ...\chat.mjs archive room    &lt;room&gt;
 node ...\chat.mjs archives
 node ...\chat.mjs restore &lt;archived_seq&gt;</code></pre>
@@ -674,7 +674,7 @@ archived_seq 3 を戻します。
 	<h1>作るものと、採らなかった案</h1>
 
 	<pre><code class="language-text">src/server/store.mjs      … archives テーブル、列の追加、msg_kind に archive を足す
-                             archiveMessage / archiveUser / archiveRoom / restore / listArchives
+                             archiveMessage / archiveConnector / archiveRoom / restore / listArchives
                              読み出し 8 関数に archived_seq IS NULL を足す
 src/server/server.mjs     … 3 つの API
 src/client/chat.mjs       … archive / archives / restore
@@ -742,7 +742,7 @@ USAGE-FOR-PROJECTS.html   … 他プロジェクトからの使い方</code></pr
 
 	<h3>deleted_at を各テーブルに持つ</h3>
 
-	<p><code>archives</code> を作らず、<code>messages</code> と <code>users</code> に <code>deleted_at</code> を持たせる案。</p>
+	<p><code>archives</code> を作らず、<code>messages</code> と <code>connectors</code> に <code>deleted_at</code> を持たせる案。</p>
 
 	<div class="tablewrap">
 	<table>
@@ -782,9 +782,9 @@ USAGE-FOR-PROJECTS.html   … 他プロジェクトからの使い方</code></pr
 
 	<h3>参加者を片付けたら発言の名前を付け替える</h3>
 
-	<p><code>from_user_id</code> を別の名前に書き換える案。<strong>個人情報を消す</strong>という前提で考えたもの。</p>
+	<p><code>from_connector_id</code> を別の名前に書き換える案。<strong>個人情報を消す</strong>という前提で考えたもの。</p>
 
-	<p>その前提が誤りだった。<code>user_id</code> は project フォルダ名であって人を識別するものではない。<strong>値を書き換える理由が無い</strong>ので採らない。</p>
+	<p>その前提が誤りだった。<code>connector_id</code> は project フォルダ名であって人を識別するものではない。<strong>値を書き換える理由が無い</strong>ので採らない。</p>
 </section>
 
 </div>

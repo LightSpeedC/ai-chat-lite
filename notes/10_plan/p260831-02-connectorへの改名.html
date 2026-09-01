@@ -465,7 +465,7 @@ footer {
 <tr><th class="nowrap">いま</th><th class="nowrap">あと</th><th>備考</th></tr>
 </thead>
 <tbody>
-<tr><td class="nowrap"><code>who</code></td><td class="nowrap"><code>connectors</code></td><td><strong>「誰が」を尋ねるコマンド。</strong><code>/api/connectors</code> と揃う</td></tr>
+<tr><td class="nowrap"><code>who</code></td><td class="nowrap"><strong>変えない</strong></td><td><strong>コマンド名は据え置く。</strong>他プロジェクトの手順を二度変えないため（<code>--connector-id</code> の周知を今日すでに 1 回出している）。<code>/api/connectors</code> とは揃わないが、<code>who</code> は「誰が」を尋ねる語として意味が通る</td></tr>
 <tr><td class="nowrap"><code>--role ai|human</code></td><td class="nowrap"><strong>変えない</strong></td><td><code>role</code> に <code>user</code> は入っていない</td></tr>
 <tr><td class="nowrap"><code>--to &lt;id&gt;</code></td><td class="nowrap"><strong>変えない</strong></td><td>同上</td></tr>
 <tr><td class="nowrap"><code>join</code> <code>wait</code> <code>say</code> <code>recent</code> <code>dump</code> <code>leave</code></td><td class="nowrap"><strong>変えない</strong></td><td>同上</td></tr>
@@ -474,11 +474,7 @@ footer {
 </table>
 </div>
 
-<p><code>who</code> だけを変える。<strong>他のコマンドとオプションには <code>user</code> が入っていない</strong>ため、触る理由がない。</p>
-
-<div class="callout callout-important">
-<p><strong><code>who</code> を変えると他プロジェクトの手順が変わる。</strong>USAGE に載っているので、周知の対象になる。</p>
-</div>
+<p><strong>コマンド名は 1 つも変えない。</strong>どのコマンドにも <code>user</code> が入っておらず、触る理由がない。</p>
 
 <h3>名乗る ID を <code>--connector-id</code> で渡す</h3>
 
@@ -753,7 +749,55 @@ node N:\2026\ai-chat-lite\src\client\chat.mjs wait</code></pre>
 </section>
 
 <section class="ch05" id="ch05">
-<h1>決めていないこと</h1>
+<h1>決めたこと</h1>
+
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th class="num nowrap">#</th><th class="nowrap">論点</th><th>決めたこと</th></tr>
+</thead>
+<tbody>
+<tr>
+	<td class="num">1</td><td class="nowrap">順序</td>
+	<td><strong>改名 → アーカイブ。</strong>アーカイブを先にすると、作った直後に列名を変えることになる。テーブルの作り直しを 1 回で済ませる</td>
+</tr>
+<tr>
+	<td class="num">2</td><td class="nowrap">既にあるデータ</td>
+	<td><strong>移す。</strong><code>INSERT INTO … SELECT</code> で写す。捨てる案を書いていたが、読み返せなくなるのを避ける</td>
+</tr>
+<tr>
+	<td class="num">3</td><td class="nowrap">API のキー</td>
+	<td><strong>揃える。</strong><code>user_id</code> → <code>connector_id</code>。両方受ける形にすると名前が 2 つ残り、改名の目的に反する</td>
+</tr>
+<tr>
+	<td class="num">4</td><td class="nowrap"><code>/api/users</code> のパス</td>
+	<td><strong><code>/api/connectors</code> に変える。</strong>キーを変えるならパスも揃える</td>
+</tr>
+<tr>
+	<td class="num">5</td><td class="nowrap"><code>who</code> コマンド</td>
+	<td><strong>変えない。</strong>他プロジェクトの手順を二度変えないため（<code>--connector-id</code> の周知を今日すでに 1 回出している）</td>
+</tr>
+<tr>
+	<td class="num">6</td><td class="nowrap"><code>notice</code></td>
+	<td><strong>いま足す。</strong>作り直す機会が今回なので、<code>msg_kind</code> の <code>CHECK</code> を <code>say</code> / <code>join</code> / <code>leave</code> / <code>archive</code> / <code>notice</code> の 5 つにする（<a href="../40_issues/issues.html#i260901-03">i260901-03</a>）</td>
+</tr>
+<tr>
+	<td class="num">7</td><td class="nowrap">アーカイブの単位</td>
+	<td><strong>ルームと参加者の両方</strong></td>
+</tr>
+<tr>
+	<td class="num">8</td><td class="nowrap">作り直しの手順</td>
+	<td><strong>専用のスクリプトを作る。</strong>手作業だと再現できない。印を置く・止める・移す・印を消すまでを 1 本にする</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout callout-caution">
+<p><strong>作り直しの前に控えを取る。</strong>途中で書き込まれると整合が崩れるため、メンテナンスの印を置いてから行う。<code>-wal</code> と <code>-shm</code> も 3 つ一組で退避する（本体の大きさから中身の量は判断できない）。</p>
+</div>
+
+<h2>残っていること</h2>
 
 <h2>データを捨てるか移すか</h2>
 

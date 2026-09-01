@@ -275,7 +275,7 @@ svg { max-width: 100%; height: auto; }
 <tr><th class="nowrap">対象</th><th class="nowrap">接頭辞</th><th>例</th></tr>
 </thead>
 <tbody>
-<tr><td class="nowrap">user_id</td><td class="nowrap"><code>test-</code></td><td><code>test-project</code> <code>test-other</code></td></tr>
+<tr><td class="nowrap">connector_id</td><td class="nowrap"><code>test-</code></td><td><code>test-project</code> <code>test-other</code></td></tr>
 <tr><td class="nowrap">room_id</td><td class="nowrap"><code>sandbox-</code></td><td><code>sandbox-dev</code> <code>sandbox-mtfrqsso</code></td></tr>
 </tbody>
 </table>
@@ -283,7 +283,7 @@ svg { max-width: 100%; height: auto; }
 
 <p><strong>この 2 つに当たるものだけを消す。</strong>接頭辞から外れた名前を使うと消えずに残るので、テスト側は定数を経由して名前を作る。</p>
 
-<pre><code class="language-typescript">const TEST_USER = 'test-project';
+<pre><code class="language-typescript">const TEST_CONNECTOR = 'test-project';
 const TEST_OTHER = 'test-other';
 const DEV_ROOM = 'sandbox-dev';</code></pre>
 
@@ -351,11 +351,11 @@ tools/40_test/purge-test-data.cmd   ダブルクリック用</code></pre>
 
 <h2>消し方</h2>
 
-<pre><code class="language-sql">DELETE FROM messages WHERE from_user_id LIKE 'test-%'
-                        OR to_user_id   LIKE 'test-%'
+<pre><code class="language-sql">DELETE FROM messages WHERE from_connector_id LIKE 'test-%'
+                        OR to_connector_id   LIKE 'test-%'
                         OR room_id      LIKE 'sandbox-%';
-DELETE FROM cursors  WHERE user_id LIKE 'test-%' OR room_id LIKE 'sandbox-%';
-DELETE FROM users    WHERE user_id LIKE 'test-%';</code></pre>
+DELETE FROM cursors  WHERE connector_id LIKE 'test-%' OR room_id LIKE 'sandbox-%';
+DELETE FROM connectors    WHERE connector_id LIKE 'test-%';</code></pre>
 
 <p><code>PRAGMA secure_delete = ON</code> を先に立ててから消し、最後に <code>VACUUM</code> する。<strong>消した行の中身がページに残らないようにするため。</strong>サーバーが動いていて <code>VACUUM</code> が取れないときは、次の機会に詰める。</p>
 
@@ -387,8 +387,8 @@ DELETE FROM users    WHERE user_id LIKE 'test-%';</code></pre>
 <pre><code class="language-typescript">const created = new Set&lt;string&gt;();
 
 export function freshNames(tag: string) {
-	const names = { room: `sandbox-${tag}-${stamp}`, user: `test-${tag}-${stamp}` };
-	register(names.room, names.user);
+	const names = { room: `sandbox-${tag}-${stamp}`, connector: `test-${tag}-${stamp}` };
+	register(names.room, names.connector);
 	return names;
 }</code></pre>
 
@@ -472,7 +472,7 @@ export function freshNames(tag: string) {
 
 <pre><code class="language-typescript">expect(messages).toBeGreaterThan(0);      // public に発言がある前提
 expect(publicCount).toBeGreaterThan(3);   // 4 件以上ある前提
-expect(users).toBeGreaterThan(0);         // 参加者がいる前提</code></pre>
+expect(connectors).toBeGreaterThan(0);         // 参加者がいる前提</code></pre>
 
 <p>空の DB では全部落ちる。<code>beforeAll</code> で <code>public</code> に数件、参加者を数名撒く。</p>
 

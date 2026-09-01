@@ -596,7 +596,7 @@ footer a {
 <section class="toc md-skip">
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（3 件 / 未 2 / 済 1）</a></li>
-		<li class="g02"><a href="#g02">データ（3 件 / 未 2 / 着手 1）</a></li>
+		<li class="g02"><a href="#g02">データ（4 件 / 未 3 / 着手 1）</a></li>
 		<li class="g03"><a href="#g03">開発環境・記録（3 件 / 済 3）</a></li>
 		<li class="g04"><a href="#g04">チャットの機能（14 件 / 未 8 / 済 6）</a></li>
 	</ol>
@@ -855,10 +855,126 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-todo">未</span>
 		データ
-		<span class="count">3 件 / 未 2 / 着手 1</span>
+		<span class="count">4 件 / 未 3 / 着手 1</span>
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue" id="i260901-04" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260901-04</span>
+				DB の形を版で管理し、上げる手順を自動にする
+			</summary>
+			<div class="issuebody">
+				<p><strong>形を変えるたびに手順を作り直している。</strong>いまの作りは <code>CREATE TABLE IF NOT EXISTS</code> だけなので、<strong>すでにある DB は作り替えられない</strong>。列を足すだけなら <code>ALTER TABLE</code> で済むが、<code>CHECK</code> の変更・列の削除・型の変更はテーブルを作り直すしかない。</p>
+
+				<div class="callout callout-important">
+					<p><strong>この課題は、いま進めている改名の最初の利用者になる。</strong><code>connector</code> への改名（<a href="#i260831-02">i260831-02</a>）はまさにテーブルの作り直しで、専用のスクリプトを 1 本作ることになっていた。<strong>枠組みを先に作れば、改名はその上の 1 つの版として書ける。</strong></p>
+				</div>
+
+				<h3>仕組み</h3>
+
+				<p><code>versions</code> テーブルに、どこまで上げたかを持つ。起動時に現在の版を見て、足りない分の SQL を順に実行する。</p>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">いまの版</th><th class="nowrap">実行するもの</th></tr>
+				</thead>
+				<tbody>
+					<tr><td class="nowrap">0</td><td><code>ver_000001/</code> → <code>ver_000002/</code> → … と順に</td></tr>
+					<tr><td class="nowrap">1</td><td><code>ver_000002/</code> から</td></tr>
+					<tr><td class="nowrap">最新</td><td>何もしない</td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<pre><code class="language-sql">CREATE TABLE versions (
+  version_seq INTEGER PRIMARY KEY,
+  applied_at  TEXT NOT NULL,
+  script      TEXT NOT NULL,   -- 実行したファイル名
+  sql_sha256  TEXT NOT NULL    -- 中身の指紋。あとから書き換えられたら気づける
+);</code></pre>
+
+				<h3>論点</h3>
+
+				<div class="callout">
+					<p><strong>番号は決め終わるまで変えない。</strong>足すときは末尾に付ける。</p>
+				</div>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="num nowrap">#</th><th class="nowrap">論点</th><th>案</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="num">1</td><td class="nowrap">改名との順序</td>
+						<td><span class="badge b-done">☑</span> <strong>枠組みを先に作り、改名を <code>ver_000002</code> として書く。</strong>専用スクリプトは作らない。どちらでも「作り直して写す SQL」を書く手間は同じで、こちらなら次からその手間が減る</td>
+					</tr>
+					<tr>
+						<td class="num">2</td><td class="nowrap">SQL の置き場</td>
+						<td><span class="badge b-done">☑</span> <strong><code>src/scripts/20_migrate/ver_000001/*.sql</code>。名前順に実行する。</strong>フォルダ規約では <code>src/scripts/20_migrate/</code>。<strong>納品するもの</strong>なので <code>src/</code> 側でよい。<code>ver_000001/</code> の下に <code>*.sql</code> を並べ、名前順に実行する</td>
+					</tr>
+					<tr>
+						<td class="num">3</td><td class="nowrap">いつ実行するか</td>
+						<td><span class="badge b-done">☑</span> <strong>起動時に自動。</strong><a href="#i260901-03">メンテナンス中の応答</a>と噛み合う。<strong>待ち受けだけ先に始め、上げている間は 503 で「更新中」と返せる</strong>。<br>手動にする案もあるが、上げ忘れたまま動かすと <code>no such column</code> で落ちる</td>
+					</tr>
+					<tr>
+						<td class="num">4</td><td class="nowrap">失敗したとき</td>
+						<td><span class="badge b-done">☑</span> 1 つの版を 1 つのトランザクションで実行し、<strong>失敗したら巻き戻して起動を止める</strong>。版は上がらない。SQLite は DDL もトランザクションに入るが、<code>PRAGMA</code> と <code>VACUUM</code> は入らない</td>
+					</tr>
+					<tr>
+						<td class="num">5</td><td class="nowrap">控えを取るか</td>
+						<td><span class="badge b-done">☑</span> <strong>上げる前に自動で取る。</strong><code>VACUUM INTO</code> は稼働中でも 24 ミリ秒で終わることを実測している。<strong>戻す手段が無いなら、控えは必須になる</strong></td>
+					</tr>
+					<tr>
+						<td class="num">6</td><td class="nowrap">下り（元に戻す）を持つか</td>
+						<td><span class="badge b-done">☑</span> <strong>持たない。</strong>SQLite では列の削除もできず、下りの SQL を正しく書き続けるのは重い。<strong>戻すなら控えから戻す</strong></td>
+					</tr>
+					<tr>
+						<td class="num">7</td><td class="nowrap">いまの形をどう扱うか</td>
+						<td><span class="badge b-done">☑</span> <strong><code>ver_000001</code> に「いまの形（改名前）」を丸ごと書く。</strong>既にある DB は中身を見て「当てなくてよい」と判断し、記録だけする。<code>versions</code> を持たない DB は版 0 とみなす。<strong><code>ver_000001</code> に「いまの形」を丸ごと書く</strong>案と、<strong>既存の DB は「1 相当」として記録だけする</strong>案がある。前者なら空の DB から作り直せるが、既にある DB では実行を飛ばす判断が要る</td>
+					</tr>
+					<tr>
+						<td class="num">8</td><td class="nowrap"><code>CREATE TABLE IF NOT EXISTS</code> をどうするか</td>
+						<td><span class="badge b-done">☑</span> <strong>今回は残す。外すのは別の課題に切る。</strong>枠組みの新設と改名を同時に通すので、ここまで足すと失敗したときの切り分けができない。定義が一時的に 2 か所になるため、<strong>空の DB に <code>ver_000001</code> を当てた形と一致するかをテストで確かめる</strong>。<br>いずれ外して SQL 側へ一本化するのが筋。残すと定義が 2 か所になり、どちらが正か分からなくなる。<strong>ただし外すと、テストが空の DB から起動できるかに枠組みが効いてくる</strong></td>
+					</tr>
+					<tr>
+						<td class="num">9</td><td class="nowrap">適用済みの SQL を書き換えたとき</td>
+						<td><span class="badge b-done">☑</span> <strong>指紋を記録し、食い違ったら起動を止める。</strong>適用済みの環境では再実行されないため、書き換えると環境ごとに形が違う状態になる。<strong>気づかないのが最も怖い</strong></td>
+					</tr>
+					<tr>
+						<td class="num">10</td><td class="nowrap">番号の付け方</td>
+						<td><span class="badge b-done">☑</span> <strong>6 桁のゼロ埋め。連続を強制し、飛んでいたら止める。</strong><strong>1 人で開発している間は衝突しない</strong>が、飛んでいたら気づける方がよい</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<h3>確かめること</h3>
+
+				<ul>
+					<li><strong>空の DB から全部の版を順に当てて、最新の形になる</strong></li>
+					<li>途中の版で失敗したら、巻き戻って起動が止まる</li>
+					<li>2 回起動しても同じ版を 2 度当てない</li>
+					<li>適用済みの SQL を書き換えたら気づく</li>
+					<li>上げている間、<code>/api/version</code> は答え、ほかは 503 になる</li>
+					<li>上げる前の控えが残る</li>
+				</ul>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> <strong>論点 1〜10 を決めた</strong></li>
+					<li><span class="badge b-todo">未</span> 計画を書く（<code>notes/10_plan/</code>）</li>
+					<li><span class="badge b-todo">未</span> <code>versions</code> テーブルと版を上げる処理を作る</li>
+					<li><span class="badge b-todo">未</span> メンテナンス中の応答と噛み合わせる（上げている間は 503）</li>
+					<li><span class="badge b-todo">未</span> 上げる前に控えを取る</li>
+					<li><span class="badge b-todo">未</span> テストを書く</li>
+					<li><span class="badge b-todo">未</span> 資料に書く（設計・手引き）</li>
+				</ul>
+			</div>
+		</details>
 
 		<details class="issue" id="i260830-15" open>
 			<summary>

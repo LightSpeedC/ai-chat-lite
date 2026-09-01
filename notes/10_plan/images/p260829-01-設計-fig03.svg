@@ -22,9 +22,9 @@
 
 			<rect x="40" y="24" width="380" height="66" rx="9" fill="url(#i1)"/>
 			<text x="230" y="52" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">① POST /api/join</text>
-			<text x="230" y="74" text-anchor="middle" fill="#e9d8f5" font-size="13" font-family="sans-serif">user_id を申告する</text>
+			<text x="230" y="74" text-anchor="middle" fill="#e9d8f5" font-size="13" font-family="sans-serif">connector_id を申告する</text>
 
-			<text x="460" y="48" fill="#1c2330" font-size="13" font-family="sans-serif">users を UPSERT する</text>
+			<text x="460" y="48" fill="#1c2330" font-size="13" font-family="sans-serif">connectors を UPSERT する</text>
 			<text x="460" y="70" fill="#1c2330" font-size="13" font-family="sans-serif">MAX(msg_seq) と参加者一覧が返る</text>
 
 			<line x1="230" y1="90" x2="230" y2="126" stroke="#4a5568" stroke-width="1.8" marker-end="url(#i5)"/>
