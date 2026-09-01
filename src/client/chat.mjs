@@ -9,6 +9,9 @@ import {
 	COMMANDS,
 	ADMIN_COMMANDS,
 	REMOVED,
+	RETRY_INTERVAL_SEC,
+	RETRY_TIMES,
+	EXIT_UNREACHABLE,
 } from './options.mjs';
 
 /**
@@ -217,28 +220,75 @@ const ROOM = option('room', DEFAULT_ROOM);
  */
 const ACCESS_TOKEN = option('access-token', '');
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** このコマンドが繋ぎ直す回数 */
+const retryTimes = RETRY_TIMES[command] ?? RETRY_TIMES.default;
+
+/**
+ * サーバーを呼ぶ。繋がらないときと、メンテナンス中（503）のときは繋ぎ直す。
+ *
+ * 出すのは始めの 1 行と、諦めたときの 1 行だけ。黙ると固まったように見えるが、
+ * 60 回すべて出すと 60 行になる。
+ */
 async function call(path, init) {
 	const base = requireBase();
 	const headers = { ...(init?.headers ?? {}) };
 	if (ACCESS_TOKEN) headers['X-AiChat-Access-Token'] = ACCESS_TOKEN;
 
-	let res;
-	try {
-		res = await fetch(base + path, { ...init, headers });
-	} catch (err) {
-		console.error(`サーバーに繋がりません: ${base}`);
-		console.error('  サービスが動いているか確認してください');
-		console.error('  例: node-ai-chat-lite-winsw.exe status');
-		console.error(`  詳細: ${err?.cause?.code ?? err?.message ?? err}`);
-		process.exit(1);
+	let announced = false;
+	let lastReason = '';
+
+	for (let attempt = 0; attempt <= retryTimes; attempt++) {
+		if (attempt > 0) await sleep(RETRY_INTERVAL_SEC * 1000);
+
+		let res;
+		try {
+			res = await fetch(base + path, { ...init, headers });
+		} catch (err) {
+			lastReason = `繋がりません（${err?.cause?.code ?? err?.message ?? err}）`;
+			if (!announced && retryTimes > 0) {
+				console.error(`サーバーに繋がりません: ${base}`);
+				console.error(`  ${describeRetry()}繋ぎ直します`);
+				announced = true;
+			}
+			continue;
+		}
+
+		const json = await res.json().catch(() => ({}));
+
+		// メンテナンス中。落ちているのではないので、同じように粘る
+		if (res.status === 503) {
+			lastReason = `メンテナンス中です（${json.detail ?? '理由の記載なし'}）`;
+			if (!announced && retryTimes > 0) {
+				console.error(`メンテナンス中です: ${json.detail ?? '理由の記載なし'}`);
+				console.error(`  ${describeRetry()}繋ぎ直します`);
+				announced = true;
+			}
+			continue;
+		}
+
+		if (!res.ok) {
+			console.error(`エラー (${res.status}): ${json.error ?? '不明'}`);
+			if (json.detail) console.error(`  ${json.detail}`);
+			process.exit(1);
+		}
+		return json;
 	}
-	const json = await res.json().catch(() => ({}));
-	if (!res.ok) {
-		console.error(`エラー (${res.status}): ${json.error ?? '不明'}`);
-		if (json.detail) console.error(`  ${json.detail}`);
-		process.exit(1);
-	}
-	return json;
+
+	console.error(`諦めました: ${lastReason}`);
+	if (retryTimes > 0) console.error(`  ${describeRetry()}繋がりませんでした`);
+	console.error('  サービスが動いているか確認してください');
+	console.error('  例: node-ai-chat-lite-winsw.exe status');
+	process.exit(EXIT_UNREACHABLE);
+}
+
+/** 「10 分（10 秒 × 60 回）まで」のような文字列を作る */
+function describeRetry() {
+	if (retryTimes === 0) return '';
+	const sec = RETRY_INTERVAL_SEC * retryTimes;
+	const span = sec % 60 === 0 ? `${sec / 60} 分` : `${sec} 秒`;
+	return `${span}（${RETRY_INTERVAL_SEC} 秒 × ${retryTimes} 回）まで`;
 }
 
 const postJson = (path, body) =>

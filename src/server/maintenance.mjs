@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, watch } from 'node:fs';
+import { existsSync, readFileSync, statSync, watch } from 'node:fs';
 import { join, dirname, basename } from 'node:path';
 
 import { DATA_DIR } from './config.mjs';
@@ -31,6 +31,39 @@ export function readReason(file = MAINTENANCE_FILE) {
 	} catch {
 		return '';
 	}
+}
+
+/**
+ * 印から理由と再開の見込みを読む。
+ *
+ * 中身は自由なテキストで、`見込み: 5 分` の行があればそれを見込みとして扱う。
+ * その行は理由から外す。書かれていなければ見込みは null になり、
+ * 「分からないものを書かない」ことにしている。
+ *
+ * since は印を置いた時刻（ファイルの更新時刻）。止まっていた長さを出すために使う。
+ */
+export function readMaintenanceInfo(file = MAINTENANCE_FILE) {
+	let text = '';
+	let since = null;
+	try {
+		text = readFileSync(file, 'utf8');
+		since = statSync(file).mtime;
+	} catch {
+		return { reason: '', minutes: null, since: null };
+	}
+
+	let minutes = null;
+	const lines = [];
+	for (const line of text.split(/\r?\n/)) {
+		const m = line.match(/^\s*見込み\s*[:：]\s*(\d+)\s*分\s*$/);
+		if (m) {
+			minutes = Number(m[1]);
+			continue;
+		}
+		lines.push(line);
+	}
+
+	return { reason: lines.join('\n').trim(), minutes, since };
 }
 
 /**

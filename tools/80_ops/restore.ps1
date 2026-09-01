@@ -19,6 +19,10 @@
 .PARAMETER Force
 	確認を省く。タスクから呼ぶとき用。
 
+.PARAMETER EstimatedMinutes
+	再開までの見込み（分）。停止の案内と、メンテナンス中の Retry-After に使う。
+	既定は 5 分。実測では 1 分前後で終わるが、短く言って外すより余裕を持たせる。
+
 .EXAMPLE
 	.\restore.ps1
 	.\restore.ps1 -Path ..\..\_backup\chat-20260830-123456.db.zip
@@ -26,7 +30,8 @@
 [CmdletBinding()]
 param(
 	[string] $Path,
-	[switch] $Force
+	[switch] $Force,
+	[int] $EstimatedMinutes = 5
 )
 
 $ErrorActionPreference = 'Stop'
@@ -86,10 +91,36 @@ if (-not $Force) {
 	}
 }
 
+# --- 0. これから止めることを知らせる ---
+
+# 印を置く前に投稿する。印を置いてから投稿すると、もう受け付けてもらえない。
+#
+# 案内を出してすぐ落とすと読めないので、10 秒待つ。待受けは long-poll なので
+# 投稿は即座に届き、読ませるだけならこれで足りる。止めたい側を長く待たせない
+# ことを優先している。
+#
+# 素の restart（コードの入れ替え）では投稿しない。案内を出すのはこの手順を
+# 通ったときだけ、という条件がこれで自然に満たされる。
+$reason = 'バックアップから戻しています: ' + (Split-Path $Path -Leaf)
+$notice = @"
+【メンテナンス】これから停止します。$reason
+見込み: 約 $EstimatedMinutes 分
+再開したらこのルームに知らせます。それまで待受けは繋がりません。
+"@
+
+$sayOutput = & node $clientPath say $notice --port $serverPort --connector-id ai-chat-lite 2>&1
+if ($LASTEXITCODE -eq 0) {
+	Write-Host '[0/5] 停止することを知らせました（10 秒待ちます）'
+	Start-Sleep -Seconds 10
+} else {
+	# 止まっているなら知らせる相手もいない。ここで止める理由はない
+	Write-Host '[0/5] 知らせられませんでした（すでに止まっている可能性）'
+}
+
 # --- 1. メンテナンスの印を置く ---
 
-$reason = 'バックアップから戻しています: ' + (Split-Path $Path -Leaf)
-Set-Content -LiteralPath $lockPath -Value $reason -Encoding UTF8
+# 見込みは「見込み: N 分」の行で渡す。サーバーはこれを読んで Retry-After に入れる
+Set-Content -LiteralPath $lockPath -Value "$reason`n見込み: $EstimatedMinutes 分" -Encoding UTF8
 Write-Host '[1/5] メンテナンスの印を置きました'
 
 try {

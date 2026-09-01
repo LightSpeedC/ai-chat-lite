@@ -3,7 +3,9 @@ import { dirname } from 'node:path';
 
 import { describeEnv, describeListen, VERSION, DB_PATH, IS_TEST, TEST_ACCESS_TOKEN } from './config.mjs';
 import { log } from './log.mjs';
-import { waitUntilCleared } from './maintenance.mjs';
+import { waitUntilCleared, isUnderMaintenance, readMaintenanceInfo } from './maintenance.mjs';
+import { startListening } from './listen.mjs';
+import { createMaintenanceHandler } from './maintenance-handler.mjs';
 
 /**
  * サーバーの起動口。
@@ -29,13 +31,39 @@ if (IS_TEST) log.info(`アクセストークン: ${TEST_ACCESS_TOKEN}`);
 // 印を置く場所（_data）が無いと存在確認もできないので、先に作っておく
 mkdirSync(dirname(DB_PATH), { recursive: true });
 
-await waitUntilCleared();
+/*
+ * 印があっても待ち受けは先に始める。
+ *
+ * 待ってから始めると、その間ポートが開かない。繋ごうとした側は
+ * ECONNREFUSED を受け、メンテナンス中なのか、サービスが死んだのか、
+ * ポートを間違えたのかが区別できない。
+ *
+ * 先に待ち受けておけば「繋がるが断られる」状態を作れる。印が消えたら
+ * 同じ http.Server のまま受け口を差し替えるので、ポートが空く瞬間もない。
+ */
+const info = readMaintenanceInfo();
+const underMaintenance = isUnderMaintenance();
+
+const servers = await startListening(
+	createMaintenanceHandler({
+		reason: info.reason,
+		retryAfterSec: info.minutes ? info.minutes * 60 : undefined,
+		since: info.since ? info.since.toISOString() : '',
+	})
+);
+log.info(`待ち受けを開始しました（${servers.length} 個のアドレス）`);
+if (underMaintenance) log.warn('メンテナンス中として応答します（API は 503）');
+
+const waited = await waitUntilCleared();
 
 // ここで初めて DB が開かれる
-const { startServers, stopServers } = await import('./server.mjs');
+const { takeOver, stopServers, announceResumed } = await import('./server.mjs');
 
-const servers = await startServers();
-log.info(`待ち受けを開始しました（${servers.length} 個のアドレス）`);
+takeOver(servers);
+log.info('通常の応答に切り替えました');
+
+// 止まっていたことは、書かないと誰にも分からない。読んだ位置は保たれるので取りこぼしは無い
+if (waited) announceResumed(info.since);
 
 for (const signal of ['SIGINT', 'SIGTERM']) {
 	process.on(signal, async () => {

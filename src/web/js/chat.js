@@ -211,6 +211,26 @@ function applyEnv(env) {
 	if (badge) badge.hidden = env !== 'test';
 }
 
+/**
+ * メンテナンス中であることを出す。
+ *
+ * 環境の色（本番＝紺／テスト＝赤茶）とは別の軸なので、色を置き換えずに帯で重ねる。
+ * 入力欄は使えないようにする。書けても届かないため。
+ */
+function applyMaintenance(maintenance, since, reason) {
+	document.body.dataset.maintenance = maintenance ? 'yes' : '';
+
+	const input = document.getElementById('input');
+	const send = document.getElementById('send');
+	if (input) input.disabled = Boolean(maintenance);
+	if (send) send.disabled = Boolean(maintenance);
+
+	if (!maintenance) return;
+	const from = since ? `（${new Date(since).toLocaleString('ja-JP')} から）` : '';
+	const why = reason ? ` ${reason}` : '';
+	showBanner(`メンテナンス中です${from}。${why} 再開までお待ちください。`);
+}
+
 function showBanner(text) {
 	el.banner.textContent = text;
 	el.banner.hidden = false;
@@ -226,9 +246,10 @@ function hideBanner() {
  * サーバーは起動するたびに版が変わる。SSE は切れると自動で繋ぎ直すため、
  * 入れ替えのあとは新しい版がここへ届く。前と違っていれば画面も古いので読み直す。
  */
-function checkVersion({ version, env }) {
+function checkVersion({ version, env, maintenance, maintenance_since, maintenance_reason }) {
 	el.version.textContent = version;
 	applyEnv(env);
+	applyMaintenance(maintenance, maintenance_since, maintenance_reason);
 
 	if (serverVersion === null) {
 		serverVersion = version;

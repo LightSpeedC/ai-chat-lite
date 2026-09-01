@@ -1,9 +1,8 @@
-import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
-import { extname, join, normalize } from 'node:path';
+import { sendJson, serveStatic } from './serve.mjs';
+import { startListening, setHandler, closeListening } from './listen.mjs';
 
 import {
-	PORT, HOSTS, WEB_DIR, DEFAULT_ROOM, MAX_WAIT_SEC, OFFLINE_CHECK_MS,
+	PORT, HOSTS, DEFAULT_ROOM, MAX_WAIT_SEC, OFFLINE_CHECK_MS,
 	MAX_ID_LENGTH, MAX_BODY_LENGTH, DEFAULT_HISTORY_LIMIT,
 	VERSION, STARTED_AT, IS_TEST, TEST_ACCESS_TOKEN,
 } from './config.mjs';
@@ -21,6 +20,15 @@ import {
 
 /** 入力の誤りを 400 で返すための例外 */
 class BadRequest extends Error {}
+
+/**
+ * サーバー自身が案内を出すときに名乗る名前。
+ *
+ * 「名乗る ID は project フォルダ名」という決まりに沿う。すでに参加者にいるので
+ * 一覧が増えない。専用の名前（server 等）にすると、接続を持たない参加者が
+ * 常にオフラインとして一覧に残り続ける。
+ */
+const SERVER_ID = 'ai-chat-lite';
 
 // --- 入力の検証 ---
 
@@ -67,15 +75,6 @@ function numberOf(value, fallback) {
 
 // --- 応答 ---
 
-function sendJson(res, status, payload) {
-	const text = JSON.stringify(payload);
-	res.writeHead(status, {
-		'Content-Type': 'application/json; charset=utf-8',
-		'Content-Length': Buffer.byteLength(text),
-		'Cache-Control': 'no-store',
-	});
-	res.end(text);
-}
 
 async function readJsonBody(req) {
 	const chunks = [];
@@ -270,7 +269,16 @@ const ENV_NAME = IS_TEST ? 'test' : 'production';
  * ブラウザはこれを見て、中身が入れ替わったら自分を読み直す。
  */
 function handleVersion(res) {
-	sendJson(res, 200, { version: VERSION, started_at: STARTED_AT, env: ENV_NAME });
+	// 通常の応答に切り替わっているのでメンテナンス中ではない。
+	// 項目の形をメンテナンス中と揃えておくと、読む側が分岐せずに済む
+	sendJson(res, 200, {
+		version: VERSION,
+		started_at: STARTED_AT,
+		env: ENV_NAME,
+		maintenance: false,
+		maintenance_since: '',
+		maintenance_reason: '',
+	});
 }
 
 /**
@@ -448,41 +456,7 @@ function handleEvents(req, res, url) {
 	});
 }
 
-// --- 静的ファイル ---
-
-const CONTENT_TYPES = {
-	'.html': 'text/html; charset=utf-8',
-	'.css': 'text/css; charset=utf-8',
-	'.js': 'text/javascript; charset=utf-8',
-	'.json': 'application/json; charset=utf-8',
-	'.svg': 'image/svg+xml',
-};
-
-async function handleStatic(res, pathname) {
-	const rel = pathname === '/' ? 'index.html' : pathname.slice(1);
-	// .. を含むパスで WEB_DIR の外へ出られないようにする
-	const full = normalize(join(WEB_DIR, rel));
-	if (!full.startsWith(normalize(WEB_DIR))) {
-		sendJson(res, 403, { error: '参照できません' });
-		return;
-	}
-	try {
-		const content = await readFile(full);
-
-		res.writeHead(200, {
-			'Content-Type': CONTENT_TYPES[extname(full)] ?? 'application/octet-stream',
-			'Content-Length': content.length,
-			'Cache-Control': 'no-store',
-		});
-		res.end(content);
-	} catch {
-		sendJson(res, 404, { error: '見つかりません', path: pathname });
-	}
-}
-
-// --- ルーティング ---
-
-/*
+/**
  * テスト用として立っているとき、アクセストークンを持たない相手を断る。
  *
  * 他プロジェクトがポートを見つけて繋いでくると、テスト中のデータに他人の発言が
@@ -530,7 +504,7 @@ export async function handleRequest(req, res) {
 			if (path === '/api/events') return handleEvents(req, res, url);
 			// ブラウザのアドレスバーから叩けるよう GET も受ける
 			if (path === '/api/admin/exit') return await handleExit(req, res, url);
-			if (!path.startsWith('/api/')) return await handleStatic(res, path);
+			if (!path.startsWith('/api/')) return await serveStatic(res, path);
 		}
 		sendJson(res, 404, { error: '該当するものがありません', path });
 	} catch (err) {
@@ -557,22 +531,57 @@ export async function handleRequest(req, res) {
  * 片方だけに bind すると、もう一方から来た接続が拒否される。
  */
 export async function startServers(port = PORT, hosts = HOSTS) {
-	const servers = await Promise.all(
-		hosts.map(
-			(host) =>
-				new Promise((resolve, reject) => {
-					const server = createServer(handleRequest);
-					server.on('error', reject);
-					server.listen(port, host, () => resolve(server));
-				})
-		)
-	);
+	const servers = await startListening(handleRequest, port, hosts);
+	startSweeping();
+	return servers;
+}
 
-	// オフラインへ落ちた人を定期的に見つける
+/**
+ * すでに待ち受けているサーバーの受け口を、通常の受け口にする。
+ *
+ * メンテナンス中は待ち受けだけを先に始めており、印が消えた時点でここへ来る。
+ * 待ち受けを切らずに差し替えるので、ポートが空く瞬間がない。
+ */
+export function takeOver(servers) {
+	setHandler(servers, handleRequest);
+	startSweeping();
+	return servers;
+}
+
+/**
+ * 運用を再開したことを既定のルームに知らせる。
+ *
+ * 読んだ位置は保たれるので取りこぼしは無いが、**遅れたことは書かないと分からない**。
+ * 止まっていた長さを添える。
+ *
+ * 印を待った起動のときだけ呼ぶ。素の restart（コードの入れ替え）でも流すと、
+ * 開発中にルームが起動メッセージで埋まる。
+ *
+ * 名乗るのはこのプロジェクトのフォルダ名。本文は【メンテナンス】で始める。
+ * いまは say で出しているため、セッションの発言と名前では区別できないため。
+ */
+export function announceResumed(since) {
+	const minutes = since ? Math.max(1, Math.round((Date.now() - new Date(since).getTime()) / 60000)) : null;
+	const howLong = minutes ? `約 ${minutes} 分止まっていました。` : '';
+	const body = `【メンテナンス】運用を再開しました。${howLong}読んだ位置は保たれているので、取りこぼしはありません。`;
+
+	try {
+		touchUser(SERVER_ID);
+		const message = postSystemMessage(DEFAULT_ROOM, SERVER_ID, 'say', body);
+		broadcastPresence();
+		return message;
+	} catch (err) {
+		// 案内が出せなくても運用は続ける。落とす理由がない
+		log.warn(`再開の案内を出せませんでした: ${err?.message ?? err}`);
+		return null;
+	}
+}
+
+/** オフラインへ落ちた人を定期的に見つける */
+function startSweeping() {
+	if (offlineTimer) return;
 	offlineTimer = setInterval(sweepOffline, OFFLINE_CHECK_MS);
 	offlineTimer.unref?.();
-
-	return servers;
 }
 
 let offlineTimer = null;
@@ -583,5 +592,5 @@ export function stopServers(servers) {
 		offlineTimer = null;
 	}
 	releaseAll();
-	return Promise.all(servers.map((s) => new Promise((resolve) => s.close(resolve))));
+	return closeListening(servers);
 }
