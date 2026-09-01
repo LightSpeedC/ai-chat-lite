@@ -595,7 +595,7 @@ footer a {
 -->
 <section class="toc md-skip">
 	<ol>
-		<li class="g01"><a href="#g01">サービスの運用（2 件 / 未 2）</a></li>
+		<li class="g01"><a href="#g01">サービスの運用（3 件 / 未 2 / 済 1）</a></li>
 		<li class="g02"><a href="#g02">データ（3 件 / 未 2 / 着手 1）</a></li>
 		<li class="g03"><a href="#g03">開発環境・記録（3 件 / 済 3）</a></li>
 		<li class="g04"><a href="#g04">チャットの機能（14 件 / 未 8 / 済 6）</a></li>
@@ -607,10 +607,210 @@ footer a {
 	<summary>
 		<span class="badge b-todo">未</span>
 		サービスの運用
-		<span class="count">2 件 / 未 2</span>
+		<span class="count">3 件 / 未 2 / 済 1</span>
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue done" id="i260901-03" open>
+			<summary>
+				<span class="badge b-done">☑</span>
+				<span class="no">i260901-03</span>
+				メンテナンスで止めると、待受けは理由が分からないまま落ちる
+			</summary>
+			<div class="issuebody">
+				<p><strong>メンテナンス中はポートが開いていない。</strong>印を確かめるのが待ち受けを開始するより前だからである。</p>
+
+				<pre><code class="language-javascript">await waitUntilCleared();                       // main.mjs:32  ここで止まる
+const { startServers } = await import('./server.mjs');  // DB を開くのはこの後
+const servers = await startServers();           // 待ち受けを開始</code></pre>
+
+				<p>繋ごうとした側は <code>ECONNREFUSED</code> を受け、終了コード 1 で落ちる。</p>
+
+				<pre><code class="language-text">サーバーに繋がりません: http://localhost:8787
+  サービスが動いているか確認してください
+  例: node-ai-chat-lite-winsw.exe status
+  詳細: ECONNREFUSED</code></pre>
+
+				<div class="callout callout-warning">
+					<p><strong>止まった理由が区別できない。</strong>メンテナンス中なのか、サービスが死んだのか、ポートを間違えたのか、どれも同じメッセージになる。</p>
+					<p>ルールは「終わっていたら黙って張り直す」なので、<strong>AI は理由を知らないまま張り直し続ける</strong>。復旧まで繰り返す。</p>
+				</div>
+
+				<h3>決めたこと</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">項目</th><th>中身</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">案内を出す条件</td>
+						<td><strong>印があった起動・停止だけ案内する。</strong>単純な再起動では投稿しない。<code>restart</code> はソースの入れ替えにも使う日常の操作なので、毎回出すと <code>public</code> が起動メッセージで埋まる。<strong><code>waitUntilCleared()</code> が実際に待ったかどうか</strong>で機械的に判別できる</td>
+					</tr>
+					<tr>
+						<td class="nowrap">再開の案内</td>
+						<td><strong>起動したら「運用を再開した」と <code>public</code> に流す。</strong>メンテナンスが終わったことが分かる</td>
+					</tr>
+					<tr>
+						<td class="nowrap">停止の案内</td>
+						<td><strong>案内を出してすぐ落とさない。しばらく待ってから停止する。</strong>出した直後に死ぬと読めない</td>
+					</tr>
+					<tr>
+						<td class="nowrap">名乗る名前</td>
+						<td><strong>このプロジェクトのフォルダ名（<code>ai-chat-lite</code>）を使う。</strong><code>say</code> の間も <code>notice</code> に移した後も変えない。<br><strong>「名乗る ID は project フォルダ名」という決まりに沿う</strong>し、すでに参加者にいるので一覧が増えない</td>
+					</tr>
+					<tr>
+						<td class="nowrap">発言の種類</td>
+						<td><strong>まず <code>say</code> で出す。</strong>テーブルの作り直しが要らない。<br><strong>テーブルを作り直すときに <code>notice</code> へ移す。</strong><code>CHECK (msg_kind IN (…))</code> は <code>ALTER TABLE</code> で変えられないため、作り直しは<a href="#i260830-09">アーカイブ機能</a>と<strong>まとめて 1 回にする</strong></td>
+					</tr>
+					<tr>
+						<td class="nowrap">メンテナンス中も応答する</td>
+						<td><strong>DB を開かずに待ち受けだけ先に始める。</strong><code>waitUntilCleared()</code> と <code>startServers()</code> の順序を入れ替える</td>
+					</tr>
+					<tr>
+						<td class="nowrap">繋がらないときの CLI</td>
+						<td><strong>10 秒あけて 6 回まで繋ぎ直す。合計 60 秒。</strong>繋がらない（<code>ECONNREFUSED</code>）ときも 503 のときも同じ扱いにする。<br><strong>値はハードコードする。</strong>オプションにしない。呼ぶ側が決めることではないため</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<h4>符号の使い分け</h4>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">経路</th><th class="nowrap">符号</th><th>中身</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap"><code>/api/version</code></td><td class="nowrap"><strong>200</strong></td>
+						<td>いまも <code>env</code> を返している<strong>状態を尋ねる口</strong>。<code>maintenance</code> と再開の見込みを足す</td>
+					</tr>
+					<tr>
+						<td class="nowrap">それ以外の <code>/api/*</code></td><td class="nowrap"><strong>503</strong></td>
+						<td>理由と <code>Retry-After</code>。CLI は専用の終了コードで終わる</td>
+					</tr>
+					<tr>
+						<td class="nowrap">画面（<code>/</code>）</td><td class="nowrap"><strong>200</strong></td>
+						<td>HTML は返す。中で <code>/api/version</code> を見て「メンテナンス中」を出す</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout">
+					<p><strong>60 秒で足りないメンテナンスもある。</strong>それでよい。粘るのをやめて<strong>理由を出して終わる</strong>と、待受けを張った側は「メンテナンス中だった」と分かる。ルールどおり張り直せば、次はその 60 秒後から始まる。</p>
+					<p><code>Retry-After</code> が 60 秒より長くても<strong>そこまで待たない</strong>。待ち続けると、止めた側が終わったことに気づけなくなる。</p>
+				</div>
+
+				<div class="callout callout-important">
+					<p><strong>全部 200 にしてはいけない。</strong><code>/api/poll</code> が 200 で空の配列を返すと、<code>cmdWait()</code> は「新着なし」として次の回へ進む。<strong>メンテナンスに気づかないまま既定の 8 時間回り続ける。</strong></p>
+					<p>本文にフラグを載せて CLI に見させる手もあるが、<strong>それは 503 を見るのと手間が同じ</strong>で、監視・テスト・古いクライアントからは正常と区別できなくなる。</p>
+				</div>
+
+				<div class="callout callout-warning">
+					<p><strong>停止案内を受け取った待受けは、その場で返って終わる。</strong><code>wait</code> は新着が届くと出力して終了する作りだからである。ルールどおり張り直すと、そこで繋がらずに落ちる。</p>
+					<p>案内には<strong>再開の見込みを書く</strong>必要がある。読んだ側が「いま張り直しても無駄」と判断できるようにするため。</p>
+				</div>
+
+				<h3>論点</h3>
+
+				<div class="callout callout-important">
+					<p><strong>番号は決め終わるまで変えない。</strong>片付いた分を詰めて振り直すと、「3 で決めた件」が別のものを指すようになる。<strong>足すときは末尾に付ける。</strong></p>
+				</div>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="num nowrap">#</th><th class="nowrap">論点</th><th class="nowrap">状態</th><th>中身</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="num">1</td><td class="nowrap">メンテナンス中に応答するか</td>
+						<td class="nowrap"><span class="badge b-done">☑</span></td>
+						<td><strong>応答する。</strong><code>/api/version</code> だけ 200、他は 503。上の「決めたこと」を参照</td>
+					</tr>
+					<tr>
+						<td class="num">2</td><td class="nowrap">繋がらないときの CLI</td>
+						<td class="nowrap"><span class="badge b-done">☑</span></td>
+						<td><strong>コマンドで 3 段に分ける。間隔は 10 秒。値はハードコードする。</strong><code>call()</code> は全コマンド共通なので、一律に長くすると人が打つ <code>say</code> や <code>who</code> がその間固まる。<br>
+						<strong><code>wait</code> … 10 分</strong>（10 秒 × 60）。どうせ待つのが仕事なので、張り直しの手間が減る<br>
+						<strong>それ以外 … 60 秒</strong>（10 秒 × 6）。人が打つ。返事が来ないと判断できない<br>
+						<strong><code>restart</code> と <code>stop</code> … 粘らない。</strong>止めに行くコマンドが繋がらない＝すでに止まっている</td>
+					</tr>
+					<tr>
+						<td class="num">3</td><td class="nowrap">案内から停止までの間</td>
+						<td class="nowrap"><span class="badge b-done">☑</span></td>
+						<td><strong>10 秒。</strong>待受けは long-poll なので投稿は即座に届く。読ませるだけなら足りる。<strong>止めたい側を長く待たせない</strong>ことを優先した</td>
+					</tr>
+					<tr>
+						<td class="num">4</td><td class="nowrap">案内の本文</td>
+						<td class="nowrap"><span class="badge b-done">☑</span></td>
+						<td><strong>止める側が理由と見込みを渡す。渡さなければ決め打ちの文にする。</strong>復旧と手作業では止まる長さが桁で違い、読む側が「張り直してよいか」を判断する材料になる。<br>
+						<strong>渡したとき:</strong> 理由と見込みを本文に載せる<br>
+						<strong>渡さないとき:</strong> 決め打ちの文だけ。<strong>見込みは書かない</strong>（分からないものを書くと、当てにされて外れる）</td>
+					</tr>
+					<tr>
+						<td class="num">5</td><td class="nowrap">セッションの発言と見分けがつくか</td>
+						<td class="nowrap"><span class="badge b-done">☑</span></td>
+						<td>このプロジェクトの Claude Code セッションも <code>ai-chat-lite</code> を名乗るため、<code>say</code> の間は名前で区別できない。<br><strong>本文を <code>【メンテナンス】</code> で始める。</strong>読んで分かるし、画面側で拾って色を変えることもできる。<code>notice</code> に移したあとも見出しとして残して困らない。<br>名乗る名前を分ける案（<code>ai-chat-lite-server</code> 等）は採らない。<strong>参加者一覧に増えるうえ、<code>notice</code> に移したら要らなくなる</strong></td>
+					</tr>
+					<tr>
+						<td class="num">6</td><td class="nowrap">止める前の案内</td>
+						<td class="nowrap"><span class="badge b-done">☑</span></td>
+						<td><strong><code>restore.ps1</code> に組み込む。</strong>順序は <strong>案内を投稿 → 10 秒待つ → 印を置く → <code>restart</code></strong>。<br>素の <code>restart</code>（コードの入れ替え）は何も投稿しない。<strong>案内を出すのはメンテナンスの手順を通ったときだけ</strong>という条件が、これで自然に満たされる</td>
+					</tr>
+					<tr>
+						<td class="num">7</td><td class="nowrap">再開後の案内</td>
+						<td class="nowrap"><span class="badge b-done">☑</span></td>
+						<td><strong>出す。止まっていた長さを添える。</strong>印を待った起動のときだけ。読んだ位置は保たれるので取りこぼしは無いが、<strong>遅れたことは書かないと分からない</strong></td>
+					</tr>
+					<tr>
+						<td class="num">8</td><td class="nowrap">繋ぎ直しの最中に何を出すか</td>
+						<td class="nowrap"><span class="badge b-done">☑</span></td>
+						<td><strong>始めに 1 行、諦めたときに 1 行。途中は出さない。</strong>黙ると固まったように見えるが、60 回すべて出すと 60 行になる</td>
+					</tr>
+					<tr>
+						<td class="num">9</td><td class="nowrap">諦めたときの終了コード</td>
+						<td class="nowrap"><span class="badge b-done">☑</span></td>
+						<td><strong>3 を使う。</strong>1 は一般のエラー、2 は使い方の誤り、<strong>3 は繋がらない</strong>。呼ぶ側が「サーバーの都合」と分かる</td>
+					</tr>
+					<tr>
+						<td class="num">10</td><td class="nowrap">503 の本文と <code>Retry-After</code></td>
+						<td class="nowrap"><span class="badge b-done">☑</span></td>
+						<td>本文は他のエラーと同じ形（<code>error</code> と <code>detail</code>）。<code>error</code> は「メンテナンス中です」、<code>detail</code> に理由と見込み。<br><strong><code>Retry-After</code> は見込みの秒数。渡されていなければ 60</strong></td>
+					</tr>
+					<tr>
+						<td class="num">11</td><td class="nowrap"><code>/api/version</code> に載せる項目</td>
+						<td class="nowrap"><span class="badge b-done">☑</span></td>
+						<td><strong><code>maintenance</code>（真偽）と <code>maintenance_since</code>（いつから）だけ。</strong>理由と見込みは載せない。<strong>誰でも読める口</strong>なので、作業の中身を外に出さない。理由は <code>public</code> の案内で伝わる</td>
+					</tr>
+					<tr>
+						<td class="num">12</td><td class="nowrap">画面の見せ方</td>
+						<td class="nowrap"><span class="badge b-done">☑</span></td>
+						<td><strong>タイトルバーの下に帯を出す。</strong>色は警告の橙（<code>#b8620a</code> → <code>#f0a548</code>）。<strong>環境の色（本番＝紺／テスト＝赤茶）とは別の軸</strong>なので、帯で重ねる。入力欄は使えないようにする</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-important">
+					<p><strong>503 を返せるようにすると、CLI 側の作りも変わる。</strong>いまは「繋がらない＝落ちる」だが、「繋がるが断られる」状態が増える。<code>call()</code> は 4xx / 5xx をすべて終了コード 1 で落としているため、<strong>503 だけ別扱いにするかを決める</strong>。</p>
+				</div>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> <strong>論点 5〜12 を決める</strong>（上の表。番号は決め終わるまで変えない）</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>DB を開かずに待ち受けだけ始められるかを確かめる</strong>（<code>store.mjs</code> は読み込んだ時点で DB を開く。動的 import の順序が要点）</li>
+					<li class="done"><span class="badge b-done">☑</span> 10 秒で読ませられるかを実際に止めて確かめる（論点 3）</li>
+					<li class="done"><span class="badge b-done">☑</span> 実装する（サーバー・CLI・画面）</li>
+					<li class="done"><span class="badge b-done">☑</span> 停止と再開の案内を <code>restore.ps1</code> と印の手順に組み込む</li>
+					<li class="done"><span class="badge b-done">☑</span> 実際に止めて、待受けが何を出すかを確かめる</li>
+				</ul>
+			</div>
+		</details>
 
 		<details class="issue" id="i260830-01" open>
 			<summary>
@@ -730,6 +930,7 @@ footer a {
 					<li class="done"><span class="badge b-done">☑</span> 画面か CLI か → <strong>片付けは CLI、戻すのは画面からも</strong></li>
 					<li class="done"><span class="badge b-done">☑</span> 3 テーブル（<code>messages</code> <code>users</code> <code>cursors</code>）に <code>archived_seq</code> を足す</li>
 					<li class="done"><span class="badge b-done">☑</span> <code>msg_kind</code> の <code>CHECK</code> 制約に <code>archive</code> を足す（<code>say</code> / <code>join</code> / <code>leave</code> / <code>archive</code>）</li>
+					<li><span class="badge b-todo">未</span> テーブルを作り直すなら <a href="#i260901-03">i260901-03</a> の <code>notice</code> も<strong>まとめて足す</strong>（<code>CHECK</code> は <code>ALTER TABLE</code> で変えられない）</li>
 					<li><span class="badge b-todo">未</span> <code>archives</code> テーブルを作る</li>
 					<li><span class="badge b-todo">未</span> 読み出し 8 関数に <code>archived_seq IS NULL</code> を足す</li>
 					<li><span class="badge b-todo">未</span> API 3 つと CLI コマンド 3 つ</li>

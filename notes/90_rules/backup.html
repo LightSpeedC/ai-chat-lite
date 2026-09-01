@@ -402,7 +402,7 @@ footer a {
 	<div class="inner">
 		<h1>バックアップの手引き</h1>
 		<p class="lead">控えの取り方・戻し方・困ったときの見どころ</p>
-		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-08-30</p>
+		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-01</p>
 	</div>
 </div>
 
@@ -514,16 +514,28 @@ tools\80_ops\register-backup-tasks.cmd</code></pre>
 			<tr><th class="num nowrap">順</th><th>すること</th></tr>
 		</thead>
 		<tbody>
-			<tr><td class="num">1</td><td><code>_data\MAINTENANCE</code> を置く。この印がある間、サーバーは起動せず待つ</td></tr>
-			<tr><td class="num">2</td><td>サーバーを落とす。印があるので、起動しようとして待機に入る</td></tr>
+			<tr><td class="num">0</td><td><strong>これから止めることを <code>public</code> に流し、10 秒待つ。</strong>印を置く前に投稿する（置いてからでは受け付けてもらえない）</td></tr>
+			<tr><td class="num">1</td><td><code>_data\MAINTENANCE</code> を置く。理由と <code>見込み: N 分</code> を書く</td></tr>
+			<tr><td class="num">2</td><td>サーバーを落とす。印があるので、<strong>待ち受けだけ始めて DB は開かない</strong></td></tr>
 			<tr><td class="num">3</td><td>zip を展開し、中身の件数を数えて確かめる</td></tr>
 			<tr><td class="num">4</td><td>いまの DB を <code>_data\prev-yyyymmdd-hhmmss\</code> へ移し、入れ替える</td></tr>
-			<tr><td class="num">5</td><td>印を消す。サーバーが自分から起動する</td></tr>
+			<tr><td class="num">5</td><td>印を消す。<strong>受け口が通常に切り替わり、再開したことを <code>public</code> に流す</strong></td></tr>
 		</tbody>
 	</table>
 	</div>
 
 	<p>数秒で起動する。<code>http://localhost:8787/</code> を開いて確かめる。</p>
+
+	<div class="callout callout-tip">
+		<p><strong>止めている間もポートは開いている。</strong>繋いだ側には 503 と理由が返り、画面には帯が出る。「繋がらない」で落ちるのではないので、<strong>メンテナンス中だと分かる</strong>。</p>
+		<p>待受けを張っている相手は 10 分まで繋ぎ直すので、その間に終われば<strong>何ごともなかったように繋がり直す</strong>。</p>
+	</div>
+
+	<h3>見込みを変える</h3>
+
+	<p>既定は 5 分。長くかかると分かっているときは渡す。<strong>案内の本文と <code>Retry-After</code> の両方に効く</strong>。</p>
+
+	<pre><code class="language-powershell">tools\80_ops\restore.ps1 -EstimatedMinutes 20</code></pre>
 
 	<h2>戻したものが違っていたら</h2>
 

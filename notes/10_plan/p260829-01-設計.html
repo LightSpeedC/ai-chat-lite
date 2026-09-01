@@ -1882,9 +1882,42 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 
 	<pre><code class="language-xml">&lt;env name="AICHAT_PORT" value="8787"/&gt;</code></pre>
 
-	<h2>メンテナンス中は起動させない</h2>
+	<h2>メンテナンス中は DB を開かない。ただし応答はする</h2>
 
-	<p>DB を作り替えたり中身を入れ替えたりする間、サービスに勝手に起動されると<strong>ファイルを掴まれて手が出せなくなる</strong>。<code>_data\MAINTENANCE</code> という印を置いておくと、サーバーは待機したまま開始しない。</p>
+	<p>DB を作り替えたり中身を入れ替えたりする間、サービスに勝手に起動されると<strong>ファイルを掴まれて手が出せなくなる</strong>。<code>_data\MAINTENANCE</code> という印を置いておくと、サーバーは <strong>DB を開かずに待つ</strong>。</p>
+
+	<div class="callout callout-important">
+		<p><strong>待ち受けだけは先に始める。</strong>印が消えるのを待ってから待ち受けを始めると、その間ポートが開かない。繋ごうとした側は <code>ECONNREFUSED</code> を受け、<strong>メンテナンス中なのか、サービスが死んだのか、ポートを間違えたのかが区別できない</strong>。</p>
+		<p>先に待ち受けておけば「繋がるが断られる」状態を作れる。<strong>同じ <code>http.Server</code> のまま受け口を差し替える</strong>ので、ポートが空く瞬間もない。</p>
+	</div>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">経路</th><th class="nowrap">符号</th><th>中身</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>/api/version</code></td><td class="nowrap"><strong>200</strong></td>
+				<td>状態を尋ねる口なので答える。<code>maintenance</code>・<code>maintenance_since</code>・<code>maintenance_reason</code></td>
+			</tr>
+			<tr>
+				<td class="nowrap">それ以外の <code>/api/*</code></td><td class="nowrap"><strong>503</strong></td>
+				<td>理由と <code>Retry-After</code>（印の「見込み: N 分」から。無ければ 60 秒）</td>
+			</tr>
+			<tr>
+				<td class="nowrap">画面（<code>/</code>）</td><td class="nowrap"><strong>200</strong></td>
+				<td>HTML は返す。中で <code>/api/version</code> を見て帯を出し、入力欄を使えなくする</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-warning">
+		<p><strong>すべて 200 にしてはいけない。</strong><code>/api/poll</code> が 200 で空の配列を返すと、CLI は「新着なし」として次の回へ進む。<strong>メンテナンスに気づかないまま既定の 8 時間回り続ける。</strong></p>
+	</div>
+
+	<h3>手順</h3>
 
 	<div class="tablewrap">
 	<table>
@@ -1892,13 +1925,16 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 			<tr><th class="num nowrap">#</th><th>手順</th></tr>
 		</thead>
 		<tbody>
-			<tr><td class="num">1</td><td><code>_data\MAINTENANCE</code> を作る。中身に理由を書くとログに出る</td></tr>
-			<tr><td class="num">2</td><td>サーバーを落とす（<code>chat.mjs restart</code> でよい。起動しようとして待機に入る）</td></tr>
+			<tr><td class="num">0</td><td><strong>これから止めることを <code>public</code> に流し、10 秒待つ。</strong>印を置く前に投稿する（置いてからでは受け付けてもらえない）</td></tr>
+			<tr><td class="num">1</td><td><code>_data\MAINTENANCE</code> を作る。中身に理由を書くとログと 503 に出る。<code>見込み: N 分</code> の行を足すと <code>Retry-After</code> になる</td></tr>
+			<tr><td class="num">2</td><td>サーバーを落とす（<code>chat.mjs restart</code> でよい。起動して待ち受けだけ始め、DB は開かない）</td></tr>
 			<tr><td class="num">3</td><td>DB を好きに触る</td></tr>
-			<tr><td class="num">4</td><td>印を消す → <strong>自分から起動する</strong></td></tr>
+			<tr><td class="num">4</td><td>印を消す → <strong>受け口が通常に切り替わり、再開したことを <code>public</code> に流す</strong></td></tr>
 		</tbody>
 	</table>
 	</div>
+
+	<p><code>restore.ps1</code> は 0 と 1 を自分で行う。<strong>素の <code>restart</code>（コードの入れ替え）では何も流さない</strong>ので、開発中にルームが起動メッセージで埋まることはない。</p>
 
 	<pre><code class="language-text">2026-08-30 07:56:57.625 WARN  メンテナンスの印があるため、起動を保留します
 2026-08-30 07:56:57.625 WARN    印: （実体）\_data\MAINTENANCE
@@ -1911,10 +1947,32 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 	<p><code>store.mjs</code> は<strong>読み込んだ時点で DB を開く</strong>。<code>server.mjs</code> をそのまま実行すると、印を見る前にファイルを掴んでしまう。そこで起動口を <code>main.mjs</code> に分け、印が消えるのを待ってから動的 <code>import</code> で読み込む。</p>
 
 	<pre><code class="language-javascript">// main.mjs
-await waitUntilCleared();
+// 印があっても待ち受けは先に始める。受け口はメンテナンス用（DB を触らない）
+const servers = await startListening(createMaintenanceHandler(info));
+
+const waited = await waitUntilCleared();
 
 // ここで初めて DB が開かれる
-const { startServers, stopServers } = await import('./server.mjs');</code></pre>
+const { takeOver, announceResumed } = await import('./server.mjs');
+
+// 同じ http.Server のまま受け口を差し替える。ポートは開いたまま
+takeOver(servers);
+if (waited) announceResumed(info.since);</code></pre>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">ファイル</th><th>役割</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap"><code>listen.mjs</code></td><td>待ち受けを始める。受け口を差し替える。<strong>DB を触らない</strong></td></tr>
+			<tr><td class="nowrap"><code>maintenance-handler.mjs</code></td><td>メンテナンス中の受け口（200 / 503 / 静的）。<strong>DB を触らない</strong></td></tr>
+			<tr><td class="nowrap"><code>serve.mjs</code></td><td><code>sendJson</code> と静的ファイルの配信。両方の受け口が使う</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p><strong>DB を触る部品を分けているのが要点。</strong>メンテナンス中に使うものが <code>store.mjs</code> を読み込むと、印を確かめる前に DB を掴んでしまう。</p>
 
 	<p>待機中に <code>chat.db</code> をリネームできることを実測で確かめている。掴んでいれば失敗する。</p>
 

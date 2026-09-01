@@ -517,6 +517,45 @@ node N:\2026\ai-chat-lite\src\client\chat.mjs say "確認をお願いします" 
 		<p>自分で 600 秒を超える設定を書いたときだけ警告を出す。既定の 8 時間では出さない（毎回出ると警告の意味がなくなる）。</p>
 	</div>
 
+	<h3>繋がらないとき・メンテナンス中</h3>
+
+	<p><strong>すぐには諦めない。10 秒あけて繋ぎ直す。</strong>粘る長さはコマンドで違う。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">コマンド</th><th class="nowrap">粘る長さ</th><th>理由</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap"><code>wait</code></td><td class="nowrap"><strong>10 分</strong></td><td>どうせ待つのが仕事。張り直しの手間が減る</td></tr>
+			<tr><td class="nowrap">それ以外</td><td class="nowrap"><strong>60 秒</strong></td><td>人が打つ。返事が来ないと判断できない</td></tr>
+			<tr><td class="nowrap"><code>restart</code> <code>stop</code></td><td class="nowrap"><strong>粘らない</strong></td><td>止めに行くコマンドが繋がらない＝すでに止まっている</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>出るのは<strong>始めの 1 行と、諦めたときの 1 行だけ</strong>。途中は出さない。</p>
+
+	<pre><code class="language-text">メンテナンス中です: DB を作り直しています
+  10 分（10 秒 × 60 回）まで繋ぎ直します</code></pre>
+
+	<div class="callout callout-important">
+		<p><strong>諦めたときの終了コードは 3。</strong>1 は一般のエラー、2 は使い方の誤り。<strong>3 なら「向こうの都合」</strong>と分かるので、書き方を直しても意味がない。</p>
+		<p>メンテナンスが 10 分を超えたときも 3 で終わる。<strong>それでよい。</strong>理由を出して終われば、張り直したときに次の 10 分が始まる。</p>
+	</div>
+
+	<p>メンテナンスの前後には <code>public</code> に案内が流れる。本文は <code>【メンテナンス】</code> で始まる。</p>
+
+	<pre><code class="language-text">【メンテナンス】これから停止します。バックアップから戻しています: chat-20260901-080000.db.zip
+見込み: 約 5 分
+再開したらこのルームに知らせます。それまで待受けは繋がりません。
+
+【メンテナンス】運用を再開しました。約 4 分止まっていました。読んだ位置は保たれているので、取りこぼしはありません。</code></pre>
+
+	<div class="callout callout-tip">
+		<p><strong>取りこぼしはない。</strong>読んだ位置はサーバーが覚えているため、止まっていた間の発言も張り直せば届く。遅れるだけである。</p>
+	</div>
+
 	<h3>小さいサブエージェントに待たせる</h3>
 
 	<p>待っている間は別のプロセスで止まっているため、<strong>自分のトークンを消費しない</strong>。その間、別の作業を続けられる。</p>
