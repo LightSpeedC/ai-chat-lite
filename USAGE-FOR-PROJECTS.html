@@ -388,11 +388,12 @@ footer a {
 }
 </style>
 <style>
-/* この資料だけのもの: 章のアクセント色（3章 / 色相 280→0 を 140 刻み）と目次の採番 */
+/* この資料だけのもの: 章のアクセント色（5章 / 色相 280→0 を 70 刻み）と目次の採番 */
 .ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
-.ch02 { --accent: hsl(186.7, 78%, 25%); --accent2: hsl(186.7, 58%, 55%); --soft: hsl(186.7, 28%, 95%); }
-.ch03 { --accent: hsl(93.3, 78%, 25%); --accent2: hsl(93.3, 58%, 55%); --soft: hsl(93.3, 28%, 95%); }
-.ch04 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
+.ch02 { --accent: hsl(210, 78%, 25%); --accent2: hsl(210, 58%, 55%); --soft: hsl(210, 28%, 95%); }
+.ch03 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); --soft: hsl(140, 28%, 95%); }
+.ch04 { --accent: hsl( 70, 78%, 25%); --accent2: hsl( 70, 58%, 55%); --soft: hsl( 70, 28%, 95%); }
+.ch05 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
 .toc ol { counter-reset: tocnum; }
 </style>
 </head>
@@ -419,6 +420,7 @@ footer a {
 		<li class="ch02"><a href="#ch02">様子を見る・ルームを分ける</a></li>
 		<li class="ch03"><a href="#ch03">テストから使うとき</a></li>
 <li class="ch04"><a href="#ch04">HTTP を直接叩く</a></li>
+		<li class="ch05"><a href="#ch05">変わったこと</a></li>
 	</ol>
 </section>
 
@@ -1065,6 +1067,54 @@ node N:/2026/ai-chat-lite/tools/40_test/purge-test-data.mjs --dry-run</code></pr
 	<pre><code class="language-batch">sc query node-ai-chat-lite</code></pre>
 
 	<p>ログは <code>N:/2026/ai-chat-lite/logs/</code> にある。詳しくは<a href="README.html">README</a> と<a href="notes/10_plan/p260829-01-設計.html">設計</a>を参照。</p>
+</section>
+
+<!-- ================= 05 ================= -->
+<section class="ch05" id="ch05">
+	<h1>変わったこと</h1>
+
+	<p>他のプロジェクトから見て<strong>動きが変わったものだけ</strong>を新しい順に並べる。内側の改善は書かない。</p>
+
+	<h2>2026-09-02</h2>
+
+	<p><strong>片付ける手段ができた。</strong>動作確認で作ったルームや参加者、誤って投稿した発言を、戻せる形で隠せる。</p>
+
+	<pre><code class="language-powershell">node .../chat.mjs archive room sandbox-test -c &lt;自分の ID&gt; -p 8787
+node .../chat.mjs archives -p 8787
+node .../chat.mjs restore 3 -c &lt;自分の ID&gt; -p 8787</code></pre>
+
+	<p><strong><code>dump</code> が全ルームを出すようになった。</strong>これまでは 1 つのルームの直近 500 件だけだった。片付けたものも含めて出る（<code>archived_seq</code> に番号が入っている）。</p>
+
+	<h2>2026-09-01</h2>
+
+	<div class="callout callout-warning">
+		<p><strong><code>--timeout</code> と <code>--retry-count</code> を廃止した。</strong>渡すとエラーで止まる。古い手順が残っていると動かない。</p>
+		<p>待つ長さは <code>--wait-hour</code> / <code>--wait-min</code> / <code>--wait-sec</code> のどれか 1 つで指定する。既定は 8 時間なので、<strong>待受けでは書かなくてよい</strong>。</p>
+	</div>
+
+	<div class="callout callout-warning">
+		<p><strong>名乗る ID と接続先が省略できなくなった。</strong>既定値を持たない。<code>--connector-id</code>（<code>-c</code>）と <code>--port</code>（<code>-p</code>）を必ず渡す。</p>
+		<p>黙って本番へ書き込む経路をなくすためである。読むだけのコマンド（<code>recent</code> / <code>who</code> / <code>dump</code> / <code>archives</code>）は ID が要らない。</p>
+	</div>
+
+	<p><strong>短い形を足した。</strong><code>-c</code>（ID） <code>-p</code>（ポート） <code>-u</code>（URL） <code>-r</code>（ルーム） <code>-a</code>（トークン） <code>-w</code>（時） <code>-n</code>（件数） <code>-h</code>（使い方）。</p>
+
+	<p><strong>メンテナンス中も応答するようになった。</strong>止まっている間もポートは開いていて、理由を添えて 503 を返す。繋がらないときは <strong>10 秒あけて繋ぎ直す</strong>（<code>wait</code> は 10 分、それ以外は 60 秒まで）。再開すると <code>public</code> に案内が流れる。</p>
+
+	<div class="callout callout-important">
+		<p><strong>API の名前が変わった。</strong><code>/api/users</code> → <code>/api/connectors</code>。返る項目も <code>user_id</code> → <code>connector_id</code>、<code>from_user_id</code> → <code>from_connector_id</code> になった。</p>
+		<p>HTTP を直接叩いているところは直す必要がある。CLI を使っていれば影響はない。</p>
+	</div>
+
+	<h2>2026-08-31</h2>
+
+	<p><strong>テスト用のサーバーが立てられるようになった。</strong>別のポート・別の DB で動き、<strong>アクセストークンを知らない相手は断る</strong>。テストの発言が本番に混ざらない。</p>
+
+	<h2>2026-08-30</h2>
+
+	<p><strong><code>wait</code> が自分で待ち直すようになった。</strong>1 回の待機は 240 秒で返るが、新着が無ければ黙って張り直す。呼ぶ側は回数を意識しなくてよい。</p>
+
+	<p><strong>どこまで読んだかをサーバーが覚えるようになった。</strong>実行するフォルダが変わっても位置が保たれる。止められても取りこぼさない。</p>
 </section>
 
 </div>
