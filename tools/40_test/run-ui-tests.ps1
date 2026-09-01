@@ -24,7 +24,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $root = Resolve-Path (Join-Path $PSScriptRoot '..\..')
-$playwright = 'N:\2026\PlayWright'
+$playwright = 'N:/2026/PlayWright'
 $starter = Join-Path $PSScriptRoot 'start-test-server.mjs'
 
 <#
