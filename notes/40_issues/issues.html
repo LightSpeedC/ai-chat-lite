@@ -2092,7 +2092,9 @@ src/cli-cs/Json.cs                      小さな JSON の読み書き
 src/cli-cs/Definition.cs                埋め込んだ定義を読む
 src/cli-cs/WaitLog.cs                   待受けの記録
 tools/20_build/export-options.mjs       options.mjs から JSON を書き出す
+aichat-node.cmd                         node 版を呼ぶだけの包み。root。PATH から呼べる
 tools/20_build/build-aichat.ps1 / .cmd  ビルド
+tools/40_test/measure-cli-startup.ps1   起動の速さを測る（20 回 × 2 巡）
 tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る（9 件）</code></pre>
 
 				<h3>食い違いを防ぐ仕組み</h3>
@@ -2133,15 +2135,10 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 				</thead>
 				<tbody>
 					<tr>
-						<td class="nowrap">起動（<code>--help</code> 5 回平均）</td>
-						<td class="nowrap num">56 ms</td><td class="nowrap num">47 ms</td>
-						<td><strong>9 ms。ほとんど変わらない</strong></td>
-					</tr>
-					<tr>
 						<td class="nowrap">書き方</td>
-						<td class="nowrap"><code>node …/chat.mjs wait -c &lt;id&gt; -p 8787</code></td>
+						<td class="nowrap"><code>aichat-node wait -c &lt;id&gt; -p 8787</code></td>
 						<td class="nowrap"><code>aichat wait -c &lt;id&gt; -p 8787</code></td>
-						<td><strong>パスを書かなくて済む</strong></td>
+						<td><strong>どちらもパスを書かなくて済む</strong></td>
 					</tr>
 					<tr>
 						<td class="nowrap">Node への依存</td>
@@ -2153,13 +2150,34 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 						<td class="nowrap">—</td><td class="nowrap num">42 KB</td>
 						<td>SDK も実行環境も要らない（<code>csc</code> は Windows 同梱）</td>
 					</tr>
+					<tr>
+						<td class="nowrap">起動の速さ</td>
+						<td class="nowrap">—</td><td class="nowrap">—</td>
+						<td><strong>差はあるが、書き換える理由になる大きさではない</strong>（下記）</td>
+					</tr>
 				</tbody>
 				</table>
 				</div>
 
+				<h3>速さは狙いにならなかった</h3>
+
+				<p>20 回 × 2 巡（順序を入れ替え）、ウォームアップ 3 回を捨てて最小値で比べた。測るのは <code>tools/40_test/measure-cli-startup.cmd</code>。</p>
+
+				<div class="callout callout-important">
+					<p><strong>Node 自体の起動の方が、C#（.NET Framework）より速かった。</strong>CLR の初期化は V8 より重い。</p>
+					<p>C# が勝っているのは、node が <code>options.mjs</code> などを読み込む分だけである。<strong>その差も、書き換える理由になる大きさではない。</strong></p>
+				</div>
+
+				<div class="callout callout-caution">
+					<p><strong>はじめの測定は粗かった。</strong>5 回の平均で、出力を <code>| Out-Null</code> に流していた。パイプラインの処理が乗り、プロセスの起動時間が埋もれる。ウォームアップも捨てていない。</p>
+					<p>数字は結果として近かったが、<strong>根拠としては弱かった</strong>。測り方を決めてから測り直した。</p>
+				</div>
+
+				<p><strong>残る利点は「パスを書かせない」ことだけ</strong>である。それでも価値はある。<strong>パスの区切りで 2 回落ちた</strong>のは、コマンドラインが長いことが原因だった。<code>aichat</code> と打てるなら、その手の事故は起きない。</p>
+
 				<div class="callout callout-tip">
-					<p><strong>速さは狙いにならなかった。</strong>9 ms の差では、書き換える理由にならない。<strong>残る利点は「パスを書かせない」ことだけ</strong>である。</p>
-					<p>それでも価値はある。<strong>パスの区切りで 2 回落ちた</strong>のは、コマンドラインが長いことが原因だった。<code>aichat</code> と打てるなら、その手の事故は起きない。</p>
+					<p><strong>node 版にも同じ利点を持たせた。</strong><code>aichat-node.cmd</code> を root に置き、PATH から呼べるようにした。中身は node 版を呼ぶだけである。</p>
+					<p>おかげで<strong>プロセスを数える式が 1 つで済む</strong>。どちらで張っても、コマンドラインに <code>aichat</code> が残る。</p>
 				</div>
 
 				<h3>決めたこと</h3>
@@ -2176,6 +2194,7 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 					<tr><td class="nowrap">名前と置き場</td><td><code>aichat.exe</code> を root に置く。<strong>Git 管理外</strong>（作り直せる）</td></tr>
 					<tr><td class="nowrap">既定値</td><td><strong>接続先と ID は持たない。</strong>node 版と同じ。黙って本番に書く事故を防ぐ</td></tr>
 					<tr><td class="nowrap">ソースの置き場</td><td><code>src/cli-cs/</code>。他プロジェクトが使うものなので納品側</td></tr>
+					<tr><td class="nowrap">node 版の呼び方</td><td><code>aichat-node.cmd</code> を root に置き、<strong>PATH から呼べるようにした</strong>。数える式が 1 つで済む</td></tr>
 				</tbody>
 				</table>
 				</div>
@@ -2186,7 +2205,7 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 					<li class="done"><span class="badge b-done">☑</span> 実装する（7 ファイル）</li>
 					<li class="done"><span class="badge b-done">☑</span> ビルドを用意する（<code>build-aichat.cmd</code>）</li>
 					<li class="done"><span class="badge b-done">☑</span> テストを書く（9 件。<code>aichat.exe</code> が無ければスキップ）</li>
-					<li class="done"><span class="badge b-done">☑</span> 起動の速さを実測する → <strong>9 ms 差。狙いにならない</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> 起動の速さを実測する → <strong>狙いにならない。Node 自体の起動の方が速かった</strong></li>
 					<li><span class="badge b-todo">未</span> <strong>PATH に追加して起動方法を変える</strong>（利用者の判断）</li>
 					<li><span class="badge b-todo">未</span> USAGE に書き、周知する</li>
 				</ul>
