@@ -16,6 +16,10 @@ node_modules/
 node-ai-chat-lite.exe
 node-ai-chat-lite-winsw.exe
 
+# C# 版 CLI のビルド出力。tools/20_build/build-aichat.cmd で作り直せる
+aichat.exe
+aichat.pdb
+
 # サービスのログ
 logs/
 
