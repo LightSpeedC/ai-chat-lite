@@ -211,6 +211,19 @@ describe('片付けたものの見え方', () => {
 		assert.ok(new Set(json.messages.map((m) => m.room_id)).size >= 2);
 	});
 
+	test('片付けの知らせが、どの操作かを持っている', async () => {
+		/*
+		 * 画面はこの番号を見て「戻す」ボタンを出す。本文は --description で
+		 * 書き換えられるため、番号を本文から拾うことはできない。
+		 */
+		const { json } = await get('/api/history?room_id=public&limit=20');
+		const notice = json.messages.filter((m) => m.msg_kind === 'archive').pop();
+
+		assert.ok(notice, 'archive の知らせが無い');
+		assert.equal(notice.ref_archived_seq, seq);
+		assert.equal(notice.archived_seq, null, '知らせ自身は片付けられていない');
+	});
+
 	test('archives には対象が説明とは別に残る', async () => {
 		const { json } = await get('/api/admin/archives');
 		const row = json.archives.find((a) => a.archived_seq === seq);

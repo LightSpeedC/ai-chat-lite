@@ -17,6 +17,10 @@
 		<button type="button" id="new-room" title="ルームを作る">＋</button>
 	</div>
 	<div class="titlebar-me">
+		<!-- 片付けたものが 1 件も無ければ出さない。普段は目に入らない方がよい -->
+		<button type="button" id="open-archives" title="片付けたものを見る" hidden>
+			片付けたもの <span class="count" id="archive-count">0</span>
+		</button>
 		<span class="version" id="version" title="サーバーの版。起動した時刻">—</span>
 		<span id="me-label">—</span>
 		<button type="button" id="change-id">ID を変える</button>
@@ -65,6 +69,43 @@
 		<input type="text" id="id-input" maxlength="64" required>
 		<menu>
 			<button value="ok">決定</button>
+		</menu>
+	</form>
+</dialog>
+
+<dialog id="archives-dialog" class="wide">
+	<h2>片付けたもの</h2>
+	<p>片付けると読み出しに出なくなります。<strong>戻せば元どおりになります。</strong></p>
+	<div class="tablewrap">
+		<table class="archives">
+			<thead>
+				<tr>
+					<th class="nowrap">seq</th>
+					<th class="nowrap">片付けた日時</th>
+					<th class="nowrap">対象</th>
+					<th class="nowrap num">件数</th>
+					<th>説明</th>
+					<th class="nowrap"></th>
+				</tr>
+			</thead>
+			<tbody id="archives-body"></tbody>
+		</table>
+	</div>
+	<form method="dialog">
+		<menu>
+			<button value="close">閉じる</button>
+		</menu>
+	</form>
+</dialog>
+
+<dialog id="restore-dialog">
+	<form method="dialog">
+		<h2>戻しますか</h2>
+		<p id="restore-target">—</p>
+		<p>片付ける前の状態に戻ります。<strong>失われるものはありません。</strong></p>
+		<menu>
+			<button value="cancel">やめる</button>
+			<button value="ok">戻す</button>
 		</menu>
 	</form>
 </dialog>

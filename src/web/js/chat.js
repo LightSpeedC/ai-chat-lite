@@ -37,6 +37,12 @@ const el = {
 	banner: document.getElementById('banner'),
 	dialog: document.getElementById('id-dialog'),
 	idInput: document.getElementById('id-input'),
+	openArchives: document.getElementById('open-archives'),
+	archiveCount: document.getElementById('archive-count'),
+	archivesDialog: document.getElementById('archives-dialog'),
+	archivesBody: document.getElementById('archives-body'),
+	restoreDialog: document.getElementById('restore-dialog'),
+	restoreTarget: document.getElementById('restore-target'),
 };
 
 let connectorId = '';
@@ -53,6 +59,14 @@ let serverVersion = null; // 最後に受け取ったサーバーの版
  */
 const statusOf = new Map();
 
+/*
+ * いま戻せる片付け。archived_seq をキーにする。
+ *
+ * 片付けの知らせに添える「戻す」ボタンの出し入れに使う。戻したものは
+ * archives から消えるため、ここからも消える。
+ */
+const liveArchives = new Map();
+
 // --- 本文の描画 ---
 
 function messageElement(m) {
@@ -61,6 +75,29 @@ function messageElement(m) {
 	if (m.msg_kind !== 'say') {
 		wrap.className = 'msg system';
 		wrap.innerHTML = `<div class="body">${renderBody(m.msg_body)}</div>`;
+
+		/*
+		 * 片付けの知らせには、その場で戻すボタンを添える。
+		 *
+		 * どの操作を指しているかは ref_archived_seq が持つ。本文は --description で
+		 * 書き換えられるため、番号を本文から拾うことはできない。
+		 *
+		 * ボタンを出すかどうかは、その番号がまだ生きているかで決める。戻したあとは
+		 * archives から消えるので、押せる状態で残らない。
+		 */
+		if (m.ref_archived_seq) {
+			wrap.dataset.refArchivedSeq = String(m.ref_archived_seq);
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.className = 'restore-here';
+			button.textContent = '戻す';
+			button.hidden = !liveArchives.has(m.ref_archived_seq);
+			button.addEventListener('click', () => {
+				const a = liveArchives.get(m.ref_archived_seq);
+				if (a) confirmRestore(a);
+			});
+			wrap.appendChild(button);
+		}
 		return wrap;
 	}
 
@@ -268,7 +305,12 @@ function connectEvents() {
 		withAccessToken(`/api/events?connector_id=${encodeURIComponent(connectorId)}&room_id=${encodeURIComponent(room)}&since=${cursor}`)
 	);
 
-	source.addEventListener('message', (e) => appendMessages([JSON.parse(e.data)]));
+	source.addEventListener('message', (e) => {
+		const m = JSON.parse(e.data);
+		appendMessages([m]);
+		// 誰かが片付けたら件数が変わる。ボタンの出し入れもここで追随する
+		if (m.msg_kind === 'archive') refreshArchives();
+	});
 	source.addEventListener('presence', (e) => renderConnectors(JSON.parse(e.data)));
 	source.addEventListener('version', (e) => checkVersion(JSON.parse(e.data)));
 	source.addEventListener('open', hideBanner);
@@ -300,9 +342,15 @@ async function loadRooms() {
 	el.roomSelect.value = room;
 }
 
-/** ルームを切り替える。表示を空にしてから読み直す */
-async function switchRoom(next) {
-	if (!next || next === room) return;
+/**
+ * ルームを切り替える。表示を空にしてから読み直す。
+ *
+ * force は同じルームのまま読み直したいとき用。戻したものは SSE で流れて
+ * こない（既にある行の archived_seq を NULL にするだけで、新しい発言が
+ * 積まれるわけではない）ため、取り込むには読み直すしかない。
+ */
+async function switchRoom(next, force = false) {
+	if (!next || (next === room && !force)) return;
 	room = next;
 	localStorage.setItem('aichat.room', room);
 
@@ -335,6 +383,7 @@ async function start() {
 	}
 
 	await loadRooms();
+	await refreshArchives();
 	connectEvents();
 }
 
@@ -414,6 +463,135 @@ window.addEventListener('pagehide', () => {
 		new Blob([JSON.stringify({ connector_id: connectorId, room_id: room })], { type: 'application/json' })
 	);
 });
+
+// --- 片付けたもの ---
+
+/**
+ * 片付けたものを数えて、ボタンの出し入れを決める。
+ *
+ * 1 件も無ければボタンごと隠す。片付けは滅多に起きないので、普段は目に
+ * 入らない方がよい。件数はバッジで出し、あることに気づけるようにする。
+ */
+async function refreshArchives() {
+	let archives = [];
+	try {
+		({ archives } = await api('/api/admin/archives'));
+	} catch {
+		// 取れなくても画面は使える。黙って隠す
+		el.openArchives.hidden = true;
+		return [];
+	}
+
+	el.archiveCount.textContent = String(archives.length);
+	el.openArchives.hidden = archives.length === 0;
+
+	liveArchives.clear();
+	for (const a of archives) liveArchives.set(a.archived_seq, a);
+	refreshRestoreButtons();
+
+	return archives;
+}
+
+/**
+ * 片付けの知らせに添えたボタンを見直す。
+ *
+ * 誰かが戻せば、その知らせのボタンは押せなくなる。逆に読み込み直しても
+ * 生きているものにはボタンが戻る。参加者の印を塗り直すのと同じ考え方。
+ */
+function refreshRestoreButtons() {
+	for (const wrap of el.log.querySelectorAll('.msg.system[data-ref-archived-seq]')) {
+		const seq = Number(wrap.dataset.refArchivedSeq);
+		const button = wrap.querySelector('button.restore-here');
+		if (button) button.hidden = !liveArchives.has(seq);
+	}
+}
+
+/** 対象を「ルーム sandbox-a」の形にする */
+function archiveTarget(a) {
+	const label = { message: '発言', connector: '参加者', room: 'ルーム' }[a.archive_kind] ?? a.archive_kind;
+	return `${label} ${a.archive_id}`;
+}
+
+/** 一覧を組み立てて開く */
+async function openArchives() {
+	const archives = await refreshArchives();
+	el.archivesBody.textContent = '';
+
+	for (const a of archives) {
+		const count = Number(a.msg_count) + Number(a.cursor_count) + Number(a.connector_count);
+		const tr = document.createElement('tr');
+
+		// 本文は他人が書いた文字列。textContent で入れる（innerHTML にしない）
+		for (const [text, cls] of [
+			[String(a.archived_seq), 'nowrap'],
+			[a.archived_at.slice(0, 16), 'nowrap'],
+			[archiveTarget(a), 'nowrap'],
+			[String(count), 'nowrap num'],
+			[a.description, ''],
+		]) {
+			const td = document.createElement('td');
+			td.className = cls;
+			td.textContent = text;
+			tr.appendChild(td);
+		}
+
+		const td = document.createElement('td');
+		td.className = 'nowrap';
+		const button = document.createElement('button');
+		button.type = 'button';
+		button.textContent = '戻す';
+		button.addEventListener('click', () => confirmRestore(a));
+		td.appendChild(button);
+		tr.appendChild(td);
+
+		el.archivesBody.appendChild(tr);
+	}
+
+	el.archivesDialog.showModal();
+}
+
+/**
+ * 戻す前に一度だけ確かめる。
+ *
+ * 戻すのは元に戻すだけで失われるものが無いため、CLI のように名前を打たせる
+ * ところまではしない。ただし押し間違いは起こるので 1 段は挟む。
+ */
+function confirmRestore(a) {
+	el.restoreTarget.textContent = `archived_seq ${a.archived_seq}　${archiveTarget(a)}　${a.description}`;
+
+	el.restoreDialog.returnValue = '';
+	el.restoreDialog.showModal();
+
+	el.restoreDialog.addEventListener(
+		'close',
+		async () => {
+			if (el.restoreDialog.returnValue !== 'ok') return;
+
+			try {
+				await api('/api/admin/restore', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ archived_seq: a.archived_seq, connector_id: connectorId }),
+				});
+			} catch (err) {
+				showBanner(`戻せませんでした: ${err.message}`);
+				return;
+			}
+
+			/*
+			 * 戻した分は SSE では流れてこない。既にある行の archived_seq を
+			 * NULL に戻すだけで、新しい発言が積まれるわけではないため。
+			 * 画面を読み直して取り込む。
+			 */
+			el.archivesDialog.close();
+			await switchRoom(room === 'public' ? 'public' : room, true);
+			await refreshArchives();
+		},
+		{ once: true }
+	);
+}
+
+el.openArchives.addEventListener('click', openArchives);
 
 // --- ID の決定 ---
 

@@ -108,9 +108,15 @@ function broadcastPresence() {
 	publishPresence(list);
 }
 
-/** システムメッセージを積んで配る */
-function postSystemMessage(roomId, connectorId, kind, body) {
-	const message = addMessage({ roomId, fromConnectorId: connectorId, kind, body });
+/*
+ * システムメッセージを積んで配る。
+ *
+ * refArchivedSeq は片付け・戻しの通知だけが持つ。どの操作を指しているかを
+ * 本文とは別に残しておくと、画面がその場で戻すボタンを出せる。本文は
+ * --description で書き換えられるため、番号を本文から拾うことはできない。
+ */
+function postSystemMessage(roomId, connectorId, kind, body, refArchivedSeq = null) {
+	const message = addMessage({ roomId, fromConnectorId: connectorId, kind, body, refArchivedSeq });
 	publish(message);
 	return message;
 }
@@ -464,7 +470,7 @@ async function handleArchive(req, res) {
 	 *
 	 * 片付けたルーム自身に積んでも見えなくなるため、既定のルームに積む。
 	 */
-	postSystemMessage(DEFAULT_ROOM, byConnectorId, 'archive', description);
+	postSystemMessage(DEFAULT_ROOM, byConnectorId, 'archive', description, result.archived_seq);
 	broadcastPresence();
 
 	sendJson(res, 200, result);

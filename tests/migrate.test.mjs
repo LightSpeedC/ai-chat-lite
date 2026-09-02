@@ -207,7 +207,7 @@ describe('実際に置いてある版', () => {
 		const dbPath = newDbPath();
 		const result = migrate({ dbPath, dir: REAL_DIR });
 
-		assert.ok(result.to >= 3, `版が上がっていない（${result.to}）`);
+		assert.ok(result.to >= 4, `版が上がっていない（${result.to}）`);
 		assert.deepEqual(tables(dbPath), ['archives', 'connectors', 'cursors', 'messages', 'versions']);
 	});
 
@@ -225,6 +225,25 @@ describe('実際に置いてある版', () => {
 			assert.ok(cols('cursors').includes('connector_id'));
 			assert.ok(cols('connectors').includes('connector_id'));
 			assert.ok(cols('connectors').includes('connector_role'));
+		} finally {
+			db.close();
+		}
+	});
+
+	test('通知が指す片付けの番号を持てる', () => {
+		/*
+		 * archived_seq とは意味が逆である。
+		 *   archived_seq     … その行自身が片付けられた番号
+		 *   ref_archived_seq … その行が知らせている片付けの番号
+		 */
+		const dbPath = newDbPath();
+		migrate({ dbPath, dir: REAL_DIR });
+
+		const db = new DatabaseSync(dbPath);
+		try {
+			const cols = db.prepare('PRAGMA table_info(messages)').all().map((c) => c.name);
+			assert.ok(cols.includes('ref_archived_seq'), '列が無い');
+			assert.ok(cols.includes('archived_seq'), '片付けられた側の列も要る');
 		} finally {
 			db.close();
 		}

@@ -564,6 +564,139 @@ dialog button {
 	cursor: pointer;
 }
 
+/* ---------- 片付けたもの ---------- */
+/*
+ * 片付けの知らせに添える「戻す」。
+ *
+ * 知らせ自体が控えめな見た目なので、ボタンも同じ大きさに合わせる。
+ * 目立たせると、流れを読んでいるだけの人が押してしまう。
+ */
+.msg.system button.restore-here {
+	display: inline-block;
+	margin-left: 8px;
+	padding: 1px 10px;
+	border: 1px solid var(--navy2, #2f5fbf);
+	border-radius: 10px;
+	background: #fff;
+	color: var(--navy1, #12224d);
+	font-size: 0.85em;
+	font-weight: 700;
+	cursor: pointer;
+	vertical-align: middle;
+}
+
+.msg.system button.restore-here:hover {
+	background: var(--code-bg, #f4f6fa);
+	color: var(--navy1, #12224d);
+}
+
+/*
+ * display を書いた要素には hidden 属性が効かない。
+ *
+ * ブラウザの既定は [hidden] { display: none } だが、作者のスタイルが勝つ。
+ * 上で display: inline-block を指定しているので、打ち消しをここに置く。
+ */
+.msg.system button.restore-here[hidden] {
+	display: none;
+}
+
+
+/*
+ * 件数のバッジ。タイトルバーのボタンの中に置く。
+ * 0 件のときはボタンごと隠すので、ここが 0 で出ることはない。
+ */
+#open-archives .count {
+	display: inline-block;
+	min-width: 1.4em;
+	margin-left: 4px;
+	padding: 0 5px;
+	border-radius: 9px;
+	background: rgba(255, 255, 255, 0.28);
+	color: #fff;
+	font-size: 0.85em;
+	font-weight: 700;
+	text-align: center;
+}
+
+/* 一覧は横に長い。既定の dialog より広くする */
+dialog.wide {
+	width: min(920px, 92vw);
+}
+
+dialog .tablewrap {
+	overflow-x: auto;
+	max-height: 60vh;
+	overflow-y: auto;
+}
+
+table.archives {
+	border-collapse: collapse;
+	width: 100%;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	font-size: 0.9em;
+}
+
+table.archives th {
+	position: sticky;
+	top: 0;
+	background: linear-gradient(100deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	text-align: left;
+	padding: 7px 10px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+table.archives td {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	padding: 7px 10px;
+	border-top: 1px solid var(--line, #d9dfe8);
+	vertical-align: top;
+}
+
+table.archives tr:nth-child(even) td {
+	background: #fafbfe;
+	color: var(--ink, #1c2330);
+}
+
+table.archives td.num {
+	text-align: right;
+}
+
+table.archives td.nowrap {
+	white-space: nowrap;
+}
+
+/* 行の「戻す」は控えめにする。押し間違いを誘わないため */
+table.archives td button {
+	background: #fff;
+	color: var(--navy1, #12224d);
+	border: 1px solid var(--navy2, #2f5fbf);
+	border-radius: 6px;
+	padding: 3px 12px;
+	font-size: 0.9em;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+table.archives td button:hover {
+	background: var(--code-bg, #f4f6fa);
+	color: var(--navy1, #12224d);
+}
+
+/* 戻す確認に出す対象。等幅にして seq と対象を読み取りやすくする */
+#restore-target {
+	padding: 8px 12px;
+	border-radius: 8px;
+	background: var(--code-bg, #f4f6fa);
+	color: var(--ink, #1c2330);
+	font-family: "Consolas", "Cascadia Mono", monospace;
+	font-size: 0.88em;
+	word-break: break-all;
+}
+
 /* ---------- 狭い画面 ---------- */
 
 @media (max-width: 720px) {
