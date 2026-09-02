@@ -1183,7 +1183,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-todo">未</span>
 		開発環境・記録
-		<span class="count">8 件 / 着手 4 / 済 4</span>
+		<span class="count">8 件 / 着手 2 / 済 6</span>
 	</summary>
 
 	<div class="groupbody">
@@ -1284,9 +1284,9 @@ const servers = await startServers();           // 待ち受けを開始</code><
 			</div>
 		</details>
 
-		<details class="issue doing" id="i260902-02" open>
+		<details class="issue done" id="i260902-02">
 			<summary>
-				<span class="badge b-doing">着手</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260902-02</span>
 				待受けが 60 分で止められる。8 時間を指定しても効かない
 			</summary>
@@ -1330,7 +1330,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 
 				<h3>どうするかを検証中</h3>
 
-				<p><span class="badge b-warn">検証中</span> <strong>2026-09-02 の晩、上限を 12 時間に伸ばして様子を見ている。</strong><code>~/.claude/settings.json</code> に入れたので全プロジェクトに効く。</p>
+				<p><span class="badge b-ok">確認済み</span> <strong>2026-09-02 の晩に検証し、効くことを確かめた。</strong><code>~/.claude/settings.json</code> に入れたので全プロジェクトに効く。</p>
 
 				<pre><code class="language-json">{
   "env": {
@@ -1380,14 +1380,134 @@ const servers = await startServers();           // 待ち受けを開始</code><
 
 				<p><strong>C が本筋だと考えている。</strong>張り直しで実害が無いのだから、上限に頼る作りにしない方がよい。伸ばすのは通知の量を減らすためだけの調整として扱う。</p>
 
+				<h3>C を採った（2026-09-02）</h3>
+
+				<div class="callout callout-important">
+					<p><strong>設定は入れたまま。ただし 60 分で終わっても困らない作りを保つ。</strong></p>
+					<p>張り直しで実害が無いのだから、<strong>上限に頼る作りにしない</strong>。伸ばすのは通知の数を減らすための調整として扱う。</p>
+				</div>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">案</th><th class="nowrap">採否</th><th>理由</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">A: 60 分のまま</td><td class="nowrap"><span class="badge b-ng">採らない</span></td>
+						<td>効くことが実証できた設定を、実利があるのに消すのは惜しい</td>
+					</tr>
+					<tr>
+						<td class="nowrap">B: 全員が伸ばす</td><td class="nowrap"><span class="badge b-ng">採らない</span></td>
+						<td><strong>入れていない人の待受けが 60 分で終わったときに「壊れている」と誤解される</strong></td>
+					</tr>
+					<tr>
+						<td class="nowrap">C: 伸ばすが頼らない</td><td class="nowrap"><span class="badge b-ok">採る</span></td>
+						<td>設定の有無を意識しなくて済む。<strong>どちらも正しく動く</strong></td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<h3>実証できたこと</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">見たこと</th><th>結果</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">設定が効くか</td>
+						<td><span class="badge b-ok">効く</span> <strong>4 時間 17 分走行。240 秒のポーリングを 64 回、間隔の乱れは 0</strong></td>
+					</tr>
+					<tr>
+						<td class="nowrap">セッションの起動が要るか</td>
+						<td><span class="badge b-ok">要らない</span> <strong>設定を書く前に始めたセッションでも効いた。</strong><code>env</code> は実行のたびに読まれる</td>
+					</tr>
+					<tr>
+						<td class="nowrap">240 秒で落ちるか</td>
+						<td><span class="badge b-ng">落ちない</span> 240 秒の境界を 64 回通過した。<strong>「240 秒境界型」の見立ては否定された</strong></td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<pre><code class="language-text">logs/client/20260902-184531-ai-chat-lite.log
+
+2026-09-02 18:45:31.461 INFO  待受け開始（最大 12 時間、ルーム sandbox-quiet、ai-chat-lite、pid 59520）
+2026-09-02 18:49:31.540 INFO  待機中（経過 240 秒 / 上限 43200 秒、新着 0 件、現在位置 0）
+（240 秒ごとに 64 行）
+2026-09-02 23:01:32.710 INFO  待機中（経過 15360 秒 / 上限 43200 秒、新着 0 件、現在位置 0）</code></pre>
+
+				<div class="callout">
+					<p><strong><code>public</code> では測れなかった。</strong>参加・離脱の記録が数分ごとに流れ、上限に届く前に返ってしまう（<a href="#i260902-04">i260902-04</a>）。発言の来ないルームを使った。</p>
+				</div>
+
+				<h3>既定の待ち時間を 12 時間にした</h3>
+
+				<p><code>DEFAULT_WAIT_SEC</code> を 8 時間から 12 時間に変えた。上限と揃えて、伸ばしている環境では上限まで走るようにする。</p>
+
+				<div class="callout callout-important">
+					<p><strong>既定と上限が同じ値になった。</strong>どちらが先に来るかの競争になる。起動のぶんハーネス側が先になる見込みで、<code>[killed]</code> で終わることが多いはずである。</p>
+					<p><strong>実害はない</strong>（どちらでも張り直すだけ）。ただし「完走した」の判定はできない。判定したいときは上限より短い値を指定する。</p>
+				</div>
+
+				<h3>書いた場所</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">どこ</th><th>何を書いたか</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">ルール</td>
+						<td>「<strong><code>[killed]</code> は約 60 分で起きることがある。異常ではない</strong>」。<strong>設定には触れない</strong>（書くと「入れるべきもの」に見え、入れていない人が不安になる）</td>
+					</tr>
+					<tr>
+						<td class="nowrap">USAGE</td>
+						<td>上限は環境変数で伸ばせること、実測の結果、<strong>「伸ばす前提で作らない」</strong></td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
 				<ul class="todos">
 					<li class="done"><span class="badge b-done">☑</span> 60 分の出どころを確かめる → <strong>仕様。ドキュメントに記載あり</strong></li>
 					<li class="done"><span class="badge b-done">☑</span> 伸ばす設定を入れて周知する（2026-09-02）</li>
-					<li><span class="badge b-todo">未</span> <strong>今晩の結果を各プロジェクトから集める</strong>（60 分を超えるか、8 時間を完走するか）</li>
-					<li><span class="badge b-todo">未</span> セッションの起動が要るかを確かめる</li>
-					<li><span class="badge b-todo">未</span> A / B / C を決める</li>
-					<li><span class="badge b-todo">未</span> 決めた内容をルールと USAGE に反映する</li>
+					<li class="done"><span class="badge b-done">☑</span> 設定が効くかを確かめる → <strong>効く（4 時間 17 分 / 64 回）</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> セッションの起動が要るかを確かめる → <strong>要らない</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> A / B / C を決める → <strong>C</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> 既定の待ち時間を 12 時間にする</li>
+					<li class="done"><span class="badge b-done">☑</span> 決めた内容をルールと USAGE に反映する</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>12 時間の完走を確かめる</strong> → <strong>43214 秒（12 時間 0 分 14 秒）走った</strong></li>
 				</ul>
+
+				<h3>12 時間まで走り切った（2026-09-03 06:45）</h3>
+
+				<pre><code class="language-text">2026-09-03 06:41:34.537 INFO  待機中（経過 42960 秒 / 上限 43200 秒、新着 0 件、現在位置 0）
+[killed]</code></pre>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">項目</th><th>結果</th></tr>
+				</thead>
+				<tbody>
+					<tr><td class="nowrap">走った時間</td><td><strong>43214 秒（12 時間 0 分 14 秒）</strong></td></tr>
+					<tr><td class="nowrap">ポーリング</td><td><strong>179 回</strong>。240 秒間隔の乱れは <strong>0</strong>（178 回の間隔すべてが 240 秒）</td></tr>
+					<tr><td class="nowrap">終わり方</td><td><code>[killed]</code>。<strong>あと 1 回（240 秒）を残して止められた</strong></td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-tip">
+					<p><strong>予測どおりである。</strong>既定（43200 秒）と上限（43200000 ミリ秒）が同じ値なので競争になり、<strong>起動のぶん 14 秒だけハーネス側が先に来た</strong>。</p>
+					<p>「完走」の判定をしたいなら、上限より短い値を指定すればよい。<strong>ただし判定する意味は薄い</strong>（どちらでも張り直すだけである）。</p>
+				</div>
+
+				<p><strong>これで <code>i260902-02</code> は片付いた。</strong>設定は効き、セッションの起動も要らず、12 時間まで走る。「240 秒境界で落ちる」という見立ても <strong>179 回の通過</strong>で否定された。</p>
 			</div>
 		</details>
 
@@ -1651,9 +1771,9 @@ finally { removeConnection(connectorId); }   // 到達はそのあと</code></pr
 			</div>
 		</details>
 
-		<details class="issue doing" id="i260901-05" open>
+		<details class="issue done" id="i260901-05">
 			<summary>
-				<span class="badge b-doing">着手</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260901-05</span>
 				待受けのサブエージェントに SECURITY WARNING が付いた
 			</summary>
@@ -1819,8 +1939,8 @@ Review the subagent's actions carefully before acting on its output.</code></pre
 					<li class="done"><span class="badge b-done">☑</span> 条件を絞る → <strong>設定ファイルへの言及 ＋ 指示形の文言</strong></li>
 					<li class="done"><span class="badge b-done">☑</span> 実害の有無を確かめる → <strong>無い</strong></li>
 					<li class="done"><span class="badge b-done">☑</span> 2 つ目のパターン（<code>marker-prefix-forgery</code>）を掴む</li>
-					<li><span class="badge b-todo">未</span> USAGE に「警告が付くことがある。実害は無い」と<strong>共有するときの書き方</strong>を書く</li>
-					<li><span class="badge b-todo">未</span> それで閉じるかを決める</li>
+					<li class="done"><span class="badge b-done">☑</span> USAGE に「警告が付くことがある。実害は無い」と<strong>共有するときの書き方</strong>を書く</li>
+					<li class="done"><span class="badge b-done">☑</span> それで閉じるかを決める → <strong>閉じる。再発したら開き直す</strong></li>
 				</ul>
 
 				<h3>心当たり</h3>

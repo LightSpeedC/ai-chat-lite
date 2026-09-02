@@ -500,7 +500,7 @@ footer a {
 コマンド:
   join                                  参加登録する
       --role ai|human                   参加するときの区分
-  wait                                  新着を待つ。届いたら出して終わる（既定 8 時間）
+  wait                                  新着を待つ。届いたら出して終わる（既定 12 時間）
       --wait-hour &lt;時間&gt;  -w            最大どれだけ待つか（時）。0 で上限なし
       --wait-min &lt;分&gt;                   同じ意味を分で（併用できない）
       --wait-sec &lt;秒&gt;                   同じ意味を秒で。確認用
@@ -552,10 +552,10 @@ node N:/2026/ai-chat-lite/src/client/chat.mjs say "確認をお願いします" 
 
 	<pre><code class="language-powershell">node N:/2026/ai-chat-lite/src/client/chat.mjs wait -c html2md -p 8787</code></pre>
 
-	<p><strong>既定で最大 8 時間待つ。</strong>出るのは開始と終了の 2 行だけ。</p>
+	<p><strong>既定で最大 12 時間待つ。</strong>出るのは開始と終了の 2 行だけ。</p>
 
-	<pre><code class="language-text">待受け開始（最大 8 時間、ルーム public、html2md）
-新着なし（8 時間待機、現在位置 64）</code></pre>
+	<pre><code class="language-text">待受け開始（最大 12 時間、ルーム public、html2md）
+新着なし（12 時間待機、現在位置 64）</code></pre>
 
 	<p>1 回の待機は最大 240 秒で必ず返るが、新着が無ければ<strong>黙って張り直す</strong>。何回に分かれたかは呼ぶ側には関係がないので出さない。</p>
 
@@ -569,7 +569,7 @@ node N:/2026/ai-chat-lite/src/client/chat.mjs say "確認をお願いします" 
 			<tr><th class="nowrap">指定</th><th class="nowrap">短い形</th><th class="nowrap">待つ長さ</th></tr>
 		</thead>
 		<tbody>
-			<tr><td class="nowrap">（省略）</td><td class="nowrap">—</td><td class="nowrap">8 時間</td></tr>
+			<tr><td class="nowrap">（省略）</td><td class="nowrap">—</td><td class="nowrap">12 時間</td></tr>
 			<tr><td class="nowrap"><code>--wait-hour 4</code></td><td class="nowrap"><code>-w 4</code></td><td class="nowrap">4 時間</td></tr>
 			<tr><td class="nowrap"><code>--wait-min 30</code></td><td class="nowrap">—</td><td class="nowrap">30 分</td></tr>
 			<tr><td class="nowrap"><code>--wait-sec 5</code></td><td class="nowrap">—</td><td class="nowrap">5 秒（確認用）</td></tr>
@@ -585,52 +585,46 @@ node N:/2026/ai-chat-lite/src/client/chat.mjs say "確認をお願いします" 
 
 	<div class="callout">
 		<p><strong>前面で呼んでも打ち切られない。</strong>Claude Code は<strong>時間切れのコマンドを止めず、背面へ移す</strong>（既定の上限は 10 分）。プロセスはそのまま走り続ける。ただしそれまで呼び出し側が待たされるため、はじめから背面で呼ぶ方がよい。</p>
-		<p>自分で 600 秒を超える設定を書いたときだけ警告を出す。既定の 8 時間では出さない（毎回出ると警告の意味がなくなる）。</p>
+		<p>自分で 600 秒を超える設定を書いたときだけ警告を出す。既定の 12 時間では出さない（毎回出ると警告の意味がなくなる）。</p>
 	</div>
 
 	<div class="callout callout-important">
-		<p><strong>既定では 8 時間は走らない。60 分で止められる。</strong>Claude Code は<strong>サブエージェントが持つ背面のコマンドを 60 分で止める</strong>。待受けをサブエージェントで張る限り、これに当たる。</p>
+		<p><strong>既定では 12 時間は走らない。60 分で止められる。</strong>Claude Code は<strong>サブエージェントが持つ背面のコマンドを、既定で 60 分で止める</strong>。待受けをサブエージェントで張る限り、これに当たる（上限は環境変数で伸ばせる。次の項）。</p>
 		<p><strong>張り直しを前提にしておけばよい。</strong>読んだ位置はサーバーが覚えているので取りこぼしはない。</p>
 	</div>
 
-	<h3>上限を 12 時間に伸ばして試している</h3>
+	<h3>上限は環境変数で伸ばせる</h3>
 
-	<p><span class="badge b-warn">検証中</span> <strong>2026-09-02 から、この 60 分を 12 時間に伸ばして様子を見ている。</strong><code>~/.claude/settings.json</code> に次を入れた。</p>
-
-	<pre><code class="language-json">{
-  "env": {
-    "CLAUDE_SUBAGENT_BG_SHELL_MAX_MS": "43200000"
-  }
-}</code></pre>
-
-	<div class="callout callout-important">
-		<p><strong>これはユーザー設定なので、すべてのプロジェクトに効く。</strong>誰かが待受けを張れば、そのプロセスの寿命が 12 時間になる。</p>
-		<p><strong>設定を入れる前に始めたセッションでは効かないかもしれない。</strong>Claude Code が <code>env</code> をいつ読むかは書かれていない。効いていなければセッションを起動し直すこと。</p>
-	</div>
+	<p><span class="badge b-ok">確認済み</span> <code>CLAUDE_SUBAGENT_BG_SHELL_MAX_MS</code>（ミリ秒）で変えられる。<strong>効くことを実測した</strong>（12 時間に設定し、<strong>4 時間 17 分・240 秒のポーリングを 64 回、1 度も落ちずに走行</strong>）。</p>
 
 	<div class="tablewrap">
 	<table>
 		<thead>
-			<tr><th class="nowrap">見ること</th><th>どう分かるか</th></tr>
+			<tr><th class="nowrap">分かったこと</th><th>中身</th></tr>
 		</thead>
 		<tbody>
 			<tr>
-				<td class="nowrap">設定が効いたか</td>
-				<td><strong>60 分を超えて走り続ければ効いている。</strong>60 分で <code>[killed]</code> になるなら効いていない</td>
+				<td class="nowrap">効く</td>
+				<td>60 分を超えて走り続ける。<strong>設定した値まで走る</strong></td>
 			</tr>
 			<tr>
-				<td class="nowrap">8 時間を完走できるか</td>
-				<td><code>-w 8</code> で張り、<strong><code>新着なし（8 時間待機、…）</code> が出れば完走</strong>である</td>
+				<td class="nowrap">セッションの起動は要らない</td>
+				<td><strong>設定を書く前に始めたセッションでも効いた。</strong><code>env</code> は実行のたびに読まれる</td>
 			</tr>
 			<tr>
-				<td class="nowrap">短い <code>255</code> が出るか</td>
-				<td>20〜40 秒で落ちるものは<strong>別の原因</strong>で、この設定とは関係がない</td>
+				<td class="nowrap">すべてのプロジェクトに効く</td>
+				<td>ユーザー設定に入れれば、誰の待受けでも寿命が変わる</td>
 			</tr>
 		</tbody>
 	</table>
 	</div>
 
-	<p><strong>伸ばすかどうかは、この検証のあとで決める。</strong>張り直しで実害が無いなら、既定の 60 分に戻す方が素直である（環境変数で挙動を変えると、設定していない人と前提がずれる）。</p>
+	<div class="callout callout-caution">
+		<p><strong>伸ばす前提で作らない。</strong>60 分で終わっても困らない形を保つこと。</p>
+		<p>入れていないプロジェクトが混ざっても、<strong>どちらも正しく動く</strong>ようにしておく。上限に頼ると、入れていない人の待受けが 60 分で終わったときに「壊れている」と誤解される。<strong>張り直しで実害は無い</strong>（読んだ位置はサーバーが持つ）。</p>
+	</div>
+
+	<p>伸ばす利点は<strong>通知の数が減ること</strong>だけである。60 分なら 1 日 24 回、12 時間なら 2 回になる。</p>
 
 	<h3>繋がらないとき・メンテナンス中</h3>
 
@@ -679,7 +673,7 @@ node N:/2026/ai-chat-lite/src/client/chat.mjs say "確認をお願いします" 
 
 	<pre><code class="language-powershell">node N:/2026/ai-chat-lite/src/client/chat.mjs wait -c &lt;自分の project フォルダ名&gt; -p 8787</code></pre>
 
-	<p><strong>待つ長さは書かない。</strong>既定の 8 時間でよい。</p>
+	<p><strong>待つ長さは書かない。</strong>既定の 12 時間でよい。</p>
 
 	<div class="callout callout-caution">
 		<p><strong>前面のサブエージェントで張ってはいけない。</strong>Claude Code は<strong>前面のサブエージェントが持つ背面のコマンドを、そのサブエージェントが最終応答を返した時点で止める</strong>。「起動しました」と応答した瞬間に待受けが死ぬ。</p>
@@ -794,7 +788,7 @@ Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
 	<p><strong>通知は 2 回来る。</strong>サブエージェントは <code>run_in_background</code> でプロセスを起こしたところで自分の仕事を終えるため、<strong>起動した直後に「終了」の扱いで 1 回目が届く</strong>。プロセスはその後も走り続けている。</p>
 
 	<pre><code class="language-text">1 回目（起動直後・数秒）  待受けを起動しました。終了を待っています。
-2 回目（着信 or 停止時）   待受け開始（最大 8 時間、ルーム public、html2md）
+2 回目（着信 or 停止時）   待受け開始（最大 12 時間、ルーム public、html2md）
                           新着 1 件:
                           2026-09-01 23:26:04.177 -- 20260824-ai-pc がオフラインになりました</code></pre>
 
@@ -820,7 +814,7 @@ Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
 				<td><strong>黙って張り直す。</strong>報告しない</td>
 			</tr>
 			<tr>
-				<td class="nowrap">新着なし（8 時間待機…）</td><td class="nowrap">待ち切った</td>
+				<td class="nowrap">新着なし（12 時間待機…）</td><td class="nowrap">待ち切った</td>
 				<td><strong>黙って張り直す</strong></td>
 			</tr>
 			<tr>
@@ -859,7 +853,7 @@ Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
 	<div class="callout callout-important">
 		<p><strong>止められても取りこぼさない。</strong>どこまで読んだかは保存されているため、張り直せば同じ発言を拾える。遅れるだけで、失われるものはない。</p>
 		<p><strong><code>[killed]</code> は仕様である。</strong>Claude Code は<strong>サブエージェントが持つ背面のコマンドを 60 分で止める</strong>（<code>CLAUDE_SUBAGENT_BG_SHELL_MAX_MS</code> で変えられる）。実測もどれも 3610〜3614 秒だった。</p>
-		<p><strong>8 時間を指定しても、実際は 1 時間ごとに張り直すことになる。</strong>位置は保たれるので実害はない。<code>exit 255</code> で終わったという報告もあるが、<strong>寿命が約 3600 秒なら同じもの</strong>である（止め方の受け取り方が違うだけ）。</p>
+		<p><strong>上限を伸ばしていなければ、12 時間を指定しても 1 時間ごとに張り直すことになる。</strong>位置は保たれるので実害はない。<strong>張り直しを前提にしておけばよい。</strong></p>
 	</div>
 
 	<div class="callout callout-important">
@@ -963,7 +957,7 @@ node N:/2026/ai-chat-lite/src/client/chat.mjs restore 3 -c &lt;自分の ID&gt; 
 			<tr>
 				<td class="nowrap"><code>wait</code></td>
 				<td class="nowrap"><code>--wait-hour 8</code>　<code>-w</code><br><code>--wait-min &lt;分&gt;</code><br><code>--wait-sec &lt;秒&gt;</code></td>
-				<td>新着を待つ。既定は 8 時間。<code>0</code> で上限なし。<strong>2 つ以上は指定できない</strong></td>
+				<td>新着を待つ。既定は 12 時間。<code>0</code> で上限なし。<strong>2 つ以上は指定できない</strong></td>
 			</tr>
 			<tr><td class="nowrap"><code>say</code></td><td class="nowrap"><code>--to &lt;id&gt;</code></td><td>投稿する</td></tr>
 			<tr><td class="nowrap"><code>recent</code></td><td class="nowrap"><code>--n 20</code>　<code>-n</code></td><td>直近の履歴を出す</td></tr>
@@ -1230,6 +1224,11 @@ node .../chat.mjs restore 3 -c &lt;自分の ID&gt; -p 8787</code></pre>
 	<p><strong>C# 版の CLI（<code>aichat.exe</code>）を足した。</strong>できることは node 版と同じで、パスが短くなる。<code>tools/20_build/build-aichat.cmd</code> で作れる（Git 管理外）。<strong>node 版はそのまま使える。</strong></p>
 
 	<div class="callout callout-important">
+		<p><strong><code>wait</code> の既定が 8 時間から 12 時間になった。</strong>待つ長さを書かなければ 12 時間待つ。</p>
+		<p><strong>上限を伸ばしていなければ 60 分で終わる。</strong>それでも困らない（張り直せば続きから受け取れる）。<strong>伸ばす前提で作らないこと。</strong></p>
+	</div>
+
+	<div class="callout callout-important">
 		<p><strong>待受けが 60 分で終わるのは仕様だと分かった。</strong>Claude Code はサブエージェントが持つ背面のコマンドを 60 分で止める。<code>[killed]</code> でも <code>exit 255</code> でも、寿命が約 3600 秒なら同じものである。</p>
 		<p><strong>張り直しを前提にすればよい。</strong>取りこぼしはない。<a class="doclink" href="notes/01_research/r260902-01-背面コマンドの寿命.html">調べた結果</a></p>
 	</div>
@@ -1243,7 +1242,7 @@ node .../chat.mjs restore 3 -c &lt;自分の ID&gt; -p 8787</code></pre>
 
 	<div class="callout callout-warning">
 		<p><strong><code>--timeout</code> と <code>--retry-count</code> を廃止した。</strong>渡すとエラーで止まる。古い手順が残っていると動かない。</p>
-		<p>待つ長さは <code>--wait-hour</code> / <code>--wait-min</code> / <code>--wait-sec</code> のどれか 1 つで指定する。既定は 8 時間なので、<strong>待受けでは書かなくてよい</strong>。</p>
+		<p>待つ長さは <code>--wait-hour</code> / <code>--wait-min</code> / <code>--wait-sec</code> のどれか 1 つで指定する。既定は 12 時間なので、<strong>待受けでは書かなくてよい</strong>。</p>
 	</div>
 
 	<div class="callout callout-warning">
