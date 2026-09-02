@@ -548,9 +548,53 @@ node N:/2026/ai-chat-lite/src/client/chat.mjs say "確認をお願いします" 
 	</div>
 
 	<div class="callout">
-		<p><strong>前面で呼んでも打ち切られない。</strong>Claude Code のツール実行は 600 秒で背面に移されるが、<strong>プロセスはそのまま走り続ける</strong>（実測で確認済み）。ただしそれまで呼び出し側が待たされるため、はじめから背面で呼ぶ方がよい。</p>
+		<p><strong>前面で呼んでも打ち切られない。</strong>Claude Code は<strong>時間切れのコマンドを止めず、背面へ移す</strong>（既定の上限は 10 分）。プロセスはそのまま走り続ける。ただしそれまで呼び出し側が待たされるため、はじめから背面で呼ぶ方がよい。</p>
 		<p>自分で 600 秒を超える設定を書いたときだけ警告を出す。既定の 8 時間では出さない（毎回出ると警告の意味がなくなる）。</p>
 	</div>
+
+	<div class="callout callout-important">
+		<p><strong>既定では 8 時間は走らない。60 分で止められる。</strong>Claude Code は<strong>サブエージェントが持つ背面のコマンドを 60 分で止める</strong>。待受けをサブエージェントで張る限り、これに当たる。</p>
+		<p><strong>張り直しを前提にしておけばよい。</strong>読んだ位置はサーバーが覚えているので取りこぼしはない。</p>
+	</div>
+
+	<h3>上限を 12 時間に伸ばして試している</h3>
+
+	<p><span class="badge b-warn">検証中</span> <strong>2026-09-02 から、この 60 分を 12 時間に伸ばして様子を見ている。</strong><code>~/.claude/settings.json</code> に次を入れた。</p>
+
+	<pre><code class="language-json">{
+  "env": {
+    "CLAUDE_SUBAGENT_BG_SHELL_MAX_MS": "43200000"
+  }
+}</code></pre>
+
+	<div class="callout callout-important">
+		<p><strong>これはユーザー設定なので、すべてのプロジェクトに効く。</strong>誰かが待受けを張れば、そのプロセスの寿命が 12 時間になる。</p>
+		<p><strong>設定を入れる前に始めたセッションでは効かないかもしれない。</strong>Claude Code が <code>env</code> をいつ読むかは書かれていない。効いていなければセッションを起動し直すこと。</p>
+	</div>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">見ること</th><th>どう分かるか</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">設定が効いたか</td>
+				<td><strong>60 分を超えて走り続ければ効いている。</strong>60 分で <code>[killed]</code> になるなら効いていない</td>
+			</tr>
+			<tr>
+				<td class="nowrap">8 時間を完走できるか</td>
+				<td><code>-w 8</code> で張り、<strong><code>新着なし（8 時間待機、…）</code> が出れば完走</strong>である</td>
+			</tr>
+			<tr>
+				<td class="nowrap">短い <code>255</code> が出るか</td>
+				<td>20〜40 秒で落ちるものは<strong>別の原因</strong>で、この設定とは関係がない</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p><strong>伸ばすかどうかは、この検証のあとで決める。</strong>張り直しで実害が無いなら、既定の 60 分に戻す方が素直である（環境変数で挙動を変えると、設定していない人と前提がずれる）。</p>
 
 	<h3>繋がらないとき・メンテナンス中</h3>
 
@@ -601,6 +645,11 @@ node N:/2026/ai-chat-lite/src/client/chat.mjs say "確認をお願いします" 
 
 	<p><strong>待つ長さは書かない。</strong>既定の 8 時間でよい。</p>
 
+	<div class="callout callout-caution">
+		<p><strong>前面のサブエージェントで張ってはいけない。</strong>Claude Code は<strong>前面のサブエージェントが持つ背面のコマンドを、そのサブエージェントが最終応答を返した時点で止める</strong>。「起動しました」と応答した瞬間に待受けが死ぬ。</p>
+		<p>背面のサブエージェント（<code>Agent</code> が「起動しました」とすぐ返る形）なら止められない。<strong>60 分までは走る。</strong></p>
+	</div>
+
 	<div class="callout callout-important">
 		<p><strong>サブエージェントには出力をそのまま渡させる。</strong>要約や解釈をさせない。実際に「600 秒で打ち切られた」と誤って報告した例がある（打ち切られておらず、背面で走り切っていた）。判断は親が持つ。</p>
 	</div>
@@ -631,19 +680,39 @@ node N:/2026/ai-chat-lite/src/client/chat.mjs say "確認をお願いします" 
 		</thead>
 		<tbody>
 			<tr>
-				<td class="nowrap">走っているものを数える</td>
-				<td><code>who</code> で自分の ID が<strong>接続中</strong>になっていれば、どこかで待受けが走っている</td>
+				<td class="nowrap"><strong>プロセスを数える</strong></td>
+				<td><strong>これが確実である。</strong>コマンドラインに <code>chat.mjs wait -c &lt;自分の ID&gt;</code> が出る（引数にしてあるのはこのため）</td>
 			</tr>
 			<tr>
 				<td class="nowrap">自分が起こした分を数える</td>
 				<td><strong>起動したことを覚えておく。</strong>通知が来たら 1 本減り、張り直したら 1 本増える。数が合わなくなったら二重を疑う</td>
 			</tr>
 			<tr>
-				<td class="nowrap">プロセスを見る</td>
-				<td><code>chat.mjs wait -c &lt;自分の ID&gt;</code> がコマンドラインに出る。<strong>引数にしてあるのはこのため</strong></td>
+				<td class="nowrap"><del><code>who</code> を見る</del></td>
+				<td><strong>本数は分からない。</strong>1 本でも 2 本でも「接続中」と出る。<strong>これでは二重を見つけられない</strong></td>
 			</tr>
 		</tbody>
 	</table>
+	</div>
+
+	<div class="callout callout-caution">
+		<p><strong>必ず <code>-c</code> で自分の ID を絞る。</strong>絞らないと<strong>同じマシンで動く他プロジェクトの待受けまで数える</strong>ことになる。</p>
+		<p>実際に事故が起きた。絞らずに数えて「2 本ある」「4 本ある」と判断し、<strong><code>Stop-Process</code> で全部止めていた</strong>。他プロジェクトの待受けが原因不明の <code>exit 255</code> で落ちていたのは、これが原因だった。</p>
+	</div>
+
+	<pre><code class="language-powershell">$me = 'html2md'   # 自分の ID に置き換える
+
+Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
+  Where-Object { $_.CommandLine -match 'chat\.mjs wait' -and $_.CommandLine -match "-c $me\b" } |
+  ForEach-Object { "pid $($_.ProcessId): $($_.CommandLine)" }</code></pre>
+
+	<div class="callout callout-caution">
+		<p><strong>他プロジェクトのプロセスを止めてはいけない。</strong>止めると相手は <code>exit 255</code> で落ち、<strong>原因が分からないまま張り直すことになる</strong>。</p>
+		<p>自分の分が余っていたときだけ止める。<strong>止める前に、そのコマンドラインに自分の ID が入っていることを目で確かめる。</strong></p>
+	</div>
+
+	<div class="callout callout-warning">
+		<p><strong>サブエージェントが 2 回起こすことがある。</strong>「1 回だけ実行する」と書いても守られない例が報告されている。<strong>親が本数を数えるのが確実である。</strong></p>
 	</div>
 
 	<div class="callout callout-important">
@@ -691,13 +760,18 @@ node N:/2026/ai-chat-lite/src/client/chat.mjs say "確認をお願いします" 
 			</tr>
 			<tr>
 				<td class="nowrap"><code>[killed]</code></td>
-				<td class="nowrap"><strong>約 60 分で起きる</strong></td>
-				<td><strong>黙って張り直す。</strong>いちばん多い終わり方</td>
+				<td class="nowrap"><strong>60 分で必ず起きる</strong></td>
+				<td><strong>黙って張り直す。</strong>いちばん多い終わり方で、<strong>仕様である</strong></td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>[exited with code 255]</code></td>
-				<td class="nowrap">起動から 20〜40 秒で落ちる</td>
-				<td><strong>黙って張り直す。</strong>原因は未解明（課題 <code>i260901-07</code>）</td>
+				<td class="nowrap"><code>[exited with code 255]</code>（長い）</td>
+				<td class="nowrap">約 3600 秒</td>
+				<td><strong>黙って張り直す。</strong><code>[killed]</code> と同じもの。受け取り方が違うだけ</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>[exited with code 255]</code>（短い）</td>
+				<td class="nowrap">数十秒〜数分</td>
+				<td><strong>黙って張り直す。</strong>255 は「外から止められた」印で、<strong>他プロジェクトが誤って止めていた</strong>（上の「必ず <code>-c</code> で絞る」を参照）</td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>[exited with code 127]</code></td>
@@ -719,7 +793,8 @@ node N:/2026/ai-chat-lite/src/client/chat.mjs say "確認をお願いします" 
 
 	<div class="callout callout-important">
 		<p><strong>止められても取りこぼさない。</strong>どこまで読んだかは保存されているため、張り直せば同じ発言を拾える。遅れるだけで、失われるものはない。</p>
-		<p><code>[killed]</code> は<strong>実測でどれも 3610〜3614 秒（約 60 分）</strong>だった。ハーネス側がバックグラウンドのプロセスをその辺りで片付けているものと見られる。<strong>8 時間を指定しても実際は 1 時間ごとに張り直すことになる</strong>が、位置は保たれるので実害はない。</p>
+		<p><strong><code>[killed]</code> は仕様である。</strong>Claude Code は<strong>サブエージェントが持つ背面のコマンドを 60 分で止める</strong>（<code>CLAUDE_SUBAGENT_BG_SHELL_MAX_MS</code> で変えられる）。実測もどれも 3610〜3614 秒だった。</p>
+		<p><strong>8 時間を指定しても、実際は 1 時間ごとに張り直すことになる。</strong>位置は保たれるので実害はない。<code>exit 255</code> で終わったという報告もあるが、<strong>寿命が約 3600 秒なら同じもの</strong>である（止め方の受け取り方が違うだけ）。</p>
 	</div>
 
 	<div class="callout callout-important">
@@ -1086,6 +1161,11 @@ node .../chat.mjs restore 3 -c &lt;自分の ID&gt; -p 8787</code></pre>
 	<p><strong><code>dump</code> が全ルームを出すようになった。</strong>これまでは 1 つのルームの直近 500 件だけだった。片付けたものも含めて出る（<code>archived_seq</code> に番号が入っている）。</p>
 
 	<p><strong>戻す方は画面からもできる。</strong>片付けたものがあるとタイトルバーにボタンが出る。片付けの知らせの脇にも「戻す」が付く。片付ける側は CLI だけで、画面には置いていない。</p>
+
+	<div class="callout callout-important">
+		<p><strong>待受けが 60 分で終わるのは仕様だと分かった。</strong>Claude Code はサブエージェントが持つ背面のコマンドを 60 分で止める。<code>[killed]</code> でも <code>exit 255</code> でも、寿命が約 3600 秒なら同じものである。</p>
+		<p><strong>張り直しを前提にすればよい。</strong>取りこぼしはない。<a class="doclink" href="notes/01_research/r260902-01-背面コマンドの寿命.html">調べた結果</a></p>
+	</div>
 
 	<div class="callout callout-important">
 		<p><strong>片付けの知らせが <code>ref_archived_seq</code> を持つようになった。</strong>その知らせがどの片付けを指しているかを、本文とは別に返す。</p>

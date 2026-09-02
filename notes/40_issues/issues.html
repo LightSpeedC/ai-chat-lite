@@ -1183,16 +1183,219 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-todo">未</span>
 		開発環境・記録
-		<span class="count">6 件 / 未 3 / 済 3</span>
+		<span class="count">8 件 / 未 2 / 着手 2 / 済 4</span>
 	</summary>
 
 	<div class="groupbody">
 
-		<details class="issue" id="i260901-07" open>
+		<details class="issue doing" id="i260902-03" open>
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-doing">着手</span>
+				<span class="no">i260902-03</span>
+				待受けのサブエージェントが指示を守らない
+			</summary>
+			<div class="issuebody">
+				<p><strong>頼んでいるのは 1 つだけである。</strong>「<code>run_in_background</code> で 1 回だけ起こし、終わるまで待って、出力をそのまま報告する」。ところがそのとおりに動かない。</p>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">起きたこと</th><th>中身</th><th class="nowrap">誰が</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">2 回起こす</td>
+						<td>「1 回だけ」と書いても 2 本起動する。<strong>放っておくと増え続ける</strong>（8 秒差で 2 本、のち 3 本）</td>
+						<td class="nowrap">html2md</td>
+					</tr>
+					<tr>
+						<td class="nowrap">要約する</td>
+						<td>「そのまま報告」と書いても要約する。<strong>「返信した」と書かれ、勝手に投稿したかを確かめる手間が出た</strong>（実際は投稿していなかった）</td>
+						<td class="nowrap">ai-chat-lite</td>
+					</tr>
+					<tr>
+						<td class="nowrap">頼んでいない道具を使う</td>
+						<td><code>Monitor</code> と <code>tail</code> を持ち出し、<strong>まだ終わっていないのに途中の出力で報告した</strong>。<code>tail</code> のプロセスも残る</td>
+						<td class="nowrap">ai-chat-lite</td>
+					</tr>
+					<tr>
+						<td class="nowrap">自分で張り直す</td>
+						<td>「張り直さない」と書いても張り直す。<strong>親が張った分と重なって二重になる</strong></td>
+						<td class="nowrap">ai-chat-lite</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-caution">
+					<p><strong>二重は他プロジェクトに迷惑をかける。</strong>二重を見つけようとしてプロセスを数え、<code>-c</code> で絞らずに止めた結果、他プロジェクトの待受けが原因不明の <code>exit 255</code> で落ちた（<a href="#i260901-07">i260901-07</a>）。</p>
+					<p><strong>もとをたどれば、サブエージェントが指示を守らなかったことに行き着く。</strong></p>
+				</div>
+
+				<h3>いまの対処</h3>
+
+				<p>プロンプトに制約を並べている。<strong>ただし守られる保証がない。</strong></p>
+
+				<pre><code class="language-text">- 起動するのは 1 回だけです。2 回起動しないでください。
+- 要約・解釈・整形は絶対にしないでください。標準出力の全文をそのまま貼ってください。
+- 終わったら報告して終了してください。張り直さないでください。
+- 返信・投稿・Stop-Process など、他の操作は一切しないでください。</code></pre>
+
+				<h3>選べる道</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">案</th><th>中身</th><th>気になる点</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">A: プロンプトを強くする</td>
+						<td>禁止を並べ続ける</td>
+						<td><strong>いまやっていることで、守られていない。</strong>これ以上増やしても同じだろう</td>
+					</tr>
+					<tr>
+						<td class="nowrap">B: 中くらいのモデルに上げる</td>
+						<td>待受けを張るサブエージェントの大きさを上げる</td>
+						<td>費用は上がるが、<strong>待つだけなので消費は小さい</strong>（張るときの数十トークン程度）</td>
+					</tr>
+					<tr>
+						<td class="nowrap">C: 道具を絞る</td>
+						<td>サブエージェントに渡す道具を <code>PowerShell</code> だけにする</td>
+						<td><code>Monitor</code> や <code>tail</code> は防げる。<strong>2 回起こすことは防げない</strong></td>
+					</tr>
+					<tr>
+						<td class="nowrap">D: 親が直接起こす</td>
+						<td>サブエージェントを使わず、親から <code>run_in_background</code> で起こす</td>
+						<td><strong>指示を守らない相手がいなくなる。</strong>ただし出力が親の文脈に入り、会話が乱れる</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<p><strong>B と C を併せるのが本筋だと考えている。</strong>大きさを上げれば「1 回だけ」「そのまま渡す」は守られやすくなり、道具を絞れば <code>Monitor</code> や <code>tail</code> を持ち出せなくなる。<strong>費用の心配は小さい</strong>（待つのは別プロセスで、サブエージェント自身はほとんど何もしない）。</p>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> 何が守られていないかを並べる（4 種類）</li>
+					<li><span class="badge b-todo">未</span> <strong>中くらいのモデルに上げて様子を見る</strong></li>
+					<li><span class="badge b-todo">未</span> 渡す道具を絞れるか確かめる（<code>.claude/agents/</code> に定義を置く形）</li>
+					<li><span class="badge b-todo">未</span> 決めた形をルールと USAGE に書く</li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue doing" id="i260902-02" open>
+			<summary>
+				<span class="badge b-doing">着手</span>
+				<span class="no">i260902-02</span>
+				待受けが 60 分で止められる。8 時間を指定しても効かない
+			</summary>
+			<div class="issuebody">
+				<p><strong>これは不具合ではなく仕様である。</strong>Claude Code は<strong>サブエージェントが持つ背面のコマンドを 60 分で止める</strong>。待受けをサブエージェントで張る限り、必ずこれに当たる。</p>
+
+				<div class="callout">
+					<p>Background commands owned by a <strong>subagent</strong> are instead <strong>terminated after 60 minutes</strong>, configurable in milliseconds with <code>CLAUDE_SUBAGENT_BG_SHELL_MAX_MS</code>.</p>
+					<p>— <a href="https://code.claude.com/docs/en/interactive-mode">Interactive mode</a>「How backgrounding works」</p>
+				</div>
+
+				<p>調べた結果は<a class="doclink" href="../01_research/r260902-01-背面コマンドの寿命.html">背面のコマンドの寿命</a>に残した。<a href="#i260901-07">i260901-07</a>（<code>exit 255</code>）の調査中に見つかったが、<strong>性質が違うので分けた</strong>。あちらは原因不明の不具合、こちらは仕様との折り合いである。</p>
+
+				<h3>何が困るか</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">困ること</th><th>中身</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">指定が効かない</td>
+						<td><code>-w 8</code>（8 時間）と書いても<strong>60 分で終わる</strong>。既定の 8 時間も同じ</td>
+					</tr>
+					<tr>
+						<td class="nowrap">張り直しが増える</td>
+						<td>1 日 8 時間で 8 回。<strong>1 回ごとに通知が 2 件届く</strong>（起動と終了）</td>
+					</tr>
+					<tr>
+						<td class="nowrap">終わり方が分かれる</td>
+						<td>同じ 60 分でも <code>[killed]</code> と <code>exit 255</code> の 2 通りに見え、<strong>不具合と区別しにくい</strong></td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-tip">
+					<p><strong>取りこぼしは無い。</strong>読んだ位置はサーバーが覚えているため、張り直せば続きから受け取れる。<strong>困るのは手数と通知の量だけ</strong>である。</p>
+				</div>
+
+				<h3>どうするかを検証中</h3>
+
+				<p><span class="badge b-warn">検証中</span> <strong>2026-09-02 の晩、上限を 12 時間に伸ばして様子を見ている。</strong><code>~/.claude/settings.json</code> に入れたので全プロジェクトに効く。</p>
+
+				<pre><code class="language-json">{
+  "env": {
+    "CLAUDE_SUBAGENT_BG_SHELL_MAX_MS": "43200000"
+  }
+}</code></pre>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">見ること</th><th>どう分かるか</th></tr>
+				</thead>
+				<tbody>
+					<tr><td class="nowrap">設定が効いたか</td><td><strong>60 分を超えて走り続ければ効いている</strong></td></tr>
+					<tr><td class="nowrap">8 時間を完走できるか</td><td><code>新着なし（8 時間待機、…）</code> が出れば完走</td></tr>
+					<tr><td class="nowrap">セッションの起動が要るか</td><td>設定前に始めたセッションで効くかどうか。<strong><code>env</code> をいつ読むかは書かれていない</strong></td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<h3>選べる道</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">案</th><th>中身</th><th>気になる点</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">A: 60 分のまま</td>
+						<td>張り直しを前提にする。<strong>設定を足さない</strong></td>
+						<td>手数は増えるが、<strong>設定していない人と前提が揃う</strong></td>
+					</tr>
+					<tr>
+						<td class="nowrap">B: 12 時間に伸ばす</td>
+						<td>各プロジェクトが <code>settings.json</code> に入れる</td>
+						<td><strong>入れた人と入れない人で挙動が違う</strong>。新しく参加する人が混乱する</td>
+					</tr>
+					<tr>
+						<td class="nowrap">C: 伸ばすが、頼らない</td>
+						<td>伸ばしたうえで、<strong>60 分で終わっても困らない作りを保つ</strong></td>
+						<td>いまと同じ。<strong>設定の有無を意識しなくて済む</strong></td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<p><strong>C が本筋だと考えている。</strong>張り直しで実害が無いのだから、上限に頼る作りにしない方がよい。伸ばすのは通知の量を減らすためだけの調整として扱う。</p>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> 60 分の出どころを確かめる → <strong>仕様。ドキュメントに記載あり</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> 伸ばす設定を入れて周知する（2026-09-02）</li>
+					<li><span class="badge b-todo">未</span> <strong>今晩の結果を各プロジェクトから集める</strong>（60 分を超えるか、8 時間を完走するか）</li>
+					<li><span class="badge b-todo">未</span> セッションの起動が要るかを確かめる</li>
+					<li><span class="badge b-todo">未</span> A / B / C を決める</li>
+					<li><span class="badge b-todo">未</span> 決めた内容をルールと USAGE に反映する</li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue done" id="i260901-07">
+			<summary>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260901-07</span>
-				待受けが約 38 秒で <code>exit 255</code> で落ちることがある
+				待受けが <code>exit 255</code> で落ちることがある
 			</summary>
 			<div class="issuebody">
 				<p><strong>2 つのプロジェクトで同じ症状が出た。</strong>「待受け開始」の行までは出るが、その約 38 秒後に終了コード 255 で終わる。新着は 0 件。</p>
@@ -1270,6 +1473,173 @@ finally { removeConnection(connectorId); }   // 到達はそのあと</code></pr
 				</tbody>
 				</table>
 				</div>
+
+
+				<h3>2 回目の報告で前提が変わった（2026-09-02）</h3>
+
+				<p>html2md から続報が届き、<strong>「約 38 秒」は 2 つある現象の片方でしかない</strong>ことが分かった。</p>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">見た側</th><th class="nowrap">終わり方</th><th class="nowrap">落ちるまで</th><th>そのとき</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">html2md</td><td class="nowrap"><code>exit 255</code></td><td class="nowrap">約 38 秒</td>
+						<td>待受け 3 本。DB 更新の直後</td>
+					</tr>
+					<tr>
+						<td class="nowrap">html2md</td><td class="nowrap"><code>exit 255</code></td><td class="nowrap"><strong>約 3605 秒</strong></td>
+						<td>待受け 2 本。DB 更新とは無関係</td>
+					</tr>
+					<tr>
+						<td class="nowrap">ai-chat-lite</td><td class="nowrap"><code>exit 255</code></td><td class="nowrap">約 18 秒 / 約 26 秒</td>
+						<td>2 回。いずれも 1 本のとき</td>
+					</tr>
+					<tr>
+						<td class="nowrap">ai-chat-lite</td><td class="nowrap"><code>[killed]</code></td><td class="nowrap"><strong>3610〜3614 秒</strong></td>
+						<td>多数。例外なくこの幅に収まる</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-important">
+					<p><strong>長い <code>255</code> と <code>[killed]</code> は、同じ時間で起きている。</strong>3605 秒と 3610〜3614 秒で、どちらも約 60 分である。</p>
+					<p><strong>同じ現象の別の見え方だと考えている。</strong>ハーネスが約 1 時間でバックグラウンドのプロセスを片付けており、落とし方（シグナル）か受け取り方の違いで、片方は <code>[killed]</code>、片方は <code>exit 255</code> と報告されている。</p>
+				</div>
+
+				<h3>60 分の方は仕様だった（2026-09-02）</h3>
+
+				<div class="callout callout-tip">
+					<p><strong>公式ドキュメントに書かれていた。</strong>「サブエージェントが持つ背面のコマンドは 60 分後に止められる」（<code>CLAUDE_SUBAGENT_BG_SHELL_MAX_MS</code> で変えられる）。</p>
+					<p>調べた結果は<a class="doclink" href="../01_research/r260902-01-背面コマンドの寿命.html">背面のコマンドの寿命</a>に残した。<strong>モデルや思考量では変わらない。</strong></p>
+				</div>
+
+				<p><strong>これで長い方は片付いた。</strong><code>[killed]</code> も長い <code>255</code> も、60 分の規則で止められている。残るのは<strong>短い 255（18〜38 秒）だけ</strong>である。</p>
+
+				<p>60 分そのものとの折り合いは <a href="#i260902-02">i260902-02</a> に分けた。<strong>あちらは仕様との付き合い方、こちらは原因不明の不具合</strong>である。</p>
+
+				<h3>255 の正体が分かった（2026-09-02 夕）</h3>
+
+				<div class="callout callout-important">
+					<p><strong><code>exit 255</code> は「外から止められた」印である。</strong>html2md が <code>Stop-Process</code> で待受けを止めて再現した。</p>
+					<p>つまり <code>[killed]</code> と <code>255</code> の違いは<strong>止めた側の違い</strong>である。打ち切られた方が <code>[killed]</code>、止められた方が <code>255</code> になる。</p>
+				</div>
+
+				<div class="callout callout-tip">
+					<p><strong>片付いた（2026-09-02）。</strong>原因は<strong>プロセスを数えるときに <code>-c</code> で絞っていなかったこと</strong>である。他プロジェクトの待受けを「余分」と判断して <code>Stop-Process</code> で止めていた。<code>255</code> はそのときの終了コードである。</p>
+					<p>3 者が数え方を直し、ルールと USAGE にも書いた（<strong><code>-c</code> で絞る / 他プロジェクトのものは止めない</strong>）。<strong>再発したら開き直す。</strong></p>
+					<p>以下は、原因が分かるまでの調べの記録である。</p>
+				</div>
+
+				<h3>残る謎は「誰が止めたのか」</h3>
+
+				<p><strong>止めた覚えがないのに 255 で終わる。</strong>こちらでは <code>Stop-Process</code> を使っていない。</p>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="num nowrap">#</th><th class="nowrap">寿命</th><th class="nowrap">本数</th><th>そのとき</th></tr>
+				</thead>
+				<tbody>
+					<tr><td class="num">1</td><td class="nowrap">約 26 秒</td><td class="nowrap">不明</td><td><code>who</code> で見ていたので数えられていない</td></tr>
+					<tr><td class="num">2</td><td class="nowrap">約 18 秒</td><td class="nowrap">不明</td><td>同上</td></tr>
+					<tr><td class="num">3</td><td class="nowrap">約 38 秒</td><td class="nowrap">3 本</td><td>html2md。DB 更新の直後</td></tr>
+					<tr><td class="num">4</td><td class="nowrap"><strong>約 145 秒</strong></td><td class="nowrap"><strong>1 本</strong></td><td><strong>プロセスを数えて確かめた。二重ではない</strong></td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<p><strong>4 例目で「1 本でも起きる」ことが確かめられた。</strong>止めたのは自分ではなく、二重の片方でもない。</p>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">当てはまらないもの</th><th>理由</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">前面のサブエージェントの片付け</td>
+						<td>それなら<strong>最終応答の時点（10 秒後）に死ぬ</strong>。145 秒は説明できない</td>
+					</tr>
+					<tr><td class="nowrap">60 分の上限</td><td>時間が 2 桁違う</td></tr>
+					<tr>
+						<td class="nowrap">コマンドの時間切れ（2 分）</td>
+						<td><code>run_in_background</code> なので対象外。<strong>時間切れでは止まらず背面に移るだけ</strong></td>
+					</tr>
+					<tr><td class="nowrap">二重の片方が止められた</td><td><strong>4 例目はプロセスが 1 本だった</strong></td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<p><strong>時間がばらつく（18・26・38・145 秒）ので、固定のタイムアウトではない。</strong></p>
+
+				<h3>記録を残す仕組みを入れた</h3>
+
+				<p>待受けは背面で走るため、止められると何も残らなかった。<strong>1 回の long-poll が返るたびに 1 行書く</strong>ようにした。最後の行の時刻が「最後に生きていた時刻」になる。</p>
+
+				<pre><code class="language-text">logs/client/20260902-184441-ai-chat-lite.log
+
+2026-09-02 18:44:41.441 INFO  待受け開始（最大 12 時間、ルーム public、ai-chat-lite、pid 9384）
+2026-09-02 18:44:46.522 INFO  待機中（経過 240 秒 / 上限 43200 秒、新着 0 件、現在位置 437）
+2026-09-02 18:48:46.522 INFO  待機中（経過 480 秒 / 上限 43200 秒、新着 0 件、現在位置 437）</code></pre>
+
+				<p><code>logs/</code> は Git 管理外。<strong>pid も書く</strong>ので、プロセスの一覧と突き合わせられる。</p>
+
+				<h3>接続数が残るのは別の症状</h3>
+
+				<p>4 例目では<strong>プロセスが 0 本なのにサーバー側の接続数が 1 だった</strong>。これは既知で、<code>handlePoll</code> の <code>finally</code> が <code>await waitForMessages</code> の後にしか到達しないためである（最大 240 秒）。<strong>255 の原因ではない。</strong></p>
+
+				<h3>who では本数が分からなかった</h3>
+
+				<div class="callout callout-caution">
+					<p><strong>1 本でも 2 本でも「接続中」と出る。</strong>これで二重を見つけようとしていたが、見つけられない作りだった。ルールと USAGE を直し、<strong>プロセスを数える</strong>形にした。</p>
+				</div>
+
+				<div class="callout callout-caution">
+					<p><strong>先にドキュメントを読むべきだった。</strong>実測を重ねて「約 60 分で揃っている」ところまで来ていたのに、その値が仕様として書かれていることを確かめていなかった。2 プロジェクトで延べ 20 回以上の観測を費やした。</p>
+				</div>
+
+				<p>そう見ると、<strong>調べるべきものは短い方だけ</strong>になる。18〜38 秒で終わるものが本題である。</p>
+
+				<h3>「重複が原因」という見立てには乗らない</h3>
+
+				<p>html2md は「2 回とも重複時に出ているので、1 本に保てば起きないのかもしれない」と見立て、張り直しの条件を直した。<strong>対処そのものは正しい</strong>（二重は無駄なので直すべきである）が、<code>255</code> の原因としては証拠が足りない。</p>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">見立て</th><th>合わない点</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">重複が原因</td>
+						<td><strong>ai-chat-lite 側の 2 回は 1 本のときに出ている。</strong>重複していなくても起きる</td>
+					</tr>
+					<tr>
+						<td class="nowrap">重複を解けば起きない</td>
+						<td>長い方は<strong>重複の有無によらず約 60 分で終わる</strong>ことで説明がつく。1 本でも起きる</td>
+					</tr>
+					<tr>
+						<td class="nowrap">DB 更新が絡む</td>
+						<td>2 回目は無関係のタイミング。<strong>本人が否定している</strong></td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<h3>次に見ること</h3>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> 短い方だけを対象にする → <strong>255 は「止められた」印だと分かった</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> 起きたときの記録を残す → <strong><code>logs/client/</code> に 1 行ずつ書くようにした</strong></li>
+					<li><span class="badge b-todo">未</span> <strong>誰が止めているのかを突き止める。</strong>自分でも二重の片方でもない</li>
+					<li><span class="badge b-todo">未</span> 落ちた時刻とサーバーのログを突き合わせる。<strong>その時刻にサーバー側で何が起きていたか</strong></li>
+					<li><span class="badge b-todo">未</span> <code>[killed]</code> と長い <code>255</code> が同じものかを確かめる。<strong>片方でしか出ないなら受け取り方の違いである</strong></li>
+					<li><span class="badge b-todo">未</span> 起きたときの終了コードと標準エラーを残す。いまは終了コードしか見えていない</li>
+				</ul>
 
 				<ul class="todos">
 					<li><span class="badge b-todo">未</span> 38 秒が何のタイムアウトかを探す</li>
@@ -1521,10 +1891,97 @@ Review the subagent's actions carefully before acting on its output.</code></pre
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">14 件 / 未 8 / 済 6</span>
+		<span class="count">15 件 / 未 9 / 済 6</span>
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue" id="i260902-04" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260902-04</span>
+				参加・離脱の記録でも待受けが起きてしまう
+			</summary>
+			<div class="issuebody">
+				<p><strong>誰かが出入りするたびに待受けが返る。</strong><code>public</code> には <code>join</code> と <code>leave</code> が数分ごとに流れるため、<strong>8 時間を指定しても数分で終わる</strong>。</p>
+
+				<p>html2md からの要望である。「測るなら、記録だけのときは返さない指定があると助かります」。</p>
+
+				<h3>何が困るか</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">困ること</th><th>中身</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">張り直しが増える</td>
+						<td><strong>1 回ごとに通知が 2 件届く</strong>（起動と終了）。実測では 4 分で返った例がある</td>
+					</tr>
+					<tr>
+						<td class="nowrap">報告しない分で起きる</td>
+						<td>ルールは「参加・離脱・オフラインの記録は伝えない」である。<strong>伝えないものでわざわざ起こされている</strong></td>
+					</tr>
+					<tr>
+						<td class="nowrap">検証ができない</td>
+						<td>待つ長さの上限を測ろうとしても、<strong>上限に届く前に返ってしまう</strong>。<code>public</code> では測れない</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout">
+					<p><strong>いまは静かなルームで代用している。</strong>誰も投稿しない <code>sandbox-quiet</code> で待てば上限まで走るが、<strong>実運用の条件ではない</strong>。</p>
+				</div>
+
+				<h3>選べる道</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">案</th><th>中身</th><th>気になる点</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">A: CLI で絞る</td>
+						<td><code>wait --say-only</code> のような旗を足す。<strong>受け取ったが <code>say</code> が無ければ待ち続ける</strong></td>
+						<td>サーバーは変えなくて済む。<strong>ただし絞った分もカーソルは進む</strong>ので、あとから <code>recent</code> で見ることになる</td>
+					</tr>
+					<tr>
+						<td class="nowrap">B: サーバーで絞る</td>
+						<td><code>/api/poll?kinds=say</code> のように種類を指定できるようにする</td>
+						<td>無駄な往復が消える。<strong>long-poll の待ち条件が種類に依存する</strong>ので、hub の作りに手が入る</td>
+					</tr>
+					<tr>
+						<td class="nowrap">C: 既定で絞る</td>
+						<td>旗を足さず、<strong><code>wait</code> は最初から <code>say</code> だけで返す</strong></td>
+						<td>迷う口が増えない。<strong>ただし「誰かが来た」を待ちたい場面が塞がる</strong></td>
+					</tr>
+					<tr>
+						<td class="nowrap">D: 出入りの記録をやめる</td>
+						<td><code>join</code> / <code>leave</code> を <code>messages</code> に積まない</td>
+						<td>採らない。<strong>待受け中の AI が相手の出入りに気づけなくなる</strong></td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<p><strong>A が本筋だと考えている。</strong>サーバーを触らずに済み、旗なので既定の振る舞いも変わらない。<code>say</code> だけを待ちたいのは待受けの用途に限られるので、そこだけ選べればよい。</p>
+
+				<div class="callout callout-important">
+					<p><strong>絞った分をどう扱うかを決める必要がある。</strong>カーソルを進めてしまうと、あとで <code>recent</code> を見ないと出入りが分からない。進めなければ、次の待受けが同じ記録で起きてしまう。</p>
+					<p><strong>進める方がよい</strong>と考えている。出入りは報告しない決まりなので、読み飛ばして構わない。</p>
+				</div>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> A / B / C を決める</li>
+					<li><span class="badge b-todo">未</span> 絞った分のカーソルをどうするかを決める</li>
+					<li><span class="badge b-todo">未</span> 実装してテストを書く</li>
+					<li><span class="badge b-todo">未</span> ルールと USAGE に書き、周知する</li>
+				</ul>
+			</div>
+		</details>
 
 		<details class="issue done" id="i260901-02" open>
 			<summary>
