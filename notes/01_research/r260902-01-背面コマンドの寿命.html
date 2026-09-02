@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>背面のコマンドの寿命</title>
+<style>
+/* 共通のスタイル。docs\css\style.css と同じ内容を持たせている */
+@charset "UTF-8";
+
+/* ===================================================================
+   ai-chat-lite 共通スタイル
+   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   =================================================================== */
+
+:root {
+	/* 章に依存しない共通色 */
+	--navy1: #12224d;
+	--navy2: #2f5fbf;
+	--ink: #1c2330;
+	--ink-soft: #4a5568;
+	--line: #d9dfe8;
+	--code-bg: #f4f6fa;
+	--link: #1a4fa0;
+
+	/* 章クラスの外に置いた要素が色を失わないための既定値 */
+	--accent: #12224d;
+	--accent2: #2f5fbf;
+	--soft: #f2f5fb;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: #fdfdfe;
+	color: var(--ink, #1c2330);
+	font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+	font-size: 15.5px;
+	line-height: 1.85;
+}
+
+a {
+	color: var(--link, #1a4fa0);
+}
+
+/* ---------- タイトルバー ---------- */
+
+.titlebar {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 34px 30px 30px;
+}
+
+.titlebar .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+}
+
+.titlebar h1 {
+	font-size: 1.85em;
+	margin: 0 0 8px;
+	color: #fff;
+}
+
+.titlebar .lead {
+	margin: 0;
+	color: #d7e2f7;
+	font-size: 0.95em;
+}
+
+.titlebar .date {
+	margin: 10px 0 0;
+	color: #b9caea;
+	font-size: 0.88em;
+}
+
+.titlebar a {
+	color: #cfe0ff;
+}
+
+.titlebar code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+/* ---------- 本文の器 ---------- */
+
+.wrap {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding: 0 30px;
+}
+
+section {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 10px;
+	padding: 4px 26px 26px;
+	margin: 34px 0;
+}
+
+/* ---------- 見出し ---------- */
+
+section h1 {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-size: 1.4em;
+	padding: 14px 20px;
+	margin: 26px 0 20px;
+	border-radius: 8px;
+	box-shadow: 0 3px 10px rgba(20, 34, 70, 0.22);
+}
+
+section h1 code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+h2 {
+	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
+	color: var(--accent, #12224d);
+	font-size: 1.16em;
+	padding: 6px 12px;
+	margin: 30px 0 12px;
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 6px 6px 0;
+}
+
+h3 {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	font-size: 1.02em;
+	display: inline-block;
+	padding-bottom: 3px;
+	margin: 20px 0 8px;
+	border-bottom: 2px dotted var(--accent2, #2f5fbf);
+}
+
+/* ---------- 表 ---------- */
+
+.tablewrap {
+	overflow-x: auto;
+	margin: 14px 0;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 5px rgba(20, 34, 70, 0.10);
+}
+
+th {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	text-align: left;
+	padding: 9px 12px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+th code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+td {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	padding: 9px 12px;
+	border-top: 1px solid var(--line, #d9dfe8);
+	vertical-align: top;
+}
+
+tr:nth-child(even) td {
+	background: #fafbfe;
+	color: var(--ink, #1c2330);
+}
+
+td.num,
+th.num {
+	text-align: right;
+}
+
+td.nowrap,
+th.nowrap {
+	white-space: nowrap;
+}
+
+/* ---------- コード ---------- */
+
+code {
+	background: var(--code-bg, #f4f6fa);
+	color: #17335f;
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 4px;
+	padding: 1px 5px;
+	font-family: "Consolas", "Cascadia Mono", monospace;
+	font-size: 0.92em;
+}
+
+pre {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 5px solid var(--accent2, #2f5fbf);
+	border-radius: 0 8px 8px 0;
+	padding: 13px 16px;
+	overflow-x: auto;
+	line-height: 1.65;
+}
+
+pre code {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	border: none;
+	padding: 0;
+	font-size: 0.92em;
+}
+
+/* ---------- バッジ ---------- */
+
+.badge {
+	display: inline-block;
+	padding: 1px 9px;
+	margin-right: 6px;
+	border-radius: 11px;
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+	font-size: 0.84em;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.badge.b-ok {
+	background: linear-gradient(100deg, #1d7a3c, #45b56c);
+	color: #fff;
+}
+
+.badge.b-ng {
+	background: linear-gradient(100deg, #a51f22, #e05a5c);
+	color: #fff;
+}
+
+.badge.b-warn {
+	background: linear-gradient(100deg, #b8620a, #f0a548);
+	color: #fff;
+}
+
+.badge.b-none {
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+}
+
+/* ---------- callout ---------- */
+
+.callout {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 8px 8px 0;
+	padding: 12px 18px;
+	margin: 16px 0;
+}
+
+.callout strong {
+	color: var(--accent, #12224d);
+	background: transparent;
+}
+
+.callout p {
+	margin: 6px 0;
+}
+
+/* ---------- 目次 ---------- */
+
+.toc ol {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 0;
+	margin: 12px 0 4px;
+}
+
+.toc ul a {
+	color: var(--link, #1a4fa0);
+	background: transparent;
+}
+
+.toc ol li {
+	counter-increment: tocnum;
+	margin: 0;
+}
+
+.toc ol a {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: normal;
+	width: 310px;
+	max-width: 100%;
+	padding: 7px 13px;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+	line-height: 1.45;
+}
+
+.toc ol a::before {
+	content: counter(tocnum) ". ";
+	font-weight: 700;
+}
+
+/* ---------- 資料リンク・戻るリンク ---------- */
+
+.navlinks {
+	margin: 20px 0 0;
+}
+
+/*
+ * 幅は文字数で決まる（固定幅にしない）。
+ * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
+ * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
+ */
+a.doclink {
+	display: inline-block;
+	padding: 3px 12px;
+	margin: 0 8px 6px 0;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	font-size: 0.9em;
+	text-decoration: none;
+}
+
+/* ---------- SVG図 ---------- */
+
+.fig {
+	margin: 18px 0;
+	text-align: center;
+}
+
+.fig svg {
+	max-width: 100%;
+	height: auto;
+}
+
+.fig figcaption {
+	color: var(--ink-soft, #4a5568);
+	background: transparent;
+	font-size: 0.88em;
+	margin-top: 6px;
+}
+
+/* ---------- フッター ---------- */
+
+footer {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 18px 30px 0;
+	margin-top: 40px;
+}
+
+footer .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding-bottom: 18px;
+}
+
+footer a {
+	color: #cfe0ff;
+}
+</style>
+<style>
+/* この資料だけのもの: 章のアクセント色（3章 / 色相 280→0 を 140 刻み）と目次の採番 */
+.ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
+.ch02 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); --soft: hsl(140, 28%, 95%); }
+.ch03 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
+.toc ol { counter-reset: tocnum; }
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>待受けが 60 分で終わる理由</h1>
+		<p class="lead">公式ドキュメントに書かれていた。サブエージェントが持つ背面のコマンドは 60 分で止められる</p>
+		<p class="date">📅 作成: 2026-09-02 / 更新: 2026-09-02</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+<p>待受けが <code>[killed]</code> や <code>exit 255</code> で終わる件（<a class="doclink" href="../40_issues/issues.html#i260901-07">i260901-07</a>）を調べた。<strong>約 60 分で終わる方は仕様であり、原因は分かった。</strong></p>
+
+<section class="toc md-skip">
+	<h2>目次</h2>
+	<ol>
+		<li class="ch01"><a href="#ch01">分かったこと</a></li>
+		<li class="ch02"><a href="#ch02">観測との突き合わせ</a></li>
+		<li class="ch03"><a href="#ch03">残る謎と、これから</a></li>
+	</ol>
+</section>
+
+<!-- ================= 01 ================= -->
+<section class="ch01" id="ch01">
+	<h1>分かったこと</h1>
+
+	<div class="callout callout-important">
+		<p><strong>サブエージェントが持つ背面のコマンドは、60 分で止められる。</strong>これが待受けが 1 時間で終わる理由である。</p>
+	</div>
+
+	<h2>ドキュメントの記述</h2>
+
+	<p><a href="https://code.claude.com/docs/en/interactive-mode">Interactive mode</a> の「How backgrounding works」にある。</p>
+
+	<div class="callout">
+		<p>Background commands owned by a <strong>subagent</strong> are instead <strong>terminated after 60 minutes</strong>, configurable in milliseconds with <code>CLAUDE_SUBAGENT_BG_SHELL_MAX_MS</code>. A command owned by a subagent running in the foreground also ends when that subagent gives its final response.</p>
+	</div>
+
+	<p><strong>訳</strong>: サブエージェントが持つ背面のコマンドは 60 分後に止められる。長さは <code>CLAUDE_SUBAGENT_BG_SHELL_MAX_MS</code>（ミリ秒）で変えられる。前面で走るサブエージェントが持つコマンドは、そのサブエージェントが最終応答を返した時点でも終わる。</p>
+
+	<h2>背面のコマンドの寿命は 4 通りある</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">誰が起こしたか</th><th>いつ終わるか</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">本体の会話</td>
+				<td>止めるまで走り続ける。<strong>Claude Code が終わるときに片付けられる</strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><strong>背面のサブエージェント</strong></td>
+				<td><strong>60 分で止められる</strong>（<code>CLAUDE_SUBAGENT_BG_SHELL_MAX_MS</code>）。<strong>待受けはこれに当たる</strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap">前面のサブエージェント</td>
+				<td>上に加えて、<strong>そのサブエージェントが最終応答を返した時点でも終わる</strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap">（種類によらず）</td>
+				<td>出力が 5GB を超えたとき。macOS・Linux ではメモリ不足の合図が来たとき（30 分以上何もしていない場合）</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-warning">
+		<p><strong>前面のサブエージェントで待受けを張ってはいけない。</strong>「起動しました」と応答した時点でプロセスが止められる。</p>
+		<p>いまの張り方（<code>Agent</code> ツールが <code>Async agent launched</code> と返す形）は背面なので、この規則には当たらない。<strong>だから 60 分は走る。</strong></p>
+	</div>
+
+	<h2>モデルやエフォートでは変わらない</h2>
+
+	<p>調べた限り、<strong>実行時間の上限がモデルや思考量で変わるという記述は無い</strong>。時間に関わる設定はどれも環境変数で、どのモデルでも同じ値が効く。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">環境変数</th><th class="nowrap">既定</th><th>何を決めるか</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>CLAUDE_SUBAGENT_BG_SHELL_MAX_MS</code></td><td class="nowrap"><strong>60 分</strong></td>
+				<td>サブエージェントが持つ背面のコマンドの寿命。<strong>これが待受けに効く</strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>BASH_DEFAULT_TIMEOUT_MS</code></td><td class="nowrap">120000（2 分）</td>
+				<td>コマンドに時間を指定しなかったときの既定</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>BASH_MAX_TIMEOUT_MS</code></td><td class="nowrap">600000（10 分）</td>
+				<td>指定できる上限。<strong>超えても止まらず背面に移るだけ</strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>CLAUDE_CODE_DISABLE_BACKGROUND_TASKS</code></td><td class="nowrap">—</td>
+				<td><code>1</code> にすると背面の実行そのものが使えなくなる</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-tip">
+		<p><strong>600 秒は「止める時間」ではない。</strong>以前「600 秒で打ち切られる」と思い込んでいたが、実測でも打ち切られなかった。ドキュメントも <strong>時間切れでは背面に移すだけで止めない</strong> と書いている。</p>
+		<p>止めない例外は 3 つある。<code>sleep</code> で始まるもの、<code>git</code> を含むもの、解釈しきれない複合コマンド。<strong>これらは時間切れで止まる。</strong></p>
+	</div>
+</section>
+
+<!-- ================= 02 ================= -->
+<section class="ch02" id="ch02">
+	<h1>観測との突き合わせ</h1>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">見た側</th><th class="nowrap">終わり方</th><th class="nowrap">寿命</th><th>60 分の規則で説明できるか</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">ai-chat-lite</td><td class="nowrap"><code>[killed]</code></td><td class="nowrap">3610〜3614 秒</td>
+				<td><span class="badge b-ok">説明できる</span> 60 分＝3600 秒。<strong>誤差は起動と検出の分</strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap">html2md</td><td class="nowrap"><code>exit 255</code></td><td class="nowrap">約 3605 秒</td>
+				<td><span class="badge b-ok">説明できる</span> 同じ 60 分。<strong>報告のされ方だけが違う</strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap">ai-chat-lite</td><td class="nowrap"><code>exit 255</code></td><td class="nowrap">約 18 秒 / 約 26 秒</td>
+				<td><span class="badge b-ng">説明できない</span> <strong>これが本題</strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap">html2md</td><td class="nowrap"><code>exit 255</code></td><td class="nowrap">約 38 秒</td>
+				<td><span class="badge b-ng">説明できない</span> 同上</td>
+			</tr>
+			<tr>
+				<td class="nowrap">ai-chat-lite</td><td class="nowrap"><code>exit 127</code></td><td class="nowrap">約 47 秒</td>
+				<td><span class="badge b-none">別件</span> <code>node</code> が見つからなかった</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-important">
+		<p><strong><code>[killed]</code> と長い <code>exit 255</code> は同じものである。</strong>どちらも 60 分の規則で止められている。片方が <code>killed</code>、片方が <code>255</code> と見えるのは、止め方（シグナル）か、サブエージェント側の受け取り方の違いにすぎない。</p>
+		<p>Unix では、シグナルで死んだプロセスをシェルが <code>128 + シグナル番号</code> で報告する。<code>255</code> はその形には当てはまらないので、<strong>途中の層が読み替えている</strong>と見られる。</p>
+	</div>
+
+	<h2>「重複が原因」ではなかった</h2>
+
+	<p>html2md は「2 回とも待受けが重複していたので、重複が原因かもしれない」と見立てていた。<strong>長い方はそれでは説明できない。</strong>重複の有無によらず 60 分で終わる。</p>
+
+	<p>ただし<strong>重複を解いた対処そのものは正しい</strong>。二重に張ると通知が倍に来るだけで、届く発言は増えない。</p>
+</section>
+
+<!-- ================= 03 ================= -->
+<section class="ch03" id="ch03">
+	<h1>残る謎と、これから</h1>
+
+	<h2>短い 255（18〜38 秒）だけが残った</h2>
+
+	<p>60 分の規則が分かったことで、<strong>調べる対象が絞れた</strong>。18〜38 秒で終わるものだけが本題である。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">当てはまらないもの</th><th>理由</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap">60 分の規則</td><td>時間が 2 桁違う</td></tr>
+			<tr><td class="nowrap">1 回の待ち（240 秒）</td><td>短すぎる。時間切れなら「新着なし」で正常終了する</td></tr>
+			<tr><td class="nowrap">繋ぎ直しの間隔（10 秒）</td><td>繋がらないときは終了コード 3 になる</td></tr>
+			<tr><td class="nowrap">既定のコマンド時間（2 分）</td><td>時間切れでは止まらず背面に移るだけ</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>待受けは 1 時間ごとに張り直すものだと考える</h2>
+
+	<div class="callout callout-tip">
+		<p><strong>8 時間を指定しても、実際は 60 分で終わる。</strong>これは仕様なので直せない。<code>CLAUDE_SUBAGENT_BG_SHELL_MAX_MS</code> を伸ばす手はあるが、<strong>環境変数で挙動を変えると、他のプロジェクトと前提がずれる。</strong></p>
+		<p>取りこぼしは無い（読んだ位置はサーバーが覚えている）ので、<strong>張り直しを前提にしておけば実害はない</strong>。</p>
+	</div>
+
+	<h2>やること</h2>
+
+	<ul>
+		<li><strong>短い 255 だけを追う。</strong>落ちた時刻とサーバーのログを突き合わせる</li>
+		<li>次に出たときのために、<strong>終了コードだけでなく標準エラーも残す</strong></li>
+		<li>他プロジェクトへ 60 分の件を伝える。<strong>「重複が原因」という誤った見立てが残っている</strong></li>
+	</ul>
+
+	<h2>調べ方の反省</h2>
+
+	<div class="callout callout-caution">
+		<p><strong>先にドキュメントを読むべきだった。</strong>実測を重ねて「約 60 分で揃っている」ところまで来ていたのに、その値が仕様として書かれていることを確かめなかった。</p>
+		<p>2 プロジェクトで延べ 20 回以上の観測を費やしている。<strong>公式の記述 1 行で済んだ話である。</strong></p>
+	</div>
+</section>
+
+</div>
+
+<footer>
+	<div class="inner">
+		<a class="doclink" href="../../README.html">README へ戻る</a>
+	</div>
+</footer>
+
+</body>
+</html>
