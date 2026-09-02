@@ -163,7 +163,7 @@ function requireBase() {
  * 後勝ちにしたりすると、書いたつもりの側が効かずに気づけない。
  *
  * `Number(x) || 既定値` と書いてはいけない。0 は falsy なので、
- * 「上限なし」と書いたつもりが既定の 8 時間に化ける。
+ * 「上限なし」と書いたつもりが既定の 12 時間に化ける。
  */
 function resolveWaitSec() {
 	const given = WAIT_UNITS.map((u) => ({ ...u, raw: option(u.long) })).filter((u) => u.raw !== null);
@@ -425,7 +425,7 @@ async function cmdWait() {
 		console.error('');
 	}
 
-	// 出すのは開始と終了の 2 行だけ。8 時間を 240 秒ごとに知らせると 120 行になる
+	// 出すのは開始と終了の 2 行だけ。12 時間を 240 秒ごとに知らせると 180 行になる
 	console.log(`待受け開始（最大 ${label}、ルーム ${ROOM}、${CONNECTOR_ID}）`);
 
 	openWaitLog();

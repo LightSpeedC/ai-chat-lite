@@ -84,7 +84,7 @@ namespace AiChat
 			DefaultRoom = Json.Str(root, "default_room", "public");
 			DefaultPort = Json.Int(root, "default_port", 8787);
 			MaxWaitSec = Json.Int(root, "max_wait_sec", 240);
-			DefaultWaitSec = Json.Int(root, "default_wait_sec", 8 * 3600);
+			DefaultWaitSec = Json.Int(root, "default_wait_sec", 12 * 3600);
 			RetryIntervalSec = Json.Int(root, "retry_interval_sec", 10);
 			ExitUnreachable = Json.Int(root, "exit_unreachable", 3);
 

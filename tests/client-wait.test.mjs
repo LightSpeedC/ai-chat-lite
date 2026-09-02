@@ -76,15 +76,15 @@ describe('wait の待つ長さ', () => {
 		assert.ok(elapsed < 20000, `残りを待ってしまっている（${elapsed}ms）`);
 	});
 
-	test('何も指定しなければ 8 時間になる', async () => {
+	test('何も指定しなければ 12 時間になる', async () => {
 		/*
-		 * 8 時間を実際に待たせるわけにいかないので、先に発言を置いて
+		 * 12 時間を実際に待たせるわけにいかないので、先に発言を置いて
 		 * 1 回目で返るようにする。開始の行に長さが出る
 		 */
 		await chat(['say', '既定の確認'], 'test-connector2');
 		const { stdout } = await chat(['wait']);
 
-		assert.match(stdout, /待受け開始（最大 8 時間/);
+		assert.match(stdout, /待受け開始（最大 12 時間/);
 		assert.match(stdout, /新着 1 件/);
 	});
 
@@ -157,7 +157,7 @@ describe('wait の指定を誤ったとき', () => {
 describe('wait のログ', () => {
 	test('出るのは開始と終了の 2 行だけ', async () => {
 		/*
-		 * 240 秒ごとに「新着なし」を出していたため、8 時間で 120 行になっていた。
+		 * 240 秒ごとに「新着なし」を出していたため、12 時間で 180 行になっていた。
 		 * 何回に分けて待ったかは呼ぶ側に関係がないので出さない
 		 */
 		const { stdout } = await chat(['wait', '--wait-sec', '1']);
@@ -188,7 +188,7 @@ describe('wait のログ', () => {
 		assert.equal(stderr, '');
 	});
 
-	test('既定の 8 時間では警告を出さない', async () => {
+	test('既定の 12 時間では警告を出さない', async () => {
 		// 既定が 600 秒を超えているため、毎回出すと警告の意味がなくなる
 		await chat(['say', '既定では黙る'], 'test-connector2');
 		const { stderr } = await chat(['wait']);

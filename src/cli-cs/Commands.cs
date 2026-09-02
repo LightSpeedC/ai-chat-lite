@@ -88,7 +88,7 @@ namespace AiChat
 				Console.Error.WriteLine("");
 			}
 
-			// 出すのは開始と終了の 2 行だけ。8 時間を 240 秒ごとに知らせると 120 行になる
+			// 出すのは開始と終了の 2 行だけ。12 時間を 240 秒ごとに知らせると 180 行になる
 			Console.WriteLine("待受け開始（最大 " + label + "、ルーム " + room + "、" + connectorId + "）");
 
 			WaitLog.Open(FindRoot(), connectorId, IsTestData());
