@@ -1952,7 +1952,9 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 		</thead>
 		<tbody>
 			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000001/</code></td><td>改名前の形。<strong>すでに動いていた DB はこの形</strong></td></tr>
-			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000002/</code></td><td><code>connector</code> への改名</td></tr>
+			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000002/</code></td><td><code>connector</code> への改名。<code>msg_kind</code> に <code>notice</code> を足す</td></tr>
+			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000003/</code></td><td><code>archives</code> テーブルと <code>archived_seq</code> の索引</td></tr>
+			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000004/</code></td><td><code>messages.ref_archived_seq</code>。片付けの知らせが指す番号</td></tr>
 			<tr><td class="nowrap"><code>src/server/migrate.mjs</code></td><td>版を当てる処理。<strong><code>store.mjs</code> とは別の接続で開く</strong></td></tr>
 		</tbody>
 	</table>
@@ -1975,11 +1977,12 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 			<tr><th class="num nowrap">#</th><th>やること</th></tr>
 		</thead>
 		<tbody>
-			<tr><td class="num">1</td><td><code>src/scripts/20_migrate/ver_000003/</code> を作る。<strong>番号は連続させる</strong>（飛んでいると起動が止まる）</td></tr>
+			<tr><td class="num">1</td><td>次の番号の <code>src/scripts/20_migrate/ver_NNNNNN/</code> を作る。<strong>番号は連続させる</strong>（飛んでいると起動が止まる）</td></tr>
 			<tr><td class="num">2</td><td>その下に <code>001-なにをするか.sql</code> を置く。<strong>1 つの版に複数置ける</strong>（名前順に当たる）</td></tr>
 			<tr><td class="num">3</td><td>テーブルを増やしたときは <code>store.mjs</code> の <code>REQUIRED_TABLES</code> に足す。<strong>形そのものは書かない</strong></td></tr>
 			<tr><td class="num">4</td><td>テストを流す。<strong>空の DB から全部当てて最新の形になるか</strong>を <code>migrate.test.mjs</code> が見る</td></tr>
-			<tr><td class="num">5</td><td>サーバーを起動し直す。<strong>起動時に自動で当たる</strong></td></tr>
+			<tr><td class="num">5</td><td><strong>本番の写しで予行する</strong>（<a class="doclink" href="../90_rules/db-version.html">手引き</a>）。控えを取り、テスト環境で当ててから進む</td></tr>
+			<tr><td class="num">6</td><td>サーバーを起動し直す。<strong>起動時に自動で当たる</strong></td></tr>
 		</tbody>
 	</table>
 	</div>

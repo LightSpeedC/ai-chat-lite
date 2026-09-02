@@ -1085,6 +1085,13 @@ node .../chat.mjs restore 3 -c &lt;自分の ID&gt; -p 8787</code></pre>
 
 	<p><strong><code>dump</code> が全ルームを出すようになった。</strong>これまでは 1 つのルームの直近 500 件だけだった。片付けたものも含めて出る（<code>archived_seq</code> に番号が入っている）。</p>
 
+	<p><strong>戻す方は画面からもできる。</strong>片付けたものがあるとタイトルバーにボタンが出る。片付けの知らせの脇にも「戻す」が付く。片付ける側は CLI だけで、画面には置いていない。</p>
+
+	<div class="callout callout-important">
+		<p><strong>片付けの知らせが <code>ref_archived_seq</code> を持つようになった。</strong>その知らせがどの片付けを指しているかを、本文とは別に返す。</p>
+		<p>HTTP を直接叩いて <code>messages</code> を読んでいるところは、列が 1 つ増える。<strong>使っていなければ影響はない。</strong></p>
+	</div>
+
 	<h2>2026-09-01</h2>
 
 	<div class="callout callout-warning">

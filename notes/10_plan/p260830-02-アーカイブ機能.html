@@ -248,7 +248,7 @@ footer a { color: #cfe0ff; }
 
 <p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
 
-<p><span class="badge b-ok">実装済み</span> <strong>2026-09-02 に実装した。</strong><code>archives</code> テーブルは版 3 で入れ、CLI の <code>archive</code> / <code>archives</code> / <code>restore</code> と、<code>/api/admin/*</code>・<code>/api/dump</code> が動いている。本番 DB への適用はまだ。</p>
+<p><span class="badge b-ok">実装済み</span> <strong>2026-09-02 に実装した。</strong>CLI の <code>archive</code> / <code>archives</code> / <code>restore</code>、<code>/api/admin/*</code>・<code>/api/dump</code>、画面から戻す手段まで動いている。<code>archives</code> テーブルは版 3、知らせが指す番号は版 4。</p>
 
 <p>動作確認で作った参加者やルーム、誤って投稿した発言を片付ける手段が無かった。<strong>DB を直接触るのは危険</strong>なので、CLI と API から片付けられるようにした。他のプロジェクトからも使えるよう <a class="doclink" href="../../USAGE-FOR-PROJECTS.html">使い方</a> に書く。</p>
 
@@ -510,10 +510,61 @@ CREATE TABLE archives (
 
 	<h3>画面から戻せるようにする</h3>
 
-	<p><code>archive#3</code> を押せるようにし、確認のうえ <code>restore</code> を呼ぶ。<strong>片付けるのは CLI、戻すのは画面からもできる</strong>という非対称を採る。</p>
+	<p><strong>片付けるのは CLI、戻すのは画面からもできる</strong>という非対称を採る。</p>
 
 	<div class="callout">
 		<p><strong>戻す方が急ぐ操作だからである。</strong>誤って片付けたと気づくのは画面を見ているときで、そこから CLI に移るのは手間になる。片付ける側は落ち着いて実行できるので CLI で足りる。</p>
+	</div>
+
+	<p>入口は 2 つ置く。<strong>気づく場面が 2 通りあるため</strong>である。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">入口</th><th>気づく場面</th><th>置き方</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">タイトルバーのボタン</td>
+				<td>あとから「あれを戻したい」と思い出したとき</td>
+				<td><strong>0 件のときは出さない。</strong>件数をバッジで添える。押すと一覧が開き、行ごとに戻せる</td>
+			</tr>
+			<tr>
+				<td class="nowrap">知らせに添えたボタン</td>
+				<td><strong>流れを見ていて、その場で気づいたとき</strong></td>
+				<td>片付けの知らせの脇に置く。一覧を開かずに戻せる</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h4>知らせから戻すには、指している番号が要る</h4>
+
+	<div class="callout callout-important">
+		<p><strong>本文から番号を拾ってはいけない。</strong>通知の本文は <code>--description</code> で書き換えられるため、番号が入る保証が無い。本文の形を仕様にすると、文言を直すたびに画面が動かなくなる。</p>
+		<p><code>messages</code> に <code>ref_archived_seq</code> を足した（版 4）。<strong><code>archived_seq</code> とは意味が逆である。</strong></p>
+	</div>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">列</th><th>意味</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap"><code>archived_seq</code></td><td>その行<strong>自身が片付けられた</strong>操作の番号。<code>NULL</code> なら生きている</td></tr>
+			<tr><td class="nowrap"><code>ref_archived_seq</code></td><td>その行が<strong>知らせている</strong>片付けの番号。通知にだけ入る</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>列の追加は <code>ALTER TABLE</code> で足りる。テーブルの作り直しは要らない。</p>
+
+	<h4>戻したらボタンは消える</h4>
+
+	<p>ボタンを出すかどうかは、<strong>その番号が <code>archives</code> に生きているか</strong>で決める。戻せば記録ごと消えるので、押せる状態では残らない。誰かが戻したときも SSE で追随する。</p>
+
+	<div class="callout">
+		<p><strong>戻したことの知らせには番号を持たせない。</strong>そこから戻す操作は無いためである。</p>
 	</div>
 
 	<h2>既にあるデータの扱い</h2>
@@ -712,16 +763,22 @@ archived_seq 3 を戻しました（14 件）
 	<h1>作るものと、採らなかった案</h1>
 
 	<pre><code class="language-text">ver_000003/001-archives.sql … archives テーブルと archived_seq の索引 3 つ
+ver_000004/001-ref-…​.sql    … messages に ref_archived_seq（知らせが指す番号）
 src/server/store.mjs        … archives テーブル、previewArchive / archive / restore / listArchives
                                読み出し 9 関数に archived_seq IS NULL を足す（selectAll だけ足さない）
 src/server/server.mjs       … /api/admin/archive・restore・archives・archive-preview、/api/dump
+                               片付けの知らせに ref_archived_seq を持たせる
 src/client/chat.mjs         … archive / archives / restore、dump を /api/dump へ
+src/web/index.html          … 「片付けたもの」ボタン、一覧と確認の 2 つの dialog
+src/web/js/chat.js          … 一覧の組み立て、知らせに添える「戻す」、生きている番号の追随
+src/web/css/chat.css        … 一覧の表、控えめな「戻す」
 tests/archive.test.mjs      … 片付けた行が読み出しに出ないこと、まとめて戻ること
                                読み出しの絞り込みを足し忘れていないかを SQL から確かめる
-tests/server.test.mjs       … history には出ず dump には出ること
+tests/server.test.mjs       … history には出ず dump には出ること、知らせが番号を持つこと
+archives-ui.spec.ts         … 画面から戻せること、戻したらボタンが消えること
 USAGE-FOR-PROJECTS.html     … 他プロジェクトからの使い方</code></pre>
 
-	<p><code>src/web/js/chat.js</code> は<strong>手を付けていない</strong>。画面から片付ける手段は置かない方針のままで、戻す側を画面に置くのは後回しにした。</p>
+	<p>画面から<strong>片付ける</strong>手段は置いていない。誤操作の機会を増やさないためで、方針のとおりである。</p>
 
 	<h2>今回やらないこと</h2>
 

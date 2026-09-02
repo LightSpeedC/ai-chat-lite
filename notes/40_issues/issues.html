@@ -855,7 +855,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-todo">未</span>
 		データ
-		<span class="count">5 件 / 未 2 / 着手 1 / 済 2</span>
+		<span class="count">5 件 / 未 2 / 済 3</span>
 	</summary>
 
 	<div class="groupbody">
@@ -1123,9 +1123,9 @@ const servers = await startServers();           // 待ち受けを開始</code><
 			</div>
 		</details>
 
-		<details class="issue doing" id="i260830-09" open>
+		<details class="issue done" id="i260830-09">
 			<summary>
-				<span class="badge b-doing">着手</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260830-09</span>
 				いらなくなった参加者・ルーム・発言を片付ける手段がない
 			</summary>
@@ -1148,9 +1148,14 @@ const servers = await startServers();           // 待ち受けを開始</code><
 					<li class="done"><span class="badge b-done">☑</span> <code>/api/dump</code> を足し、CLI の <code>dump</code> を全件（片付けた分も含む）に直した</li>
 					<li class="done"><span class="badge b-done">☑</span> テストを書く（<code>tests/archive.test.mjs</code> 23 件。<strong>絞り込みの足し忘れを SQL から検出する</strong>）</li>
 					<li class="done"><span class="badge b-done">☑</span> USAGE に書く</li>
-					<li><span class="badge b-todo">未</span> 本番 DB を版 3 へ上げる</li>
-					<li><span class="badge b-todo">未</span> 画面で <code>archive#&lt;seq&gt;</code> を押せるようにする</li>
+					<li class="done"><span class="badge b-done">☑</span> 本番 DB を版 3 へ上げる</li>
+					<li class="done"><span class="badge b-done">☑</span> 画面から戻せるようにする（タイトルバーの一覧と、知らせに添えたボタンの 2 通り）</li>
+					<li class="done"><span class="badge b-done">☑</span> 知らせが指す番号を <code>ref_archived_seq</code> で持つ（版 4）。<strong>本文から拾わない</strong></li>
 				</ul>
+
+				<div class="callout callout-tip">
+					<p><strong>本番 DB の版 4 への引き上げは、これからである。</strong>画面の機能はその後に効く。</p>
+				</div>
 			</div>
 		</details>
 
@@ -1174,7 +1179,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 </details>
 
 <!-- ================= グループ 3 ================= -->
-<details class="group g03" id="g03" data-name="開発環境・記録">
+<details class="group g03" id="g03" data-name="開発環境・記録" open>
 	<summary>
 		<span class="badge b-todo">未</span>
 		開発環境・記録
