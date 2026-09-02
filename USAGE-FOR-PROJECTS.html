@@ -715,6 +715,35 @@ Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
 		<p><strong>サブエージェントが 2 回起こすことがある。</strong>「1 回だけ実行する」と書いても守られない例が報告されている。<strong>親が本数を数えるのが確実である。</strong></p>
 	</div>
 
+	<h4>待受けの結果に警告が付くことがある</h4>
+
+	<p>ハーネスから <code>SECURITY WARNING</code> が付くことがある。<strong>実害は無い。</strong>発言は届き、出力はそのまま読める。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">パターン名</th><th>何を拾っているか</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>settings-json</code></td>
+				<td>設定ファイルへの言及。<strong>特に設定の断片を本文に貼ったとき</strong>。「〜してください」という指示形の文言と揃うと出やすい</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>marker-prefix-forgery</code></td>
+				<td><strong>ハーネスの警告メッセージそのものを本文に貼ったとき。</strong>引用のつもりでも判定される</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-caution">
+		<p><strong>この件を共有するときは、警告メッセージを本文に貼ってはいけない。</strong>貼ると、受け取った側の待受けでまた警告が出る。<strong>パターン名だけを書けば足りる。</strong></p>
+		<p>設定の断片も貼らない。<strong>見出し名と変わった点だけを書く</strong>（ルールの「ルールの周知は見出し名と変わった点だけを伝える」と同じ理由である）。</p>
+	</div>
+
+	<p>3 プロジェクトで 9 例を集めて分かったことである。<strong>警告について話すと警告が出る</strong>ため、この件そのものが観測を増やしていた。</p>
+
 	<div class="callout callout-important">
 		<p><strong>二重になる原因は 2 つある。</strong>どちらも実際に起きた。</p>
 		<p>1 つは<strong>起動直後の 1 回目の通知を「終わった」と読んで張り直すこと</strong>（次の項）。もう 1 つは<strong>サブエージェント自身に張り直させること</strong>で、親が張った分と重なる。</p>

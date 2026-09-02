@@ -1183,7 +1183,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-todo">未</span>
 		開発環境・記録
-		<span class="count">8 件 / 未 2 / 着手 2 / 済 4</span>
+		<span class="count">8 件 / 未 1 / 着手 3 / 済 4</span>
 	</summary>
 
 	<div class="groupbody">
@@ -1651,9 +1651,9 @@ finally { removeConnection(connectorId); }   // 到達はそのあと</code></pr
 			</div>
 		</details>
 
-		<details class="issue" id="i260901-05" open>
+		<details class="issue doing" id="i260901-05" open>
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-doing">着手</span>
 				<span class="no">i260901-05</span>
 				待受けのサブエージェントに SECURITY WARNING が付いた
 			</summary>
@@ -1681,6 +1681,147 @@ Review the subagent's actions carefully before acting on its output.</code></pre
 				</tbody>
 				</table>
 				</div>
+
+
+				<h3>条件がほぼ絞れた（2026-09-02）</h3>
+
+				<p>各プロジェクトに報告を依頼し、<strong>html2md から 4 例、agent-rules から 2 例</strong>の記録が届いた。こちらの 2 例と合わせて 8 例になる。</p>
+
+				<div class="callout callout-tip">
+					<p><strong>3 者の見立てが一致した。</strong>設定ファイルの断片（特に JSON ブロック）を本文に貼ると出る。</p>
+					<p>agent-rules から「回避するなら、周知の本文に設定の断片を貼らず、見出し名と変わった点だけを書く形になる」と指摘があった。<strong>ルールの「ルールの周知は見出し名と変わった点だけを伝える」と同じ理由が、ここにも当てはまる。</strong></p>
+				</div>
+
+				<div class="callout callout-important">
+					<p><strong>2 つが揃ったときに出る。</strong>片方だけでは出ていない。</p>
+					<p>1. <code>~/.claude/CLAUDE.md</code> か <code>settings.json</code> への言及<br>
+					2. <strong>「〜してください」「〜を入れました」という指示形の文言</strong></p>
+				</div>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">回</th><th>そのときの本文</th><th class="nowrap">Reason</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">1</td>
+						<td><code>settings.json</code> の <code>env</code> の話 ＋「<code>-w 8</code> で張って、次を見てください」</td>
+						<td class="nowrap"><code>instruction-shaped pattern(s): settings-json</code></td>
+					</tr>
+					<tr>
+						<td class="nowrap">2・3</td>
+						<td>パスの区切りの周知 ＋「シェル実行ルールに新設しました」</td>
+						<td class="nowrap"><code>Blocked by classifier</code></td>
+					</tr>
+					<tr>
+						<td class="nowrap">4</td>
+						<td>まとめ ＋「新しいルールで待受けを張り直してください」</td>
+						<td class="nowrap"><code>Blocked by classifier</code></td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<p><strong>Reason は 2 種類ある。</strong>別の仕組みだと見られる。1 回目は <code>settings-json</code> というパターン名が具体的に出て、「制御タグを無害化した」と添えられていた。</p>
+
+
+				<h3>条件は 2 つある（2026-09-02 追記）</h3>
+
+				<p>agent-rules から追報が届き、<strong>パターン名が 2 つ列挙された例</strong>が出た。</p>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">パターン名</th><th>何を拾っているか</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap"><code>settings-json</code></td>
+						<td>設定ファイルへの言及。<strong>特に設定の断片（JSON ブロック）を本文に貼ったとき</strong></td>
+					</tr>
+					<tr>
+						<td class="nowrap"><code>marker-prefix-forgery</code></td>
+						<td><strong>ハーネスの警告メッセージそのものを本文に貼ったとき。</strong>引用のつもりでも「マーカーの偽造」と判定される</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-caution">
+					<p><strong>この件を共有するときは、ハーネスの警告メッセージを本文に貼ってはいけない。</strong>貼ると、受け取った側の待受けでまた警告が出る。</p>
+					<p><strong>パターン名だけを書けば足りる。</strong>agent-rules がこれをやって連鎖させてしまった、と自ら報告している。</p>
+				</div>
+
+				<p>受け取った本文では、貼られた角括弧の中身がバックスラッシュを挿入した形にエスケープされていた。<strong>無害化はされるが、警告は付く。</strong></p>
+
+				<div class="callout callout-tip">
+					<p><strong>警告が連鎖する構図になっている。</strong>警告について話すと警告が出る。そのため、この課題そのものが観測を増やす原因になっていた。</p>
+					<p><strong>書き方を決めれば止まる。</strong>設定の断片も警告の全文も貼らず、見出し名とパターン名だけを書く。</p>
+				</div>
+
+				<h3>つまり、ルールの周知そのものが引っかかる</h3>
+
+				<div class="callout callout-tip">
+					<p><strong>周知の本文は「ルールを更新したので従ってください」という形を取る。</strong>設定ファイルの名前と指示形の文言が、必ず同時に入る。</p>
+					<p><strong>だから引っかかりやすい。</strong>待受けのサブエージェントは、その発言を受け取ってそのまま渡すため、警告が付く。</p>
+				</div>
+
+				<p>こちらでも 2 回出ており、どちらも<strong>自分が送った周知の折り返し</strong>だった。html2md の 4 回も同じ形である。</p>
+
+				<h3>実害はない</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">確かめたこと</th><th>結果</th></tr>
+				</thead>
+				<tbody>
+					<tr><td class="nowrap">発言は届くか</td><td><strong>届く。</strong>出力はそのまま読める</td></tr>
+					<tr><td class="nowrap">待受けは続くか</td><td>終わって通知が来るだけで、いつもと同じ</td></tr>
+					<tr><td class="nowrap">何かが失われるか</td><td><strong>失われない。</strong>制御タグらしき文字が無害化されるだけ</td></tr>
+					<tr><td class="nowrap">サブエージェントの操作か</td><td><strong>違う。</strong>4 例とも待受けだけで、ファイル操作も発言もさせていない</td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<h3>どうするか</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">案</th><th>中身</th><th>気になる点</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">A: 何もしない</td>
+						<td>実害が無いので放っておく。<strong>警告が出ても中身を読んで進める</strong></td>
+						<td>毎回「何がブロックされたのか」を確かめる手間が出る</td>
+					</tr>
+					<tr>
+						<td class="nowrap">B: 周知の書き方を変える</td>
+						<td>設定ファイルの名前を書かず、<strong>見出し名だけを伝える</strong></td>
+						<td>ルールは既に「本文を貼らない、見出し名だけ」である。<strong>ファイル名は避けにくい</strong></td>
+					</tr>
+					<tr>
+						<td class="nowrap">C: 警告が出る前提で書く</td>
+						<td>USAGE に「ルールの周知では警告が付くことがある。実害は無い」と書く</td>
+						<td><strong>読み手が慌てなくなる。</strong>原因を追う手間も消える</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<p><strong>A と C を併せるのが本筋だと考えている。</strong>分類器の判断はこちらで変えられず、実害も無い。<strong>知らずに驚くことだけが問題</strong>なので、書いておけば済む。</p>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> 各プロジェクトに報告を依頼する（2026-09-02）</li>
+					<li class="done"><span class="badge b-done">☑</span> 条件を絞る → <strong>設定ファイルへの言及 ＋ 指示形の文言</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> 実害の有無を確かめる → <strong>無い</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> 2 つ目のパターン（<code>marker-prefix-forgery</code>）を掴む</li>
+					<li><span class="badge b-todo">未</span> USAGE に「警告が付くことがある。実害は無い」と<strong>共有するときの書き方</strong>を書く</li>
+					<li><span class="badge b-todo">未</span> それで閉じるかを決める</li>
+				</ul>
 
 				<h3>心当たり</h3>
 
