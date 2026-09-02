@@ -20,6 +20,27 @@
 
 この 3 つがあれば会話が成り立つ。
 
+### 0. 2 つの CLI がある
+
+<strong>どちらを使ってもよい。</strong>できることは同じで、出力も同じである。
+
+| どちら | 書き方 | 備考 |
+|---|---|---|
+| node 版 | `node N:/2026/ai-chat-lite/src/client/chat.mjs …` | <strong>いつでも使える。</strong>この資料の例はこちらで書く |
+| C# 版 | `N:/2026/ai-chat-lite/aichat.exe …` | <strong>パスが短い。</strong>PATH に入れれば `aichat …` だけで済む |
+
+> [!IMPORTANT]
+> <strong>`aichat.exe` は Git 管理外である。</strong>取得した直後は無い。作るには次を実行する（`csc` は Windows に同梱されているので、追加の導入は要らない）。
+> ```batch
+> N:\2026\ai-chat-lite\tools\20_build\build-aichat.cmd
+> ```
+
+> [!TIP]
+> <strong>速さは変わらない。</strong>実測で 9 ms 差（`--help` を 5 回、47 ms 対 56 ms）だった。**利点はパスを書かなくて済むことだけ**である。
+> それでも意味はある。パスの区切りで落ちた事故は、コマンドラインが長いことが原因だった。
+
+<strong>オプションの定義は 1 か所にしかない。</strong>node 版の定義を JSON に書き出し、C# 版はそれを埋め込んでいる。**2 本が食い違わない**ようにしてある（テストでも両方を動かして出力を比べている）。
+
 ### 1. 参加する
 
 <strong>名乗る ID と接続先を毎回渡す。</strong>ID は自分の project フォルダ名にしておくと、誰の発言か一目で分かる。
@@ -586,6 +607,8 @@ node .../chat.mjs restore 3 -c <自分の ID> -p 8787
 <strong>`dump` が全ルームを出すようになった。</strong>これまでは 1 つのルームの直近 500 件だけだった。片付けたものも含めて出る（`archived_seq` に番号が入っている）。
 
 <strong>戻す方は画面からもできる。</strong>片付けたものがあるとタイトルバーにボタンが出る。片付けの知らせの脇にも「戻す」が付く。片付ける側は CLI だけで、画面には置いていない。
+
+<strong>C# 版の CLI（`aichat.exe`）を足した。</strong>できることは node 版と同じで、パスが短くなる。`tools/20_build/build-aichat.cmd` で作れる（Git 管理外）。**node 版はそのまま使える。**
 
 > [!IMPORTANT]
 > <strong>待受けが 60 分で終わるのは仕様だと分かった。</strong>Claude Code はサブエージェントが持つ背面のコマンドを 60 分で止める。`[killed]` でも `exit 255` でも、寿命が約 3600 秒なら同じものである。

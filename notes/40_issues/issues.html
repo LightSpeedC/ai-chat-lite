@@ -1183,7 +1183,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-todo">未</span>
 		開発環境・記録
-		<span class="count">8 件 / 未 1 / 着手 3 / 済 4</span>
+		<span class="count">8 件 / 着手 4 / 済 4</span>
 	</summary>
 
 	<div class="groupbody">
@@ -1870,9 +1870,9 @@ Review the subagent's actions carefully before acting on its output.</code></pre
 			</div>
 		</details>
 
-		<details class="issue" id="i260901-06" open>
+		<details class="issue doing" id="i260901-06" open>
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-doing">着手</span>
 				<span class="no">i260901-06</span>
 				C# で CLI を書き、node 版と並行して持つ
 			</summary>
@@ -1959,6 +1959,116 @@ Review the subagent's actions carefully before acting on its output.</code></pre
 					<li><span class="badge b-todo">未</span> 食い違いを検出するテストを書く</li>
 					<li><span class="badge b-todo">未</span> 起動の速さを node 版と比べる</li>
 					<li><span class="badge b-todo">未</span> 資料に書く</li>
+				</ul>
+			
+				<h3>作った（2026-09-02）</h3>
+
+				<pre><code class="language-text">aichat.exe                              root。42 KB。Git 管理外
+src/cli-cs/Program.cs                   入口・使い方の表示
+src/cli-cs/Commands.cs                  各コマンド
+src/cli-cs/Args.cs                      引数の解析
+src/cli-cs/Client.cs                    HTTP（繋ぎ直し・503・終了コード 3）
+src/cli-cs/Json.cs                      小さな JSON の読み書き
+src/cli-cs/Definition.cs                埋め込んだ定義を読む
+src/cli-cs/WaitLog.cs                   待受けの記録
+tools/20_build/export-options.mjs       options.mjs から JSON を書き出す
+tools/20_build/build-aichat.ps1 / .cmd  ビルド
+tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る（9 件）</code></pre>
+
+				<h3>食い違いを防ぐ仕組み</h3>
+
+				<div class="callout callout-important">
+					<p><strong>定義は 1 か所にしかない。</strong><code>src/client/options.mjs</code> から JSON を書き出し、<strong>ビルド時に exe へ埋め込む</strong>（<code>csc /resource:</code>）。手で写していないので、オプションを増やしても 2 本がずれない。</p>
+					<p>埋め込んだ JSON には <code>schema</code> を持たせた。形が変わったら <strong>C# 側が起動時に気づいて止まる</strong>。</p>
+				</div>
+
+				<p>そのうえで <code>tests/cli-cs.test.mjs</code> が<strong>両方を実際に動かして出力を比べる</strong>。時刻や番号は揺れるので形だけを見る。</p>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">見ていること</th><th>中身</th></tr>
+				</thead>
+				<tbody>
+					<tr><td class="nowrap"><code>--help</code></td><td><strong>コマンドとオプションの並びが一字一句同じか</strong></td></tr>
+					<tr><td class="nowrap"><code>join</code></td><td>1 行目の形。参加者の一覧は増減するので数は見ない</td></tr>
+					<tr><td class="nowrap">相互に読めるか</td><td>C# 版で <code>say</code> したものを node 版の <code>recent</code> で読む</td></tr>
+					<tr><td class="nowrap">廃止したオプション</td><td>両方が<strong>同じ文で、終了コード 2 で</strong>止まるか</td></tr>
+					<tr><td class="nowrap">接続先なし</td><td>両方が終了コード 2 で止まるか</td></tr>
+					<tr><td class="nowrap">定義の出どころ</td><td>書き出した JSON と <code>options.mjs</code> が一致するか</td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout">
+					<p><strong>1 度だけ食い違いが出て、テストが見つけた。</strong>説明を始める列が node 版 40・C# 版 37 でずれていた。中身は同じだが表示が違う。<strong>見つけたい類の食い違いである。</strong></p>
+				</div>
+
+				<h3>実測</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">観点</th><th class="nowrap">node 版</th><th class="nowrap">C# 版</th><th>差</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">起動（<code>--help</code> 5 回平均）</td>
+						<td class="nowrap num">56 ms</td><td class="nowrap num">47 ms</td>
+						<td><strong>9 ms。ほとんど変わらない</strong></td>
+					</tr>
+					<tr>
+						<td class="nowrap">書き方</td>
+						<td class="nowrap"><code>node …/chat.mjs wait -c &lt;id&gt; -p 8787</code></td>
+						<td class="nowrap"><code>aichat wait -c &lt;id&gt; -p 8787</code></td>
+						<td><strong>パスを書かなくて済む</strong></td>
+					</tr>
+					<tr>
+						<td class="nowrap">Node への依存</td>
+						<td class="nowrap">要る</td><td class="nowrap">要らない</td>
+						<td>ただしサーバーは Node で動くので、同じ PC では意味が薄い</td>
+					</tr>
+					<tr>
+						<td class="nowrap">大きさ</td>
+						<td class="nowrap">—</td><td class="nowrap num">42 KB</td>
+						<td>SDK も実行環境も要らない（<code>csc</code> は Windows 同梱）</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-tip">
+					<p><strong>速さは狙いにならなかった。</strong>9 ms の差では、書き換える理由にならない。<strong>残る利点は「パスを書かせない」ことだけ</strong>である。</p>
+					<p>それでも価値はある。<strong>パスの区切りで 2 回落ちた</strong>のは、コマンドラインが長いことが原因だった。<code>aichat</code> と打てるなら、その手の事故は起きない。</p>
+				</div>
+
+				<h3>決めたこと</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">項目</th><th>中身</th></tr>
+				</thead>
+				<tbody>
+					<tr><td class="nowrap">どこまで作るか</td><td><strong>全コマンド。</strong>「一部だけ」だとどちらを使うか毎回考えることになる</td></tr>
+					<tr><td class="nowrap">食い違いの防ぎ方</td><td><code>options.mjs</code> を唯一の出どころにし、JSON を埋め込む</td></tr>
+					<tr><td class="nowrap">ビルド</td><td><code>csc</code> 単ファイル。<strong>SDK が要らない</strong></td></tr>
+					<tr><td class="nowrap">名前と置き場</td><td><code>aichat.exe</code> を root に置く。<strong>Git 管理外</strong>（作り直せる）</td></tr>
+					<tr><td class="nowrap">既定値</td><td><strong>接続先と ID は持たない。</strong>node 版と同じ。黙って本番に書く事故を防ぐ</td></tr>
+					<tr><td class="nowrap">ソースの置き場</td><td><code>src/cli-cs/</code>。他プロジェクトが使うものなので納品側</td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> どこまで作るかを決める → <strong>全コマンド</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> 食い違いをどう防ぐかを決める → <strong>JSON を埋め込み、テストで比べる</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> 実装する（7 ファイル）</li>
+					<li class="done"><span class="badge b-done">☑</span> ビルドを用意する（<code>build-aichat.cmd</code>）</li>
+					<li class="done"><span class="badge b-done">☑</span> テストを書く（9 件。<code>aichat.exe</code> が無ければスキップ）</li>
+					<li class="done"><span class="badge b-done">☑</span> 起動の速さを実測する → <strong>9 ms 差。狙いにならない</strong></li>
+					<li><span class="badge b-todo">未</span> <strong>PATH に追加して起動方法を変える</strong>（利用者の判断）</li>
+					<li><span class="badge b-todo">未</span> USAGE に書き、周知する</li>
 				</ul>
 			</div>
 		</details>
