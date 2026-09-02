@@ -1,7 +1,8 @@
 import { basename, join } from 'node:path';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, appendFileSync } from 'node:fs';
 
-import { ROOT, PORT, DEFAULT_ROOM, MAX_WAIT_SEC } from '../server/config.mjs';
+import { ROOT, PORT, DEFAULT_ROOM, MAX_WAIT_SEC, IS_TEST } from '../server/config.mjs';
+import { nowJst } from '../server/time.mjs';
 import {
 	WAIT_UNITS,
 	DEFAULT_WAIT_SEC,
@@ -344,6 +345,67 @@ async function cmdSay() {
 	console.log(`送信しました（${message.msg_seq}）`);
 }
 
+/*
+ * 待受けの記録を残す。
+ *
+ * 待受けは背面で走るため、外から止められると何も残らない。終了コードだけが
+ * 呼び出し側に届き、「いつまで生きていたか」が分からない。
+ *
+ * そこで 1 回の long-poll が返るたびに 1 行書く。最後の行の時刻が
+ * 「最後に生きていた時刻」になるので、止められた時刻が分かる。
+ *
+ * 置き場は logs/client/yyyymmdd-hhmmss-<名乗る ID>.log。起動ごとに 1 本。
+ * 名前の先頭を日時にすると、名前順がそのまま時系列順になる。
+ *
+ * 記録するのは wait だけにする。他のコマンドは短時間で終わり、出力は
+ * 呼び出し側が見ている。残す意味があるのは、誰も見ていない間に落ちるものだけ。
+ */
+
+/** この待受けの記録先。開くのは wait のときだけ */
+let waitLogPath = null;
+
+/** yyyymmdd-hhmmss。JST で組み立てる */
+function logStamp() {
+	const jst = new Date(Date.now() + 9 * 3600 * 1000);
+	const p = (n) => String(n).padStart(2, '0');
+	return (
+		`${jst.getUTCFullYear()}${p(jst.getUTCMonth() + 1)}${p(jst.getUTCDate())}` +
+		`-${p(jst.getUTCHours())}${p(jst.getUTCMinutes())}${p(jst.getUTCSeconds())}`
+	);
+}
+
+/**
+ * 記録を始める。書けなければ黙って諦める（待受けは続ける）。
+ *
+ * テストのときは書かない。単体テストが cmdWait を呼ぶため、置き場に
+ * test- で始まる記録が溜まる。実際に 7 本溜まった。
+ * 置き場が本番かどうかで判断する（AICHAT_DATA を差し替えていればテスト）。
+ */
+function openWaitLog() {
+	if (IS_TEST) return;
+	try {
+		const dir = join(ROOT, 'logs', 'client');
+		mkdirSync(dir, { recursive: true });
+		waitLogPath = join(dir, `${logStamp()}-${CONNECTOR_ID}.log`);
+	} catch {
+		waitLogPath = null;
+	}
+}
+
+/**
+ * 1 行書く。書式はサーバーのログに揃える（日時 + レベル + 本文）。
+ *
+ * 失敗しても黙って捨てる。記録のために待受けを止めるのは本末転倒である。
+ */
+function writeWaitLog(level, body) {
+	if (!waitLogPath) return;
+	try {
+		appendFileSync(waitLogPath, `${nowJst()} ${level.padEnd(5)} ${body}\n`, 'utf8');
+	} catch {
+		/* 書けなくても続ける */
+	}
+}
+
 async function cmdWait() {
 	const { sec: limitSec, fromDefault } = resolveWaitSec();
 	const unlimited = limitSec === 0;
@@ -366,6 +428,9 @@ async function cmdWait() {
 	// 出すのは開始と終了の 2 行だけ。8 時間を 240 秒ごとに知らせると 120 行になる
 	console.log(`待受け開始（最大 ${label}、ルーム ${ROOM}、${CONNECTOR_ID}）`);
 
+	openWaitLog();
+	writeWaitLog('INFO', `待受け開始（最大 ${label}、ルーム ${ROOM}、${CONNECTOR_ID}、pid ${process.pid}）`);
+
 	let waited = 0;
 	let last = null;
 	while (unlimited || waited < limitSec) {
@@ -381,14 +446,25 @@ async function cmdWait() {
 		);
 		waited += wait;
 
+		/*
+		 * 1 回返るたびに書く。最後の行の時刻が「最後に生きていた時刻」になる。
+		 * 外から止められると終わりの行は書けないため、これが手がかりになる。
+		 */
+		writeWaitLog(
+			'INFO',
+			`待機中（経過 ${waited} 秒 / 上限 ${unlimited ? '無し' : limitSec + ' 秒'}、新着 ${last.messages.length} 件、現在位置 ${last.msg_seq}）`
+		);
+
 		if (last.messages.length > 0) {
 			console.log(`新着 ${last.messages.length} 件:`);
 			printMessages(last.messages);
+			writeWaitLog('INFO', `新着 ${last.messages.length} 件を受け取って終わります`);
 			return;
 		}
 	}
 
 	console.log(`新着なし（${label}待機、現在位置 ${last.msg_seq}）`);
+	writeWaitLog('INFO', `新着なし。上限まで待ち切って終わります（${label}）`);
 }
 
 async function cmdRecent() {

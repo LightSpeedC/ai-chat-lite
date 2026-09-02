@@ -242,9 +242,17 @@ describe('メンテナンスの通し', () => {
 			// メンテナンス中に待受けを張る。ここでは繋がらず、粘りに入る
 			let outText = '';
 			let errText = '';
-			const waiter = spawn(process.execPath, [
-				CLIENT, 'wait', '--port', String(p), '--access-token', tok, '--connector-id', 'test-connector1', '--wait-sec', '45',
-			]);
+			/*
+			 * 置き場を渡す。渡さないと本番の置き場を見ていることになり、
+			 * CLI が logs/client/ に記録を残してしまう（実際に残った）。
+			 */
+			const waiter = spawn(
+				process.execPath,
+				[
+					CLIENT, 'wait', '--port', String(p), '--access-token', tok, '--connector-id', 'test-connector1', '--wait-sec', '45',
+				],
+				{ env: { ...process.env, AICHAT_DATA: data } }
+			);
 			waiter.stdout.setEncoding('utf8');
 			waiter.stderr.setEncoding('utf8');
 			waiter.stdout.on('data', (c) => { outText += c; });
