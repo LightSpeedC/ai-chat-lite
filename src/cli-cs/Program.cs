@@ -3,8 +3,8 @@
  *
  * node 版（src/client/chat.mjs）と同じことができる。どちらを使ってもよい。
  *
- *   node 版  node N:/2026/ai-chat-lite/src/client/chat.mjs wait -c <id> -p 8787
- *   C# 版    aichat wait -c <id> -p 8787
+ *   node 版  node N:/2026/ai-chat-lite/src/client/chat.mjs wait :<id>: -p 8787
+ *   C# 版    aichat wait :<id>: -p 8787
  *
  * Node を要らなくするために作った。パスを書かせずに済むこと、起動が速いことも
  * 狙いである。DB は触らず、すべて HTTP 越しに行うのは node 版と同じ。
@@ -33,6 +33,15 @@ namespace AiChat
 		private static readonly HashSet<string> ReadOnly = new HashSet<string>
 		{
 			"recent", "who", "dump", "archives",
+		};
+
+		/// <summary>
+		/// サーバーに繋がないコマンド。手元のプロセスだけを見る。
+		/// 接続先（--port / --url）を要求しない。
+		/// </summary>
+		private static readonly HashSet<string> LocalOnly = new HashSet<string>
+		{
+			"waiters",
 		};
 
 		/// <summary>
@@ -88,14 +97,25 @@ namespace AiChat
 			}
 
 			baseUrl = args.ResolveBase();
-			connectorId = args.Option("connector-id");
 			room = args.Option("room", Definition.DefaultRoom);
 			accessToken = args.Option("access-token", "");
 
-			// 読むだけのコマンド以外は、名乗る ID が要る
-			if (!ReadOnly.Contains(command)) RequireConnectorId();
+			/*
+			 * 名乗る ID はコマンドの直後の位置引数。読むだけのコマンドは取らない。
+			 * どちらかを Args に教えてから、本文などを数え始める。
+			 */
+			bool takesId = !ReadOnly.Contains(command);
+			args.TakesConnectorId(takesId);
+			if (takesId) RequireConnectorId();
 
-			client = new Client(RequireBase(), accessToken, Definition.RetryFor(command), WaitLog.Write);
+			/*
+			 * サーバーに繋がないコマンドでは、接続先を要求しない。
+			 * waiters は手元のプロセスだけを見るので、--port も --url も要らない。
+			 */
+			if (!LocalOnly.Contains(command))
+			{
+				client = new Client(RequireBase(), accessToken, Definition.RetryFor(command), WaitLog.Write);
+			}
 
 			switch (command)
 			{
@@ -104,6 +124,7 @@ namespace AiChat
 				case "say": return CmdSay();
 				case "recent": return CmdRecent();
 				case "who": return CmdWho();
+				case "waiters": return CmdWaiters();
 				case "dump": return CmdDump();
 				case "leave": return CmdLeave();
 				case "archive": return CmdArchive();
@@ -123,15 +144,22 @@ namespace AiChat
 		{
 			if (!string.IsNullOrEmpty(connectorId)) return connectorId;
 
-			Console.Error.WriteLine("名乗る ID が指定されていません。");
-			Console.Error.WriteLine("");
-			Console.Error.WriteLine("  --connector-id で指定してください:");
-			Console.Error.WriteLine("    --connector-id " + new DirectoryInfo(Directory.GetCurrentDirectory()).Name);
-			Console.Error.WriteLine("");
-			Console.Error.WriteLine("  自分の project フォルダ名にしておくと、誰の発言か分かりやすくなります。");
-			Console.Error.WriteLine("  短い形は -c です。");
-			Environment.Exit(1);
-			return null;
+			string raw = args.RawConnectorId();
+			if (raw == null)
+			{
+				string w = Definition.IdWrap;
+				Console.Error.WriteLine("名乗る ID が指定されていません。");
+				Console.Error.WriteLine("");
+				Console.Error.WriteLine("  " + args.Command + " の直後に、コロンで囲んで置いてください:");
+				Console.Error.WriteLine("    " + args.Command + " " + w +
+					new DirectoryInfo(Directory.GetCurrentDirectory()).Name + w);
+				Console.Error.WriteLine("");
+				Console.Error.WriteLine("  自分の project フォルダ名にしておくと、誰の発言か分かりやすくなります。");
+				Environment.Exit(1);
+			}
+
+			connectorId = Args.UnwrapId(raw, args.Command + " の直後");
+			return connectorId;
 		}
 
 		private static string RequireBase()
@@ -156,7 +184,9 @@ namespace AiChat
 			Console.WriteLine("ai-chat-lite クライアント（C# 版）");
 			Console.WriteLine("");
 			Console.WriteLine("  接続先: " + (baseUrl ?? "(未指定)  ← --port " + Definition.DefaultPort + " か --url <URL> を渡してください"));
-			Console.WriteLine("  名乗る ID: " + (string.IsNullOrEmpty(connectorId) ? "(未指定)  ← --connector-id <id> を渡してください" : connectorId));
+			Console.WriteLine("  名乗る ID: " + (string.IsNullOrEmpty(connectorId)
+				? "(未指定)  ← コマンドの直後に " + Definition.IdWrap + "<自分のID>" + Definition.IdWrap + " を置いてください"
+				: connectorId));
 			Console.WriteLine("  ルーム: " + (room ?? Definition.DefaultRoom) + "         （--room で変更できる）");
 			Console.WriteLine("");
 

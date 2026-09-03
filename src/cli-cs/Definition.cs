@@ -42,14 +42,31 @@ namespace AiChat
 	internal class RemovedDef
 	{
 		public string Name;
+		public string Short;   // 無ければ null
 		public string Hint;
+
+		/// <summary>--name と -x の両方を返す。短い形で叩かれた分も捕まえる</summary>
+		public IEnumerable<string> Flags()
+		{
+			yield return "--" + Name;
+			if (!string.IsNullOrEmpty(Short)) yield return "-" + Short;
+		}
 	}
 
 	/// <summary>埋め込んだ JSON から読んだ定義</summary>
 	internal static class Definition
 	{
 		/// <summary>この版が読める JSON の形。上がったら合わせる</summary>
-		public const int ExpectedSchema = 1;
+		public const int ExpectedSchema = 3;
+
+		/// <summary>名乗る ID を囲む記号。options.mjs の ID_WRAP から来る</summary>
+		public static string IdWrap { get; private set; }
+
+		/// <summary>ID に使える文字の規則。options.mjs の ID_PATTERN から来る</summary>
+		public static string IdPattern { get; private set; }
+
+		/// <summary>コマンドラインから待受けを見つける式。options.mjs の WAITER_PATTERN から来る</summary>
+		public static string WaiterPattern { get; private set; }
 
 		public static string DefaultRoom { get; private set; }
 		public static int DefaultPort { get; private set; }
@@ -80,6 +97,11 @@ namespace AiChat
 					"埋め込んだ定義の形が違います（schema " + schema + " / 期待 " + ExpectedSchema + "）。" +
 					"tools/20_build/build-aichat.cmd で作り直してください。");
 			}
+
+			IdWrap = Json.Str(root, "id_wrap", ":");
+			IdPattern = Json.Str(root, "id_pattern", "^[A-Za-z0-9_-]+$");
+			WaiterPattern = Json.Str(root, "waiter_pattern",
+				"(?:^|\\s)wait\\s+(?::([A-Za-z0-9_-]+):|(?:-c|--connector-id)\\s+([^\\s\"]+))");
 
 			DefaultRoom = Json.Str(root, "default_room", "public");
 			DefaultPort = Json.Int(root, "default_port", 8787);
@@ -129,7 +151,12 @@ namespace AiChat
 			{
 				var r = item as Dictionary<string, object>;
 				if (r == null) continue;
-				Removed.Add(new RemovedDef { Name = Json.Str(r, "name"), Hint = Json.Str(r, "hint", "") });
+				Removed.Add(new RemovedDef
+				{
+					Name = Json.Str(r, "name"),
+					Short = Json.Str(r, "short"),
+					Hint = Json.Str(r, "hint", ""),
+				});
 			}
 		}
 

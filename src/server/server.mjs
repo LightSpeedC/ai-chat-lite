@@ -15,6 +15,7 @@ import {
 	previewArchive, archive, restore, listArchives, getAllMessages,
 } from './store.mjs';
 import { listPresence, getPresence, STATUS } from './presence.mjs';
+import { ID_PATTERN } from '../client/options.mjs';
 import {
 	waitForMessages, publish, publishPresence,
 	addSseClient, removeSseClient, releaseAll,
@@ -34,10 +35,28 @@ const SERVER_ID = 'ai-chat-lite';
 
 // --- 入力の検証 ---
 
+/**
+ * ID として受け取れる文字。参加者の ID とルーム ID の両方に効かせる。
+ *
+ * CLI 側でも同じ検査をしているが、ここにも置く。CLI だけだと web UI や
+ * curl から直に叩いた分が抜ける。逆にサーバーだけだと、往復してからでないと
+ * 誤りが分からない。両方に置いて、早く弾きつつ漏らさない形にする。
+ *
+ * DB の CHECK 制約にはしない。いまの CHECK は長さだけで、文字種を足すと
+ * CHECK の変更＝テーブルの作り直しになる。得るものに対して重すぎる。
+ *
+ * 規則は src/client/options.mjs の ID_PATTERN を見る。CLI と食い違わないよう、
+ * 出どころを 1 か所にする。
+ */
+const ID_RE = new RegExp(ID_PATTERN);
+
 function requireId(value, name) {
 	const id = String(value ?? '').trim();
 	if (!id) throw new BadRequest(`${name} は必須です`);
 	if (id.length > MAX_ID_LENGTH) throw new BadRequest(`${name} は ${MAX_ID_LENGTH} 文字までです`);
+	if (!ID_RE.test(id)) {
+		throw new BadRequest(`${name} に使えるのは英数字・ハイフン・下線だけです: ${id}`);
+	}
 	return id;
 }
 

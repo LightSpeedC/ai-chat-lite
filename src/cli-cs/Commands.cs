@@ -50,11 +50,13 @@ namespace AiChat
 			string text = args.Positional();
 			if (string.IsNullOrEmpty(text))
 			{
-				Console.Error.WriteLine("本文を指定してください: say \"本文\"");
+				string w = Definition.IdWrap;
+				Console.Error.WriteLine("本文を指定してください: say " + w + "<自分のID>" + w +
+					" \"本文\" [--to " + w + "<相手>" + w + "]");
 				return 2;
 			}
 
-			string to = args.Option("to");
+			string to = args.OptionalWrappedId("to");
 			string body = "{" +
 				"\"from_connector_id\":" + Json.Quote(connectorId) + "," +
 				"\"room_id\":" + Json.Quote(room) + "," +
@@ -236,21 +238,29 @@ namespace AiChat
 
 		private static int CmdArchive()
 		{
-			List<string> found = args.Positionals();
+			List<string> found = args.Tail();
 			if (found.Count < 2)
 			{
-				Console.Error.WriteLine("対象を指定してください: archive message|connector|room <対象>");
+				string w = Definition.IdWrap;
+				Console.Error.WriteLine("対象を指定してください: archive " + w + "<自分のID>" + w +
+					" message|connector|room <対象>");
 				return 2;
 			}
 
 			string kind = found[0];
-			string id = found[1];
+			string rawId = found[1];
 
 			if (kind != "message" && kind != "connector" && kind != "room")
 			{
 				Console.Error.WriteLine("kind は message / connector / room です: " + kind);
 				return 2;
 			}
+
+			/*
+			 * 参加者を片付けるときだけ、対象も参加者の ID なのでコロンで囲む。
+			 * 発言は番号、ルームはルーム ID なので囲まない。囲みの対象は参加者の ID だけ。
+			 */
+			string id = kind == "connector" ? Args.UnwrapId(rawId, "archive connector の対象") : rawId;
 
 			/*
 			 * 既定のルームはサーバー側でも弾くが、ここでも先に弾く。
@@ -297,7 +307,8 @@ namespace AiChat
 
 			Console.WriteLine("片付けました（archived_seq " + Json.Int(result, "archived_seq") + "）");
 			Console.WriteLine("  " + Json.Str(result, "description", ""));
-			Console.WriteLine("戻すには: restore " + Json.Int(result, "archived_seq"));
+			Console.WriteLine("戻すには: restore " + Definition.IdWrap + connectorId + Definition.IdWrap +
+				" " + Json.Int(result, "archived_seq"));
 			return 0;
 		}
 
@@ -380,7 +391,8 @@ namespace AiChat
 			int parsed;
 			if (seq == null || !int.TryParse(seq, out parsed) || parsed < 1)
 			{
-				Console.Error.WriteLine("戻す番号を指定してください: restore <archived_seq>");
+				string w = Definition.IdWrap;
+				Console.Error.WriteLine("戻す番号を指定してください: restore " + w + "<自分のID>" + w + " <archived_seq>");
 				return 2;
 			}
 

@@ -1,11 +1,15 @@
 import { basename, join } from 'node:path';
 import { writeFileSync, mkdirSync, appendFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 
 import { ROOT, PORT, DEFAULT_ROOM, MAX_WAIT_SEC, IS_TEST } from '../server/config.mjs';
 import { nowJst } from '../server/time.mjs';
 import {
 	WAIT_UNITS,
 	DEFAULT_WAIT_SEC,
+	ID_WRAP,
+	ID_PATTERN,
+	WAITER_PATTERN,
 	OPTIONS,
 	COMMANDS,
 	ADMIN_COMMANDS,
@@ -52,9 +56,10 @@ const WORDS = process.argv.slice(2);
 /** 長い名前から短い名前を引く。定義に無い名前を渡したら気づけるよう、引く側で例外にする */
 const SHORT_OF = new Map(OPTIONS.map((o) => [o.long, o.short]));
 
-for (const [name, hint] of REMOVED) {
-	if (WORDS.includes(`--${name}`)) {
-		console.error(`--${name} は廃止されました。`);
+for (const [name, { short, hint }] of REMOVED) {
+	const given = WORDS.includes(`--${name}`) ? `--${name}` : short && WORDS.includes(`-${short}`) ? `-${short}` : null;
+	if (given) {
+		console.error(`${given} は廃止されました。`);
 		console.error(`  ${hint}`);
 		process.exit(2);
 	}
@@ -121,30 +126,73 @@ function resolveBase() {
 const BASE = resolveBase();
 
 /**
- * 名乗る ID。
+ * 名乗る ID を渡す場所。コマンドの直後の位置引数に固定する。
  *
- * --connector-id での明示を必須にしている。カレントのフォルダ名を自動で使うと、
- * 想定と違う場所から実行したときに意図しない ID で参加してしまい、
- * その名前が connectors とログに残る。取り違えは後から消せないため、
- * 手軽さより確実さを採る。
+ * オプション（--connector-id / -c）は廃止した。オプションはコマンドの前にも
+ * 後ろにも書けるため、プロセス一覧から待受けを探すときに並びが定まらない。
+ * コマンドの次の語に固定すれば、探す側が場所を決め打ちできる。
  *
- * 環境変数ではなく引数で受ける。環境変数はプロセス一覧に出ないため、
- * 動いている待受けがどのプロジェクトのものか分からない。引数なら
- * コマンドラインに出るし、シェルごとの書き方の違いもなくなる。
+ * 自動で決めない。既定値も持たず、カレントのフォルダ名からも採らない。
+ * 取り違えた名前で名乗ると connectors とログに残り、後から消せない。
+ * 実際に ID は project フォルダ名と一致しないものが使われている（agent-rules、
+ * human）。一致を前提にした実装は取り違える。
+ *
+ * 環境変数でも受けない。環境変数はプロセス一覧に出ないため、動いている
+ * 待受けがどのプロジェクトのものか分からなくなる。
  */
-const CONNECTOR_ID = option('connector-id');
+const READ_ONLY_COMMAND = READ_ONLY.has(command);
+
+/** 位置引数の全体。名乗る ID もここに入る */
+const ARGS = positionals();
+
+/**
+ * 名乗る ID を除いた位置引数。本文・対象・番号はここから取る。
+ *
+ * 読むだけのコマンドは ID を取らないので、そのまま全部が中身になる。
+ */
+const TAIL = READ_ONLY_COMMAND ? ARGS : ARGS.slice(1);
+
+let CONNECTOR_ID = null;
+
+/**
+ * :id: の囲みを剥がして中身を返す。形が違えば止める。
+ *
+ * 囲みが無いものを黙って受けると、新しい形と古い形が混ざる。混ざると
+ * 「コマンドの次の語が ID」という前提が崩れ、探す側が場所を決め打ちできない。
+ * それが廃止の目的そのものなので、ここは緩めない。
+ */
+function unwrapId(raw, where) {
+	const w = ID_WRAP;
+	if (raw.length > w.length * 2 && raw.startsWith(w) && raw.endsWith(w)) {
+		const id = raw.slice(w.length, -w.length);
+		if (new RegExp(ID_PATTERN).test(id)) return id;
+
+		console.error(`ID に使えない文字が入っています（${where}）: ${raw}`);
+		console.error('  使えるのは英数字・ハイフン・下線だけです。');
+		process.exit(2);
+	}
+
+	console.error(`ID は ${w} で囲んでください（${where}）: ${raw}`);
+	console.error(`  例: ${w}${raw.replaceAll(w, '')}${w}`);
+	process.exit(2);
+}
 
 function requireConnectorId() {
 	if (CONNECTOR_ID) return CONNECTOR_ID;
 
-	console.error('名乗る ID が指定されていません。');
-	console.error('');
-	console.error('  --connector-id で指定してください:');
-	console.error(`    --connector-id ${basename(process.cwd())}`);
-	console.error('');
-	console.error('  自分の project フォルダ名にしておくと、誰の発言か分かりやすくなります。');
-	console.error('  短い形は -c です。');
-	process.exit(1);
+	const raw = ARGS[0] ?? null;
+	if (raw === null) {
+		console.error('名乗る ID が指定されていません。');
+		console.error('');
+		console.error(`  ${command} の直後に、コロンで囲んで置いてください:`);
+		console.error(`    ${command} ${ID_WRAP}${basename(process.cwd())}${ID_WRAP}`);
+		console.error('');
+		console.error('  自分の project フォルダ名にしておくと、誰の発言か分かりやすくなります。');
+		process.exit(1);
+	}
+
+	CONNECTOR_ID = unwrapId(raw, `${command} の直後`);
+	return CONNECTOR_ID;
 }
 
 /** 繋ぐ前に接続先を確かめる。既定値を持たないので、指定が無ければここで止まる */
@@ -205,9 +253,15 @@ function positionals() {
 	return args;
 }
 
-/** オプションでない最初の引数（本文など） */
+/** 名乗る ID を除いた最初の位置引数（本文・戻す番号など） */
 function positional() {
-	return positionals()[0] ?? null;
+	return TAIL[0] ?? null;
+}
+
+/** --to のように、値が ID のオプションを読む。囲みを剥がして返す */
+function optionalWrappedId(name) {
+	const raw = option(name);
+	return raw === null ? null : unwrapId(raw, `--${name}`);
 }
 
 const ROOM = option('room', DEFAULT_ROOM);
@@ -333,13 +387,14 @@ async function cmdJoin() {
 async function cmdSay() {
 	const body = positional();
 	if (!body) {
-		console.error('本文を指定してください: say "本文" [--to <id>]');
-		process.exit(1);
+		console.error(`本文を指定してください: say ${ID_WRAP}<自分のID>${ID_WRAP} "本文" [--to ${ID_WRAP}<相手>${ID_WRAP}]`);
+		// 書き忘れは使い方の誤りなので 2。ここだけ 1 を返していて C# 版と食い違っていた
+		process.exit(2);
 	}
 	const message = await postJson('/api/say', {
 		from_connector_id: CONNECTOR_ID,
 		room_id: ROOM,
-		to_connector_id: option('to'),
+		to_connector_id: optionalWrappedId('to'),
 		msg_body: body,
 	});
 	console.log(`送信しました（${message.msg_seq}）`);
@@ -495,6 +550,290 @@ async function cmdWho() {
 	}
 }
 
+/*
+ * 走っている待受けを数える。
+ *
+ * サーバーには繋がない。手元のプロセスだけを見る。who は「サーバーが知って
+ * いる在席」を返すが、本数は分からない（1 本でも 2 本でも「接続中」になる）。
+ *
+ * 【なぜコマンドにしたのか】
+ * これまでは各プロジェクトに検索式を書かせていた。書き方を 1 つ守れなかった
+ * だけで結果が反転し、そのたびに事故になった。
+ *
+ *   -c で絞らない        他プロジェクトの待受けまで数え、止めてしまう（i260901-07）
+ *   プロセス名で絞る      張り方によって aichat.exe / cmd.exe / node.exe に変わる
+ *   ID を直に書く        確認コマンド自身に一致し、0 本が 1 本に見える
+ *   前方一致             project-a を探すと project-aa にも当たる
+ *
+ * 4 つとも原因は同じで、「式を人に書かせている」ことである。ここで数えれば
+ * 誰も式を書かない。
+ *
+ * 【自分自身を数えない】
+ * 自分の pid を除く。加えて、待受けに当たったプロセスの親も除く。
+ * サブエージェントは pwsh 越しに呼ぶので、pwsh のコマンドラインにも
+ * 「aichat wait :id:」がそのまま入っており、放っておくと 1 本が 2 本になる。
+ * aichat-node なら cmd.exe → node.exe と 2 段になる。親をたどって落とす。
+ */
+async function cmdWaiters() {
+	const all = listWaiters();
+	const basis = basisOf();
+
+	if (all.length === 0) {
+		console.log('待受けは走っていません。');
+		console.log(`  ${basis.label} の待受けがありません。張ってください。`);
+		return;
+	}
+
+	printWaiters(all, basis, CONNECTOR_ID);
+}
+
+/**
+ * どこを見ている待受けを数えるか。
+ *
+ * --port / --url / --room で変えられる。渡さなければ本番の既定ルームになる。
+ * テスト用サーバーを相手にしているときも、同じコマンドで数えられるようにする。
+ *
+ * ここを固定にしてしまうと、テスト環境では「全部が本番以外」に見えて
+ * 使えなくなる。基準は呼ぶ側が決める。
+ */
+function basisOf() {
+	const port = option('port');
+	const url = option('url');
+
+	/*
+	 * 接続先を省略できない。既定値を持たない。
+	 *
+	 * 他のコマンドと同じ扱いにする。既定を本番にすると、テストのつもりで
+	 * 数えたものが本番の本数として返る。「張っているから張らない」と判断して
+	 * 本番の待受けが 1 本も無いまま止まる。書き込まないだけで、事故の形は同じ。
+	 */
+	if (port === null && url === null) {
+		console.error('どこを見ている待受けを数えるかが指定されていません。');
+		console.error('');
+		console.error(`  本番: waiters ${ID_WRAP}<自分のID>${ID_WRAP} -p ${PORT} -r ${DEFAULT_ROOM}`);
+		console.error('');
+		console.error('  既定値は持ちません。テストのつもりで数えた本数を本番の本数と読み違えるのを防ぐためです。');
+		process.exit(2);
+	}
+
+	let num = 0;
+	if (port !== null) {
+		num = Number(port);
+	} else {
+		const m = /:(\d+)/.exec(url);
+		num = m ? Number(m[1]) : 0;
+	}
+
+	return { port: num, room: ROOM, label: `:${num} / ${ROOM}` };
+}
+
+/**
+ * 待受けのプロセスを拾う。
+ *
+ * PowerShell に一覧を出させて JSON で受ける。Node には WMI を直に引く仕組みが
+ * 無く、wmic は非推奨で将来消えるため、これが残る道になる。
+ *
+ * 絞り込みは JavaScript 側で行う。PowerShell に渡す式に ID を入れないので、
+ * 子プロセス自身が数に混ざらない。
+ */
+function listWaiters() {
+	const script =
+		'Get-CimInstance Win32_Process | ' +
+		"Where-Object { $_.CommandLine -and $_.CommandLine -like '*wait*' } | " +
+		'ForEach-Object { [pscustomobject]@{ pid = $_.ProcessId; ppid = $_.ParentProcessId; name = $_.Name; ' +
+		"cmd = $_.CommandLine; at = $_.CreationDate.ToString('yyyy-MM-dd HH:mm:ss') } } | " +
+		'ConvertTo-Json -Compress -Depth 3';
+
+	const run = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], {
+		encoding: 'utf8',
+		maxBuffer: 32 * 1024 * 1024,
+	});
+
+	if (run.status !== 0) {
+		console.error('プロセスの一覧を取れませんでした。');
+		console.error(`  ${(run.stderr ?? '').trim() || 'powershell.exe が動きませんでした'}`);
+		process.exit(1);
+	}
+
+	const text = (run.stdout ?? '').trim();
+	if (!text) return [];
+
+	// 1 件のときオブジェクト、複数のとき配列で返る
+	const parsed = JSON.parse(text);
+	const rows = Array.isArray(parsed) ? parsed : [parsed];
+
+	return pickWaiters(rows, [process.pid, run.pid]);
+}
+
+/**
+ * 一覧から待受けだけを選ぶ。
+ *
+ * 引数で渡した pid（自分と、一覧を取るために起こした子）は最初に外す。
+ * テストから直に呼べるよう、プロセスを触る部分と分けてある。
+ */
+function pickWaiters(rows, excludePids) {
+	const skip = new Set(excludePids);
+	const re = new RegExp(WAITER_PATTERN);
+
+	const hits = [];
+	for (const r of rows) {
+		if (skip.has(r.pid)) continue;
+		const m = re.exec(r.cmd ?? '');
+		if (!m) continue;
+		hits.push({
+			pid: r.pid,
+			ppid: r.ppid,
+			name: r.name,
+			at: r.at,
+			id: m[1] ?? m[2],
+			...targetOf(r.cmd ?? ''),
+		});
+	}
+
+	/*
+	 * 親を落とす。pwsh → aichat.exe や pwsh → cmd.exe → node.exe と連なるとき、
+	 * 途中の段はすべて同じコマンドラインを抱えているため全部が当たってしまう。
+	 * 「当たったものの直親」を落とすと、連鎖でも末端 1 つだけが残る。
+	 */
+	const parents = new Set(hits.map((h) => h.ppid));
+	const leaves = hits.filter((h) => !parents.has(h.pid));
+
+	// 親の名前から張り方を決める。cmd.exe 越しの node は aichat-node である
+	const nameOf = new Map(hits.map((h) => [h.pid, h.name]));
+	for (const h of leaves) h.via = viaOf(h.name, nameOf.get(h.ppid));
+
+	return leaves.sort((a, b) => (a.at === b.at ? a.pid - b.pid : a.at < b.at ? -1 : 1));
+}
+
+/** コマンドラインから「--name 値」を読む。短い形も同じ値として受ける */
+function readArg(cmd, long, short) {
+	const m = new RegExp(`(?:^|\\s)(?:--${long}|-${short})\\s+([^\\s"]+)`).exec(cmd);
+	return m ? m[1] : null;
+}
+
+/**
+ * その待受けが「どこを待っているか」を読む。
+ *
+ * 【なぜ要るのか】
+ * 本数だけ数えても、待っている場所が違えば意味がない。とくにルームは
+ * 間違えても静かに動く。繋がっているので who は「接続中」と出し、waiters も
+ * 1 本と数えるが、public の発言は 1 つも届かない。どこも異常に見えない。
+ *
+ * ポートは間違えれば繋がらないか別のサーバーに繋がるので、まだ気づける。
+ * ルームはそれが無い。だから両方を出す。
+ *
+ * 値はすべて引数で渡す決まりなので、コマンドラインを読めば分かる。
+ * 環境変数で渡せるようにしていないのは、まさにこのためである。
+ */
+function targetOf(cmd) {
+	const port = readArg(cmd, 'port', 'p');
+	const url = readArg(cmd, 'url', 'u');
+	const room = readArg(cmd, 'room', 'r') ?? DEFAULT_ROOM;
+
+	let target = '(未指定)';
+	let portNum = 0;
+
+	if (port !== null) {
+		target = `:${port}`;
+		portNum = Number(port);
+	} else if (url !== null) {
+		// スキームは落として host:port だけ出す
+		target = url.replace(/^[a-z]+:\/\//i, '').replace(/\/+$/, '');
+		const m = /:(\d+)/.exec(target);
+		portNum = m ? Number(m[1]) : 0;
+	}
+
+	return { target, room, port: portNum };
+}
+
+/** 張り方の名前。出力に出るのは aichat / aichat-node / node の 3 つ */
+function viaOf(name, parentName) {
+	const lower = (name ?? '').toLowerCase();
+	if (lower === 'aichat.exe') return 'aichat';
+	if (lower === 'node.exe') return (parentName ?? '').toLowerCase() === 'cmd.exe' ? 'aichat-node' : 'node';
+	return lower.replace(/\.exe$/, '');
+}
+
+/** 経過を h:mm で返す。日をまたいでも時のまま増やす（2 日なら 48:00 になる） */
+function elapsedOf(at, now = new Date()) {
+	const started = new Date(at.replace(' ', 'T'));
+	const min = Math.max(0, Math.floor((now - started) / 60000));
+	return `${Math.floor(min / 60)}:${String(min % 60).padStart(2, '0')}`;
+}
+
+/*
+ * 一覧を出す。C# 版と 1 文字ずつ同じにする（テストで突き合わせている）。
+ *
+ * 幅は文字数ではなく表示幅で揃える。「張り方」は 3 文字だが 6 桁を占めるため、
+ * padEnd で数えると列がずれる。
+ */
+function printWaiters(all, basis, me) {
+	// 基準に合う分だけを並べる。合わない分は件数だけ添える
+	const here = all.filter((h) => h.port === basis.port && h.room === basis.room);
+	const elsewhere = all.filter((h) => !(h.port === basis.port && h.room === basis.room));
+
+	console.log(`  ${basis.label} を見ている待受け`);
+	console.log('');
+
+	if (here.length === 0) {
+		console.log('  ありません。');
+	} else {
+		const idWidth = Math.max(width('ID'), ...here.map((h) => width(h.id)));
+		const viaWidth = Math.max(width('張り方'), ...here.map((h) => width(h.via)));
+
+		console.log(
+			`  ${padEndW('ID', idWidth)}  ${padEndW('張り方', viaWidth)}  ${padEndW('いつから', 8)}  ` +
+				`${padStartW('経過', 5)}  ${padStartW('pid', 6)}`
+		);
+		for (const h of here) {
+			// 自分の分に印を付ける。止めてよいのはこれだけである
+			const mark = h.id === me ? '*' : ' ';
+			console.log(
+				`${mark} ${padEndW(h.id, idWidth)}  ${padEndW(h.via, viaWidth)}  ${h.at.slice(11)}  ` +
+					`${padStartW(elapsedOf(h.at), 5)}  ${padStartW(String(h.pid), 6)}`
+			);
+		}
+	}
+
+	const mine = here.filter((h) => h.id === me);
+
+	console.log('');
+	console.log(`  自分（${me}）: ${mine.length} 本 / この場所に ${here.length} 本`);
+
+	/*
+	 * 別の場所を見ている自分の分は、pid まで出す。
+	 *
+	 * ルームを間違えた待受けは静かに動く。繋がっているので who は「接続中」と
+	 * 出すが、この場所の発言は 1 つも届かない。件数だけでは止めようがないので
+	 * pid を添える。他プロジェクトの分は件数だけにする（止めてはいけないため）。
+	 */
+	const strayMine = elsewhere.filter((h) => h.id === me);
+	if (strayMine.length > 0) {
+		const shown = strayMine.map((h) => `pid ${h.pid}（${h.target} / ${h.room}）`).join('、');
+		console.log(`  自分の分が別の場所に ${strayMine.length} 本: ${shown}`);
+	}
+
+	const others = elsewhere.length - strayMine.length;
+	if (others > 0) console.log(`  他に ${others} 本（別の接続先やルーム）`);
+
+	/*
+	 * 次にやることを書く。事実だけ出すと、読み手が判断のためにルールを
+	 * 思い出すことになる。その場に要る 1 行をここに出す。
+	 *
+	 * ただし指示するのは自分の分についてだけにし、対象を名指しする。
+	 * 「1 本だけ残してください」のように読み手に選ばせると、他プロジェクトの
+	 * 待受けを止める事故が起きる（i260901-07）。
+	 */
+	if (mine.length === 0) {
+		console.log(`  ${basis.label} の待受けがありません。張ってください。`);
+	} else if (mine.length > 1) {
+		// 経過が長い方を残す。読み位置はサーバーが覚えているので取りこぼさない
+		const keep = mine[0];
+		const stop = mine.slice(1).map((h) => h.pid).join(', ');
+		console.log(`  二重に張っています。pid ${stop} を止めてください（pid ${keep.pid} を残す）。`);
+	}
+}
+
 async function cmdDump() {
 	const out = option('out', join(ROOT, 'tmp', 'messages.jsonl'));
 	/*
@@ -545,6 +884,16 @@ function width(s) {
 	return w;
 }
 
+/** 表示幅で右に詰める。全角を 2 桁として数える */
+function padEndW(text, w) {
+	return text + ' '.repeat(Math.max(0, w - width(text)));
+}
+
+/** 表示幅で左に詰める */
+function padStartW(text, w) {
+	return ' '.repeat(Math.max(0, w - width(text))) + text;
+}
+
 function helpLine(indent, left, desc) {
 	const head = ' '.repeat(indent) + left;
 	const pad = Math.max(1, HELP_COLUMN - width(head));
@@ -577,7 +926,7 @@ function usage() {
 	console.log(`ai-chat-lite クライアント
 
   接続先: ${BASE ?? `(未指定)  ← --port ${PORT} か --url <URL> を渡してください`}
-  名乗る ID: ${CONNECTOR_ID ?? '(未指定)  ← --connector-id <id> を渡してください'}
+  名乗る ID: ${CONNECTOR_ID ?? `(未指定)  ← コマンドの直後に ${ID_WRAP}<自分のID>${ID_WRAP} を置いてください`}
   ルーム: ${ROOM}         （--room で変更できる）
 
 コマンド:
@@ -631,15 +980,21 @@ function readLine(prompt) {
 }
 
 async function cmdArchive() {
-	const [kind, id] = positionals();
-	if (!kind || !id) {
-		console.error('対象を指定してください: archive message|connector|room <対象>');
+	const [kind, rawId] = TAIL;
+	if (!kind || !rawId) {
+		console.error(`対象を指定してください: archive ${ID_WRAP}<自分のID>${ID_WRAP} message|connector|room <対象>`);
 		process.exit(2);
 	}
 	if (!['message', 'connector', 'room'].includes(kind)) {
 		console.error(`kind は message / connector / room です: ${kind}`);
 		process.exit(2);
 	}
+
+	/*
+	 * 参加者を片付けるときだけ、対象も参加者の ID なのでコロンで囲む。
+	 * 発言は番号、ルームはルーム ID なので囲まない。囲みの対象は参加者の ID だけ。
+	 */
+	const id = kind === 'connector' ? unwrapId(rawId, 'archive connector の対象') : rawId;
 
 	/*
 	 * 既定のルームはサーバー側でも弾くが、ここでも先に弾く。
@@ -677,7 +1032,7 @@ async function cmdArchive() {
 
 	console.log(`片付けました（archived_seq ${result.archived_seq}）`);
 	console.log(`  ${result.description}`);
-	console.log(`戻すには: restore ${result.archived_seq}`);
+	console.log(`戻すには: restore ${ID_WRAP}${CONNECTOR_ID}${ID_WRAP} ${result.archived_seq}`);
 }
 
 async function cmdArchives() {
@@ -707,7 +1062,7 @@ async function cmdArchives() {
 async function cmdRestore() {
 	const seq = positional();
 	if (!seq || !/^\d+$/.test(seq)) {
-		console.error('戻す番号を指定してください: restore <archived_seq>');
+		console.error(`戻す番号を指定してください: restore ${ID_WRAP}<自分のID>${ID_WRAP} <archived_seq>`);
 		process.exit(2);
 	}
 
@@ -726,6 +1081,7 @@ const commands = {
 	say: cmdSay,
 	recent: cmdRecent,
 	who: cmdWho,
+	waiters: cmdWaiters,
 	dump: cmdDump,
 	leave: cmdLeave,
 	archive: cmdArchive,
@@ -750,6 +1106,6 @@ if (wantsHelp || !run) {
 }
 
 // 読むだけのコマンド以外は、名乗る ID が要る
-if (!READ_ONLY.has(command)) requireConnectorId();
+if (!READ_ONLY_COMMAND) requireConnectorId();
 
 await run();

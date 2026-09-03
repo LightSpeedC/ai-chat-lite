@@ -39,11 +39,62 @@ namespace AiChat
 		{
 			foreach (RemovedDef r in Definition.Removed)
 			{
-				if (!words.Contains("--" + r.Name)) continue;
-				Console.Error.WriteLine("--" + r.Name + " は廃止されました。");
-				Console.Error.WriteLine("  " + r.Hint);
+				foreach (string flag in r.Flags())
+				{
+					if (!words.Contains(flag)) continue;
+					Console.Error.WriteLine(flag + " は廃止されました。");
+					Console.Error.WriteLine("  " + r.Hint);
+					Environment.Exit(2);
+				}
+			}
+		}
+
+		/// <summary>
+		/// :id: の囲みを剥がして中身を返す。形が違えば止める。
+		///
+		/// 囲みが無いものを黙って受けると、新しい形と古い形が混ざる。混ざると
+		/// 「コマンドの次の語が ID」という前提が崩れ、探す側が場所を決め打ちできない。
+		/// それが廃止の目的そのものなので、ここは緩めない。
+		///
+		/// 正規表現は使わず 1 文字ずつ見る。埋め込んだ規則（英数字・ハイフン・下線）と
+		/// 同じ判定を、参照を増やさずに書けるため。
+		/// </summary>
+		public static string UnwrapId(string raw, string where)
+		{
+			string w = Definition.IdWrap;
+			if (raw.Length > w.Length * 2 && raw.StartsWith(w) && raw.EndsWith(w))
+			{
+				string id = raw.Substring(w.Length, raw.Length - w.Length * 2);
+				if (IsValidId(id)) return id;
+
+				Console.Error.WriteLine("ID に使えない文字が入っています（" + where + "）: " + raw);
+				Console.Error.WriteLine("  使えるのは英数字・ハイフン・下線だけです。");
 				Environment.Exit(2);
 			}
+
+			Console.Error.WriteLine("ID は " + w + " で囲んでください（" + where + "）: " + raw);
+			Console.Error.WriteLine("  例: " + w + raw.Replace(w, "") + w);
+			Environment.Exit(2);
+			return null;
+		}
+
+		private static bool IsValidId(string id)
+		{
+			if (id.Length == 0) return false;
+			foreach (char c in id)
+			{
+				bool ok = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+						  (c >= '0' && c <= '9') || c == '-' || c == '_';
+				if (!ok) return false;
+			}
+			return true;
+		}
+
+		/// <summary>--to のように、値が ID のオプションを読む。囲みを剥がして返す</summary>
+		public string OptionalWrappedId(string longName)
+		{
+			string raw = Option(longName);
+			return raw == null ? null : UnwrapId(raw, "--" + longName);
 		}
 
 		/// <summary>--name value の形で値を取る。短い形も同じ値として受ける</summary>
@@ -82,10 +133,40 @@ namespace AiChat
 			return found;
 		}
 
+		/// <summary>
+		/// 名乗る ID をコマンドの直後に取るコマンドかを覚える。
+		///
+		/// 覚えるのは、位置引数の 1 つめが ID になるため。本文・対象・番号は
+		/// その次から数えることになる。読むだけのコマンドは ID を取らないので、
+		/// 位置引数がそのまま中身になる。
+		/// </summary>
+		public void TakesConnectorId(bool takes)
+		{
+			skipFirstPositional = takes;
+		}
+
+		private bool skipFirstPositional;
+
+		/// <summary>名乗る ID を除いた位置引数。本文・対象・番号はここから取る</summary>
+		public List<string> Tail()
+		{
+			List<string> all = Positionals();
+			if (!skipFirstPositional || all.Count == 0) return all;
+			return all.GetRange(1, all.Count - 1);
+		}
+
+		/// <summary>名乗る ID を除いた最初の位置引数</summary>
 		public string Positional()
 		{
-			List<string> found = Positionals();
+			List<string> found = Tail();
 			return found.Count > 0 ? found[0] : null;
+		}
+
+		/// <summary>位置引数の 1 つめ。名乗る ID が入る（囲みは剥がしていない）</summary>
+		public string RawConnectorId()
+		{
+			List<string> all = Positionals();
+			return all.Count > 0 ? all[0] : null;
 		}
 
 		/// <summary>

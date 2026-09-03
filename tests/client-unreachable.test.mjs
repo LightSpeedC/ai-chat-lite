@@ -15,6 +15,7 @@ process.env.AICHAT_DATA = TEST_DATA;
 rmSync(TEST_DATA, { recursive: true, force: true });
 
 const { RETRY_INTERVAL_SEC, RETRY_TIMES, EXIT_UNREACHABLE } = await import('../src/client/options.mjs');
+const { withId } = await import('./helpers/cli-args.mjs');
 const { createMaintenanceHandler } = await import('../src/server/maintenance-handler.mjs');
 const { startListening, closeListening } = await import('../src/server/listen.mjs');
 
@@ -52,7 +53,7 @@ describe('繋ぎ直す回数の決め', () => {
 describe('繋がらないとき', () => {
 	test('粘らないコマンドは即座に終了コード 3 で終わる', async () => {
 		// 誰も待ち受けていないポートを使う
-		const { code, stderr } = await failing(['stop', '--port', '1', '--connector-id', 'test-connector1']);
+		const { code, stderr } = await failing(withId(['stop', '--port', '1'], 'test-connector1'));
 
 		assert.equal(code, EXIT_UNREACHABLE, '終了コードが 3 でない');
 		assert.match(stderr, /諦めました/);
@@ -61,7 +62,9 @@ describe('繋がらないとき', () => {
 
 	test('終了コードで「使い方の誤り」と区別できる', async () => {
 		// 2 は使い方の誤り、3 は向こうの都合。呼ぶ側がどちらか分かるようにしてある
-		const wrongUsage = await failing(['wait', '--wait-hour', '1', '--wait-min', '30', '--connector-id', 'test-connector1', '--port', '1']);
+		const wrongUsage = await failing(
+			withId(['wait', '--wait-hour', '1', '--wait-min', '30', '--port', '1'], 'test-connector1')
+		);
 
 		assert.equal(wrongUsage.code, 2);
 		assert.notEqual(wrongUsage.code, EXIT_UNREACHABLE);
@@ -86,20 +89,59 @@ describe('メンテナンス中に叩いたとき', () => {
 	});
 
 	test('503 は「繋がらない」と同じ扱いで、理由が出る', async () => {
-		const { code, stderr } = await failing(['stop', '--port', String(port), '--connector-id', 'test-connector1']);
+		const { code, stderr } = await failing(withId(['stop', '--port', String(port)], 'test-connector1'));
 
 		assert.equal(code, EXIT_UNREACHABLE);
 		assert.match(stderr, /メンテナンス中です/);
 		assert.match(stderr, /DB を作り直しています/);
 	});
 
-	test('403 や 400 は粘らずに終了コード 1 で終わる', async () => {
+});
+
+describe('求め方が悪いと言われたとき', () => {
+	let servers;
+	let port;
+
+	/*
+	 * わざと 400 を返すだけのサーバーを立てる。
+	 *
+	 * 以前はメンテナンス中のサーバーへ本文が空の say を投げていたが、
+	 * 空の本文は CLI が手元で弾くため、サーバーまで届いていなかった。
+	 * 「400 なら粘らない」ことを確かめたつもりで、何も確かめていなかった。
+	 */
+	before(async () => {
+		servers = await startListening(
+			(req, res) => {
+				res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
+				res.end(JSON.stringify({ error: 'わざと 400 を返しています' }));
+			},
+			0,
+			['127.0.0.1']
+		);
+		port = servers[0].address().port;
+	});
+
+	after(async () => {
+		await closeListening(servers);
+	});
+
+	test('400 は粘らずに終了コード 1 で終わる', async () => {
 		/*
 		 * 向こうの都合ではなく、こちらの求め方の問題。粘っても直らない。
-		 * 本文が空の POST は 400 になる
+		 * 3（繋がらない）と区別できることが要点。
 		 */
-		const { code } = await failing(['say', '', '--port', String(port), '--connector-id', 'test-connector1']);
+		const { code, stderr } = await failing(withId(['say', '本文はある', '--port', String(port)], 'test-connector1'));
 
 		assert.equal(code, 1);
+		assert.notEqual(code, EXIT_UNREACHABLE, '繋がらないと同じ扱いになっている');
+		assert.match(stderr, /わざと 400 を返しています/);
+	});
+
+	test('粘った跡が残らない', async () => {
+		// 繋がらないときは「繋がりません」と出して待つ。400 ではそれが出ないこと
+		const { stderr } = await failing(withId(['say', '本文はある', '--port', String(port)], 'test-connector1'));
+
+		assert.doesNotMatch(stderr, /繋がりません/);
+		assert.doesNotMatch(stderr, /諦めました/);
 	});
 });

@@ -19,6 +19,9 @@ import { fileURLToPath } from 'node:url';
 import {
 	WAIT_UNITS,
 	DEFAULT_WAIT_SEC,
+	ID_WRAP,
+	ID_PATTERN,
+	WAITER_PATTERN,
 	OPTIONS,
 	COMMANDS,
 	ADMIN_COMMANDS,
@@ -60,9 +63,20 @@ if (unknown.length > 0) {
  * 配列に直しておくと、C# 側でも順序が保たれる。
  */
 const definition = {
-	/* この JSON の形が変わったら上げる。C# 側が食い違いに気づけるようにするため */
-	schema: 1,
+	/*
+	 * この JSON の形が変わったら上げる。C# 側が食い違いに気づけるようにするため。
+	 *
+	 *   1 … 最初の形
+	 *   2 … id_wrap / id_pattern を足し、removed に short を足した
+	 *       （--connector-id を廃止し、コマンドの直後に :id: を置く形へ）
+	 *   3 … waiter_pattern を足した（waiters コマンド）
+	 */
+	schema: 3,
 	generated_from: 'src/client/options.mjs',
+
+	id_wrap: ID_WRAP,
+	id_pattern: ID_PATTERN,
+	waiter_pattern: WAITER_PATTERN,
 
 	default_room: DEFAULT_ROOM,
 	default_port: PORT,
@@ -76,7 +90,7 @@ const definition = {
 	options: OPTIONS,
 	commands: COMMANDS,
 	admin_commands: ADMIN_COMMANDS,
-	removed: [...REMOVED].map(([name, hint]) => ({ name, hint })),
+	removed: [...REMOVED].map(([name, { short, hint }]) => ({ name, short, hint })),
 };
 
 const json = JSON.stringify(definition, null, '\t') + '\n';

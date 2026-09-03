@@ -16,6 +16,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
 import { prepareTestDb } from './helpers/prepare-db.mjs';
+import { withId } from './helpers/cli-args.mjs';
 
 const run = promisify(execFile);
 const here = dirname(fileURLToPath(import.meta.url));
@@ -31,7 +32,7 @@ const built = existsSync(EXE);
 await prepareTestDb(TEST_DATA);
 
 const { startServers, stopServers } = await import('../src/server/server.mjs');
-const { TEST_ACCESS_TOKEN } = await import('../src/server/config.mjs');
+const { TEST_ACCESS_TOKEN, PORT: DEFAULT_PORT, DEFAULT_ROOM } = await import('../src/server/config.mjs');
 
 let servers;
 let base;
@@ -49,7 +50,7 @@ after(async () => {
 function viaNode(args, connectorId = 'test-cli-cs') {
 	return run(
 		process.execPath,
-		[NODE_CLI, ...args, '--url', base, '--access-token', TEST_ACCESS_TOKEN, '--connector-id', connectorId],
+		[NODE_CLI, ...withId(args, connectorId), '--url', base, '--access-token', TEST_ACCESS_TOKEN],
 		{ env: { ...process.env } }
 	);
 }
@@ -58,7 +59,7 @@ function viaNode(args, connectorId = 'test-cli-cs') {
 function viaExe(args, connectorId = 'test-cli-cs') {
 	return run(
 		EXE,
-		[...args, '--url', base, '--access-token', TEST_ACCESS_TOKEN, '--connector-id', connectorId],
+		[...withId(args, connectorId), '--url', base, '--access-token', TEST_ACCESS_TOKEN],
 		{ env: { ...process.env } }
 	);
 }
@@ -158,6 +159,64 @@ describe('C# 版と node 版で同じものが出る', () => {
 		assert.match(stdout, /新着なし（1 秒待機/, '待ち切ったときの行が違う');
 	});
 
+	test('waiters の出力が揃う', async (t) => {
+		if (!built) return t.skip('aichat.exe が無い');
+
+		/*
+		 * waiters はサーバーに繋がない。手元のプロセスを見るだけなので、
+		 * --port も --url も渡さずに動くことが要点。C# 版は以前、コマンドを
+		 * 問わず先に接続先を要求していて、waiters が使えなかった。
+		 *
+		 * 2 つの出力をそのまま突き合わせることはできない。呼ぶ間に他のテストが
+		 * 待受けを立てたり終えたりするので、本数が変わる。代わりに、両方が
+		 * 同じ書式に従っていることを見る。書式がずれれば、どちらかが落ちる。
+		 */
+		/*
+		 * 接続先は省略できない（既定値を持たない）。本番の基準を渡して数える。
+		 * テスト用サーバーの分は基準が違うので、この一覧には出ない。
+		 */
+		const basis = ['-p', String(DEFAULT_PORT), '-r', DEFAULT_ROOM];
+		const fromNode = await run(process.execPath, [NODE_CLI, 'waiters', ':test-cli-cs:', ...basis], {
+			env: { ...process.env },
+		});
+		const fromExe = await run(EXE, ['waiters', ':test-cli-cs:', ...basis], { env: { ...process.env } });
+
+		const BASIS = /^ {2}:\d+ \/ \S+ を見ている待受け$/;
+		const HEADER = /^ {2}ID {2,}張り方 {2,}いつから {2,}経過 {2,}pid$/;
+		const ROW = /^[* ] \S+ +\S+ +\d{2}:\d{2}:\d{2} +\d+:\d{2} +\d+$/;
+		const SUMMARY = /^ {2}自分（[A-Za-z0-9_-]+）: \d+ 本 \/ この場所に \d+ 本$/;
+		// 集計のあとに付く行。別の場所・他プロジェクト・次にやること
+		const NOTE = /^ {2}(自分の分が別の場所に|他に |二重に張って|:\d+ \/ \S+ の待受けがありません)/;
+
+		for (const [name, out] of [['node 版', fromNode.stdout], ['C# 版', fromExe.stdout]]) {
+			const lines = out.split(/\r?\n/).filter((l) => l !== '');
+
+			if (lines[0] === '待受けは走っていません。') {
+				assert.match(lines[1], NOTE, `${name}: 0 本のときの案内が無い`);
+				continue;
+			}
+
+			assert.match(lines[0], BASIS, `${name}: どこを見ているかの行が無い`);
+
+			const summaryAt = lines.findIndex((l) => SUMMARY.test(l));
+			assert.ok(summaryAt > 0, `${name}: 集計の行が無い`);
+
+			// 基準の次は、見出し＋行か「ありません。」のどちらか
+			if (lines[1] === '  ありません。') {
+				assert.equal(summaryAt, 2, `${name}: 0 本なのに行がある`);
+			} else {
+				assert.match(lines[1], HEADER, `${name}: 見出しの形が違う`);
+				for (const row of lines.slice(2, summaryAt)) {
+					assert.match(row, ROW, `${name}: 行の形が違う`);
+				}
+			}
+
+			for (const note of lines.slice(summaryAt + 1)) {
+				assert.match(note, NOTE, `${name}: 集計の後ろに知らない行がある`);
+			}
+		}
+	});
+
 	test('廃止したオプションは両方が同じように止める', async (t) => {
 		if (!built) return t.skip('aichat.exe が無い');
 
@@ -178,6 +237,51 @@ describe('C# 版と node 版で同じものが出る', () => {
 		assert.equal(fromExe.code, 2, '終了コードが 2 でない');
 		assert.equal(fromNode.code, 2);
 		assert.equal(shape(fromExe.stderr), shape(fromNode.stderr), '案内の文が違う');
+	});
+
+	test('使い方を誤ったときの終了コードが揃っている', async (t) => {
+		if (!built) return t.skip('aichat.exe が無い');
+
+		/*
+		 * 終了コードは呼ぶ側の判断材料になる。2 は「自分の書き方が悪い」、
+		 * 3 は「向こうが止まっている」。片方だけ違う値を返すと、同じ誤りなのに
+		 * 呼ぶ側の扱いが変わる。
+		 *
+		 * 実際に say の本文を書き忘れたときだけ食い違っていた（node 1 / C# 2）。
+		 * 出力の文が同じでも終了コードは揃わないので、別に見る必要がある。
+		 */
+		const cases = [
+			{ name: '本文を書かない say', args: ['say'], expected: 2 },
+			{ name: 'ID を囲まない', args: ['join', 'test-cli-cs'], expected: 2, bare: true },
+			{ name: 'ID に使えない文字', args: ['join', ':te st:'], expected: 2, bare: true },
+			{ name: '待つ長さを 2 つ', args: ['wait', '--wait-hour', '1', '--wait-min', '30'], expected: 2 },
+			{ name: '戻す番号が数でない', args: ['restore', 'あ'], expected: 2 },
+			{ name: '知らない片付け方', args: ['archive', 'nope', 'x'], expected: 2 },
+		];
+
+		const fail = async (file, args) => {
+			try {
+				await run(file, [...args, '--url', base, '--access-token', TEST_ACCESS_TOKEN], {
+					env: { ...process.env },
+				});
+				return null;
+			} catch (err) {
+				return err;
+			}
+		};
+
+		for (const c of cases) {
+			// bare は ID の形そのものを試すので、helper に差し込ませない
+			const args = c.bare ? c.args : withId(c.args, 'test-cli-cs');
+			const fromNode = await fail(process.execPath, [NODE_CLI, ...args]);
+			const fromExe = await fail(EXE, args);
+
+			assert.ok(fromNode, `node 版が止まっていない: ${c.name}`);
+			assert.ok(fromExe, `C# 版が止まっていない: ${c.name}`);
+			assert.equal(fromNode.code, c.expected, `node 版の終了コードが違う: ${c.name}`);
+			assert.equal(fromExe.code, c.expected, `C# 版の終了コードが違う: ${c.name}`);
+			assert.equal(shape(fromExe.stderr), shape(fromNode.stderr), `案内の文が違う: ${c.name}`);
+		}
 	});
 
 	test('接続先を渡さなければ両方が同じように止める', async (t) => {
@@ -215,9 +319,14 @@ describe('定義の出どころが 1 つであること', () => {
 		const exported = JSON.parse(stdout);
 		const options = await import('../src/client/options.mjs');
 
-		assert.equal(exported.schema, 1, 'schema が上がったら C# 側も合わせる');
+		assert.equal(exported.schema, 3, 'schema が上がったら C# 側も合わせる');
 		assert.equal(exported.options.length, options.OPTIONS.length);
 		assert.equal(exported.commands.length, options.COMMANDS.length);
+
+		// ID の囲み・使える文字・待受けを探す式も、出どころは options.mjs 1 か所にする
+		assert.equal(exported.id_wrap, options.ID_WRAP);
+		assert.equal(exported.id_pattern, options.ID_PATTERN);
+		assert.equal(exported.waiter_pattern, options.WAITER_PATTERN);
 		assert.deepEqual(
 			exported.options.map((o) => o.long),
 			options.OPTIONS.map((o) => o.long)

@@ -6,6 +6,8 @@ import { dirname, join } from 'node:path';
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
 
+import { wrapId } from './helpers/cli-args.mjs';
+
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(here, '..');
 const TEST_DATA = join(ROOT, 'tmp', '_data', 'unit-maintenance-flow');
@@ -249,7 +251,7 @@ describe('メンテナンスの通し', () => {
 			const waiter = spawn(
 				process.execPath,
 				[
-					CLIENT, 'wait', '--port', String(p), '--access-token', tok, '--connector-id', 'test-connector1', '--wait-sec', '45',
+					CLIENT, 'wait', wrapId('test-connector1'), '--port', String(p), '--access-token', tok, '--wait-sec', '45',
 				],
 				{ env: { ...process.env, AICHAT_DATA: data } }
 			);

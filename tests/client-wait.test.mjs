@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 import { prepareTestDb } from './helpers/prepare-db.mjs';
+import { withId } from './helpers/cli-args.mjs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
@@ -34,7 +35,7 @@ function chat(args, connectorId = 'test-connector1') {
 	// 接続先と名乗る ID は引数で渡す（環境変数では渡せない）
 	return run(
 		process.execPath,
-		[CLIENT, ...args, '--url', base, '--access-token', TEST_ACCESS_TOKEN, '--connector-id', connectorId],
+		[CLIENT, ...withId(args, connectorId), '--url', base, '--access-token', TEST_ACCESS_TOKEN],
 		{ env: { ...process.env } }
 	);
 }
