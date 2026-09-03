@@ -97,6 +97,28 @@ namespace AiChat
 			return raw == null ? null : UnwrapId(raw, "--" + longName);
 		}
 
+		/// <summary>
+		/// --reply-to の値を読む。渡されなければ 0（＝指定なし）。
+		///
+		/// 先頭の # は落とす。出力には #474 と出るので、画面から写した人が
+		/// そのまま貼っても通るようにする。# は表示のためのもので、値の一部ではない。
+		/// </summary>
+		public int ReplyToMsgSeq()
+		{
+			string raw = Option("reply-to");
+			if (raw == null) return 0;
+
+			string value = raw.StartsWith("#") ? raw.Substring(1) : raw;
+			int parsed;
+			if (!int.TryParse(value, out parsed) || parsed < 1)
+			{
+				Console.Error.WriteLine("--reply-to には 1 以上の数を渡してください: " + raw);
+				Console.Error.WriteLine("  番号は出力の先頭に #474 の形で出ています。");
+				Environment.Exit(2);
+			}
+			return parsed;
+		}
+
 		/// <summary>--name value の形で値を取る。短い形も同じ値として受ける</summary>
 		public string Option(string longName, string fallback = null)
 		{

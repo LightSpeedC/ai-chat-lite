@@ -32,6 +32,7 @@ const el = {
 	form: document.getElementById('composer'),
 	input: document.getElementById('input'),
 	to: document.getElementById('to'),
+	replyTo: document.getElementById('reply-to'),
 	send: document.getElementById('send'),
 	version: document.getElementById('version'),
 	banner: document.getElementById('banner'),
@@ -69,8 +70,41 @@ const liveArchives = new Map();
 
 // --- 本文の描画 ---
 
+/**
+ * 返信元を 1 行で引用する。
+ *
+ * 画面に出ている中から探す。無ければ番号だけを出す。サーバーに問い合わせない。
+ * 片付けられた発言や、まだ読み込んでいない古い発言を指すことがあるためで、
+ * そこで問い合わせると 1 件ごとに往復が増える。
+ */
+function replyQuote(seq) {
+	const parent = el.log.querySelector(`.msg[data-msg-seq="${seq}"] .body`);
+	if (!parent) return `<div class="reply-to">↳ #${seq}</div>`;
+
+	// 引用は 1 行に切る。長い本文をそのまま重ねると読みづらい
+	const text = parent.textContent.replace(/\s+/g, ' ').trim();
+	const short = text.length > 60 ? `${text.slice(0, 60)}…` : text;
+	return `<div class="reply-to">↳ #${seq} ${escapeText(short)}</div>`;
+}
+
+/**
+ * 返信先の入力を数にする。空なら null。
+ *
+ * 先頭の # は落とす。画面には #474 と出るので、そのまま写して貼れるようにする。
+ * 数でなければ null にする（送信そのものは止めない）。
+ */
+function replyToValue() {
+	const raw = el.replyTo.value.trim().replace(/^#/, '');
+	if (!/^\d+$/.test(raw)) return null;
+	const n = Number(raw);
+	return n >= 1 ? n : null;
+}
+
 function messageElement(m) {
 	const wrap = document.createElement('div');
+
+	// 返信元を引くための目印。replyQuote がこれで探す
+	wrap.dataset.msgSeq = String(m.msg_seq);
 
 	if (m.msg_kind !== 'say') {
 		wrap.className = 'msg system';
@@ -111,9 +145,19 @@ function messageElement(m) {
 	const status = statusOf.get(m.from_connector_id) ?? 'offline';
 	const mark = `<span class="mark ${status}" data-connector="${escapeText(m.from_connector_id)}"></span>`;
 
+	/*
+	 * 返信元を 1 行だけ引用する。
+	 *
+	 * 指す先が画面に無いことがある（片付けられた、まだ読み込んでいない）。
+	 * サーバーに問い合わせず、持っている範囲だけで出す。無ければ番号だけ出す。
+	 * 存在を強いると、返信が付いた発言を片付けられなくなるため。
+	 */
+	const reply = m.reply_to_msg_seq ? replyQuote(m.reply_to_msg_seq) : '';
+
 	wrap.innerHTML =
 		`<div class="meta">${mark}<span class="who">${escapeText(m.from_connector_id)}</span>${to}` +
-		` ・ ${escapeText(m.sent_at)}</div>` +
+		` ・ ${escapeText(m.sent_at)} ・ <span class="seq">#${m.msg_seq}</span></div>` +
+		reply +
 		`<div class="body">${renderBody(m.msg_body)}</div>`;
 	return wrap;
 }
@@ -403,10 +447,12 @@ el.form.addEventListener('submit', async (e) => {
 				from_connector_id: connectorId,
 				room_id: room,
 				to_connector_id: el.to.value.trim() || null,
+				reply_to_msg_seq: replyToValue(),
 				msg_body: body,
 			}),
 		});
 		el.input.value = '';
+		el.replyTo.value = '';
 	} catch (err) {
 		showBanner(`送信できません: ${err.message}`);
 		setTimeout(hideBanner, 4000);

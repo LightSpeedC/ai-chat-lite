@@ -70,8 +70,8 @@ db.exec('UPDATE connectors SET active_connection_count = 0');
 
 const stmt = {
 	insertMessage: db.prepare(`
-		INSERT INTO messages (room_id, sent_at, from_connector_id, msg_kind, to_connector_id, msg_body, ref_archived_seq)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO messages (room_id, sent_at, from_connector_id, msg_kind, to_connector_id, msg_body, ref_archived_seq, reply_to_msg_seq)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`),
 	selectSince: db.prepare(`
 		SELECT * FROM messages
@@ -149,9 +149,9 @@ function clampLimit(limit, fallback) {
  * メッセージを 1 件積む。積んだ行をそのまま返す。
  * @returns {object} 採番された msg_seq を含む行
  */
-export function addMessage({ roomId, fromConnectorId, kind = 'say', toConnectorId = null, body, refArchivedSeq = null }) {
+export function addMessage({ roomId, fromConnectorId, kind = 'say', toConnectorId = null, body, refArchivedSeq = null, replyToMsgSeq = null }) {
 	const sentAt = nowJst();
-	const result = stmt.insertMessage.run(roomId, sentAt, fromConnectorId, kind, toConnectorId, body, refArchivedSeq);
+	const result = stmt.insertMessage.run(roomId, sentAt, fromConnectorId, kind, toConnectorId, body, refArchivedSeq, replyToMsgSeq);
 	return {
 		msg_seq: Number(result.lastInsertRowid),
 		room_id: roomId,
@@ -162,6 +162,7 @@ export function addMessage({ roomId, fromConnectorId, kind = 'say', toConnectorI
 		msg_body: body,
 		archived_seq: null,
 		ref_archived_seq: refArchivedSeq,
+		reply_to_msg_seq: replyToMsgSeq,
 	};
 }
 

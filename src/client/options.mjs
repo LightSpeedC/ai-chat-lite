@@ -126,6 +126,7 @@ export const OPTIONS = [
 	{ long: 'wait-min', short: null, arg: '<分>', cmd: 'wait', desc: '同じ意味を分で（併用できない）' },
 	{ long: 'wait-sec', short: null, arg: '<秒>', cmd: 'wait', desc: '同じ意味を秒で。確認用' },
 	{ long: 'to', short: null, arg: ':<id>:', cmd: 'say', desc: '名指しの相手。ID はコロンで囲む' },
+	{ long: 'reply-to', short: null, arg: '<msg_seq>', cmd: 'say', desc: 'どの発言への返答か。番号は出力の # を見る' },
 	{ long: 'n', short: 'n', arg: '<件数>', cmd: 'recent', desc: '直近の履歴を何件出すか' },
 	{ long: 'out', short: null, arg: '<path>', cmd: 'dump', desc: 'JSONL の書き出し先' },
 ];

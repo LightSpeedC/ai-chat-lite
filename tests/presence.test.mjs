@@ -34,7 +34,7 @@ test('接続を保持していれば online', () => {
 
 test('接続があれば、最後のアクセスがどれだけ古くても online', () => {
 	// long-poll で 4 分待ち続けている間はアクセスが無いが、繋がっている
-	const old = row({ connections: 1, lastActiveAt: '2020-01-01 00:00:00.000' });
+	const old = row({ connections: 1, lastActiveAt: '2020/01/01 00:00:00.000' });
 	assert.equal(presence.getStatus(old), STATUS.ONLINE);
 });
 
@@ -63,7 +63,7 @@ test('居ない人は offline 扱い', () => {
 
 test('猶予の境界は DB と同じ書式で返る', () => {
 	// Date のパース（ローカルタイムゾーン依存）を挟まず、文字列同士で比較するため
-	assert.match(presence.graceThreshold(), /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/);
+	assert.match(presence.graceThreshold(), /^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/);
 });
 
 test('状態は 3 つ。ラベルがすべてに用意されている', () => {

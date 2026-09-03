@@ -69,6 +69,23 @@ function roomOf(value) {
 	return optionalId(value, 'room_id') ?? DEFAULT_ROOM;
 }
 
+/**
+ * 返信先の msg_seq を読む。渡されなければ null。
+ *
+ * 【存在は確かめない】
+ * 指す先が片付けられていることがある。存在を強いると、返信が付いた発言を
+ * 片付けられなくなる。画面は指す先が無ければ引用を出さないだけにする。
+ * 確かめるのは「1 以上の整数であること」までにする。
+ */
+function optionalMsgSeq(value) {
+	if (value === undefined || value === null || value === '') return null;
+	const n = Number(value);
+	if (!Number.isInteger(n) || n < 1) {
+		throw new BadRequest(`reply_to_msg_seq は 1 以上の整数です: ${value}`);
+	}
+	return n;
+}
+
 function requireBody(value) {
 	const body = String(value ?? '');
 	if (!body) throw new BadRequest('msg_body は必須です');
@@ -209,9 +226,10 @@ async function handleSay(req, res) {
 	const roomId = roomOf(input.room_id);
 	const toConnectorId = optionalId(input.to_connector_id, 'to_connector_id');
 	const body = requireBody(input.msg_body);
+	const replyToMsgSeq = optionalMsgSeq(input.reply_to_msg_seq);
 
 	touchConnector(fromConnectorId);
-	const message = addMessage({ roomId, fromConnectorId, kind: 'say', toConnectorId, body });
+	const message = addMessage({ roomId, fromConnectorId, kind: 'say', toConnectorId, body, replyToMsgSeq });
 	publish(message);
 	broadcastPresence();
 

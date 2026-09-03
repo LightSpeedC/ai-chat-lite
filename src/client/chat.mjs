@@ -264,6 +264,25 @@ function optionalWrappedId(name) {
 	return raw === null ? null : unwrapId(raw, `--${name}`);
 }
 
+/**
+ * --reply-to の値を読む。渡されなければ null。
+ *
+ * 先頭の # は落とす。出力には #474 と出るので、画面から写した人が
+ * そのまま貼っても通るようにする。# は表示のためのもので、値の一部ではない。
+ */
+function replyToMsgSeq() {
+	const raw = option('reply-to');
+	if (raw === null) return null;
+
+	const value = raw.replace(/^#/, '');
+	if (!/^\d+$/.test(value) || Number(value) < 1) {
+		console.error(`--reply-to には 1 以上の数を渡してください: ${raw}`);
+		console.error('  番号は出力の先頭に #474 の形で出ています。');
+		process.exit(2);
+	}
+	return Number(value);
+}
+
 const ROOM = option('room', DEFAULT_ROOM);
 
 // --- 通信 ---
@@ -362,10 +381,23 @@ const postJson = (path, body) =>
 
 // --- 表示 ---
 
+/**
+ * 発言を 1 行にする。
+ *
+ * 先頭に #<msg_seq> を 6 桁右詰めで出す。これが無いと、受け取った発言に
+ * 返信しようにも指す先を書けない。# を付けるのは、付けないと
+ * 「474 2026/09/04」と数が 2 つ並び、境目を読み手が判断することになるため。
+ *
+ * 仕組みからの発言（join / leave / archive / notice）にも番号を出す。
+ * 種別で出し分けると、読み手が「番号が無い行は何か」を考えることになる。
+ */
 function formatMessage(m) {
+	const seq = padStartW(`#${m.msg_seq}`, 6);
+	if (m.msg_kind !== 'say') return `${seq} ${m.sent_at} -- ${m.msg_body}`;
+
 	const to = m.to_connector_id ? ` @${m.to_connector_id}` : '';
-	if (m.msg_kind !== 'say') return `${m.sent_at} -- ${m.msg_body}`;
-	return `${m.sent_at} ${m.from_connector_id}${to} > ${m.msg_body}`;
+	const reply = m.reply_to_msg_seq ? ` ↳#${m.reply_to_msg_seq}` : '';
+	return `${seq} ${m.sent_at} ${m.from_connector_id}${to}${reply} > ${m.msg_body}`;
 }
 
 function printMessages(messages) {
@@ -387,7 +419,7 @@ async function cmdJoin() {
 async function cmdSay() {
 	const body = positional();
 	if (!body) {
-		console.error(`本文を指定してください: say ${ID_WRAP}<自分のID>${ID_WRAP} "本文" [--to ${ID_WRAP}<相手>${ID_WRAP}]`);
+		console.error(`本文を指定してください: say ${ID_WRAP}<自分のID>${ID_WRAP} "本文" [--to ${ID_WRAP}<相手>${ID_WRAP}] [--reply-to <msg_seq>]`);
 		// 書き忘れは使い方の誤りなので 2。ここだけ 1 を返していて C# 版と食い違っていた
 		process.exit(2);
 	}
@@ -395,6 +427,7 @@ async function cmdSay() {
 		from_connector_id: CONNECTOR_ID,
 		room_id: ROOM,
 		to_connector_id: optionalWrappedId('to'),
+		reply_to_msg_seq: replyToMsgSeq(),
 		msg_body: body,
 	});
 	console.log(`送信しました（${message.msg_seq}）`);

@@ -365,6 +365,33 @@ body {
 	font-weight: 700;
 }
 
+/* 発言の番号。--reply-to に渡す値なので、選んで写せるよう等幅にする */
+.msg .seq {
+	color: var(--ink-soft, #4a5568);
+	background: transparent;
+	font-family: Consolas, "Courier New", monospace;
+	user-select: all;
+}
+
+/*
+ * 返信元の引用。1 行だけを薄く出す。
+ *
+ * 本文と同じ濃さにすると、どちらが今の発言か分からなくなる。
+ * 左の線で「引用」であることを示し、色を落とす。
+ */
+.msg .reply-to {
+	color: var(--ink-soft, #4a5568);
+	background: rgba(0, 0, 0, 0.03);
+	border-left: 3px solid var(--line, #d9dfe8);
+	border-radius: 0 4px 4px 0;
+	padding: 3px 8px;
+	margin-bottom: 4px;
+	font-size: 0.82em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 /* 入退室 */
 .msg.system {
 	max-width: 100%;

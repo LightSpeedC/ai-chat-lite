@@ -68,16 +68,16 @@ describe('バックアップ', () => {
 	});
 
 	test('名前は chat-yyyymmdd-hhmmss の形で、日時の桁が揃っている', () => {
-		const name = backupBaseName('2026-08-30 09:05:03.123');
+		const name = backupBaseName('2026/08/30 09:05:03.123');
 		assert.equal(name, 'chat-20260830-090503');
 	});
 
 	test('名前は辞書順に並べると時系列順になる', () => {
 		// 索引を持たずに「新しい順」を出せているのは、この一致があるため
 		const names = [
-			backupBaseName('2026-09-01 00:00:00.000'),
-			backupBaseName('2026-08-30 23:59:59.999'),
-			backupBaseName('2026-08-30 09:05:03.123'),
+			backupBaseName('2026/09/01 00:00:00.000'),
+			backupBaseName('2026/08/30 23:59:59.999'),
+			backupBaseName('2026/08/30 09:05:03.123'),
 		];
 		assert.deepEqual([...names].sort(), [...names].reverse());
 	});
@@ -416,7 +416,7 @@ describe('取ってはいけないときに取らない', () => {
 
 		const body = readLock(path);
 		assert.match(body, /hourly/);
-		assert.match(body, /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
+		assert.match(body, /\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}/);
 		assert.match(body, new RegExp(`pid ${process.pid}`));
 
 		releaseLock(path);

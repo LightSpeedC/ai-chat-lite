@@ -72,7 +72,7 @@ function viaExe(args, connectorId = 'test-cli-cs') {
  */
 function shape(text) {
 	return text
-		.replace(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}/g, '<日時>')
+		.replace(/\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}\.\d{3}/g, '<日時>')
 		.replace(/\d{2}-\d{2} \d{2}:\d{2}/g, '<短い日時>')
 		.replace(/（\d+）/g, '（<数>）')
 		.replace(/現在位置 \d+/g, '現在位置 <数>')

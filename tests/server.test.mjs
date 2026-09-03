@@ -89,7 +89,7 @@ test('say で投稿できる', async () => {
 	assert.equal(json.msg_kind, 'say');
 	assert.equal(json.room_id, 'public');
 	assert.equal(json.to_connector_id, null);
-	assert.match(json.sent_at, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/);
+	assert.match(json.sent_at, /^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/);
 });
 
 test('名指しできる', async () => {

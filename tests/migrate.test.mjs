@@ -280,6 +280,111 @@ describe('実際に置いてある版', () => {
 		}
 	});
 
+	test('版 5 で reply_to_msg_seq が足される', () => {
+		const dbPath = newDbPath();
+		migrate({ dbPath, dir: REAL_DIR });
+
+		const db = new DatabaseSync(dbPath);
+		try {
+			const cols = db.prepare('PRAGMA table_info(messages)').all().map((c) => c.name);
+			assert.ok(cols.includes('reply_to_msg_seq'), 'reply_to_msg_seq が無い');
+		} finally {
+			db.close();
+		}
+	});
+
+	test('版 5 で既存の行の日付が / に書き換わる', () => {
+		/*
+		 * これが効かないと、既存の参加者が全員オフライン扱いのまま戻らない。
+		 *
+		 * jstBefore() が作る文字列は DB の値と文字列のまま比較される（在席判定の
+		 * 90 秒）。'-'（0x2D）は '/'（0x2F）より小さいため、旧形式の行が残っていると
+		 * 「90 秒以内」の判定が常に偽になる。
+		 *
+		 * 版 4 までを当てて旧形式の行を入れ、そのあと版 5 を当てて確かめる。
+		 */
+		const dbPath = newDbPath();
+
+		// 版 4 までだけを当てる
+		const upTo4 = listVersions(REAL_DIR).filter((v) => v.name <= 'ver_000004');
+		const dir4 = join(TEST_DATA, 'only-4');
+		rmSync(dir4, { recursive: true, force: true });
+		for (const v of upTo4) {
+			mkdirSync(join(dir4, v.name), { recursive: true });
+			for (const file of v.files) {
+				writeFileSync(join(dir4, v.name, file), readFileSync(join(v.dir, file), 'utf8'), 'utf8');
+			}
+		}
+		migrate({ dbPath, dir: dir4 });
+
+		// 旧形式の行を入れる
+		const before = new DatabaseSync(dbPath);
+		try {
+			before
+				.prepare(
+					`INSERT INTO messages (room_id, sent_at, from_connector_id, msg_kind, msg_body)
+					 VALUES ('public', '2026-09-04 06:00:00.000', 'project-a', 'say', '古い形式')`
+				)
+				.run();
+			before
+				.prepare(
+					`INSERT INTO connectors (connector_id, connector_role, first_joined_at, last_active_at)
+					 VALUES ('project-a', 'ai', '2026-09-01 10:00:00.000', '2026-09-04 06:00:00.000')`
+				)
+				.run();
+			before
+				.prepare(
+					`INSERT INTO cursors (connector_id, room_id, msg_seq, updated_at)
+					 VALUES ('project-a', 'public', 1, '2026-09-04 06:00:00.000')`
+				)
+				.run();
+			before
+				.prepare(
+					`INSERT INTO archives (archived_at, archived_connector_id, archive_kind, archive_id, description)
+					 VALUES ('2026-09-02 12:00:00.000', 'project-a', 'room', 'sandbox', '片付け')`
+				)
+				.run();
+		} finally {
+			before.close();
+		}
+
+		// 版 5 を当てる
+		const result = migrate({ dbPath, dir: REAL_DIR });
+		assert.equal(result.to, 5, `版が 5 に上がっていない（${result.to}）`);
+
+		const db = new DatabaseSync(dbPath);
+		try {
+			const one = (sql) => db.prepare(sql).get();
+
+			assert.equal(one('SELECT sent_at AS v FROM messages').v, '2026/09/04 06:00:00.000');
+			assert.equal(one('SELECT first_joined_at AS v FROM connectors').v, '2026/09/01 10:00:00.000');
+			assert.equal(one('SELECT last_active_at AS v FROM connectors').v, '2026/09/04 06:00:00.000');
+			assert.equal(one('SELECT updated_at AS v FROM cursors').v, '2026/09/04 06:00:00.000');
+			assert.equal(one('SELECT archived_at AS v FROM archives').v, '2026/09/02 12:00:00.000');
+
+			// versions 自身も揃える。1 つのテーブルだけ旧形式が残ると読み手が迷う
+			const stale = db.prepare("SELECT COUNT(*) AS n FROM versions WHERE applied_at LIKE '%-%'").get();
+			assert.equal(stale.n, 0, 'versions に旧形式が残っている');
+		} finally {
+			db.close();
+		}
+	});
+
+	test('書き換えても長さ 23 と順序は保たれる', () => {
+		/*
+		 * CHECK (length(…) = 23) を通り続けること。区切りが揃っていれば
+		 * 辞書順と時系列順の一致も変わらない。
+		 */
+		const older = '2026/09/04 06:00:00.000';
+		const newer = '2026/09/04 06:48:00.000';
+
+		assert.equal(older.length, 23);
+		assert.ok(older < newer, '辞書順と時系列順が一致していない');
+
+		// 混ざると壊れることも押さえる（版 5 が要る理由）
+		assert.ok(!('2026-09-04 06:00:00.000' >= newer), '旧形式が新形式の閾値を上回っている');
+	});
+
 	test('版の SQL は当て済みを書き換えない形で置かれている', () => {
 		// 各版に .sql が 1 つ以上あり、読めること
 		for (const v of listVersions(REAL_DIR)) {

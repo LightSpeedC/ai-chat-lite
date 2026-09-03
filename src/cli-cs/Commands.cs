@@ -52,15 +52,17 @@ namespace AiChat
 			{
 				string w = Definition.IdWrap;
 				Console.Error.WriteLine("本文を指定してください: say " + w + "<自分のID>" + w +
-					" \"本文\" [--to " + w + "<相手>" + w + "]");
+					" \"本文\" [--to " + w + "<相手>" + w + "] [--reply-to <msg_seq>]");
 				return 2;
 			}
 
 			string to = args.OptionalWrappedId("to");
+			int replyTo = args.ReplyToMsgSeq();
 			string body = "{" +
 				"\"from_connector_id\":" + Json.Quote(connectorId) + "," +
 				"\"room_id\":" + Json.Quote(room) + "," +
 				(to == null ? "" : "\"to_connector_id\":" + Json.Quote(to) + ",") +
+				(replyTo == 0 ? "" : "\"reply_to_msg_seq\":" + replyTo + ",") +
 				"\"msg_body\":" + Json.Quote(text) + "}";
 
 			Dictionary<string, object> result = client.Post("/api/say", body);

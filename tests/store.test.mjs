@@ -113,7 +113,7 @@ test('touchConnector は first_joined_at を変えない', () => {
 });
 
 test('sent_at は 23 文字の JST', () => {
-	assert.match(m1.sent_at, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/);
+	assert.match(m1.sent_at, /^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/);
 });
 
 test('msg_seq の順序と sent_at の順序が一致する', () => {

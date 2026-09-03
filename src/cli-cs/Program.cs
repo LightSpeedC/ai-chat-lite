@@ -263,16 +263,31 @@ namespace AiChat
 				string sentAt = Json.Str(m, "sent_at", "");
 				string body = Json.Str(m, "msg_body", "");
 
+				/*
+				 * 先頭に #<msg_seq> を 6 桁右詰めで出す。これが無いと、受け取った
+				 * 発言に返信しようにも指す先を書けない。# を付けるのは、付けないと
+				 * 「474 2026/09/04」と数が 2 つ並び、境目を読み手が判断することになるため。
+				 *
+				 * 仕組みからの発言（join / leave / archive / notice）にも番号を出す。
+				 * 種別で出し分けると、読み手が「番号が無い行は何か」を考えることになる。
+				 */
+				string seq = PadStartW("#" + Json.Int(m, "msg_seq"), 6);
+
 				if (kind != "say")
 				{
-					Console.WriteLine(sentAt + " -- " + body);
+					Console.WriteLine(seq + " " + sentAt + " -- " + body);
 					continue;
 				}
 
 				string from = Json.Str(m, "from_connector_id", "");
 				string to = Json.Str(m, "to_connector_id");
-				string arrow = to == null ? " > " : " @" + to + " > ";
-				Console.WriteLine(sentAt + " " + from + arrow + body);
+				object replyRaw;
+				string reply = m.TryGetValue("reply_to_msg_seq", out replyRaw) && replyRaw != null
+					? " ↳#" + Json.Int(m, "reply_to_msg_seq")
+					: "";
+
+				string at = to == null ? "" : " @" + to;
+				Console.WriteLine(seq + " " + sentAt + " " + from + at + reply + " > " + body);
 			}
 		}
 
