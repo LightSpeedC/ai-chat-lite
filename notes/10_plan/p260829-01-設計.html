@@ -406,7 +406,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 設計</h1>
 		<p class="lead">ローカルPC内で AI セッションと人間が同席する簡易チャットの設計</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-02</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-04</p>
 	</div>
 </div>
 
@@ -444,7 +444,7 @@ footer a {
 		<tbody>
 			<tr><td class="nowrap">動作範囲</td><td>ローカル PC 内で完結する。外部ネットワークには出さない</td></tr>
 			<tr><td class="nowrap">参加者</td><td>AI セッションと人間の両方</td></tr>
-			<tr><td class="nowrap">ID</td><td>自己申告。<code>--connector-id</code> で明示する。project フォルダ名を使うことを想定している</td></tr>
+			<tr><td class="nowrap">ID</td><td>自己申告。<strong>コマンドの直後に <code>:id:</code> の形で明示する</strong>。project フォルダ名を使うことを想定している。使えるのは英数字・ハイフン・下線だけ</td></tr>
 			<tr><td class="nowrap">アクセス制御</td><td>初期仕様では設けない。誰でも参加でき、誰の発言も全員が読める</td></tr>
 			<tr><td class="nowrap">在席表示</td><td>誰がいまオンラインかが分かる</td></tr>
 			<tr><td class="nowrap">AI の待受け</td><td>サブエージェントを常駐させ、着信に反応する</td></tr>
@@ -600,7 +600,7 @@ for (const host of ['::1', '127.0.0.1']) {
 <section class="ch03" id="ch03">
 	<h1>データ設計</h1>
 
-	<h2>3 つのテーブルの役割</h2>
+	<h2>4 つのテーブルの役割</h2>
 
 	<div class="tablewrap">
 	<table>
@@ -622,6 +622,11 @@ for (const host of ['::1', '127.0.0.1']) {
 				<td class="nowrap"><code>cursors</code></td>
 				<td>誰がどのルームをどこまで読んだか</td>
 				<td class="nowrap">参加者とルームの組ごとに 1 行</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>archives</code></td>
+				<td>片付けた 1 回ぶんの記録。何をなぜ片付けたかと、対象（種別と ID）を持つ</td>
+				<td class="nowrap">片付けるたびに 1 行</td>
 			</tr>
 		</tbody>
 	</table>
@@ -676,36 +681,69 @@ export const DB_PATH = join(DATA_DIR, 'chat.db');</code></pre>
 	<h2>スキーマ</h2>
 
 	<pre><code class="language-sql">CREATE TABLE messages (
-  msg_seq      INTEGER PRIMARY KEY AUTOINCREMENT,
-  room_id      TEXT    NOT NULL DEFAULT 'public'
-                 CHECK (length(room_id) BETWEEN 1 AND 64),
-  sent_at      TEXT    NOT NULL
-                 CHECK (length(sent_at) = 23),
+  msg_seq           INTEGER PRIMARY KEY AUTOINCREMENT,
+  room_id           TEXT    NOT NULL DEFAULT 'public'
+                      CHECK (length(room_id) BETWEEN 1 AND 64),
+  sent_at           TEXT    NOT NULL
+                      CHECK (length(sent_at) = 23),
   from_connector_id TEXT    NOT NULL
-                 CHECK (length(from_connector_id) BETWEEN 1 AND 64),
-  msg_kind     TEXT    NOT NULL
-                 CHECK (msg_kind IN ('say','join','leave')),
+                      CHECK (length(from_connector_id) BETWEEN 1 AND 64),
+  msg_kind          TEXT    NOT NULL
+                      CHECK (msg_kind IN ('say','join','leave','archive','notice')),
   to_connector_id   TEXT
-                 CHECK (to_connector_id IS NULL
-                        OR length(to_connector_id) BETWEEN 1 AND 64),
-  msg_body     TEXT    NOT NULL
-                 CHECK (length(msg_body) BETWEEN 1 AND 32000)
+                      CHECK (to_connector_id IS NULL
+                             OR length(to_connector_id) BETWEEN 1 AND 64),
+  msg_body          TEXT    NOT NULL
+                      CHECK (length(msg_body) BETWEEN 1 AND 32000),
+  archived_seq      INTEGER,
+  ref_archived_seq  INTEGER
 );
 
-CREATE INDEX messages_ix_room_id_msg_seq ON messages(room_id, msg_seq);
-
 CREATE TABLE connectors (
-  connector_id                 TEXT    PRIMARY KEY
+  connector_id            TEXT    PRIMARY KEY
                             CHECK (length(connector_id) BETWEEN 1 AND 64),
-  connector_role               TEXT    NOT NULL
+  connector_role          TEXT    NOT NULL
                             CHECK (connector_role IN ('ai','human')),
   first_joined_at         TEXT    NOT NULL
                             CHECK (length(first_joined_at) = 23),
   last_active_at          TEXT    NOT NULL
                             CHECK (length(last_active_at) = 23),
   active_connection_count INTEGER NOT NULL DEFAULT 0
-                            CHECK (active_connection_count &gt;= 0)
-);</code></pre>
+                            CHECK (active_connection_count &gt;= 0),
+  archived_seq            INTEGER
+);
+
+CREATE TABLE cursors (
+  connector_id TEXT    NOT NULL
+                 CHECK (length(connector_id) BETWEEN 1 AND 64),
+  room_id      TEXT    NOT NULL
+                 CHECK (length(room_id) BETWEEN 1 AND 64),
+  msg_seq      INTEGER NOT NULL
+                 CHECK (msg_seq &gt;= 0),
+  updated_at   TEXT    NOT NULL
+                 CHECK (length(updated_at) = 23),
+  archived_seq INTEGER,
+  PRIMARY KEY (connector_id, room_id)
+);
+
+CREATE TABLE archives (
+  archived_seq          INTEGER PRIMARY KEY AUTOINCREMENT,
+  archived_at           TEXT    NOT NULL
+                          CHECK (length(archived_at) = 23),
+  archived_connector_id TEXT    NOT NULL
+                          CHECK (length(archived_connector_id) BETWEEN 1 AND 64),
+  archive_kind          TEXT    NOT NULL
+                          CHECK (archive_kind IN ('message', 'connector', 'room')),
+  archive_id            TEXT    NOT NULL
+                          CHECK (length(archive_id) BETWEEN 1 AND 64),
+  description           TEXT    NOT NULL
+                          CHECK (length(description) BETWEEN 1 AND 200)
+);
+
+CREATE INDEX messages_ix_room_id_msg_seq ON messages(room_id, msg_seq);
+CREATE INDEX messages_ix_archived_seq    ON messages(archived_seq);
+CREATE INDEX cursors_ix_archived_seq     ON cursors(archived_seq);
+CREATE INDEX connectors_ix_archived_seq  ON connectors(archived_seq);</code></pre>
 
 	<p><code>CHECK</code> を明示的に書いておくと、実装のバグでおかしな値が入るのを DB 側で止められる。</p>
 
@@ -1562,7 +1600,7 @@ LIMIT ?;</code></pre>
 		<tbody>
 			<tr>
 				<td class="nowrap">指定</td>
-				<td><code>--connector-id</code>（<code>-c</code>）で明示する。既定値は設けず、指定が無ければエラーで止める</td>
+				<td><strong>コマンドの直後に <code>:id:</code> の形で明示する</strong>。既定値は設けず、指定が無ければエラーで止める。<code>--connector-id</code>（<code>-c</code>）は廃止した</td>
 			</tr>
 			<tr>
 				<td class="nowrap">既定値を<br>置かない理由</td>
@@ -1596,11 +1634,16 @@ LIMIT ?;</code></pre>
 		</thead>
 		<tbody>
 			<tr><td class="nowrap"><code>join</code></td><td>参加登録。読み始めの位置はサーバーが記録する</td></tr>
-			<tr><td class="nowrap"><code>wait</code></td><td>long-poll。前回の続きから待ち、新着を整形して標準出力に書いて終了する。無ければ待ち直す（<code>--retry-count</code>、既定 2 回）</td></tr>
-			<tr><td class="nowrap"><code>say</code></td><td>投稿。<code>--to &lt;id&gt;</code> で名指しできる</td></tr>
+			<tr><td class="nowrap"><code>wait</code></td><td>long-poll。前回の続きから待ち、新着を整形して標準出力に書いて終了する。無ければ待ち直す（既定は最大 12 時間）</td></tr>
+			<tr><td class="nowrap"><code>say</code></td><td>投稿。<code>--to :&lt;id&gt;:</code> で名指しできる</td></tr>
 			<tr><td class="nowrap"><code>recent</code></td><td>直近の履歴を表示する</td></tr>
 			<tr><td class="nowrap"><code>who</code></td><td>参加者一覧とオンライン状態を表示する</td></tr>
+			<tr><td class="nowrap"><code>waiters</code></td><td>走っている待受けの本数を数える。<strong>サーバーには繋がず、手元のプロセスだけを見る</strong></td></tr>
 			<tr><td class="nowrap"><code>dump</code></td><td>全メッセージを JSONL に書き出す</td></tr>
+			<tr><td class="nowrap"><code>leave</code></td><td>離脱を知らせる。打たなくても、待受けが消えれば猶予のあとサーバーが流す</td></tr>
+			<tr><td class="nowrap"><code>archive</code></td><td>発言・参加者・ルームを片付ける。先に件数を出し、対象名の入力を求める（<a class="doclink" href="p260830-02-アーカイブ機能.html">アーカイブ機能の設計</a>）</td></tr>
+			<tr><td class="nowrap"><code>archives</code></td><td>片付けたものの一覧を出す</td></tr>
+			<tr><td class="nowrap"><code>restore</code></td><td>片付けたものをまとめて戻す</td></tr>
 		</tbody>
 	</table>
 	</div>
@@ -1852,7 +1895,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 				<td class="nowrap"><s><code>AICHAT_ID</code></s></td>
 				<td class="nowrap">CLI</td>
 				<td class="nowrap">—</td>
-				<td><strong>廃止した。</strong><code>--connector-id</code>（<code>-c</code>）で渡す</td>
+				<td><strong>廃止した。</strong>コマンドの直後に <code>:id:</code> の形で渡す</td>
 			</tr>
 			<tr>
 				<td class="nowrap"><s><code>AICHAT_URL</code></s></td>

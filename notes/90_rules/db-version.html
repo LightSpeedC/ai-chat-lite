@@ -401,7 +401,7 @@ footer a {
 	<div class="inner">
 		<h1>DB の版を上げる手引き</h1>
 		<p class="lead">版は起動時に自動で当たる。本番へ当てる前に、写しで予行する</p>
-		<p class="date">📅 作成: 2026-09-02 / 更新: 2026-09-02</p>
+		<p class="date">📅 作成: 2026-09-02 / 更新: 2026-09-04</p>
 	</div>
 </div>
 
@@ -499,7 +499,7 @@ DB の版を 2 から 3 へ上げました
 
 	<h2>そのまま起動し直すだけでよいとき</h2>
 
-	<pre><code class="language-powershell">node src/client/chat.mjs restart -c &lt;自分の ID&gt; -p 8787</code></pre>
+	<pre><code class="language-powershell">aichat restart :project-a: -p 8787</code></pre>
 
 	<p>終了コード 1 で落ちるため、サービスが 10 秒後に起動し直す。<strong>その起動で版が当たる。</strong></p>
 

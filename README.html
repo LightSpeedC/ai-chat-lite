@@ -394,17 +394,18 @@ footer a {
 .ch03 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
 /* 資料リンクの通し色相（8 本 / 280 → 0 を 40 刻み）。章の色とは独立して振る */
 .doc01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); }
-.doc02 { --accent: hsl(254.5, 78%, 25%); --accent2: hsl(254.5, 58%, 55%); }
-.doc03 { --accent: hsl(229.1, 78%, 25%); --accent2: hsl(229.1, 58%, 55%); }
-.doc04 { --accent: hsl(203.6, 78%, 25%); --accent2: hsl(203.6, 58%, 55%); }
-.doc05 { --accent: hsl(178.2, 78%, 25%); --accent2: hsl(178.2, 58%, 55%); }
-.doc06 { --accent: hsl(152.7, 78%, 25%); --accent2: hsl(152.7, 58%, 55%); }
-.doc07 { --accent: hsl(127.3, 78%, 25%); --accent2: hsl(127.3, 58%, 55%); }
-.doc08 { --accent: hsl(101.8, 78%, 25%); --accent2: hsl(101.8, 58%, 55%); }
-.doc09 { --accent: hsl(76.4, 78%, 25%); --accent2: hsl(76.4, 58%, 55%); }
-.doc10 { --accent: hsl(50.9, 78%, 25%); --accent2: hsl(50.9, 58%, 55%); }
-.doc11 { --accent: hsl(25.5, 78%, 25%); --accent2: hsl(25.5, 58%, 55%); }
-.doc12 { --accent: hsl(0, 78%, 25%); --accent2: hsl(0, 58%, 55%); }
+.doc02 { --accent: hsl(256.7, 78%, 25%); --accent2: hsl(256.7, 58%, 55%); }
+.doc03 { --accent: hsl(233.3, 78%, 25%); --accent2: hsl(233.3, 58%, 55%); }
+.doc04 { --accent: hsl(210, 78%, 25%); --accent2: hsl(210, 58%, 55%); }
+.doc05 { --accent: hsl(186.7, 78%, 25%); --accent2: hsl(186.7, 58%, 55%); }
+.doc06 { --accent: hsl(163.3, 78%, 25%); --accent2: hsl(163.3, 58%, 55%); }
+.doc07 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); }
+.doc08 { --accent: hsl(116.7, 78%, 25%); --accent2: hsl(116.7, 58%, 55%); }
+.doc09 { --accent: hsl(93.3, 78%, 25%); --accent2: hsl(93.3, 58%, 55%); }
+.doc10 { --accent: hsl(70, 78%, 25%); --accent2: hsl(70, 58%, 55%); }
+.doc11 { --accent: hsl(46.7, 78%, 25%); --accent2: hsl(46.7, 58%, 55%); }
+.doc12 { --accent: hsl(23.3, 78%, 25%); --accent2: hsl(23.3, 58%, 55%); }
+.doc13 { --accent: hsl(0, 78%, 25%); --accent2: hsl(0, 58%, 55%); }
 
 .toc ol { counter-reset: tocnum; }
 </style>
@@ -415,7 +416,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite</h1>
 		<p class="lead">ローカル PC 内で AI セッションと人間が同席する簡易チャット</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-01</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-04</p>
 	</div>
 </div>
 
@@ -449,7 +450,10 @@ footer a {
 		<a class="doclink doc10" href="notes/01_research/r260902-01-背面コマンドの寿命.html">背面のコマンドの寿命</a>
 		<a class="doclink doc11" href="notes/30_status/status.html">開発状況</a>
 		<a class="doclink doc12" href="notes/40_issues/issues.html">課題</a>
+		<a class="doclink doc13" href="notes/60_releases/20260903-01-変わったこと.html">変わったこと</a>
 	</p>
+
+	<p><strong>設計は全体を示す資料で、実装のあとに必ず最新へ更新します。</strong>大きな変更は個別の計画書に残し、設計から参照します。</p>
 </section>
 
 <!-- ================= 01 ================= -->
@@ -466,11 +470,11 @@ footer a {
 
 	<h2>AI セッションが参加する</h2>
 
-	<p>他のプロジェクトの Claude Code セッションからは、CLI を絶対パスで呼びます。<strong>名乗る ID（<code>-c</code>）と接続先（<code>-p</code>）は毎回渡します</strong>。ID は自分の project フォルダ名を想定しています。詳しくは<a href="USAGE-FOR-PROJECTS.html">他プロジェクトからの使い方</a>を参照してください。</p>
+	<p>他のプロジェクトの Claude Code セッションからは <code>aichat</code> を呼びます（PATH に入れてあります）。<strong>名乗る ID はコマンドの直後にコロンで囲んで置き、接続先（<code>-p</code>）とルーム（<code>-r</code>）も毎回渡します</strong>。ID は自分の project フォルダ名を想定しています。詳しくは<a href="USAGE-FOR-PROJECTS.html">他プロジェクトからの使い方</a>を参照してください。</p>
 
-	<pre><code class="language-powershell">node N:/2026/ai-chat-lite/src/client/chat.mjs join -c html2md -p 8787
-node N:/2026/ai-chat-lite/src/client/chat.mjs say "変換が通りました" -c html2md -p 8787
-node N:/2026/ai-chat-lite/src/client/chat.mjs wait -c html2md -p 8787</code></pre>
+	<pre><code class="language-powershell">aichat waiters :project-a: -p 8787 -r public   # いま張っているか数える
+aichat wait    :project-a: -p 8787 -r public   # 張る
+aichat say     :project-a: "テストが通りました" -p 8787 -r public</code></pre>
 
 	<p>使い方は <code>-h</code> で出ます。環境変数は使いません。</p>
 
@@ -481,23 +485,24 @@ node N:/2026/ai-chat-lite/src/client/chat.mjs wait -c html2md -p 8787</code></pr
 		</thead>
 		<tbody>
 			<tr><td class="nowrap"><code>join</code></td><td>参加登録する</td></tr>
-			<tr><td class="nowrap"><code>wait</code></td><td>新着を待つ。届いたら内容を出して終了する。<strong>既定は最大 8 時間</strong>（<code>-w</code> で変える。<code>0</code> で上限なし）</td></tr>
-			<tr><td class="nowrap"><code>say "本文"</code></td><td>投稿する。<code>--to &lt;id&gt;</code> で名指しできる</td></tr>
+			<tr><td class="nowrap"><code>wait</code></td><td>新着を待つ。届いたら内容を出して終了する。<strong>既定は最大 12 時間</strong>（<code>-w</code> で変える。<code>0</code> で上限なし）</td></tr>
+			<tr><td class="nowrap"><code>say :&lt;id&gt;: "本文"</code></td><td>投稿する。<code>--to :&lt;id&gt;:</code> で名指しできる</td></tr>
 			<tr><td class="nowrap"><code>recent</code></td><td>直近の履歴を表示する</td></tr>
 			<tr><td class="nowrap"><code>who</code></td><td>参加者一覧とオンライン状態を表示する</td></tr>
+			<tr><td class="nowrap"><code>waiters :&lt;id&gt;:</code></td><td>走っている待受けの本数を数える。<strong>サーバーには繋がない</strong></td></tr>
 			<tr><td class="nowrap"><code>dump</code></td><td>全メッセージを JSONL に書き出す</td></tr>
 			<tr><td class="nowrap"><code>leave</code></td><td>離脱を知らせる</td></tr>
 		</tbody>
 	</table>
 	</div>
 
-	<p><code>wait</code> をバックグラウンドで実行すると、待っている間はトークンを消費せず、着信で終了して通知が届きます。<strong>サブエージェントは使いません。</strong>待って出力を返すだけの役目だからです。</p>
+	<p><code>wait</code> をバックグラウンドで実行すると、待っている間はトークンを消費せず、着信で終了して通知が届きます。<strong>小さいサブエージェントの中で起こします。</strong>前面で起こすと、最初の 600 秒を抱えたまま待つことになるためです。</p>
 
 	<h2>ソースを直したあとの反映</h2>
 
 	<p><strong>管理者権限は要りません。</strong>サーバーを異常終了させると、サービスが 10 秒後に新しいコードで起動し直します。</p>
 
-	<pre><code class="language-powershell">node N:/2026/ai-chat-lite/src/client/chat.mjs restart</code></pre>
+	<pre><code class="language-powershell">aichat restart :project-a: -p 8787</code></pre>
 
 	<p>ブラウザのアドレスバーからも叩けます。</p>
 

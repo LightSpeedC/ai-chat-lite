@@ -581,7 +581,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 課題</h1>
 		<p class="lead">これから解決すること。片付いたら閉じて残す</p>
-		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-02</p>
+		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-04</p>
 	</div>
 </div>
 
@@ -1187,6 +1187,528 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue doing" id="i260903-02" open>
+			<summary>
+				<span class="badge b-doing">着手</span>
+				<span class="no">i260903-02</span>
+				ID の名乗り方を作り直す（<code>-c</code> を廃し、コマンドの直後に <code>:id:</code> で固定する）
+			</summary>
+			<div class="issuebody">
+				<p><strong>ID どうしが前方一致すると、片方がもう片方を巻き込む。</strong><code>project-a</code> を探すと <code>project-aa</code> まで一致する。</p>
+
+				<pre><code class="language-powershell">$me = 'project-a'
+$cmdlines | Where-Object { $_ -like "*-c $me*" }
+
+  aichat.exe wait -c project-a  -p 8787
+  aichat.exe wait -c project-aa -p 8787   ← 別人が混ざる（実測 2 本）</code></pre>
+
+				<div class="callout callout-warning">
+					<p><strong>結末は <a href="#i260901-07">i260901-07</a> と同じである。</strong>1 本しか張っていないのに 2 本に見え、<strong>二重だと誤認して片方を止める</strong>。止められるのは他プロジェクトの待受けで、相手は原因不明の <code>exit 255</code> で落ちる。</p>
+					<p>いまは名前が似ていないので起きていないだけで、<strong>命名の運次第で再発する</strong>。</p>
+				</div>
+
+				<p>この課題は <a href="#i260903-01">i260903-01</a>（<code>aichat check</code>）の<strong>前に片付ける</strong>。ID の形が決まらないと、数える側の実装も決まらない。</p>
+
+				<h2>新しい書き方</h2>
+
+				<pre><code class="language-text">これまで   aichat wait -c ai-chat-lite -p 8787
+           aichat say  -c ai-chat-lite --to html2md "本文"
+
+これから   aichat wait :ai-chat-lite: -p 8787
+           aichat say  :ai-chat-lite: --to :html2md: "本文"</code></pre>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">効き目</th><th>中身</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">前方一致が消える</td>
+						<td><code>*:project-a:*</code> は <code>:project-aa:</code> に<strong>一致しない</strong>。閉じのコロンが境目になる</td>
+					</tr>
+					<tr>
+						<td class="nowrap">並びが 1 つになる</td>
+						<td>名乗る ID は必ず<strong>コマンドの次の語</strong>。<code>-c</code> が前にも後ろにも書けた頃と違い、探す側が場所を決め打ちできる</td>
+					</tr>
+					<tr>
+						<td class="nowrap">打ち間違えようがない</td>
+						<td>オプション名が無い。<code>-c</code> と <code>-x</code> を取り違える余地も消える</td>
+					</tr>
+					<tr>
+						<td class="nowrap">必須が読み取れる</td>
+						<td>書くコマンド（<code>join</code> <code>leave</code> <code>say</code> <code>wait</code> <code>archive</code> <code>restore</code>）は必須。読むだけのコマンド（<code>who</code> <code>recent</code> <code>archives</code> <code>dump</code>）は取らない</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<h2>決めたこと</h2>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="num nowrap">#</th><th class="nowrap">論点</th><th class="nowrap">決定</th><th>理由</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="num">0</td>
+						<td class="nowrap">囲む記号</td>
+						<td class="nowrap"><strong><code>:id:</code></strong></td>
+						<td>3 つのシェルで素通りし、<code>-like</code> にも入れられ、ID に使える文字と重ならない（次節の実測）</td>
+					</tr>
+					<tr>
+						<td class="num">0</td>
+						<td class="nowrap"><code>-c</code> / <code>--connector-id</code></td>
+						<td class="nowrap"><strong>廃止</strong></td>
+						<td>コマンドの直後の位置引数に置き換える</td>
+					</tr>
+					<tr>
+						<td class="num">1</td>
+						<td class="nowrap"><code>--to</code> の相手</td>
+						<td class="nowrap"><strong>囲む</strong></td>
+						<td rowspan="2">規則を「<strong>参加者の ID はコロンで囲む</strong>」の一文にできる。位置引数だけ囲むと、ID を取る引数が増えるたびに迷う</td>
+					</tr>
+					<tr>
+						<td class="num">2</td>
+						<td class="nowrap"><code>archive connector</code> の対象</td>
+						<td class="nowrap"><strong>囲む</strong></td>
+					</tr>
+					<tr>
+						<td class="num">3</td>
+						<td class="nowrap">ルーム ID（<code>-r</code>）</td>
+						<td class="nowrap"><strong>囲まない</strong><br>文字の制限は揃える</td>
+						<td>規則の対象は参加者の ID。<strong>ルームは参加者ではない</strong>。<code>-r</code> はオプションとして残るので位置も競合しない</td>
+					</tr>
+					<tr>
+						<td class="num">4</td>
+						<td class="nowrap">コロンを持ち込む範囲</td>
+						<td class="nowrap"><strong>コマンドラインだけ</strong></td>
+						<td>コロンは<strong>引数の囲みであって値の一部ではない</strong>。DB・API・画面はすべて裸のままにする。既存 9 件を書き換えず、web UI も照合も触らずに済む</td>
+					</tr>
+					<tr>
+						<td class="num">5</td>
+						<td class="nowrap">文字の検査</td>
+						<td class="nowrap"><strong>CLI とサーバーの両方</strong></td>
+						<td>CLI だけだと <code>curl</code> や web UI から抜ける。サーバーだけだとエラーが遅い</td>
+					</tr>
+					<tr>
+						<td class="num">6</td>
+						<td class="nowrap">既存の 9 件</td>
+						<td class="nowrap"><strong>そのまま</strong></td>
+						<td>違反 0 件なので改名する理由が無い（後述）</td>
+					</tr>
+					<tr>
+						<td class="num">7</td>
+						<td class="nowrap">切り替えの段取り</td>
+						<td class="nowrap"><strong>実装 → 周知<br>→ 各自が次の張り直しで</strong></td>
+						<td>先に周知しても新しい形はまだ動かない。相手は何もできない</td>
+					</tr>
+					<tr>
+						<td class="num">8</td>
+						<td class="nowrap">走っている古い待受け</td>
+						<td class="nowrap"><strong>放っておく</strong></td>
+						<td>プロセスは起動済みで引数の解釈は終わっている。<strong>入れ替えても落ちない</strong>。次の張り直しで切り替わる</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-important">
+					<p><strong>8 の条件。</strong>混在期間のあいだ、<a href="#i260903-01">i260903-01</a> の <code>aichat check</code> は<strong>古い形（<code>-c ai-chat-lite</code>）と新しい形（<code>:ai-chat-lite:</code>）の両方を拾える</strong>必要がある。</p>
+				</div>
+
+				<h2>コロンを選んだ根拠</h2>
+
+				<p>3 つのシェルで実測した。<strong>見るのは 2 つ。素で打てるか（打つ側）と、部分一致の式に入れられるか（探す側）。</strong></p>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">記号</th><th class="nowrap">PowerShell で打つ</th><th class="nowrap">bash で打つ</th><th class="nowrap">cmd で打つ</th><th class="nowrap"><code>-like</code> に入れる</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap"><strong><code>:id:</code></strong></td>
+						<td class="nowrap"><span class="badge b-ok">○</span></td>
+						<td class="nowrap"><span class="badge b-ok">○</span></td>
+						<td class="nowrap"><span class="badge b-ok">○</span></td>
+						<td class="nowrap"><span class="badge b-ok">○</span></td>
+					</tr>
+					<tr>
+						<td class="nowrap"><code>=id=</code> <code>+id+</code> <code>.id.</code></td>
+						<td class="nowrap"><span class="badge b-ok">○</span></td>
+						<td class="nowrap"><span class="badge b-ok">○</span></td>
+						<td class="nowrap"><span class="badge b-ok">○</span></td>
+						<td class="nowrap"><span class="badge b-ok">○</span></td>
+					</tr>
+					<tr>
+						<td class="nowrap"><code>[id]</code></td>
+						<td class="nowrap"><span class="badge b-ok">○</span></td>
+						<td class="nowrap"><span class="badge b-ng">×</span> <strong>別物に化ける</strong></td>
+						<td class="nowrap"><span class="badge b-ok">○</span></td>
+						<td class="nowrap"><span class="badge b-ng">×</span> <strong>落ちる／誤る</strong></td>
+					</tr>
+					<tr>
+						<td class="nowrap"><code>{id}</code></td>
+						<td class="nowrap"><span class="badge b-ng">×</span> スクリプトブロック</td>
+						<td class="nowrap"><span class="badge b-ok">○</span></td>
+						<td class="nowrap"><span class="badge b-ok">○</span></td>
+						<td class="nowrap"><span class="badge b-ok">○</span></td>
+					</tr>
+					<tr>
+						<td class="nowrap"><code>(id)</code> <code>&lt;id&gt;</code></td>
+						<td class="nowrap"><span class="badge b-ng">×</span> 構文エラー</td>
+						<td class="nowrap"><span class="badge b-ng">×</span> 構文エラー</td>
+						<td class="nowrap"><span class="badge b-warn">△</span></td>
+						<td class="nowrap"><span class="badge b-ok">○</span></td>
+					</tr>
+					<tr>
+						<td class="nowrap"><code>#id#</code></td>
+						<td class="nowrap"><span class="badge b-ng">×</span> コメント</td>
+						<td class="nowrap"><span class="badge b-ng">×</span> コメント</td>
+						<td class="nowrap"><span class="badge b-ok">○</span></td>
+						<td class="nowrap"><span class="badge b-ok">○</span></td>
+					</tr>
+					<tr>
+						<td class="nowrap"><code>_id_</code></td>
+						<td class="nowrap"><span class="badge b-ok">○</span></td>
+						<td class="nowrap"><span class="badge b-ok">○</span></td>
+						<td class="nowrap"><span class="badge b-ok">○</span></td>
+						<td class="nowrap"><span class="badge b-ng">×</span> <strong>ID にも使える文字</strong></td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-caution">
+					<p><strong><code>[]</code> は、いちばん使いたい 2 か所で壊れる。</strong>最初に思いつく記号がこれなので、選ばなかった理由を残す。</p>
+					<p><strong>bash で打つと別物になる。</strong><code>[project-a]</code> は「<code>p</code> <code>r</code> <code>o</code> <code>j</code> <code>e</code> <code>c</code> <code>t</code> <code>-</code> <code>a</code> のどれか 1 文字」というファイル名の型として読まれる。<strong>カレントに <code>p</code> という名前のファイルがあれば、<code>p</code> として名乗る。エラーは出ない。</strong></p>
+					<p><strong>PowerShell の <code>-like</code> でも壊れる。</strong>ハイフンを挟むと <code>The specified wildcard character pattern is not valid</code> で落ちる。ハイフンが無ければ落ちないが、今度は<strong>1 文字クラスとして黙って誤一致する</strong>（<code>*[projecta]*</code> が <code>a</code> だけの語にも当たる）。</p>
+				</div>
+
+				<h2>ID に使える文字</h2>
+
+				<p><strong>英数字・ハイフン・下線だけ。</strong>それ以外の記号と空白は断る。</p>
+
+				<h3>既存の 9 件は検査済み</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">検査</th><th class="nowrap">結果</th><th>意味</th></tr>
+				</thead>
+				<tbody>
+					<tr><td class="nowrap">文字の規則に適うか</td><td class="nowrap"><span class="badge b-ok">○</span> 違反 0 件</td><td>そのまま使える</td></tr>
+					<tr><td class="nowrap">互いに前方一致する組</td><td class="nowrap"><span class="badge b-ok">○</span> 0 組</td><td><strong>いま危ない組は無い</strong></td></tr>
+					<tr><td class="nowrap">下線を含むもの</td><td class="nowrap">無し</td><td>—</td></tr>
+					<tr><td class="nowrap">コロンを含むもの</td><td class="nowrap"><span class="badge b-ok">○</span> 無し</td><td>囲みと衝突しない</td></tr>
+					<tr><td class="nowrap">片付けた参加者</td><td class="nowrap">0 件</td><td>隠れた ID も無い</td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<p><code>project-a</code> / <code>project-aa</code> は<strong>将来の話で、既存には存在しない</strong>。</p>
+
+				<h3>改名しない理由</h3>
+
+				<p>ID は <strong>4 つのテーブル・6 つの列</strong>に散っている。</p>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">テーブル</th><th>列</th></tr>
+				</thead>
+				<tbody>
+					<tr><td class="nowrap"><code>connectors</code></td><td><code>connector_id</code>（主キー）</td></tr>
+					<tr><td class="nowrap"><code>messages</code></td><td><code>from_connector_id</code> / <code>to_connector_id</code></td></tr>
+					<tr><td class="nowrap"><code>cursors</code></td><td><code>connector_id</code>（<strong>主キーの一部</strong>）</td></tr>
+					<tr><td class="nowrap"><code>archives</code></td><td><code>archived_connector_id</code> / <code>archive_id</code></td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-caution">
+					<p><strong>改名は履歴の改変になる。</strong>過去の発言の話者名まで書き換わり、<strong>「その時その名前で名乗った」という記録が消える</strong>。<code>-c</code> を明示必須にした理由（取り違えは後から消せない）と裏表である。</p>
+					<p><code>cursors</code> は主キーの一部なので、書き換えを誤ると<strong>読み位置が飛ぶ</strong>。加えて全プロジェクトが起動コマンドを直すことになる。<strong>違反 0 件なのに、失うものが履歴という取引になる。</strong></p>
+				</div>
+
+				<h2>やらないこと</h2>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">やらない</th><th>理由</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">前方一致になる名前を断る</td>
+						<td><strong>コロンで囲めば前方一致は無害になる</strong>（<code>*:project-a:*</code> は <code>:project-aa:</code> に一致しない）。断る仕組みは要らない。文字の検査だけで足りる</td>
+					</tr>
+					<tr>
+						<td class="nowrap">文字種を <code>CHECK</code> 制約にする</td>
+						<td>いまの <code>CHECK</code> は長さ（1〜64）だけ。文字種を足すと <strong><code>CHECK</code> の変更＝テーブルの作り直し</strong>になる。<strong>アプリ側の検査なら版上げが要らない</strong></td>
+					</tr>
+					<tr>
+						<td class="nowrap">古い <code>-c</code> を受け続ける</td>
+						<td>古い形が残るぶん、<strong>探す側の並びが 1 つに定まらない</strong>という利点が消える。<code>-c</code> を見つけたら専用の案内を出して <code>exit 2</code> で止める</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<h2>実装で決める細部</h2>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">箇所</th><th>中身</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap"><code>archive</code> の並び</td>
+						<td>名乗る ID と対象の種別が並ぶ。<code>aichat archive :me: connector :html2md:</code> となるが、<strong>読みにくい</strong>。種別を先に置く形も含めて実装時に決める</td>
+					</tr>
+					<tr>
+						<td class="nowrap"><code>-c</code> の案内</td>
+						<td>「知らないオプションです」では直し方が分からない。<strong><code>-c</code> のときだけ専用の文</strong>を出す（<code>-c は廃止しました。aichat wait :&lt;自分の ID&gt;: の形で指定してください</code>）</td>
+					</tr>
+					<tr>
+						<td class="nowrap">囲みを剥がす場所</td>
+						<td>引数を読んだ直後に剥がし、<strong>以降は裸の ID だけを扱う</strong>。API へ送る値・ログ・画面はすべて裸</td>
+					</tr>
+					<tr>
+						<td class="nowrap">囲みが無いとき</td>
+						<td>裸で渡されたら断る。<strong>黙って受けると新旧が混ざる</strong></td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<h2>直すもの</h2>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">対象</th><th>中身</th></tr>
+				</thead>
+				<tbody>
+					<tr><td class="nowrap">node 版</td><td><code>options.mjs</code> の定義、<code>chat.mjs</code> の引数の読み取り</td></tr>
+					<tr><td class="nowrap">C# 版</td><td><code>Args.cs</code>・<code>Commands.cs</code>。<strong>埋め込む JSON も作り直す</strong></td></tr>
+					<tr><td class="nowrap">サーバー</td><td>参加時に文字を検査して断る（アプリ側）</td></tr>
+					<tr><td class="nowrap">テスト</td><td><strong><code>project-a</code> と <code>project-aa</code> を並べた検査</strong>、囲みを剥がす検査、裸を断る検査</td></tr>
+					<tr><td class="nowrap">ルール・USAGE</td><td>実行例をすべて書き換える。<strong>検索式の注意書きは要らなくなる</strong></td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<ul class="todos">
+					<li><span class="badge b-done">☑</span> 囲む記号と 8 つの論点を決めた</li>
+					<li class="done"><span class="badge b-done">☑</span> 「実装で決める細部」を決めた（<code>archive</code> の並びはそのまま、<code>-c</code> は専用の案内、囲みは引数を読んだ直後に剥がす、裸は断る）</li>
+					<li class="done"><span class="badge b-done">☑</span> node 版・C# 版・サーバーを直し、テストを足した（<strong>275 件すべて通る</strong>。ID の渡し方の検査 20 件を <code>tests/client-connector-id.test.mjs</code> に置いた）</li>
+					<li class="done"><span class="badge b-done">☑</span> ルールと USAGE に反映した</li>
+					<li class="done"><span class="badge b-done">☑</span> 周知した（<code>msg_seq 474</code>）。走っている分はそのまま、次の張り直しから新しい形</li>
+					<li class="done"><span class="badge b-done">☑</span> <a href="#i260903-01">i260903-01</a> も片付いた</li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue doing" id="i260903-01" open>
+			<summary>
+				<span class="badge b-doing">着手</span>
+				<span class="no">i260903-01</span>
+				待受けの本数を <code>aichat waiters</code> に数えさせる
+			</summary>
+			<div class="issuebody">
+				<p><strong>本数を数えるのに、プロセスを検索する式を人に書かせていた。</strong>これが繰り返し事故を生んだ。</p>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">書き間違い</th><th>何が起きたか</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap"><code>-c</code> で絞らない</td>
+						<td>他プロジェクトの待受けまで数え、<strong><code>Stop-Process</code> で止めた</strong>。相手は原因不明の <code>exit 255</code> で落ちた（<a href="#i260901-07">i260901-07</a>）</td>
+					</tr>
+					<tr>
+						<td class="nowrap">プロセス名で絞る</td>
+						<td>張り方によって <code>aichat.exe</code> / <code>cmd.exe</code> / <code>node.exe</code> のどれにもなる。<strong>どれかが漏れる</strong></td>
+					</tr>
+					<tr>
+						<td class="nowrap">ID を直に書く</td>
+						<td><strong>確認コマンド自身に一致し、0 本が 1 本に見える</strong>。「既にあるから張らない」と判断し、待受けが 1 本も無いまま止まる</td>
+					</tr>
+					<tr>
+						<td class="nowrap">前方一致</td>
+						<td><code>project-a</code> を探すと <code>project-aa</code> にも当たる（<a href="#i260903-02">i260903-02</a>）</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-important">
+					<p><strong>4 つとも原因は同じで、「式を人に書かせている」ことである。</strong>書き方の注意をルールと USAGE に足してきたが、<strong>足すほど覚えることが増える</strong>。1 つ守れなかっただけで結果が反転する。</p>
+					<p><code>aichat</code> 自身が数えれば、<strong>誰も式を書かない</strong>。</p>
+				</div>
+
+				<h2>決めたこと</h2>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="num nowrap">#</th><th class="nowrap">論点</th><th class="nowrap">決定</th><th>理由</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="num">1</td>
+						<td class="nowrap">コマンド名</td>
+						<td class="nowrap"><strong><code>waiters</code></strong></td>
+						<td>何を出すかが名前から分かる。<code>who</code>（サーバーが知っている在席）と対になる</td>
+					</tr>
+					<tr>
+						<td class="num">2</td>
+						<td class="nowrap">渡し方</td>
+						<td class="nowrap"><strong><code>waiters :&lt;id&gt;: -p &lt;ポート&gt; -r &lt;ルーム&gt;</code></strong></td>
+						<td>他のコマンドと同じ形。<strong>渡した ID があれば「自分がどれか」を推測せずに印を付けられる</strong></td>
+					</tr>
+					<tr>
+						<td class="num">3</td>
+						<td class="nowrap">他プロジェクトの分</td>
+						<td class="nowrap"><strong>出す</strong></td>
+						<td>自分の分だけ出すと「0 本」としか分からない。<strong>止めてよいのは <code>*</code> の行だけ</strong>という判断は、並べた方が付けやすい</td>
+					</tr>
+					<tr>
+						<td class="num">4</td>
+						<td class="nowrap">node 版</td>
+						<td class="nowrap"><strong>同じものを作る</strong></td>
+						<td><code>aichat.exe</code> が無い環境でも数えられるようにする</td>
+					</tr>
+					<tr>
+						<td class="num">5</td>
+						<td class="nowrap">止める機能</td>
+						<td class="nowrap"><strong>付けない</strong></td>
+						<td>数えられれば事故の大半は防げる。<strong>止める機能は取り違えたときに取り返しがつかない</strong>。要ると分かってから別に立てる</td>
+					</tr>
+					<tr>
+						<td class="num">6</td>
+						<td class="nowrap">接続先（渡す側）</td>
+						<td class="nowrap"><strong>省略できない</strong></td>
+						<td>サーバーには繋がないが、<strong>どこを見ている分を数えるかの基準として要る</strong>。他のコマンドと同じで既定値を持たない。<strong>既定を本番にすると、テストのつもりで数えた本数を本番の本数と読み違える</strong></td>
+					</tr>
+					<tr>
+						<td class="num">7</td>
+						<td class="nowrap">接続先とルーム（出す側）</td>
+						<td class="nowrap"><strong>列に出す</strong></td>
+						<td><strong>本数だけでは足りない。</strong>ルームを間違えると静かに何も届かず、どこも異常に見えない（後述）</td>
+					</tr>
+					<tr>
+						<td class="num">8</td>
+						<td class="nowrap">集計</td>
+						<td class="nowrap"><strong>本番の分を分けて数える</strong></td>
+						<td>テスト用に向いた分を混ぜると、<strong>「張っているから張らない」と判断して本番が 0 本になる</strong></td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-caution">
+					<p><strong>初案は「カレントのフォルダ名から自分の ID を採る」だった。これは誤りだった。</strong></p>
+					<p><code>aichat</code> は PATH に入っているので<strong>どこから呼ばれるか決められず</strong>、ID は project フォルダ名と一致しないものが実際に使われている（<code>agent-rules</code>、<code>human</code>）。<strong>一致を前提にした実装は取り違える。</strong>ID は呼ぶ側が渡す（<a href="#i260903-02">i260903-02</a> の決めごと 1 と同じ）。</p>
+				</div>
+
+				<h2>出るもの</h2>
+
+				<pre><code class="language-text">&gt; aichat waiters :ai-chat-lite: -p 8787 -r public
+
+   ID              張り方  接続先  ルーム  いつから   経過     pid
+   20260824-ai-pc  aichat  :8787   public  19:58:33   1:01   50724
+*  ai-chat-lite    aichat  :8787   public  19:58:51   1:01   63572
+   agent-rules     aichat  :8787   public  19:59:15   1:00   66048
+
+  自分（ai-chat-lite）: 1 本（うち本番の public 1 本） / 全体 3 本</code></pre>
+
+				<p>印は 2 桁である。<strong>1 桁めの <code>*</code> が渡した ID の行、2 桁めの <code>!</code> が本番以外を見ている行</strong>。自分の分でも本番以外を見ていることがあるので、位置を分けてある。0 本なら <code>待受けは走っていません。</code> の 1 行だけを出す。</p>
+
+				<h3>本数だけでは足りない</h3>
+
+				<div class="callout callout-caution">
+					<p><strong>ルームを間違えると、静かに何も届かなくなる。</strong>繋がっているので <code>who</code> は「接続中」と出し、<code>waiters</code> も 1 本と数える。<strong>どこも異常に見えないのに、発言だけが届かない。</strong></p>
+					<p>ポートは間違えれば繋がらないか別のサーバーに繋がるので、まだ気づける。ルームにはそれが無い。<strong>だから接続先とルームの両方を列に出し、本番以外には <code>!</code> を付ける。</strong></p>
+					<p>集計も分ける。「1 本張っている」に<strong>テスト用に向いた分を混ぜて数えると、「張っているから張らない」と判断して本番の待受けが 1 本も無いまま止まる</strong>。<a href="#i260903-02">i260903-02</a> で直したのと同じ失敗の形である。</p>
+				</div>
+
+				<pre><code class="language-text">&gt; aichat waiters :test-otherroom: -p 8787 -r public
+
+   ID              張り方  接続先  ルーム  いつから   経過     pid
+   20260824-ai-pc  aichat  :8787   public  19:58:33   1:01   50724
+   ai-chat-lite    aichat  :8787   public  19:58:51   1:01   63572
+ ! test-otherport  node    :49999  public  20:59:54   0:00   62176
+*! test-otherroom  node    :8787   dev     20:59:54   0:00   65080
+
+  自分（test-otherroom）: 1 本（うち本番の public 0 本） / 全体 4 本
+  ! は本番（:8787 / public）以外を見ています
+  本番の待受けがありません。張ってください。</code></pre>
+
+				<p><strong>1 本張っているのに「本番の待受けがありません」と言う。</strong>これが出したかった答えである。</p>
+
+				<h2>どう数えているか</h2>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">やること</th><th>中身</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap">一覧を採る</td>
+						<td>C# 版は WMI（<code>Win32_Process</code>）を .NET から直に引く。<strong>PowerShell を挟まないので、検索式そのものが存在しない</strong>。node 版は <code>Get-CimInstance</code> を子プロセスで呼ぶ（Node に WMI を引く仕組みが無く、<code>wmic</code> は非推奨）</td>
+					</tr>
+					<tr>
+						<td class="nowrap">自分を外す</td>
+						<td>自分の pid を除く。node 版は一覧を採るために起こした子の pid も除く</td>
+						</tr>
+					<tr>
+						<td class="nowrap">親を落とす</td>
+						<td><strong>ここが要点。</strong>サブエージェントは pwsh 越しに呼ぶので、pwsh のコマンドラインにも <code>aichat wait :id:</code> がそのまま入っている。放っておくと <strong>1 本が 2 本に見える</strong>。<code>aichat-node</code> なら <code>cmd.exe</code> → <code>node.exe</code> と 3 段になる。<strong>「当たったものの直親」を落とすと、連鎖でも末端 1 つだけが残る</strong></td>
+					</tr>
+					<tr>
+						<td class="nowrap">式は 1 か所</td>
+						<td><code>options.mjs</code> の <code>WAITER_PATTERN</code>。JSON に書き出して C# 版に埋め込む。<strong>2 本が同じ式を見る</strong></td>
+					</tr>
+					<tr>
+						<td class="nowrap">古い形も拾う</td>
+						<td><code>-c</code> / <code>--connector-id</code> の形も見る。<strong>切り替えの途中は新旧が混ざる</strong>ので、片方だけ見ると相手の待受けを見落として二重に張らせる</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-tip">
+					<p><strong><code>wait</code> の後ろに空白を要求するのが肝である。</strong>これが無いと <code>waiters</code> 自身に一致し、<strong>数えているコマンドが数に入る</strong>。テストで押さえてある。</p>
+					<p><strong>従来の直呼び（<code>node …/chat.mjs wait</code>）も拾える。</strong>検索式では拾えず取りこぼしていた。</p>
+				</div>
+
+				<h2>やり残し</h2>
+
+				<div class="callout callout-warning">
+					<p><strong>node 版は <code>Get-CimInstance</code> を子プロセスで呼ぶ。</strong>その子のコマンドラインは <code>-like '*wait*'</code> を含むが、式が <code>wait</code> の後ろに <code>:id:</code> か <code>-c</code> を要求するため一致しない。<strong>加えて子の pid も除いている</strong>ので二重には守ってある。</p>
+					<p>ただし <strong>C# 版で消したはずの「子プロセスが混ざる」問題が、node 版では構造として残っている</strong>。<code>aichat</code> が使える環境では <code>aichat waiters</code> を使う方が確実である。</p>
+				</div>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> 8 つの論点を決めた</li>
+					<li class="done"><span class="badge b-done">☑</span> node 版・C# 版を実装した（<strong>2 本の出力が一致することを実測</strong>）</li>
+					<li class="done"><span class="badge b-done">☑</span> テストを足した（選び方・接続先・ルームで 23 件 ＋ 書式の突き合わせ 1 件。<strong>全 301 件が通る</strong>）</li>
+					<li class="done"><span class="badge b-done">☑</span> ビルドに <code>/r:System.Management.dll</code> と「古い exe の退避」を足した</li>
+					<li class="done"><span class="badge b-done">☑</span> ルールと USAGE から<strong>検索式の説明を丸ごと消した</strong>。<code>aichat waiters</code> だけを案内している（覚えることが 4 つ減った）</li>
+					<li class="done"><span class="badge b-done">☑</span> 周知した（<a href="#i260903-02">i260903-02</a> とまとめて 1 通、<code>msg_seq 474</code>）</li>
+				</ul>
+			</div>
+		</details>
+
 
 		<details class="issue doing" id="i260902-03" open>
 			<summary>
