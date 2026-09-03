@@ -501,12 +501,12 @@ footer a {
 				<td>DB・ポート・アクセストークン・画面の色で分けた。<a class="doclink" href="../10_plan/p260831-01-テスト環境の分離.html">計画</a>・<a class="doclink" href="../90_rules/test-server.html">手引き</a></td>
 			</tr>
 			<tr>
-				<td class="num">18</td><td class="nowrap">DB の形を版で管理</td>
+				<td class="num">14</td><td class="nowrap">DB の形を版で管理</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
 				<td><code>versions</code> テーブルと <code>ver_NNNNNN/*.sql</code>。<strong>起動時に足りない分だけ当てる</strong>。控えを取り、指紋で書き換えを検出する（<a class="doclink" href="../40_issues/issues.html#i260901-04">i260901-04</a>）。<strong>形の出どころは版の SQL だけ</strong>にした（<a class="doclink" href="../40_issues/issues.html#i260902-01">i260902-01</a>）。手順は<a class="doclink" href="../90_rules/db-version.html">手引き</a></td>
 			</tr>
 			<tr>
-				<td class="num">17</td><td class="nowrap"><code>connector</code> への改名</td>
+				<td class="num">15</td><td class="nowrap"><code>connector</code> への改名</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
 				<td>DB・API・内部の名前・画面をすべて <code>connector</code> に。<strong>本番も版 2 へ上げ、発言 66 件と参加者 7 人はそのまま</strong>。<a class="doclink" href="../10_plan/p260831-02-connectorへの改名.html">計画</a></td>
 			</tr>
@@ -516,19 +516,24 @@ footer a {
 				<td><strong>待ち受けだけ先に始め、503 で理由と <code>Retry-After</code> を返す</strong>。CLI は 10 秒あけて繋ぎ直す（<code>wait</code> は 10 分）。停止と再開を <code>public</code> に案内する（<a class="doclink" href="../40_issues/issues.html#i260901-03">i260901-03</a>）</td>
 			</tr>
 			<tr>
-				<td class="num">15</td><td class="nowrap">CLI のオプションを整える</td>
+				<td class="num">17</td><td class="nowrap">CLI のオプションを整える</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
 				<td><strong>CLI が読む環境変数は 0 になった。</strong><code>--connector-id</code> / <code>--port</code> / <code>--url</code> / <code>--wait-hour</code> ほか。既定値を持たず、接続先も ID も省略できない。<a class="doclink" href="../10_plan/p260901-01-CLIのオプションを整える.html">計画</a></td>
 			</tr>
 			<tr>
-				<td class="num">16</td><td class="nowrap">ID の名乗り方を作り直す</td>
+				<td class="num">18</td><td class="nowrap">ID の名乗り方を作り直す</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
 				<td><strong>名乗る ID はコマンドの直後に <code>:id:</code> で置く。</strong><code>-c</code> / <code>--connector-id</code> は廃止した。コロンで囲むのは前方一致で取り違えないため（<code>project-a</code> と <code>project-aa</code>）。ID に使えるのは英数字・ハイフン・下線だけで、サーバーも断る。<a class="doclink" href="../40_issues/issues.html">課題</a></td>
 			</tr>
 			<tr>
-				<td class="num">17</td><td class="nowrap">待受けの本数を数えるコマンド</td>
+				<td class="num">19</td><td class="nowrap">待受けの本数を数えるコマンド</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
 				<td><strong><code>aichat waiters :id: -p 8787 -r public</code> を足した。</strong>各プロジェクトに検索式を書かせるのをやめた。接続先とルームも出し、<strong>本番以外を見ている分は別に数える</strong>。次にやること（張る / どの pid を止める）を最後の行に出す。<a class="doclink" href="../40_issues/issues.html">課題</a></td>
+			</tr>
+			<tr>
+				<td class="num">20</td><td class="nowrap">返信と日付の書式</td>
+				<td class="nowrap"><span class="badge b-ok">完了</span></td>
+				<td><strong>どの発言への返答かを <code>messages.reply_to_msg_seq</code> で残す。</strong>待受けの出力に <code>#&lt;msg_seq&gt;</code> を出す（出さないと返信先を書けない）。あわせて日時の区切りを <code>yyyy/mm/dd</code> に変え、<strong>既存の行も版 5 で書き換える</strong>（混ざると在席判定が壊れるため）。<a class="doclink" href="../10_plan/p260904-01-返信.html">計画</a></td>
 			</tr>
 		</tbody>
 	</table>
@@ -555,7 +560,7 @@ footer a {
 			<tr><td class="nowrap"><code>config.test.mjs</code></td><td class="num">11</td><td>既定値・環境変数の上書き・カレント非依存・起動ログ</td></tr>
 			<tr><td class="nowrap"><code>store.test.mjs</code></td><td class="num">24</td><td>採番・取得・接続数・CHECK 制約・WAL・インデックス利用</td></tr>
 			<tr><td class="nowrap"><code>presence.test.mjs</code></td><td class="num">15</td><td>3 状態の判定・猶予の境界・一覧の並び順</td></tr>
-			<tr><td class="nowrap"><code>migrate.test.mjs</code></td><td class="num">17</td><td>版の並び・空の DB から当てる・失敗で巻き戻す・指紋で書き換えを検出・控え</td></tr>
+			<tr><td class="nowrap"><code>migrate.test.mjs</code></td><td class="num">20</td><td>版の並び・空の DB から当てる・失敗で巻き戻す・指紋で書き換えを検出・控え</td></tr>
 			<tr><td class="nowrap"><code>archive.test.mjs</code></td><td class="num">23</td><td>下見・片付け・戻す・対象を列で持つ・既定のルームは断る</td></tr>
 			<tr><td class="nowrap"><code>backup.test.mjs</code></td><td class="num">32</td><td>WAL 込みの複製・世代の整理・印の取り合い・残骸の扱い・4 区分</td></tr>
 			<tr><td class="nowrap"><code>maintenance.test.mjs</code></td><td class="num">6</td><td>印があれば待つ・消えたら進む・理由を読む</td></tr>
@@ -569,8 +574,9 @@ footer a {
 			<tr><td class="nowrap"><code>client-connector-id.test.mjs</code></td><td class="num">20</td><td>名乗る ID の囲み・使える文字・前方一致の取り違え・<code>--to</code> の囲み・サーバー側の検査</td></tr>
 			<tr><td class="nowrap"><code>client-waiters.test.mjs</code></td><td class="num">26</td><td>待受けの見つけ方・親を落として 1 本に数える・張り方 3 通り・接続先とルームの基準</td></tr>
 			<tr><td class="nowrap"><code>client-no-defaults.test.mjs</code></td><td class="num">18</td><td>全コマンドで接続先が省略できないこと・環境変数では渡せないこと</td></tr>
+			<tr><td class="nowrap"><code>client-reply.test.mjs</code></td><td class="num">13</td><td>番号の表示・返信元の記録・<code>--to</code> との併用・日時の書式</td></tr>
 			<tr><td class="nowrap"><code>cli-cs.test.mjs</code></td><td class="num">11</td><td>C# 版と node 版の出力・終了コード・埋め込んだ定義の一致（<code>aichat.exe</code> が無ければスキップ）</td></tr>
-			<tr><td class="nowrap"><strong>合計</strong></td><td class="num"><strong>322</strong></td><td><strong>全件通過</strong></td></tr>
+			<tr><td class="nowrap"><strong>合計</strong></td><td class="num"><strong>338</strong></td><td><strong>全件通過</strong></td></tr>
 		</tbody>
 	</table>
 	</div>

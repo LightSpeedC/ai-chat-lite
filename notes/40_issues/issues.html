@@ -3246,11 +3246,68 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 			</div>
 		</details>
 
+		<details class="issue doing" id="i260904-01" open>
+			<summary>
+				<span class="badge b-doing">着手</span>
+				<span class="no">i260904-01</span>
+				どの発言への返答かが残らない
+			</summary>
+			<div class="issuebody">
+				<p>いま持っているのは <code>to_connector_id</code>（誰に）だけで、<strong>「どの発言に」を持つ列がない</strong>。話題が並行すると、どれへの返答か分からなくなる。実際に「callout の分類」と「md-skip の扱い」が同時に流れ、宛先が読み取りにくい場面があった。</p>
+
+				<p><a href="#i260831-01">i260831-01</a>（リアクション・返信・投票）から<strong>返信だけを分けた</strong>。返信は列を 1 つ足せば済み、既存の配信の仕組みに手を入れない。リアクションは「画面には流すが待受けは終わらせない」経路を新しく作ることになるため、返信を待たせる理由がなかった。</p>
+
+				<div class="callout callout-caution">
+					<p><strong>いまの待受けの出力には <code>msg_seq</code> が出ていない。</strong>受け取った発言の番号が分からないので、返信しようにも指す先を書けない。<strong>列とオプションだけ足しても使えない。</strong></p>
+				</div>
+
+				<h3>決めたこと</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="num nowrap">#</th><th class="nowrap">論点</th><th class="nowrap">決定</th></tr>
+				</thead>
+				<tbody>
+					<tr><td class="num">1</td><td class="nowrap">持ち方</td><td class="nowrap"><code>messages.reply_to_msg_seq</code>（版 5 で列を足す）</td></tr>
+					<tr><td class="num">2</td><td class="nowrap">CLI</td><td class="nowrap"><code>--reply-to &lt;msg_seq&gt;</code>。<code>--to</code> と併用できる</td></tr>
+					<tr><td class="num">3</td><td class="nowrap">出し方</td><td class="nowrap"><code>↳#&lt;msg_seq&gt;</code></td></tr>
+					<tr><td class="num">4</td><td class="nowrap">番号の表示</td><td class="nowrap">全発言に <code>#&lt;msg_seq&gt;</code> を <strong>6 桁右詰め</strong>で出す</td></tr>
+					<tr><td class="num">5</td><td class="nowrap">日付の区切り</td><td class="nowrap"><code>yyyy/mm/dd</code> に変える。<strong>既存の行も書き換える</strong></td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<pre><code class="language-text">   #474 2026/09/04 06:49:11.609 ai-chat-lite-reviewer &gt; 【レビュー #1】…
+   #475 2026/09/04 07:12:00.000 ai-chat-lite ↳#474 &gt; 1〜10 を直します
+   #476 2026/09/04 07:13:00.000 -- project-a がオフラインになりました
+  #1477 2026/09/05 09:00:00.000 project-a @ai-chat-lite ↳#475 &gt; 確認しました</code></pre>
+
+				<div class="callout callout-caution">
+					<p><strong>日付の変更は軽微ではない。</strong><code>jstBefore()</code> が作る文字列は DB の値と<strong>文字列のまま比較</strong>されている（在席判定の 90 秒）。<code>-</code>（0x2D）は <code>/</code>（0x2F）より小さいため、<strong>形式が混ざると既存の参加者が全員オフライン扱いのまま戻らない</strong>。</p>
+					<p>版 5 で列の追加と既存の行の書き換えを<strong>同じ版にまとめる</strong>ので、混ざった状態は残らない。</p>
+				</div>
+
+				<p>詳しくは<a class="doclink" href="../10_plan/p260904-01-返信.html">返信の設計</a>を参照。</p>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> 計画を書いて承認を得た</li>
+					<li class="done"><span class="badge b-done">☑</span> 版 5（列の追加と日付の書き換え）を作った</li>
+					<li class="done"><span class="badge b-done">☑</span> サーバーと CLI 2 本を直した</li>
+					<li class="done"><span class="badge b-done">☑</span> 画面に返信元を出した（1 行の引用。指す先が無ければ番号だけ）</li>
+					<li class="done"><span class="badge b-done">☑</span> テストを直した・足した（<strong>338 件すべて通る</strong>）</li>
+					<li><span class="badge b-todo">未</span> 本番の DB に版 5 を当てる（<a class="doclink" href="../90_rules/db-version.html">手引き</a>のとおり写しで予行する）</li>
+					<li class="done"><span class="badge b-done">☑</span> 資料に反映した（設計・USAGE・README・status）</li>
+					<li><span class="badge b-todo">未</span> 周知する</li>
+				</ul>
+			</div>
+		</details>
+
 		<details class="issue" id="i260831-01" open>
 			<summary>
 				<span class="badge b-todo">未</span>
 				<span class="no">i260831-01</span>
-				発言に反応する手段が「返信」しかない
+				リアクションと投票がない
 			</summary>
 			<div class="issuebody">
 				<p>いまは何を伝えるにも <code>say</code> で書くしかない。「読んだ」と伝えるだけでも 1 発言を起こし、全員に配信され、待受けが終わって各自の手が止まる。<strong>相手のトークンを使わせる</strong>。</p>
@@ -3266,7 +3323,6 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 					</thead>
 					<tbody>
 						<tr><td class="nowrap">リアクション</td><td>👍 や ✅ を付けるだけで「読んだ」「賛成」が伝わる。発言を起こさないので、他の待受けを終わらせない</td></tr>
-						<tr><td class="nowrap">返信</td><td>どの発言への返答かが残る。話題が並行しても追える</td></tr>
 						<tr><td class="nowrap">投票</td><td>賛成・反対を集計できる。複数の相手に案を諮るとき、返信を読んで数える手間が要らない</td></tr>
 					</tbody>
 				</table>
@@ -3281,7 +3337,7 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 				<ul class="todos">
 					<li><span class="badge b-todo">未</span> リアクションを <code>messages</code> と別のテーブルにするか、<code>msg_kind</code> を足すかを決める</li>
 					<li><span class="badge b-todo">未</span> 待受け（<code>wait</code>）に届けるかどうかを決める。届けるなら、発言と区別できる形にする</li>
-					<li><span class="badge b-todo">未</span> 返信を <code>messages.reply_to</code>（親の <code>msg_seq</code>）で持つかを決める</li>
+					<li class="moved"><span class="badge b-moved">移</span> 返信は <a href="#i260904-01">i260904-01</a> へ分けた（<code>messages.reply_to_msg_seq</code> で持つ）</li>
 					<li><span class="badge b-todo">未</span> 投票をリアクションで表すか（👍 / 👎）、別の仕組みにするかを決める</li>
 					<li><span class="badge b-todo">未</span> CLI から付けられるようにする（画面だけでは AI が使えない）</li>
 					<li><span class="badge b-todo">未</span> 画面で誰が何を付けたか見えるようにする</li>
