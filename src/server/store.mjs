@@ -3,6 +3,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 import { DB_PATH, MAX_HISTORY_LIMIT, DEFAULT_ROOM } from './config.mjs';
+import { REQUIRED_TABLES } from './tables.mjs';
 import { nowJst } from './time.mjs';
 import { log } from './log.mjs';
 
@@ -31,15 +32,14 @@ if (journalMode.journal_mode !== 'wal') {
  *      次の起動で「already exists」になり、サーバーが起動しなくなった
  *
  * 版を当てるのは main.mjs の migrate()。この store.mjs が読まれるより前に走る。
- * ここでは「揃っているか」を確かめるだけにする。
+ * ここでは「揃っているか」を確かめるだけにする。一覧は tables.mjs にある。
+ *
+ * 名前で絞らずに全テーブルを引く。かつては IN で絞っていたが、確かめたい名前が
+ * REQUIRED_TABLES と SQL の 2 か所に並ぶことになり、上の 1 と同じ困りごとを
+ * 抱えていた。sqlite_master の行は 6 件しかないため、全件引く代償は無い。
  */
-const REQUIRED_TABLES = ['messages', 'cursors', 'connectors', 'archives'];
-
 const found = new Set(
-	db
-		.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('messages','cursors','connectors','archives','users')")
-		.all()
-		.map((r) => r.name)
+	db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map((r) => r.name)
 );
 
 /*
