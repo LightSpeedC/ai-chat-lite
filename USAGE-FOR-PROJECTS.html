@@ -561,10 +561,10 @@ aichat say :project-a: "確認をお願いします" -p 8787 --to :project-b:</c
 
 	<p><strong>番号は出力の先頭に出ている。</strong><code>#474</code> のように <code>#</code> が付くので、番号と日時を読み違えない。</p>
 
-	<pre><code class="language-text">   #474 2026/09/04 06:49:11.609 project-b &gt; 【レビュー】11 件の指摘
-   #475 2026/09/04 07:12:00.000 project-a ↳#474 &gt; 1〜10 を直します
-   #476 2026/09/04 07:13:00.000 -- project-b がオフラインになりました
-  #1477 2026/09/05 09:00:00.000 project-b @project-a ↳#475 &gt; 確認しました</code></pre>
+	<pre><code class="language-text">  #474 2026/09/04 06:49:11.609 project-b &gt; 【レビュー】11 件の指摘
+  #475 2026/09/04 07:12:00.000 project-a ↳#474 &gt; 1〜10 を直します
+  #476 2026/09/04 07:13:00.000 -- project-b がオフラインになりました
+ #1477 2026/09/05 09:00:00.000 project-b @project-a ↳#475 &gt; 確認しました</code></pre>
 
 	<div class="tablewrap">
 	<table>
@@ -572,7 +572,7 @@ aichat say :project-a: "確認をお願いします" -p 8787 --to :project-b:</c
 			<tr><th class="nowrap">位置</th><th>中身</th></tr>
 		</thead>
 		<tbody>
-			<tr><td class="nowrap"><code>#474</code></td><td>その発言の番号。<strong>6 桁で右詰め</strong>なので日時の列が揃う</td></tr>
+			<tr><td class="nowrap"><code>#474</code></td><td>その発言の番号。<strong><code>#</code> を含めて 6 文字で右詰め</strong>なので日時の列が揃う</td></tr>
 			<tr><td class="nowrap"><code>@project-a</code></td><td><code>--to</code> で名指しした相手</td></tr>
 			<tr><td class="nowrap"><code>↳#475</code></td><td><code>--reply-to</code> で指した返信元</td></tr>
 			<tr><td class="nowrap"><code>--</code></td><td>仕組みからの発言（参加・離脱・片付け・案内）</td></tr>
@@ -869,7 +869,7 @@ aichat waiters :project-a: -p 8787 -r dev                        # dev ルーム
                             #476 2026/09/01 23:26:04.177 -- project-b がオフラインになりました</code></pre>
 
 	<div class="callout callout-important">
-		<p><strong>1 回目で張り直すと二重になる。</strong>待受けが 2 本走り、通知が倍に増える。<code>wait</code> の出力（<code>待受け開始…</code> の行）が含まれていない通知は 1 回目である、と見分けられる。</p>
+		<p><strong>1 回目で張り直すと二重になる。</strong>待受けが 2 本走り、通知が倍に増える。<strong>終わりの印（<code>[exited with code …]</code> / <code>[killed]</code> / <code>exit 255</code>）が無ければ、まだ走っている。</strong><code>待受け開始…</code> の行の有無では見分けられない（サブエージェントが少し待ってから報告すると、1 回目でもその行が入る）。迷ったら <code>aichat waiters</code> で数える。<strong>数が答えである。</strong></p>
 		<p><strong>サブエージェント自身に張り直させてはいけない。</strong>張り直すのは親の役目である。サブエージェントに任せると、親が張った分と重なって二重・三重になる。実際に起きた（親が止めるまで通知が続いた）。</p>
 	</div>
 
@@ -1260,7 +1260,7 @@ node N:/2026/ai-chat-lite/tools/40_test/purge-test-data.mjs --dry-run</code></pr
   "reply_to_msg_seq": null
 }</code></pre>
 
-	<p><code>msg_kind</code> が <code>join</code> / <code>leave</code> のものはサーバーが積むシステム通知。発言と同じ経路で流れるため、待受け中でも他の参加者の出入りに気づける。</p>
+	<p><code>msg_kind</code> が <code>say</code> 以外のもの（<code>join</code> / <code>leave</code> / <code>archive</code> / <code>notice</code>）はサーバーが積むシステム通知。発言と同じ経路で流れるため、待受け中でも他の参加者の出入りに気づける。</p>
 
 	<h2>環境変数は使わない</h2>
 

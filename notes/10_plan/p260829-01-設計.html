@@ -491,6 +491,72 @@ footer a {
 	<h2>既存の仕組みとの関係</h2>
 
 	<p>Claude Code には <code>ListAgents</code> と <code>SendMessage</code> で他のローカルセッションへ直接メッセージを送る仕組みが既にある。ただし人間の参加・履歴の蓄積・オンライン一覧を持たないため、今回の要件はこれとは別に用意する。</p>
+
+	<h2>個別の計画書</h2>
+
+	<p>大きな変更は個別の計画書（<code>notes/10_plan/pyymmdd-nn-件名.html</code>）を立てて実装している。<strong>この資料は全体を示すもので、詳細は下の表から辿る。</strong>片付いた計画書も消さずに並べたままにする。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">計画書</th><th>決めたこと</th><th class="nowrap">状態</th><th class="nowrap">主に効いている章</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><a href="p260829-01-設計.html">p260829-01 設計</a></td>
+				<td>全体。テーブル・API・オンライン判定・CLI・サービス化</td>
+				<td class="nowrap">この資料</td>
+				<td class="nowrap">&mdash;</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><a href="p260830-01-バックアップ.html">p260830-01 バックアップ</a></td>
+				<td>世代を分けて残す。<strong>DB は 3 つで 1 組</strong>、<code>VACUUM INTO</code>、ファイルによる排他</td>
+				<td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td class="nowrap"><a href="#ch03">データ設計</a></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><a href="p260830-02-アーカイブ機能.html">p260830-02 アーカイブ機能</a></td>
+				<td>参加者・ルーム・発言を、戻せる形で片付ける</td>
+				<td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td class="nowrap"><a href="#ch03">データ設計</a> / <a href="#ch06">クライアントと待受け</a></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><a href="p260830-03-テストデータ.html">p260830-03 テストデータ</a></td>
+				<td><code>test-</code> / <code>sandbox-</code> の規約と、物理削除の手順</td>
+				<td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td class="nowrap"><a href="#ch05">オンライン判定と ID</a></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><a href="p260831-01-テスト環境の分離.html">p260831-01 テスト環境の分離</a></td>
+				<td>DB・ポート・アクセストークン・画面の色で分ける。<strong>忘れたら止まる形にする</strong></td>
+				<td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td class="nowrap"><a href="#ch04">API</a> / <a href="#ch07">作るものと実装ステップ</a></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><a href="p260831-02-connectorへの改名.html">p260831-02 connector への改名</a></td>
+				<td>繋いでくる側の呼び名を <code>connector</code> に統一する</td>
+				<td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td class="nowrap"><a href="#ch03">データ設計</a></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><a href="p260901-01-CLIのオプションを整える.html">p260901-01 CLI のオプションを整える</a></td>
+				<td>環境変数を読むのをやめ、<strong>接続先も ID も既定値を持たない</strong></td>
+				<td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td class="nowrap"><a href="#ch06">クライアントと待受け</a></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><a href="p260904-01-返信.html">p260904-01 返信</a></td>
+				<td><code>reply_to_msg_seq</code> と <code>#&lt;msg_seq&gt;</code> の表示。日時の区切りを <code>yyyy/mm/dd</code> に</td>
+				<td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td class="nowrap"><a href="#ch03">データ設計</a> / <a href="#ch06">クライアントと待受け</a></td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-important">
+		<p><strong>ここには全件を並べる。</strong>どれを載せるか選ぶと、載せる・載せないの判断が毎回要る。<code>notes/10_plan/</code> のファイル数と行数が合っているかだけを見れば済む形にしてある。</p>
+	</div>
 </section>
 
 <!-- ================= 02 ================= -->
@@ -696,7 +762,8 @@ export const DB_PATH = join(DATA_DIR, 'chat.db');</code></pre>
   msg_body          TEXT    NOT NULL
                       CHECK (length(msg_body) BETWEEN 1 AND 32000),
   archived_seq      INTEGER,
-  ref_archived_seq  INTEGER
+  ref_archived_seq  INTEGER,
+  reply_to_msg_seq  INTEGER
 );
 
 CREATE TABLE connectors (
@@ -740,6 +807,15 @@ CREATE TABLE archives (
                           CHECK (length(description) BETWEEN 1 AND 200)
 );
 
+CREATE TABLE versions (
+  version_seq INTEGER PRIMARY KEY,
+  applied_at  TEXT    NOT NULL
+                CHECK (length(applied_at) = 23),
+  script      TEXT    NOT NULL,
+  sql_sha256  TEXT    NOT NULL
+                CHECK (length(sql_sha256) = 64)
+);
+
 CREATE INDEX messages_ix_room_id_msg_seq ON messages(room_id, msg_seq);
 CREATE INDEX messages_ix_archived_seq    ON messages(archived_seq);
 CREATE INDEX cursors_ix_archived_seq     ON cursors(archived_seq);
@@ -777,7 +853,7 @@ CREATE INDEX connectors_ix_archived_seq  ON connectors(archived_seq);</code></pr
 			</tr>
 			<tr>
 				<td class="nowrap"><code>msg_kind</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可</td>
-				<td class="nowrap"><code>say</code> / <code>join</code> / <code>leave</code></td>
+				<td class="nowrap"><code>say</code> / <code>join</code> / <code>leave</code> / <code>archive</code> / <code>notice</code></td>
 				<td>出来事の種類</td>
 			</tr>
 			<tr>
@@ -840,18 +916,7 @@ CREATE INDEX connectors_ix_archived_seq  ON connectors(archived_seq);</code></pr
 
 	<p>参加者とルームの組ごとに 1 行。<strong>読んだ位置はサーバーが覚える。</strong></p>
 
-	<pre><code class="language-sql">CREATE TABLE cursors (
-  connector_id    TEXT    NOT NULL
-               CHECK (length(connector_id) BETWEEN 1 AND 64),
-  room_id    TEXT    NOT NULL
-               CHECK (length(room_id) BETWEEN 1 AND 64),
-  msg_seq    INTEGER NOT NULL
-               CHECK (msg_seq &gt;= 0),
-  updated_at TEXT    NOT NULL
-               CHECK (length(updated_at) = 23),
-  archived_seq INTEGER,
-  PRIMARY KEY (connector_id, room_id)
-);</code></pre>
+	<p>形は同じ章の<strong>スキーマ</strong>に置いてある。ここでは移した理由と各列の意味だけを扱う。</p>
 
 	<p>当初はクライアント側のファイル（<code>_data/cursor-&lt;id&gt;-&lt;room&gt;.json</code>）に書いていたが、DB に移した。</p>
 
@@ -1039,7 +1104,7 @@ CREATE INDEX connectors_ix_archived_seq  ON connectors(archived_seq);</code></pr
 
 	<pre><code class="language-text">2026/08/29 12:34:56.789</code></pre>
 
-	<p>この形なら <code>WHERE sent_at &gt;= '2026-08-29'</code> のような範囲検索が単なる文字列比較で通り、<code>ORDER BY</code> も正しく並ぶ。日本標準時は夏時間を採用していないため、この順序が崩れることもない（夏時間のある地域では切り替え時に 1 時間巻き戻って順序が壊れる）。</p>
+	<p>この形なら <code>WHERE sent_at &gt;= '2026/08/29'</code> のような範囲検索が単なる文字列比較で通り、<code>ORDER BY</code> も正しく並ぶ。日本標準時は夏時間を採用していないため、この順序が崩れることもない（夏時間のある地域では切り替え時に 1 時間巻き戻って順序が壊れる）。</p>
 
 	<p>日本国内でしか使わないため UTC では持たず、JST をそのまま格納する。オフセット表記も付けない。ブラウザも CLI も DB の値をそのまま表示でき、UTC 保存なら必要だった表示側の変換処理が丸ごと消える。</p>
 
@@ -1050,9 +1115,10 @@ CREATE INDEX connectors_ix_archived_seq  ON connectors(archived_seq);</code></pr
 	<pre><code class="language-javascript">/** JST の現在時刻を "2026/08/29 12:34:56.789" 形式で返す */
 function nowJst() {
 	return new Date(Date.now() + 9 * 3600 * 1000)
-		.toISOString()      // 2026-08-29T12:34:56.789Z
-		.slice(0, 23)       // 2026-08-29T12:34:56.789
-		.replace('T', ' '); // 2026/08/29 12:34:56.789
+		.toISOString()          // 2026-08-29T12:34:56.789Z
+		.slice(0, 23)           // 2026-08-29T12:34:56.789
+		.replace('T', ' ')      // 2026-08-29 12:34:56.789
+		.replaceAll('-', '/');  // 2026/08/29 12:34:56.789
 }</code></pre>
 
 	<h2>room_id</h2>
@@ -1291,9 +1357,12 @@ if (mode.journal_mode !== 'wal') {
 	<h3>版と環境を返す</h3>
 
 	<pre><code class="language-json">{
-	"version": "20260831-1030",
-	"started_at": "2026-08-31 10:30:12.345",
-	"env": "production"
+	"version": "20260904-0841",
+	"started_at": "2026/09/04 08:41:20.897",
+	"env": "production",
+	"maintenance": false,
+	"maintenance_since": "",
+	"maintenance_reason": ""
 }</code></pre>
 
 	<div class="tablewrap">
@@ -1305,6 +1374,9 @@ if (mode.journal_mode !== 'wal') {
 			<tr><td class="nowrap"><code>version</code></td><td>起動した時刻から作る。<strong>入れ替えたら必ず変わる</strong>。ブラウザはこれを見て自分を読み直す</td></tr>
 			<tr><td class="nowrap"><code>started_at</code></td><td>起動した時刻そのもの</td></tr>
 			<tr><td class="nowrap"><code>env</code></td><td><code>production</code> か <code>test</code>。<strong><code>AICHAT_DATA</code> が既定かどうかで決まる</strong></td></tr>
+			<tr><td class="nowrap"><code>maintenance</code></td><td>メンテナンス中かどうか（真偽）</td></tr>
+			<tr><td class="nowrap"><code>maintenance_since</code></td><td>いつから。平常時は空文字</td></tr>
+			<tr><td class="nowrap"><code>maintenance_reason</code></td><td>理由。平常時は空文字。<strong>この口はループバックからしか届かない</strong>ので理由も返す</td></tr>
 		</tbody>
 	</table>
 	</div>
@@ -1831,46 +1903,75 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 	<pre><code class="language-text">N:/2026/ai-chat-lite/
   README.html                      … 概要・セットアップ・資料へのリンク
   USAGE-FOR-PROJECTS.html          … 他プロジェクトからの使い方（AI が読む）
+  CLAUDE.md                        … ローカルルールを 1 行で取り込む
+  aichat.exe                       … C# 版 CLI（Git 管理外）。PATH に入れて使う
+  aichat-node.cmd                  … node 版 CLI のランチャー
   .gitignore
   node-ai-chat-lite-winsw.exe      … WinSW 本体（Git 管理外）
   node-ai-chat-lite-winsw.xml      … サービス定義
   node-ai-chat-lite.exe            … node.exe のコピー（Git 管理外・98.9 MB）
   etc/c.bat
   docs/css/style.css               … 共通 CSS（notes から相対参照する）
+  docs/ファイルで排他する.html     … 公開資料
   src/
     server/main.mjs                … 起動口。印が消えるのを待ってから server を読む
+    server/listen.mjs              … 待ち受けだけを始める。受け口はあとから差し替える
     server/server.mjs              … HTTP ルーティング・SSE・long-poll
+    server/serve.mjs               … HTTP の応答を組み立てる（JSON・静的ファイル）
     server/hub.mjs                 … 新着を待っている相手をまとめて管理する
-    server/store.mjs               … node:sqlite（スキーマ作成・投稿・範囲取得）
+    server/store.mjs               … node:sqlite（投稿・範囲取得）。形は作らず、揃っているかだけ確かめる
+    server/tables.mjs              … 版が作るテーブルの名前。store.mjs が確かめる一覧
+    server/migrate.mjs             … 版を当てる。versions を作り、足りない分だけ順に当てる
+    server/backup.mjs              … 控えを取る（VACUUM INTO）。世代を整理する
     server/presence.mjs            … online / grace / offline の 3 状態を判定
     server/config.mjs              … ポート等の既定値
     server/time.mjs                … JST の固定長文字列を作る
     server/log.mjs                 … 日時とレベルを付けて 1 行 1 件で出す
     server/maintenance.mjs         … _data\MAINTENANCE を見張る
+    server/maintenance-handler.mjs … メンテナンス中の受け口。DB を触らない
     client/chat.mjs                … CLI クライアント（AI・人間 共用）
     web/index.html                 … チャット画面
     web/css/chat.css
     web/js/chat.js                 … SSE 受信・送信・参加者一覧の描画
     web/js/markdown.js             … 本文の変換。エスケープを先に済ませる
+    scripts/20_migrate/            … ver_NNNNNN/*.sql。DB の形の出どころ
+    cli-cs/                        … C# 版 CLI の原本（Args・Commands・Waiters ほか 8 本）
   tests/
+    helpers/prepare-db.mjs         … 置き場を作り直して版を当てる。store より先に呼ぶ
+    helpers/cli-args.mjs           … ID の囲みなど、CLI の引数を組み立てる
     time.test.mjs                  … node:test で書く。node --test tests/ で一括実行
     config.test.mjs
+    tables.test.mjs
     store.test.mjs
+    migrate.test.mjs
     presence.test.mjs
-    maintenance.test.mjs
-    markdown.test.mjs
     server.test.mjs
-  tools/40_test/
-    run-tests.ps1 / .cmd           … テストを全件実行する
-  tools/50_run/
-    start-server.ps1 / .cmd        … サーバーを別ウィンドウで起動（開発用）
-    open-chat.cmd                  … 既定ブラウザで画面を開く
-  tools/70_deploy/
-    install-service.cmd            … サービス登録（管理者・実体フォルダで実行）
-    uninstall-service.cmd
-  notes/
-    10_plan/p260829-01-設計.html
-    30_status/status.html          … 実装の進み具合と次にやること
+    archive.test.mjs
+    backup.test.mjs
+    maintenance.test.mjs
+    maintenance-flow.test.mjs
+    maintenance-handler.test.mjs
+    markdown.test.mjs
+    client-wait.test.mjs
+    client-waiters.test.mjs
+    client-reply.test.mjs
+    client-connector-id.test.mjs
+    client-no-defaults.test.mjs
+    client-unreachable.test.mjs
+    client-usage.test.mjs
+    cli-cs.test.mjs
+  tools/20_build/                  … aichat.exe のビルド。オプション定義の書き出し
+  tools/30_html2md/                … HTML から Markdown を作るランチャー
+  tools/40_test/                   … テストの実行・テスト用サーバー・計測
+  tools/50_run/                    … 開発用の起動と画面を開く
+  tools/70_deploy/                 … サービスの登録・解除
+  tools/80_ops/                    … バックアップ・復旧・ログの加工
+  notes/01_research/               … 調べたこと
+  notes/10_plan/                   … 設計と個別の計画書
+  notes/30_status/                 … 実装の進み具合と次にやること
+  notes/40_issues/                 … これから解決する課題
+  notes/60_releases/               … 変わったことの記録
+  notes/90_rules/                  … ローカルルールと運用の手引き
   logs/                            … サービスのログ（Git 管理外）
   _data/                           … chat.db・MAINTENANCE（Git 管理外）
   tmp/  etc/                       … Git 管理外</code></pre>
@@ -2032,12 +2133,26 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 
 	<p><code>versions</code> テーブルに、どこまで当てたかを持つ。起動時に足りない分だけを順に当てる。</p>
 
-	<pre><code class="language-sql">CREATE TABLE versions (
-  version_seq INTEGER PRIMARY KEY,
-  applied_at  TEXT    NOT NULL,   -- 当てた時刻
-  script      TEXT    NOT NULL,   -- 実行したファイル名
-  sql_sha256  TEXT    NOT NULL    -- 中身の指紋
-);</code></pre>
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">列</th><th>何か</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap"><code>version_seq</code></td><td>版の番号</td></tr>
+			<tr><td class="nowrap"><code>applied_at</code></td><td>当てた時刻</td></tr>
+			<tr><td class="nowrap"><code>script</code></td><td>実行したファイル名</td></tr>
+			<tr><td class="nowrap"><code>sql_sha256</code></td><td>中身の指紋</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>形は<strong>スキーマ</strong>にある。</p>
+
+	<div class="callout callout-caution">
+		<p>他の 4 つのテーブルは <code>src/scripts/20_migrate/</code> の SQL が形の出どころだが、<strong><code>versions</code> だけは <code>migrate.mjs</code> の <code>CREATE TABLE IF NOT EXISTS</code> が出どころ</strong>である。版の状況を読むために先に必要なので、版の SQL では作れない。</p>
+		<p><strong>作り直す版を足すときも、この文字列は書き換えない。</strong>書き換えると空の DB でだけ壊れる（新しい形が先にでき、そこへ旧→新の作り直しが当たり、消した列を <code>SELECT</code> して落ちる）。既存の DB では起きないため、気づくのが最後になる。</p>
+	</div>
 
 	<h3>版を足す手順</h3>
 
@@ -2049,7 +2164,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 		<tbody>
 			<tr><td class="num">1</td><td>次の番号の <code>src/scripts/20_migrate/ver_NNNNNN/</code> を作る。<strong>番号は連続させる</strong>（飛んでいると起動が止まる）</td></tr>
 			<tr><td class="num">2</td><td>その下に <code>001-なにをするか.sql</code> を置く。<strong>1 つの版に複数置ける</strong>（名前順に当たる）</td></tr>
-			<tr><td class="num">3</td><td>テーブルを増やしたときは <code>store.mjs</code> の <code>REQUIRED_TABLES</code> に足す。<strong>形そのものは書かない</strong></td></tr>
+			<tr><td class="num">3</td><td>テーブルを増やしたときは <code>src/server/tables.mjs</code> の <code>REQUIRED_TABLES</code> に足す。<strong>形そのものは書かない</strong>。ただし <code>versions</code> は入れない（<code>migrate.mjs</code> 自身が最初に作るため、<code>store.mjs</code> が開く時点で必ず在る）。<strong>入れ忘れは <code>tests/tables.test.mjs</code> が落とす</strong></td></tr>
 			<tr><td class="num">4</td><td>テストを流す。<strong>空の DB から全部当てて最新の形になるか</strong>を <code>migrate.test.mjs</code> が見る</td></tr>
 			<tr><td class="num">5</td><td><strong>本番の写しで予行する</strong>（<a class="doclink" href="../90_rules/db-version.html">手引き</a>）。控えを取り、テスト環境で当ててから進む</td></tr>
 			<tr><td class="num">6</td><td>サーバーを起動し直す。<strong>起動時に自動で当たる</strong></td></tr>
@@ -2181,11 +2296,11 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 
 	<p><code>restore.ps1</code> は 0 と 1 を自分で行う。<strong>素の <code>restart</code>（コードの入れ替え）では何も流さない</strong>ので、開発中にルームが起動メッセージで埋まることはない。</p>
 
-	<pre><code class="language-text">2026-08-30 07:56:57.625 WARN  メンテナンスの印があるため、起動を保留します
-2026-08-30 07:56:57.625 WARN    印: （実体）\_data\MAINTENANCE
-2026-08-30 07:56:57.625 WARN    理由: DB を整理している
-2026-08-30 07:56:57.625 WARN    この印を消すと、自分から起動します
-2026-08-30 07:57:19.601 INFO  メンテナンスの印が消えました。起動を続けます</code></pre>
+	<pre><code class="language-text">2026/08/30 07:56:57.625 WARN  メンテナンスの印があるため、起動を保留します
+2026/08/30 07:56:57.625 WARN    印: （実体）\_data\MAINTENANCE
+2026/08/30 07:56:57.625 WARN    理由: DB を整理している
+2026/08/30 07:56:57.625 WARN    この印を消すと、自分から起動します
+2026/08/30 07:57:19.601 INFO  メンテナンスの印が消えました。起動を続けます</code></pre>
 
 	<h3>起動口を分けている理由</h3>
 
@@ -2235,7 +2350,7 @@ if (waited) announceResumed(info.since);</code></pre>
 
 	<p>1 行 1 件。<strong>先頭に固定長の JST 日時、次にレベル</strong>を置く。</p>
 
-	<pre><code class="language-text">2026-08-29 23:23:37.264 INFO  待ち受け: http://localhost:8787/  [::1, 127.0.0.1]
+	<pre><code class="language-text">2026/08/29 23:23:37.264 INFO  待ち受け: http://localhost:8787/  [::1, 127.0.0.1]
 └──────── 23 文字 ───────┘ └─5─┘</code></pre>
 
 	<div class="tablewrap">
@@ -2268,11 +2383,11 @@ if (waited) announceResumed(info.since);</code></pre>
 
 	<p>既定値だけで動く作りにしている以上、外から見て「どの DB を掴んだか」が分からない。設定ミスがあっても静かに動いてしまうため、<strong>起動時に環境変数の名前と値を出す</strong>。<strong>既定値のままなのか、環境変数で上書きされたのか</strong>も併せて記録する。</p>
 
-	<pre><code class="language-text">2026-08-29 23:23:37.262 INFO  ai-chat-lite サーバーを起動しました
-2026-08-29 23:23:37.264 INFO  AICHAT_PORT = 8787                        (既定)
-2026-08-29 23:23:37.264 INFO  AICHAT_DATA = N:/2026/ai-chat-lite/_data  (既定)
-2026-08-29 23:23:37.264 INFO  環境          = 本番                          (既定)
-2026-08-29 23:23:37.264 INFO  待ち受け: http://localhost:8787/  [::1, 127.0.0.1]</code></pre>
+	<pre><code class="language-text">2026/08/29 23:23:37.262 INFO  ai-chat-lite サーバーを起動しました
+2026/08/29 23:23:37.264 INFO  AICHAT_PORT = 8787                        (既定)
+2026/08/29 23:23:37.264 INFO  AICHAT_DATA = N:/2026/ai-chat-lite/_data  (既定)
+2026/08/29 23:23:37.264 INFO  環境          = 本番                          (既定)
+2026/08/29 23:23:37.264 INFO  待ち受け: http://localhost:8787/  [::1, 127.0.0.1]</code></pre>
 
 	<p>サービスとして動かすと <code>logs/</code> に残るため、想定と違う場所を掴んでいればすぐ気づける。ポートの衝突・DB の取り違え・片方のアドレスでしか待ち受けていない状態は、この数行で切り分けられる。</p>
 

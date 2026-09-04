@@ -458,6 +458,10 @@ footer a {
 				<td class="nowrap">コマンド表</td>
 				<td>CLI のコマンドとオプション</td>
 			</tr>
+			<tr>
+				<td class="nowrap">個別の計画書の一覧</td>
+				<td><code>notes/10_plan/</code> の全件が表に並んでいるか。<strong>片付いたものも消さない</strong></td>
+			</tr>
 		</tbody>
 	</table>
 	</div>
@@ -465,6 +469,11 @@ footer a {
 	<div class="callout callout-caution">
 		<p><strong>スキーマは手で写さない。</strong>版を重ねるたびに写していたため、設計書が 6 か所ずれていた。<code>cursors</code> と <code>archives</code> が丸ごと無く、<code>messages</code> に足した 2 列と <code>msg_kind</code> の 2 値、索引 3 本も落ちていた。</p>
 		<p>テスト用の置き場を新しく作って版を当て、<code>sqlite_master</code> から取り出せば<strong>ずれようがない</strong>。</p>
+	</div>
+
+	<div class="callout callout-important">
+		<p><strong>計画書は設計書の表から辿れるようにする。</strong>README には代表だけを載せる。</p>
+		<p>README の資料一覧は<strong>色相を本数で割って振っている</strong>（刻み＝280 ÷（本数 − 1））。1 本足すと <code>hsl()</code> の指定が 28 か所すべて変わるため、<strong>計画書を足すたびに全部を振り直すことになる。</strong></p>
 	</div>
 </section>
 
