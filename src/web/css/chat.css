@@ -12,6 +12,9 @@
 	--ink-soft: #4a5568;
 	--line: #d9dfe8;
 	--code-bg: #f4f6fa;
+
+	/* 発言が流れる枠の地色。白い吹き出しを浮かせるため、ほんのり色を付ける */
+	--pane: #eff7f0;
 	--link: #1a4fa0;
 
 	/* 在席の状態。presence.mjs の STATUS と対応する */
@@ -274,7 +277,7 @@ body {
 	flex: 1;
 	overflow-y: auto;
 	padding: 16px 22px;
-	background: #fdfdfe;
+	background: var(--pane, #eff7f0);
 	color: var(--ink, #1c2330);
 }
 
@@ -345,10 +348,11 @@ body {
 	flex-direction: row-reverse;
 }
 
+/* 地色（--pane）と同じ色相で、少しだけ濃くする。相手の白と見分けるため */
 .msg.mine .body {
-	background: #eaf1fd;
+	background: #ddefe1;
 	color: var(--ink, #1c2330);
-	border-color: #c7d9f5;
+	border-color: #bcdcc2;
 	border-radius: 12px 4px 12px 12px;
 }
 
@@ -392,11 +396,17 @@ body {
 	white-space: nowrap;
 }
 
-/* 入退室 */
+/* 入退室・片付けの知らせ・案内 */
 .msg.system {
 	max-width: 100%;
-	text-align: center;
+	text-align: left;
 	margin: 14px 0;
+}
+
+/* 発言の meta より一段小さくする。出来事の記録なので前に出さない */
+.msg.system .meta {
+	font-size: 0.7em;
+	margin-bottom: 1px;
 }
 
 .msg.system .body {

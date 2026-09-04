@@ -9,6 +9,7 @@
  */
 
 import { renderBody, escapeText } from './markdown.js';
+import { isStaleSystem } from './stale.js';
 
 const HISTORY_LIMIT = 50;
 
@@ -108,7 +109,14 @@ function messageElement(m) {
 
 	if (m.msg_kind !== 'say') {
 		wrap.className = 'msg system';
-		wrap.innerHTML = `<div class="body">${renderBody(m.msg_body)}</div>`;
+
+		/*
+		 * 日時と番号は発言と同じ形で出す。番号が無いと --reply-to に渡す先が
+		 * 画面から読み取れず、日時が無いといつの出来事か分からない。
+		 */
+		wrap.innerHTML =
+			`<div class="meta">${escapeText(m.sent_at)} ・ <span class="seq">#${m.msg_seq}</span></div>` +
+			`<div class="body">${renderBody(m.msg_body)}</div>`;
 
 		/*
 		 * 片付けの知らせには、その場で戻すボタンを添える。
@@ -173,7 +181,8 @@ function appendMessages(messages) {
 	const stick = isAtBottom();
 	for (const m of messages) {
 		if (m.msg_seq <= cursor) continue;
-		el.items.appendChild(messageElement(m));
+		// 出さない分も cursor は進める。止めると同じ行を何度も取りに行く
+		if (!isStaleSystem(m)) el.items.appendChild(messageElement(m));
 		cursor = m.msg_seq;
 		if (oldestSeq === null) oldestSeq = m.msg_seq;
 	}
@@ -187,7 +196,10 @@ function prependMessages(messages) {
 	}
 	const before = el.log.scrollHeight;
 	for (let i = messages.length - 1; i >= 0; i--) {
-		el.items.insertBefore(messageElement(messages[i]), el.items.firstChild);
+		// 出さない分も oldestSeq は進める。止めると「もっと読む」が同じ所を繰り返す
+		if (!isStaleSystem(messages[i])) {
+			el.items.insertBefore(messageElement(messages[i]), el.items.firstChild);
+		}
 		oldestSeq = messages[i].msg_seq;
 	}
 	// 読み込み前に見ていた位置を保つ
@@ -419,7 +431,9 @@ async function start() {
 	if (history.messages.length > 0) {
 		oldestSeq = history.messages[0].msg_seq;
 		cursor = history.messages[history.messages.length - 1].msg_seq;
-		for (const m of history.messages) el.items.appendChild(messageElement(m));
+		for (const m of history.messages) {
+			if (!isStaleSystem(m)) el.items.appendChild(messageElement(m));
+		}
 		el.log.scrollTop = el.log.scrollHeight;
 	} else {
 		cursor = joined.msg_seq;
