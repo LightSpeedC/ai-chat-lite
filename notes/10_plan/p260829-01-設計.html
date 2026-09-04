@@ -406,7 +406,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 設計</h1>
 		<p class="lead">ローカルPC内で AI セッションと人間が同席する簡易チャットの設計</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-04</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-05</p>
 	</div>
 </div>
 
@@ -549,6 +549,12 @@ footer a {
 				<td><code>reply_to_msg_seq</code> と <code>#&lt;msg_seq&gt;</code> の表示。日時の区切りを <code>yyyy/mm/dd</code> に</td>
 				<td class="nowrap"><span class="badge b-ok">済</span></td>
 				<td class="nowrap"><a href="#ch03">データ設計</a> / <a href="#ch06">クライアントと待受け</a></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><a href="p260905-01-待受けの種別しぼり.html">p260905-01 待受けの種別しぼり</a></td>
+				<td>参加・離脱では待受けを起こさない。<code>--with-joins</code> で含める</td>
+				<td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td class="nowrap"><a href="#ch04">API</a> / <a href="#ch06">クライアントと待受け</a></td>
 			</tr>
 		</tbody>
 	</table>
@@ -721,18 +727,18 @@ export const DB_PATH = join(DATA_DIR, 'chat.db');</code></pre>
 		<tbody>
 			<tr>
 				<td class="nowrap">手動（<code>N:</code> から）</td>
-				<td class="nowrap"><code>N:/2026/ai-chat-lite</code></td>
-				<td class="nowrap"><code>N:/2026/ai-chat-lite/_data/chat.db</code></td>
+				<td class="nowrap"><code>&lt;ai-chat-lite&gt;</code></td>
+				<td class="nowrap"><code>&lt;ai-chat-lite&gt;/_data/chat.db</code></td>
 			</tr>
 			<tr>
 				<td class="nowrap">別のカレントから</td>
 				<td class="nowrap"><code>C:\Windows\System32</code></td>
-				<td class="nowrap"><code>N:/2026/ai-chat-lite/_data/chat.db</code></td>
+				<td class="nowrap"><code>&lt;ai-chat-lite&gt;/_data/chat.db</code></td>
 			</tr>
 			<tr>
 				<td class="nowrap">実体パス経由<br>（サービスと同じ）</td>
 				<td class="nowrap"><code>C:\Windows\System32</code></td>
-				<td class="nowrap">（実体）<code>\2026\ai-chat-lite\_data\chat.db</code></td>
+				<td class="nowrap">（実体）<code>\ai-chat-lite\_data\chat.db</code></td>
 			</tr>
 		</tbody>
 	</table>
@@ -1318,8 +1324,8 @@ if (mode.journal_mode !== 'wal') {
 			</tr>
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/poll</code></td>
-				<td class="nowrap"><code>connector_id</code> / <code>room_id</code><br><code>since</code> / <code>wait</code></td>
-				<td>long-poll。新着があれば即返し、無ければ最大 <code>wait</code> 秒待つ。<code>since</code> は省略できる（<a href="#ch03">記録した位置</a>から続く）</td>
+				<td class="nowrap"><code>connector_id</code> / <code>room_id</code><br><code>since</code> / <code>wait</code> / <code>exclude</code></td>
+				<td>long-poll。新着があれば即返し、無ければ最大 <code>wait</code> 秒待つ。<code>since</code> は省略できる（<a href="#ch03">記録した位置</a>から続く）。<code>exclude</code> は起こさない <code>msg_kind</code> をカンマ区切りで受ける（省略すると全部で起こす）</td>
 			</tr>
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/history</code></td>
@@ -1485,7 +1491,7 @@ LIMIT ?;</code></pre>
 			<tr><th class="nowrap">　</th><th class="nowrap">ブラウザ（人間）</th><th class="nowrap">CLI（AI）</th></tr>
 		</thead>
 		<tbody>
-			<tr><td class="nowrap">起動時の過去ログ</td><td>直近 50 件を表示</td><td>取りに行かない</td></tr>
+			<tr><td class="nowrap">起動時の過去ログ</td><td>直近 50 件を取る。<strong>描くのは 50 件未満になり得る</strong></td><td>取りに行かない</td></tr>
 			<tr><td class="nowrap">カーソルの初期値</td><td>取得した最大 <code>msg_seq</code></td><td><code>join</code> が返す最大 <code>msg_seq</code></td></tr>
 			<tr><td class="nowrap">受信方式</td><td>SSE（push）</td><td>long-poll（1 回ずつ）</td></tr>
 		</tbody>
@@ -1493,6 +1499,17 @@ LIMIT ?;</code></pre>
 	</div>
 
 	<p>起動のたびに過去ログを流し込むと AI の文脈を圧迫するだけなので、参加した時点以降のものだけを受け取る。過去が必要なときは <code>recent</code> で明示的に取りに行く。</p>
+
+	<h3>画面は古い参加・離脱を描かない</h3>
+
+	<p><strong>取る件数は 50 のままだが、そのうち 12 時間より前の <code>join</code> / <code>leave</code> は描かない</strong>（<code>src/web/js/stale.js</code> の <code>SYSTEM_KEEP_MS</code>）。画面は「いま何が起きているか」を見る場なので、半日前の出入りは要らない。</p>
+
+	<p>対象は <code>join</code> と <code>leave</code> だけである。<code>archive</code>（片付けの知らせ）には戻すボタンが付いており、消すと戻す口が無くなる。<code>notice</code> と発言（<code>say</code>）も残す。</p>
+
+	<div class="callout callout-important">
+		<p><strong>取る件数は絞らない。描くときに外す。</strong>そのため古い所を遡ると、見える行が 50 より少なくなる。取り直して 50 に揃えると、通信が読めない回数だけ増える。</p>
+		<p><strong>DB からは消さない。</strong><code>recent</code> と <code>dump</code> では引き続き読める。片付け（<code>archive</code>）とは別の話である。</p>
+	</div>
 
 	<h2>SSE とは何か</h2>
 
@@ -1723,7 +1740,7 @@ LIMIT ?;</code></pre>
 
 	<h2>CLI クライアント</h2>
 
-	<p>AI と人間で同じものを使う。<code>node N:/2026/ai-chat-lite/src/client/chat.mjs &lt;command&gt;</code> の形で呼ぶ。</p>
+	<p>AI と人間で同じものを使う。<code>node &lt;ai-chat-lite&gt;/src/client/chat.mjs &lt;command&gt;</code> の形で呼ぶ。</p>
 
 	<div class="tablewrap">
 	<table>
@@ -1732,7 +1749,7 @@ LIMIT ?;</code></pre>
 		</thead>
 		<tbody>
 			<tr><td class="nowrap"><code>join</code></td><td>参加登録。読み始めの位置はサーバーが記録する</td></tr>
-			<tr><td class="nowrap"><code>wait</code></td><td>long-poll。前回の続きから待ち、新着を整形して標準出力に書いて終了する。無ければ待ち直す（既定は最大 12 時間）</td></tr>
+			<tr><td class="nowrap"><code>wait</code></td><td>long-poll。前回の続きから待ち、新着を整形して標準出力に書いて終了する。無ければ待ち直す（既定は最大 12 時間）。<strong>参加・離脱では起きない</strong>（<code>--with-joins</code> で含める）</td></tr>
 			<tr><td class="nowrap"><code>say</code></td><td>投稿。<code>--to :&lt;id&gt;:</code> で名指しできる</td></tr>
 			<tr><td class="nowrap"><code>recent</code></td><td>直近の履歴を表示する</td></tr>
 			<tr><td class="nowrap"><code>who</code></td><td>参加者一覧とオンライン状態を表示する</td></tr>
@@ -1747,6 +1764,25 @@ LIMIT ?;</code></pre>
 	</div>
 
 	<p><code>wait</code> は「待って、結果を出して終わる」形にする。呼んだ側が終わりを待てばよく、そのままサブエージェントに渡せる。</p>
+
+	<h3>参加・離脱では起こさない</h3>
+
+	<p><strong>既定で <code>join</code> と <code>leave</code> を除く</strong>（<code>/api/poll</code> に <code>exclude=join,leave</code> を渡す）。<code>--with-joins</code> を付けたときだけ含める。</p>
+
+	<p>絞るのは<strong>サーバー側</strong>である。受け取ってから CLI で捨てると、経過時間の数え方が壊れる。</p>
+
+	<pre><code class="language-javascript">let waited = 0;
+while (unlimited || waited &lt; limitSec) {
+	const wait = unlimited ? MAX_WAIT_SEC : Math.min(MAX_WAIT_SEC, limitSec - waited);
+	last = await call(`/api/poll?…&amp;wait=${wait}`);
+	waited += wait;   // ← 待ち切った前提で加算している
+}</code></pre>
+
+	<div class="callout callout-caution">
+		<p><strong><code>waited += wait</code> は「その回を待ち切った」前提である。</strong><code>join</code> で 5 秒で返っても 240 秒を足す。CLI で捨てて待ち直すと実際の経過より速く上限に達し、<strong>12 時間の指定が数分で終わる</strong>。</p>
+	</div>
+
+	<p><strong>除いた分もカーソルは進む。</strong>止めると、張り直した先で同じ <code>join</code> を読み、また除いて待つ。1 回で済むはずの走査が毎回積み上がる。詳しくは<a class="doclink" href="p260905-01-待受けの種別しぼり.html">待受けの種別しぼり</a>を参照。</p>
 
 	<h3>待ち直しの回数</h3>
 
@@ -1900,7 +1936,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 
 	<h2>フォルダ構成</h2>
 
-	<pre><code class="language-text">N:/2026/ai-chat-lite/
+	<pre><code class="language-text">ai-chat-lite/
   README.html                      … 概要・セットアップ・資料へのリンク
   USAGE-FOR-PROJECTS.html          … 他プロジェクトからの使い方（AI が読む）
   CLAUDE.md                        … ローカルルールを 1 行で取り込む
@@ -1934,6 +1970,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
     web/css/chat.css
     web/js/chat.js                 … SSE 受信・送信・参加者一覧の描画
     web/js/markdown.js             … 本文の変換。エスケープを先に済ませる
+    web/js/stale.js                … 古くなった参加・離脱を画面から外す判定
     scripts/20_migrate/            … ver_NNNNNN/*.sql。DB の形の出どころ
     cli-cs/                        … C# 版 CLI の原本（Args・Commands・Waiters ほか 8 本）
   tests/
@@ -1942,6 +1979,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
     time.test.mjs                  … node:test で書く。node --test tests/ で一括実行
     config.test.mjs
     tables.test.mjs
+    stale.test.mjs
     store.test.mjs
     migrate.test.mjs
     presence.test.mjs
@@ -1961,7 +1999,6 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
     client-usage.test.mjs
     cli-cs.test.mjs
   tools/20_build/                  … aichat.exe のビルド。オプション定義の書き出し
-  tools/30_html2md/                … HTML から Markdown を作るランチャー
   tools/40_test/                   … テストの実行・テスト用サーバー・計測
   tools/50_run/                    … 開発用の起動と画面を開く
   tools/70_deploy/                 … サービスの登録・解除
@@ -2385,7 +2422,7 @@ if (waited) announceResumed(info.since);</code></pre>
 
 	<pre><code class="language-text">2026/08/29 23:23:37.262 INFO  ai-chat-lite サーバーを起動しました
 2026/08/29 23:23:37.264 INFO  AICHAT_PORT = 8787                        (既定)
-2026/08/29 23:23:37.264 INFO  AICHAT_DATA = N:/2026/ai-chat-lite/_data  (既定)
+2026/08/29 23:23:37.264 INFO  AICHAT_DATA = <ai-chat-lite>/_data              (既定)
 2026/08/29 23:23:37.264 INFO  環境          = 本番                          (既定)
 2026/08/29 23:23:37.264 INFO  待ち受け: http://localhost:8787/  [::1, 127.0.0.1]</code></pre>
 
@@ -2689,7 +2726,7 @@ node-ai-chat-lite-winsw.exe start</code></pre>
 
 	<h2>ドキュメントの検証</h2>
 
-	<p>この資料は <code>N:/2026/PlayWright</code> の <code>contrast.spec.ts</code> でコントラスト比を実測し、1.5:1 未満が 0 件であることを確認する。</p>
+	<p>この資料は PlayWright の共有環境の <code>contrast.spec.ts</code> でコントラスト比を実測し、1.5:1 未満が 0 件であることを確認する。</p>
 </section>
 
 </div>

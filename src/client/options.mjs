@@ -125,6 +125,7 @@ export const OPTIONS = [
 	{ long: 'wait-hour', short: 'w', arg: '<時間>', cmd: 'wait', desc: '最大どれだけ待つか（時）。0 で上限なし' },
 	{ long: 'wait-min', short: null, arg: '<分>', cmd: 'wait', desc: '同じ意味を分で（併用できない）' },
 	{ long: 'wait-sec', short: null, arg: '<秒>', cmd: 'wait', desc: '同じ意味を秒で。確認用' },
+	{ long: 'with-joins', short: null, arg: '', cmd: 'wait', desc: '参加・離脱でも起こす。既定では起こさない' },
 	{ long: 'to', short: null, arg: ':<id>:', cmd: 'say', desc: '名指しの相手。ID はコロンで囲む' },
 	{ long: 'reply-to', short: null, arg: '<msg_seq>', cmd: 'say', desc: 'どの発言への返答か。番号は出力の # を見る' },
 	{ long: 'n', short: 'n', arg: '<件数>', cmd: 'recent', desc: '直近の履歴を何件出すか' },

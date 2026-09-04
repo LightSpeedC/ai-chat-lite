@@ -401,7 +401,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 開発状況</h1>
 		<p class="lead">実装の進み具合と、次にやること</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-04</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-05</p>
 	</div>
 </div>
 
@@ -535,6 +535,21 @@ footer a {
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
 				<td><strong>どの発言への返答かを <code>messages.reply_to_msg_seq</code> で残す。</strong>待受けの出力に <code>#&lt;msg_seq&gt;</code> を出す（出さないと返信先を書けない）。あわせて日時の区切りを <code>yyyy/mm/dd</code> に変え、<strong>既存の行も版 5 で書き換える</strong>（混ざると在席判定が壊れるため）。<a class="doclink" href="../10_plan/p260904-01-返信.html">計画</a></td>
 			</tr>
+			<tr>
+				<td class="num">21</td><td class="nowrap">テーブル名の出どころ</td>
+				<td class="nowrap"><span class="badge b-ok">完了</span></td>
+				<td><strong>確かめたいテーブル名が <code>store.mjs</code> の 2 か所に並んでいたのを 1 か所にした。</strong>検査の SQL から <code>IN</code> を外し、一覧は <code>src/server/tables.mjs</code> に置く。<strong>版でテーブルを足したのに一覧へ入れ忘れた</strong>を <code>tests/tables.test.mjs</code> が落とす（入れ忘れても検査は通るため、空の DB から起動したときだけ形が違う状態になる）</td>
+			</tr>
+			<tr>
+				<td class="num">22</td><td class="nowrap">参加・離脱の行の見せ方</td>
+				<td class="nowrap"><span class="badge b-ok">完了</span></td>
+				<td><strong>仕組みからの行にも日時と <code>#&lt;msg_seq&gt;</code> を出し、中央寄せから左寄せにした。</strong>12 時間より前の <code>join</code> / <code>leave</code> は画面に描かない（<code>archive</code> は戻すボタンが付いているので残す）。<strong>DB からは消さない</strong>ので <code>recent</code> と <code>dump</code> では読める。判定は <code>src/web/js/stale.js</code>（<code>chat.js</code> は <code>document</code> を触るためテストから読めない）。<a class="doclink" href="../40_issues/issues.html#i260904-02">i260904-02</a></td>
+			</tr>
+			<tr>
+				<td class="num">23</td><td class="nowrap">待受けの種別しぼり</td>
+				<td class="nowrap"><span class="badge b-ok">完了</span></td>
+				<td><strong>参加・離脱では待受けを起こさなくなった。</strong><code>public</code> には <code>join</code> / <code>leave</code> が数分ごとに流れるため、12 時間を指定しても数分で返っていた（実測 4 分）。サーバー側（<code>/api/poll</code> の <code>exclude</code>）で絞り、<code>--with-joins</code> を付けたときだけ含める。<strong>除いた分もカーソルは進める</strong>（止めると次の待受けが同じ記録を読み直す）。<a class="doclink" href="../10_plan/p260905-01-待受けの種別しぼり.html">計画</a>・<a class="doclink" href="../40_issues/issues.html#i260902-04">i260902-04</a></td>
+			</tr>
 		</tbody>
 	</table>
 	</div>
@@ -557,6 +572,9 @@ footer a {
 		</thead>
 		<tbody>
 			<tr><td class="nowrap"><code>time.test.mjs</code></td><td class="num">5</td><td>固定長・JST・辞書順と時系列順の一致</td></tr>
+			<tr><td class="nowrap"><code>tables.test.mjs</code></td><td class="num">3</td><td>版が作るテーブルと <code>REQUIRED_TABLES</code> の一致・<code>versions</code> を入れないこと</td></tr>
+			<tr><td class="nowrap"><code>wait-kinds.test.mjs</code></td><td class="num">10</td><td>既定で参加・離脱では起きない・<code>--with-joins</code>・除いた分のカーソル・知らない種別は 400</td></tr>
+			<tr><td class="nowrap"><code>stale.test.mjs</code></td><td class="num">12</td><td>古い参加・離脱を画面から外す判定・種別ごとの扱い・旧書式が混ざったとき</td></tr>
 			<tr><td class="nowrap"><code>config.test.mjs</code></td><td class="num">11</td><td>既定値・環境変数の上書き・カレント非依存・起動ログ</td></tr>
 			<tr><td class="nowrap"><code>store.test.mjs</code></td><td class="num">24</td><td>採番・取得・接続数・CHECK 制約・WAL・インデックス利用</td></tr>
 			<tr><td class="nowrap"><code>presence.test.mjs</code></td><td class="num">15</td><td>3 状態の判定・猶予の境界・一覧の並び順</td></tr>
@@ -576,14 +594,14 @@ footer a {
 			<tr><td class="nowrap"><code>client-no-defaults.test.mjs</code></td><td class="num">18</td><td>全コマンドで接続先が省略できないこと・環境変数では渡せないこと</td></tr>
 			<tr><td class="nowrap"><code>client-reply.test.mjs</code></td><td class="num">13</td><td>番号の表示・返信元の記録・<code>--to</code> との併用・日時の書式</td></tr>
 			<tr><td class="nowrap"><code>cli-cs.test.mjs</code></td><td class="num">11</td><td>C# 版と node 版の出力・終了コード・埋め込んだ定義の一致（<code>aichat.exe</code> が無ければスキップ）</td></tr>
-			<tr><td class="nowrap"><strong>合計</strong></td><td class="num"><strong>338</strong></td><td><strong>全件通過</strong></td></tr>
+			<tr><td class="nowrap"><strong>合計</strong></td><td class="num"><strong>363</strong></td><td><strong>全件通過</strong></td></tr>
 		</tbody>
 	</table>
 	</div>
 
 	<h2>ブラウザ画面</h2>
 
-	<p><code>N:/2026/PlayWright</code> の共有環境で、実際に動かして確かめる（サーバーが起動していること）。</p>
+	<p>PlayWright の共有環境で、実際に動かして確かめる（サーバーが起動していること）。</p>
 
 	<pre><code class="language-powershell">$env:PW_PROJECT = 'ai-chat-lite'
 npm run test:projects -- ai-chat-lite</code></pre>

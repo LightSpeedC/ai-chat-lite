@@ -111,6 +111,29 @@ function numberOf(value, fallback) {
 	return Number.isFinite(n) ? n : fallback;
 }
 
+/** messages.msg_kind に入る値。版の SQL の CHECK と同じ並び */
+const MSG_KINDS = ['say', 'join', 'leave', 'archive', 'notice'];
+
+/**
+ * 待受けを起こさない msg_kind を読む。省略されていたら空（全部で起こす）。
+ *
+ * 知らない名前は断る。素通しすると「除いたつもりで除けていない」状態になり、
+ * 呼ぶ側は待受けが起きる理由を追えない。綴りの間違いは黙って通さない。
+ */
+function excludeOf(value) {
+	if (value === null || value === undefined || value === '') return new Set();
+	const kinds = String(value)
+		.split(',')
+		.map((s) => s.trim())
+		.filter((s) => s !== '');
+	for (const kind of kinds) {
+		if (!MSG_KINDS.includes(kind)) {
+			throw new BadRequest(`exclude に使えるのは ${MSG_KINDS.join(' ')} です: ${kind}`);
+		}
+	}
+	return new Set(kinds);
+}
+
 // --- 応答 ---
 
 
@@ -240,6 +263,7 @@ async function handlePoll(req, res, url) {
 	const connectorId = optionalId(url.searchParams.get('connector_id'), 'connector_id');
 	const roomId = roomOf(url.searchParams.get('room_id'));
 	const waitSec = Math.min(Math.max(numberOf(url.searchParams.get('wait'), MAX_WAIT_SEC), 0), MAX_WAIT_SEC);
+	const exclude = excludeOf(url.searchParams.get('exclude'));
 
 	/*
 	 * since を省略したら、サーバーが覚えている位置から続ける。
@@ -265,11 +289,16 @@ async function handlePoll(req, res, url) {
 	req.on('close', () => { closed = true; });
 
 	try {
-		const messages = await waitForMessages(roomId, since, waitSec * 1000);
+		const { messages, scannedSeq } = await waitForMessages(roomId, since, waitSec * 1000, exclude);
 		if (closed) return;
 
-		const msgSeq = messages.length > 0 ? messages[messages.length - 1].msg_seq : since;
-		// 返した分まで読んだものとして記録する。次は since を省略しても続きから受け取れる
+		/*
+		 * 走査した所まで読んだものとして記録する。次は since を省略しても続きから届く。
+		 *
+		 * 除いた分も進める。止めると、張り直した先で同じ join を読み、また除いて待つ。
+		 * 1 回で済むはずの走査が毎回積み上がる。
+		 */
+		const msgSeq = Math.max(scannedSeq, since);
 		if (connectorId) setCursor(connectorId, roomId, msgSeq);
 
 		sendJson(res, 200, { room_id: roomId, since, msg_seq: msgSeq, messages });

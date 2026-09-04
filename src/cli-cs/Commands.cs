@@ -92,12 +92,28 @@ namespace AiChat
 				Console.Error.WriteLine("");
 			}
 
+			/*
+			 * 参加・離脱では起こさない。
+			 *
+			 * public には join と leave が数分ごとに流れるため、既定のままだと 12 時間を
+			 * 指定しても数分で返っていた。ルールは「参加・離脱の記録は伝えない」なので、
+			 * 読まずに捨てるもので起こされていたことになる。
+			 *
+			 * 絞るのはサーバー側にする。ここで捨てて待ち直すと、下の waited += wait が
+			 * 「待ち切った」前提で加算しているため、実際の経過より速く上限に達する。
+			 * 除いた分もサーバーがカーソルを進めるので、取りこぼしにはならない。
+			 */
+			bool withJoins = args.HasFlag("with-joins");
+			string excludeParam = withJoins ? "" : "&exclude=join,leave";
+
 			// 出すのは開始と終了の 2 行だけ。12 時間を 240 秒ごとに知らせると 180 行になる
-			Console.WriteLine("待受け開始（最大 " + label + "、ルーム " + room + "、" + connectorId + "）");
+			Console.WriteLine("待受け開始（最大 " + label + "、ルーム " + room + "、" + connectorId +
+				(withJoins ? "、参加・離脱も" : "") + "）");
 
 			WaitLog.Open(FindRoot(), connectorId, IsTestData());
 			WaitLog.Write("待受け開始（最大 " + label + "、ルーム " + room + "、" + connectorId +
-				"、pid " + System.Diagnostics.Process.GetCurrentProcess().Id + "）");
+				"、pid " + System.Diagnostics.Process.GetCurrentProcess().Id +
+				(withJoins ? "、参加・離脱も" : "、参加・離脱は除く") + "）");
 
 			int waited = 0;
 			Dictionary<string, object> last = null;
@@ -111,7 +127,7 @@ namespace AiChat
 				 * 受け取った分は返答と同時に記録されるので、次はその続きから届く。
 				 */
 				string path = "/api/poll?" + Query("connector_id", connectorId) +
-					"&" + Query("room_id", room) + "&wait=" + wait;
+					"&" + Query("room_id", room) + "&wait=" + wait + excludeParam;
 				last = client.Get(path, wait);
 				waited += wait;
 

@@ -513,11 +513,29 @@ async function cmdWait() {
 		console.error('');
 	}
 
+	/*
+	 * 参加・離脱では起こさない。
+	 *
+	 * public には join と leave が数分ごとに流れるため、既定のままだと 12 時間を
+	 * 指定しても数分で返っていた。ルールは「参加・離脱の記録は伝えない」なので、
+	 * 読まずに捨てるもので起こされていたことになる。
+	 *
+	 * 絞るのはサーバー側にする。ここで捨てて待ち直すと、下の waited += wait が
+	 * 「待ち切った」前提で加算しているため、実際の経過より速く上限に達する。
+	 * 除いた分もサーバーがカーソルを進めるので、取りこぼしにはならない。
+	 */
+	const withJoins = hasFlag('with-joins');
+	const excludeParam = withJoins ? '' : '&exclude=join,leave';
+
 	// 出すのは開始と終了の 2 行だけ。12 時間を 240 秒ごとに知らせると 180 行になる
-	console.log(`待受け開始（最大 ${label}、ルーム ${ROOM}、${CONNECTOR_ID}）`);
+	console.log(`待受け開始（最大 ${label}、ルーム ${ROOM}、${CONNECTOR_ID}${withJoins ? '、参加・離脱も' : ''}）`);
 
 	openWaitLog();
-	writeWaitLog('INFO', `待受け開始（最大 ${label}、ルーム ${ROOM}、${CONNECTOR_ID}、pid ${process.pid}）`);
+	writeWaitLog(
+		'INFO',
+		`待受け開始（最大 ${label}、ルーム ${ROOM}、${CONNECTOR_ID}、pid ${process.pid}` +
+			`${withJoins ? '、参加・離脱も' : '、参加・離脱は除く'}）`
+	);
 
 	let waited = 0;
 	let last = null;
@@ -530,7 +548,7 @@ async function cmdWait() {
 		 * 受け取った分は返答と同時に記録されるので、次はその続きから届く。
 		 */
 		last = await call(
-			`/api/poll?connector_id=${encodeURIComponent(CONNECTOR_ID)}&room_id=${encodeURIComponent(ROOM)}&wait=${wait}`
+			`/api/poll?connector_id=${encodeURIComponent(CONNECTOR_ID)}&room_id=${encodeURIComponent(ROOM)}&wait=${wait}${excludeParam}`
 		);
 		waited += wait;
 

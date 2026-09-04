@@ -581,7 +581,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 課題</h1>
 		<p class="lead">これから解決すること。片付いたら閉じて残す</p>
-		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-04</p>
+		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-05</p>
 	</div>
 </div>
 
@@ -598,7 +598,7 @@ footer a {
 		<li class="g01"><a href="#g01">サービスの運用（3 件 / 未 2 / 済 1）</a></li>
 		<li class="g02"><a href="#g02">データ（5 件 / 未 2 / 済 3）</a></li>
 		<li class="g03"><a href="#g03">開発環境・記録（10 件 / 着手 4 / 済 6）</a></li>
-		<li class="g04"><a href="#g04">チャットの機能（17 件 / 未 10 / 済 7）</a></li>
+		<li class="g04"><a href="#g04">チャットの機能（17 件 / 未 8 / 済 9）</a></li>
 	</ol>
 </section>
 
@@ -2784,7 +2784,7 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 				PlayWright 側の spec をコミットする
 			</summary>
 			<div class="issuebody">
-				<p><code>N:/2026/PlayWright/projects/ai-chat-lite/</code> の spec が未コミットだった。共有環境の規約では「テストスクリプトは必ず commit する」となっている。別リポジトリなので、こちらのコミットには含まれない。</p>
+				<p>PlayWright 共有環境の <code>projects/ai-chat-lite/</code> の spec が未コミットだった。共有環境の規約では「テストスクリプトは必ず commit する」となっている。別リポジトリなので、こちらのコミットには含まれない。</p>
 				<p>spec 9 本を 3 回に分けてコミットした。<code>.gitignore</code> に <code>projects/*/tmp/</code> と <code>projects/*/test-results/</code> があり、出力は入っていない。</p>
 				<ul class="todos">
 					<li class="done"><span class="badge b-done">☑</span> <code>contrast</code> / <code>shot</code> / <code>chat-ui</code> / <code>issues-shot</code> をコミットする</li>
@@ -2803,16 +2803,16 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">17 件 / 未 10 / 済 7</span>
+		<span class="count">17 件 / 未 8 / 済 9</span>
 	</summary>
 
 	<div class="groupbody">
 
-		<details class="issue" id="i260904-02" open>
+		<details class="issue done" id="i260904-02">
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260904-02</span>
-				画面の表示を整える（参加・離脱の行と、古い発言）
+				参加・離脱の行の見せ方を整える
 			</summary>
 			<div class="issuebody">
 				<p>ブラウザの画面についての依頼。<code>public</code> ルームで <code>human</code> から届いた（発言 <code>#486</code>）。</p>
@@ -2820,22 +2820,49 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 				<h3>やること</h3>
 
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> <code>join</code> / <code>leave</code> の行にも<strong>日時と <code>#&lt;msg_seq&gt;</code> を小さく出す</strong></li>
-					<li><span class="badge b-todo">未</span> 参加・離脱の行を<strong>中央寄せから左寄せに</strong>する</li>
-					<li><span class="badge b-todo">未</span> <strong>12 時間より前の <code>join</code> / <code>leave</code> の行は画面に出さない</strong>（発言は残す）</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>join</code> / <code>leave</code> の行にも<strong>日時と <code>#&lt;msg_seq&gt;</code> を小さく出した</strong>（発言の meta より 1 段小さい 0.7em）</li>
+					<li class="done"><span class="badge b-done">☑</span> 参加・離脱の行を<strong>中央寄せから左寄せに</strong>した</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>12 時間より前の <code>join</code> / <code>leave</code> の行は画面に出さない</strong>（発言は残す）</li>
+					<li class="done"><span class="badge b-done">☑</span> 判定を <code>src/web/js/stale.js</code> に切り出し、テストを 12 件足した</li>
 				</ul>
+
+				<h3>実装で決めたこと</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="num nowrap">#</th><th class="nowrap">論点</th><th>決定</th></tr>
+				</thead>
+				<tbody>
+					<tr><td class="num">1</td><td class="nowrap">1・2 の対象</td>
+						<td><strong>仕組みからの行すべて</strong>（<code>join</code> / <code>leave</code> / <code>archive</code> / <code>notice</code>）。同じ <code>.msg.system</code> なので、片方だけ中央寄せに残すと見た目が 2 通りになる</td></tr>
+					<tr><td class="num">2</td><td class="nowrap">3 の対象</td>
+						<td><strong><code>join</code> と <code>leave</code> だけ</strong>。<code>archive</code> には戻すボタンが付いており、消すと戻す口が無くなる</td></tr>
+					<tr><td class="num">3</td><td class="nowrap">読み込み件数との関係</td>
+						<td><strong>取る件数（50）は変えず、描くときに外す。</strong>古い所を遡ると、見える行が 50 より少なくなる。取り直して 50 に揃えると、通信が読めない回数だけ増える</td></tr>
+					<tr><td class="num">4</td><td class="nowrap">判定のタイミング</td>
+						<td><strong>描くときに 1 度だけ。</strong>開いたまま 12 時間が過ぎた分は消えない。そのために時計を持つほどのことではない</td></tr>
+					<tr><td class="num">5</td><td class="nowrap">時刻の比べ方</td>
+						<td><strong>文字列のまま比べる。</strong><code>sent_at</code> は固定長で辞書順と時系列順が一致する。<code>Date</code> のパースを挟むとブラウザのタイムゾーンに依存する</td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-tip">
+					<p><strong>判定は <code>chat.js</code> に置かなかった。</strong><code>chat.js</code> は読み込んだ時点で <code>document</code> を触るため、node のテストから読めない。<code>markdown.js</code> と同じ理由で <code>stale.js</code> に切り出してある。</p>
+				</div>
 
 				<div class="callout callout-important">
 					<p><strong>3 つめが消すのは <code>join</code> / <code>leave</code> の行だけである。発言（<code>say</code>）は古くても残す。</strong>取り違えると過去の会話が画面から消える。</p>
 					<p>表示を絞るだけなので DB には残り、<code>recent</code> と <code>dump</code> では引き続き読める。片付け（<code>archive</code>）とは別の話である。</p>
-					<p>境目は<strong>その行の時刻から 12 時間</strong>（<code>#488</code> で決まった）。<strong>いま入っている読み込み件数の上限と、どちらが先に効くかは決めていない。</strong></p>
+					<p>境目は<strong>その行の時刻から 12 時間</strong>（<code>#488</code> で決まった）。読み込み件数の上限との関係は下の表の 3 で決めた。</p>
 				</div>
 			</div>
 		</details>
 
-		<details class="issue" id="i260902-04" open>
+		<details class="issue done" id="i260902-04">
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260902-04</span>
 				参加・離脱の記録でも待受けが起きてしまう
 			</summary>
@@ -2912,10 +2939,12 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 				</div>
 
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> A / B / C を決める</li>
-					<li><span class="badge b-todo">未</span> 絞った分のカーソルをどうするかを決める</li>
-					<li><span class="badge b-todo">未</span> 実装してテストを書く</li>
-					<li><span class="badge b-todo">未</span> ルールと USAGE に書き、周知する</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>C ＋ 旗</strong>にした。既定で <code>join</code> / <code>leave</code> を除き、<code>--with-joins</code> で含める</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>絞るのはサーバー側</strong>にした。CLI で捨てると <code>waited += wait</code> が壊れる（<a class="doclink" href="../10_plan/p260905-01-待受けの種別しぼり.html">計画</a>の 2 章）</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>除いた分もカーソルは進める</strong>。止めると張り直した先で同じ記録を読み直す</li>
+					<li class="done"><span class="badge b-done">☑</span> 実装してテストを書いた（<code>tests/wait-kinds.test.mjs</code> の 10 件）</li>
+					<li class="done"><span class="badge b-done">☑</span> USAGE と設計書に書いた</li>
+					<li><span class="badge b-todo">未</span> 周知する</li>
 				</ul>
 			</div>
 		</details>
