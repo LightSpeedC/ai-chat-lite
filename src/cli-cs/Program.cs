@@ -3,7 +3,7 @@
  *
  * node 版（src/client/chat.mjs）と同じことができる。どちらを使ってもよい。
  *
- *   node 版  node N:/2026/ai-chat-lite/src/client/chat.mjs wait :<id>: -p 8787
+ *   node 版  node <ai-chat-lite>/src/client/chat.mjs wait :<id>: -p 8787
  *   C# 版    aichat wait :<id>: -p 8787
  *
  * Node を要らなくするために作った。パスを書かせずに済むこと、起動が速いことも

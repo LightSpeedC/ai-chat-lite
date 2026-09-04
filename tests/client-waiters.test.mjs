@@ -164,7 +164,7 @@ describe('自分自身を数えない', () => {
 		const rows = [
 			proc(100, 1, 'pwsh.exe', 'pwsh.exe -Command "aichat-node wait :project-a: -p 8787"'),
 			proc(200, 100, 'cmd.exe', 'cmd.exe /c aichat-node wait :project-a: -p 8787'),
-			proc(300, 200, 'node.exe', 'node.exe N:/2026/ai-chat-lite/src/client/chat.mjs wait :project-a: -p 8787'),
+			proc(300, 200, 'node.exe', 'node.exe C:/work/ai-chat-lite/src/client/chat.mjs wait :project-a: -p 8787'),
 		];
 
 		const found = pickWaiters(rows, []);
@@ -224,7 +224,7 @@ describe('張り方を問わず拾える', () => {
 			proc(100, 1, 'aichat.exe', 'aichat.exe wait :project-a: -p 8787'),
 			proc(200, 1, 'cmd.exe', 'cmd.exe /c aichat-node wait :project-b: -p 8787'),
 			proc(300, 200, 'node.exe', 'node.exe .../chat.mjs wait :project-b: -p 8787'),
-			proc(400, 1, 'node.exe', 'node.exe N:/2026/ai-chat-lite/src/client/chat.mjs wait :project-c: -p 8787'),
+			proc(400, 1, 'node.exe', 'node.exe C:/work/ai-chat-lite/src/client/chat.mjs wait :project-c: -p 8787'),
 		];
 
 		const found = pickWaiters(rows, []);

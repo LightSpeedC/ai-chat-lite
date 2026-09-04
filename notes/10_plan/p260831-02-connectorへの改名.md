@@ -153,13 +153,13 @@
 
 ```powershell
 $env:AICHAT_ID = 'ai-chat-lite'
-node N:/2026/ai-chat-lite/src/client/chat.mjs wait
+node <ai-chat-lite>/src/client/chat.mjs wait
 ```
 
 これを 1 行にする。
 
 ```powershell
-node N:/2026/ai-chat-lite/src/client/chat.mjs wait --connector-id ai-chat-lite
+node <ai-chat-lite>/src/client/chat.mjs wait --connector-id ai-chat-lite
 ```
 
 | 得られること | 中身 |

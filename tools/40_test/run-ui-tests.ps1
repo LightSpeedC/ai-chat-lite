@@ -24,7 +24,10 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $root = Resolve-Path (Join-Path $PSScriptRoot '..\..')
-$playwright = 'N:/2026/PlayWright'
+# PlayWright の共有環境。プロジェクトと同じ親の下にある前提で組み立てる。
+# 実パスを書かないので、プロジェクトごと引っ越しても付いてくる
+$playwright = Join-Path (Split-Path $root -Parent) 'PlayWright'
+if (-not (Test-Path $playwright)) { throw "PlayWright の共有環境が見つかりません: $playwright" }
 $starter = Join-Path $PSScriptRoot 'start-test-server.mjs'
 
 <#

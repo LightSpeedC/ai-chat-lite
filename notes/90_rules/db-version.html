@@ -451,7 +451,7 @@ footer a {
 
 	<h2>2. 写しをテスト環境へ置く</h2>
 
-	<pre><code class="language-powershell">$dir = 'N:/2026/ai-chat-lite/tmp/_data/rehearsal'
+	<pre><code class="language-powershell">$dir = './tmp/_data/rehearsal'
 New-Item -ItemType Directory -Force $dir
 Copy-Item '_backup/20260902-070632-ver3.db' (Join-Path $dir 'chat.db')</code></pre>
 
@@ -459,7 +459,7 @@ Copy-Item '_backup/20260902-070632-ver3.db' (Join-Path $dir 'chat.db')</code></p
 
 	<h2>3. 予行する</h2>
 
-	<pre><code class="language-powershell">$env:AICHAT_DATA = 'N:/2026/ai-chat-lite/tmp/_data/rehearsal'
+	<pre><code class="language-powershell">$env:AICHAT_DATA = './tmp/_data/rehearsal'
 $env:AICHAT_PORT = '8796'
 node src/server/main.mjs</code></pre>
 

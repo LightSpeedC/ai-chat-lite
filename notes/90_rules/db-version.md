@@ -40,7 +40,7 @@ node tools/80_ops/snapshot.mjs ver3
 ### 2. 写しをテスト環境へ置く
 
 ```powershell
-$dir = 'N:/2026/ai-chat-lite/tmp/_data/rehearsal'
+$dir = './tmp/_data/rehearsal'
 New-Item -ItemType Directory -Force $dir
 Copy-Item '_backup/20260902-070632-ver3.db' (Join-Path $dir 'chat.db')
 ```
@@ -50,7 +50,7 @@ Copy-Item '_backup/20260902-070632-ver3.db' (Join-Path $dir 'chat.db')
 ### 3. 予行する
 
 ```powershell
-$env:AICHAT_DATA = 'N:/2026/ai-chat-lite/tmp/_data/rehearsal'
+$env:AICHAT_DATA = './tmp/_data/rehearsal'
 $env:AICHAT_PORT = '8796'
 node src/server/main.mjs
 ```

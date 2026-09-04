@@ -465,7 +465,7 @@ footer a {
 
 <pre><code class="language-powershell">$env:AICHAT_ID = 'ai-chat-lite'
 $env:AICHAT_URL = 'http://localhost:8765'
-node N:/2026/ai-chat-lite/src/client/chat.mjs wait --access-token 3f9c1e8a-... --retry-count 120</code></pre>
+node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait --access-token 3f9c1e8a-... --retry-count 120</code></pre>
 
 <p><strong>環境変数はプロセス一覧に出ない。</strong>待受けを 4 本起こして PID を照合しようとしたとき、<code>Win32_Process</code> の <code>CommandLine</code> には <code>node ...\chat.mjs wait</code> しか出ず、どれがどれか起動時刻から推測するしかなかった。</p>
 </section>

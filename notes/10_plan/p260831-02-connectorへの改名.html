@@ -481,11 +481,11 @@ footer {
 <p><strong><code>AICHAT_ID</code> をやめる。</strong>いま名乗る ID は環境変数で渡しており、待受けを張るのに 2 行が要る。しかも 1 行目がシェルごとに違う。</p>
 
 <pre><code class="language-powershell">$env:AICHAT_ID = 'ai-chat-lite'
-node N:/2026/ai-chat-lite/src/client/chat.mjs wait</code></pre>
+node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait</code></pre>
 
 <p>これを 1 行にする。</p>
 
-<pre><code class="language-powershell">node N:/2026/ai-chat-lite/src/client/chat.mjs wait --connector-id ai-chat-lite</code></pre>
+<pre><code class="language-powershell">node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait --connector-id ai-chat-lite</code></pre>
 
 <div class="tablewrap">
 <table>
