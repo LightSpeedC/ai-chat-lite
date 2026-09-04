@@ -596,9 +596,9 @@ footer a {
 <section class="toc md-skip">
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（3 件 / 未 2 / 済 1）</a></li>
-		<li class="g02"><a href="#g02">データ（4 件 / 未 2 / 着手 1 / 済 1）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（6 件 / 未 3 / 済 3）</a></li>
-		<li class="g04"><a href="#g04">チャットの機能（14 件 / 未 8 / 済 6）</a></li>
+		<li class="g02"><a href="#g02">データ（5 件 / 未 2 / 済 3）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（10 件 / 着手 4 / 済 6）</a></li>
+		<li class="g04"><a href="#g04">チャットの機能（17 件 / 未 10 / 済 7）</a></li>
 	</ol>
 </section>
 
@@ -786,7 +786,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 					<tr>
 						<td class="num">11</td><td class="nowrap"><code>/api/version</code> に載せる項目</td>
 						<td class="nowrap"><span class="badge b-done">☑</span></td>
-						<td><strong><code>maintenance</code>（真偽）と <code>maintenance_since</code>（いつから）だけ。</strong>理由と見込みは載せない。<strong>誰でも読める口</strong>なので、作業の中身を外に出さない。理由は <code>public</code> の案内で伝わる</td>
+						<td><strong><code>maintenance</code>（真偽）・<code>maintenance_since</code>（いつから）・<code>maintenance_reason</code>（理由）の 3 つ。</strong>見込みは載せない。<br><strong>当初は理由も載せない決めだった</strong>が、この口は<strong>ループバック（<code>::1</code> / <code>127.0.0.1</code>）からしか届かず外に出ない</strong>ため、画面が帯にそのまま出せるよう理由も返す形にした（2026-09-04）</td>
 					</tr>
 					<tr>
 						<td class="num">12</td><td class="nowrap">画面の見せ方</td>
@@ -1181,9 +1181,9 @@ const servers = await startServers();           // 待ち受けを開始</code><
 <!-- ================= グループ 3 ================= -->
 <details class="group g03" id="g03" data-name="開発環境・記録" open>
 	<summary>
-		<span class="badge b-todo">未</span>
+		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">8 件 / 着手 2 / 済 6</span>
+		<span class="count">10 件 / 着手 4 / 済 6</span>
 	</summary>
 
 	<div class="groupbody">
@@ -2803,10 +2803,35 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">15 件 / 未 9 / 済 6</span>
+		<span class="count">17 件 / 未 10 / 済 7</span>
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue" id="i260904-02" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260904-02</span>
+				画面の表示を整える（参加・離脱の行と、古い発言）
+			</summary>
+			<div class="issuebody">
+				<p>ブラウザの画面についての依頼。<code>public</code> ルームで <code>human</code> から届いた（発言 <code>#486</code>）。</p>
+
+				<h3>やること</h3>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> <code>join</code> / <code>leave</code> の行にも<strong>日時と <code>#&lt;msg_seq&gt;</code> を小さく出す</strong></li>
+					<li><span class="badge b-todo">未</span> 参加・離脱の行を<strong>中央寄せから左寄せに</strong>する</li>
+					<li><span class="badge b-todo">未</span> <strong>12 時間より前の <code>join</code> / <code>leave</code> の行は画面に出さない</strong>（発言は残す）</li>
+				</ul>
+
+				<div class="callout callout-important">
+					<p><strong>3 つめが消すのは <code>join</code> / <code>leave</code> の行だけである。発言（<code>say</code>）は古くても残す。</strong>取り違えると過去の会話が画面から消える。</p>
+					<p>表示を絞るだけなので DB には残り、<code>recent</code> と <code>dump</code> では引き続き読める。片付け（<code>archive</code>）とは別の話である。</p>
+					<p>境目は<strong>その行の時刻から 12 時間</strong>（<code>#488</code> で決まった）。<strong>いま入っている読み込み件数の上限と、どちらが先に効くかは決めていない。</strong></p>
+				</div>
+			</div>
+		</details>
 
 		<details class="issue" id="i260902-04" open>
 			<summary>
@@ -3246,9 +3271,9 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 			</div>
 		</details>
 
-		<details class="issue doing" id="i260904-01" open>
+		<details class="issue done" id="i260904-01">
 			<summary>
-				<span class="badge b-doing">着手</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260904-01</span>
 				どの発言への返答かが残らない
 			</summary>
@@ -3278,10 +3303,10 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 				</table>
 				</div>
 
-				<pre><code class="language-text">   #474 2026/09/04 06:49:11.609 ai-chat-lite-reviewer &gt; 【レビュー #1】…
-   #475 2026/09/04 07:12:00.000 ai-chat-lite ↳#474 &gt; 1〜10 を直します
-   #476 2026/09/04 07:13:00.000 -- project-a がオフラインになりました
-  #1477 2026/09/05 09:00:00.000 project-a @ai-chat-lite ↳#475 &gt; 確認しました</code></pre>
+				<pre><code class="language-text">  #474 2026/09/04 06:49:11.609 ai-chat-lite-reviewer &gt; 【レビュー #1】…
+  #475 2026/09/04 07:12:00.000 ai-chat-lite ↳#474 &gt; 1〜10 を直します
+  #476 2026/09/04 07:13:00.000 -- project-a がオフラインになりました
+ #1477 2026/09/05 09:00:00.000 project-a @ai-chat-lite ↳#475 &gt; 確認しました</code></pre>
 
 				<div class="callout callout-caution">
 					<p><strong>日付の変更は軽微ではない。</strong><code>jstBefore()</code> が作る文字列は DB の値と<strong>文字列のまま比較</strong>されている（在席判定の 90 秒）。<code>-</code>（0x2D）は <code>/</code>（0x2F）より小さいため、<strong>形式が混ざると既存の参加者が全員オフライン扱いのまま戻らない</strong>。</p>
@@ -3296,9 +3321,9 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 					<li class="done"><span class="badge b-done">☑</span> サーバーと CLI 2 本を直した</li>
 					<li class="done"><span class="badge b-done">☑</span> 画面に返信元を出した（1 行の引用。指す先が無ければ番号だけ）</li>
 					<li class="done"><span class="badge b-done">☑</span> テストを直した・足した（<strong>338 件すべて通る</strong>）</li>
-					<li><span class="badge b-todo">未</span> 本番の DB に版 5 を当てる（<a class="doclink" href="../90_rules/db-version.html">手引き</a>のとおり写しで予行する）</li>
+					<li class="done"><span class="badge b-done">☑</span> 本番の DB に版 5 を当てた（<a class="doclink" href="../90_rules/db-version.html">手引き</a>のとおり写しで予行した。発言 133 件を書き換え、<code>who</code> で在席 5 人が正しく出ることを確かめた）</li>
 					<li class="done"><span class="badge b-done">☑</span> 資料に反映した（設計・USAGE・README・status）</li>
-					<li><span class="badge b-todo">未</span> 周知する</li>
+					<li class="done"><span class="badge b-done">☑</span> 周知した（<code>public</code> の <code>#479</code>）</li>
 				</ul>
 			</div>
 		</details>
