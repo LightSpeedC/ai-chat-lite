@@ -874,6 +874,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 				</ul>
 			</div>
 		</details>
+
 	</div>
 </details>
 
@@ -1210,7 +1211,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">12 件 / 着手 5 / 済 7</span>
+		<span class="count">13 件 / 未 1 / 着手 2 / 済 10</span>
 	</summary>
 
 	<div class="groupbody">
@@ -1289,14 +1290,14 @@ const servers = await startServers();           // 待ち受けを開始</code><
 					<li class="done"><span class="badge b-done">☑</span> USAGE に書いた（出力例 2 か所と「1 回目の通知で終わったと思わないこと」）</li>
 					<li><span class="badge b-todo">未</span> 共通ルールに書く</li>
 					<li><span class="badge b-todo">未</span> B（起動時に断る）を採るかどうかを決める</li>
-					<li><span class="badge b-todo">未</span> 周知する</li>
+					<li class="done"><span class="badge b-done">☑</span> 周知した（msg_seq 515。pid 表示と --with-joins をまとめて 1 通）</li>
 				</ul>
 			</div>
 		</details>
 
-		<details class="issue doing" id="i260903-02" open>
+		<details class="issue done" id="i260903-02">
 			<summary>
-				<span class="badge b-doing">着手</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260903-02</span>
 				ID の名乗り方を作り直す（<code>-c</code> を廃し、コマンドの直後に <code>:id:</code> で固定する）
 			</summary>
@@ -1620,9 +1621,9 @@ $cmdlines | Where-Object { $_ -like "*-c $me*" }
 			</div>
 		</details>
 
-		<details class="issue doing" id="i260903-01" open>
+		<details class="issue done" id="i260903-01">
 			<summary>
-				<span class="badge b-doing">着手</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260903-01</span>
 				待受けの本数を <code>aichat waiters</code> に数えさせる
 			</summary>
@@ -1909,6 +1910,8 @@ $cmdlines | Where-Object { $_ -like "*-c $me*" }
 					<li><span class="badge b-todo">未</span> 渡す道具を絞れるか確かめる（<code>.claude/agents/</code> に定義を置く形）</li>
 					<li><span class="badge b-todo">未</span> 決めた形をルールと USAGE に書く</li>
 				</ul>
+
+				<p><strong>関連: <a href="#i260905-04">i260905-04</a></strong>（待受けが逼迫で刈られる）。<strong>あちらで「サブエージェントを挟むこと自体が資源を食う」ことが実測された。</strong>この課題の着地（サブエージェントに頼らない）と同じ方向を指す。</p>
 			</div>
 		</details>
 
@@ -2136,6 +2139,8 @@ $cmdlines | Where-Object { $_ -like "*-c $me*" }
 				</div>
 
 				<p><strong>これで <code>i260902-02</code> は片付いた。</strong>設定は効き、セッションの起動も要らず、12 時間まで走る。「240 秒境界で落ちる」という見立ても <strong>179 回の通過</strong>で否定された。</p>
+
+				<p><strong>関連: <a href="#i260905-04">i260905-04</a></strong>（待受けが逼迫で刈られる）。<strong>止め方はもう 1 つある。</strong>こちらは経過時間（60 分）で止まる話で、あちらはメモリの逼迫で刈られる話。<strong>対象も違い、親の背面コマンドも刈られる。</strong></p>
 			</div>
 		</details>
 
@@ -2618,9 +2623,9 @@ Review the subagent's actions carefully before acting on its output.</code></pre
 			</div>
 		</details>
 
-		<details class="issue doing" id="i260901-06" open>
+		<details class="issue done" id="i260901-06">
 			<summary>
-				<span class="badge b-doing">着手</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260901-06</span>
 				C# で CLI を書き、node 版と並行して持つ
 			</summary>
@@ -2700,13 +2705,13 @@ Review the subagent's actions carefully before acting on its output.</code></pre
 				</div>
 
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> <strong>論点 1〜6 を決める</strong></li>
-					<li><span class="badge b-todo">未</span> <code>csc</code> の在処と版を実測する</li>
-					<li><span class="badge b-todo">未</span> 計画を書く（<code>notes/10_plan/</code>）</li>
-					<li><span class="badge b-todo">未</span> 実装する</li>
-					<li><span class="badge b-todo">未</span> 食い違いを検出するテストを書く</li>
-					<li><span class="badge b-todo">未</span> 起動の速さを node 版と比べる</li>
-					<li><span class="badge b-todo">未</span> 資料に書く</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>論点 1〜6 を決めた</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> <code>csc</code> の在処と版を実測した（Windows 同梱。SDK は要らない）</li>
+					<li class="done"><span class="badge b-done">☑</span> 計画を書いた（<a href="../10_plan/p260902-01-CLIを2本持つ.html">p260902-01 CLI を 2 本持つ</a>）</li>
+					<li class="done"><span class="badge b-done">☑</span> 実装した</li>
+					<li class="done"><span class="badge b-done">☑</span> 食い違いを検出するテストを書いた（<code>tests/cli-cs.test.mjs</code> 9 件）</li>
+					<li class="done"><span class="badge b-done">☑</span> 起動の速さを node 版と比べた</li>
+					<li class="done"><span class="badge b-done">☑</span> 資料に書いた（USAGE と計画書）</li>
 				</ul>
 			
 				<h3>作った（2026-09-02）</h3>
@@ -2834,8 +2839,8 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 					<li class="done"><span class="badge b-done">☑</span> ビルドを用意する（<code>build-aichat.cmd</code>）</li>
 					<li class="done"><span class="badge b-done">☑</span> テストを書く（9 件。<code>aichat.exe</code> が無ければスキップ）</li>
 					<li class="done"><span class="badge b-done">☑</span> 起動の速さを実測する → <strong>狙いにならない。Node 自体の起動の方が速かった</strong></li>
-					<li><span class="badge b-todo">未</span> <strong>PATH に追加して起動方法を変える</strong>（利用者の判断）</li>
-					<li><span class="badge b-todo">未</span> USAGE に書き、周知する</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>PATH に追加した。</strong><code>aichat</code> と打てば動く（実測）</li>
+					<li class="done"><span class="badge b-done">☑</span> USAGE に書き、周知した（msg_seq 467）</li>
 				</ul>
 			</div>
 		</details>
@@ -2947,6 +2952,57 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 				</ul>
 			</div>
 		</details>
+
+		<details class="issue" id="i260905-04" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260905-04</span>
+				待受けが逼迫で刈られる。張り直しがそれを悪化させる
+			</summary>
+			<div class="issuebody">
+				<p><strong>止めているのは Windows ではなく Claude Code である。</strong>背面コマンドの終了通知に <code>stopped because the system is running low on memory</code> と出る。本体に <code>CLAUDE_CODE_DISABLE_BG_SHELL_PRESSURE_REAP</code> という環境変数があり、<strong>いまは未設定</strong>。</p>
+
+				<p><strong>関連: <a href="#i260902-02">i260902-02</a></strong>（60 分で止められる）。<strong>あちらは経過時間で止まる話で、こちらはメモリの逼迫で刈られる話である。</strong>止め方が 2 つある。<strong>関連: <a href="#i260902-03">i260902-03</a></strong>（サブエージェントが指示を守らない）。着地は同じ方向を指す。</p>
+
+				<h3>実測</h3>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th>見たこと</th><th>中身</th></tr></thead>
+					<tbody>
+						<tr><td class="nowrap">件数</td><td>08:20〜09:55 に 46 件（html2md 28 / reviewer 8 / ai-chat-lite 6 / PlayWright 4）。<strong>前日は 0 件</strong></td></tr>
+						<tr><td class="nowrap">寿命</td><td>24〜588 秒。29〜30 秒が最頻。<strong>時間の上限ではない</strong></td></tr>
+						<tr><td class="nowrap">空き</td><td>15.75 GB 中 0.7〜1.1 GB。<code>Memory Compression</code> が 2,857 MB</td></tr>
+						<tr><td class="nowrap">待受けの重さ</td><td>16 本で 240 MB。<strong>減らしても空きは戻らない</strong></td></tr>
+						<tr><td class="nowrap">取りこぼし</td><td><strong>無い。</strong>読んだ位置は保存されている</td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<h3>張り直しが悪化させている</h3>
+
+				<p><strong>サブエージェントで張り直すと、1 回につき claude が 5〜6 本立つ。</strong>10:51 に待受けを 2 本張り直したとき、<strong>9 秒間に 11 本</strong>が立った。<strong>サブエージェントが completed になっても、そのプロセスは残る</strong>（40 分後も生存、合計およそ 400 MB）。</p>
+
+				<p><strong>刈られる → 張り直す → claude が増える → 空きが減る → もっと刈られる</strong>、のループになる。html2md の張り直しは 50 回で、<strong>exit 0 は 2 回、残り 48 回が killed</strong> だった。</p>
+
+				<h3>親から直接張ると増えない</h3>
+
+				<p><strong>サブエージェントを挟まず、親の <code>run_in_background</code> で起こすと claude は 1 本も増えない</strong>（19 本のまま、2 本を 590 秒張って実測）。</p>
+
+				<div class="callout callout-important">
+					<p><strong>ただし刈られるのは同じである。</strong>12 時間で張り直した 2 本は、親から直接起こしたものでも同じ理由で止まった。<strong>親の背面コマンドも対象になる。</strong></p>
+					<p>つまりこれは<strong>「刈られない方法」ではなく「刈られても悪化させない方法」</strong>である。</p>
+				</div>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> 親から直接張る形をルールと USAGE に書くか決める</li>
+					<li><span class="badge b-todo">未</span> <code>CLAUDE_CODE_DISABLE_BG_SHELL_PRESSURE_REAP</code> を設定するか決める（効くかは未検証）</li>
+					<li><span class="badge b-todo">未</span> 刈る閾値と判定の間隔を調べる</li>
+					<li><span class="badge b-todo">未</span> 終わったサブエージェントのプロセスが残る理由を調べる</li>
+				</ul>
+			</div>
+		</details>
+
 	</div>
 </details>
 
@@ -3096,7 +3152,7 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 					<li class="done"><span class="badge b-done">☑</span> <strong>除いた分もカーソルは進める</strong>。止めると張り直した先で同じ記録を読み直す</li>
 					<li class="done"><span class="badge b-done">☑</span> 実装してテストを書いた（<code>tests/wait-kinds.test.mjs</code> の 10 件）</li>
 					<li class="done"><span class="badge b-done">☑</span> USAGE と設計書に書いた</li>
-					<li><span class="badge b-todo">未</span> 周知する</li>
+					<li class="done"><span class="badge b-done">☑</span> 周知した（msg_seq 515。pid 表示と --with-joins をまとめて 1 通）</li>
 				</ul>
 			</div>
 		</details>
