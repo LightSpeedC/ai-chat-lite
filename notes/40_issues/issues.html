@@ -1210,7 +1210,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">12 件 / 未 1 / 着手 5 / 済 6</span>
+		<span class="count">12 件 / 着手 5 / 済 7</span>
 	</summary>
 
 	<div class="groupbody">
@@ -2901,9 +2901,9 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 			</div>
 		</details>
 
-		<details class="issue" id="i260905-03" open>
+		<details class="issue done" id="i260905-03" open>
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260905-03</span>
 				履歴に残った個人名を消す
 			</summary>
@@ -2940,10 +2940,10 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 				</div>
 
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> <code>develop</code> の 2 コミットから個人名を消す（<code>filter-branch</code>）</li>
-					<li><span class="badge b-todo">未</span> 書き換え後に個人名が 0 件であることを数え直す</li>
-					<li><span class="badge b-todo">未</span> force push する</li>
-					<li><span class="badge b-todo">未</span> <code>refs/original/</code> を消し、reflog を切って <code>gc</code> する（B）</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>develop</code> の 2 コミットから個人名を消した（<code>filter-branch</code>。98 コミットを 106 秒で書き換え、<code>--to human</code> になった）</li>
+					<li class="done"><span class="badge b-done">☑</span> 数え直して <strong>0 箇所</strong>。いまのファイルは 1 バイトも変わっていない（<code>git diff --stat</code> が空）</li>
+					<li class="done"><span class="badge b-done">☑</span> force push した（<code>ffe13d8 → 2cb1249</code>）</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>refs/original/</code> を消し、reflog を切って <code>gc</code> した（B）。書き換え前のオブジェクトは消えている</li>
 				</ul>
 			</div>
 		</details>
