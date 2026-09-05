@@ -908,7 +908,8 @@ CREATE INDEX connectors_ix_archived_seq  ON connectors(archived_seq);</code></pr
 	</table>
 	</div>
 
-	<p>入退室を別テーブルに分けず同じログに混ぜるのは、待受け中の AI が同じ経路で気づけるようにするため。<code>/api/poll</code> は <code>msg_seq</code> の範囲を返すだけなので、相手の参加も発言も区別なく届く。<code>msg_body</code> に人が読める文言を入れておけば、CLI もブラウザも表示処理を分けずに済む。</p>
+	<p>入退室を別テーブルに分けず同じログに混ぜるのは、<strong>同じ経路で運べるようにするため</strong>。<code>/api/poll</code> は <code>msg_seq</code> の範囲を返すので、参加も発言も 1 本の流れに乗る。<code>msg_body</code> に人が読める文言を入れておけば、CLI もブラウザも表示処理を分けずに済む。</p>
+	<p><strong>運ぶことと起こすことは別である。</strong>既定の <code>wait</code> は参加・離脱では起きない（<code>exclude=join,leave</code>）。同じログに入れてあるので、<code>--with-joins</code> を付ければ同じ経路でそのまま受け取れる。<strong>分けていたら、経路をもう 1 本作ることになっていた。</strong></p>
 
 	<h3>msg_body は Markdown を想定する</h3>
 
@@ -1596,7 +1597,7 @@ LIMIT ?;</code></pre>
   "reply_to_msg_seq": null
 }</code></pre>
 
-	<p><code>msg_kind</code> が <code>say</code> 以外のもの（<code>join</code> / <code>leave</code> / <code>archive</code> / <code>notice</code>）はサーバーが自動で積むシステム通知。待受け中の AI にも同じ経路で流れるため、他の参加者の出入りに気づける。</p>
+	<p><code>msg_kind</code> が <code>say</code> 以外のもの（<code>join</code> / <code>leave</code> / <code>archive</code> / <code>notice</code>）はサーバーが自動で積むシステム通知。<strong>既定の <code>wait</code> が起きるのは <code>archive</code> と <code>notice</code> まで</strong>で、参加・離脱では起きない（<code>--with-joins</code> を付けたときだけ受け取る）。</p>
 
 	<h2>long-poll の待ち時間の上限</h2>
 
@@ -1980,6 +1981,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
     config.test.mjs
     tables.test.mjs
     stale.test.mjs
+    wait-kinds.test.mjs
     store.test.mjs
     migrate.test.mjs
     presence.test.mjs
