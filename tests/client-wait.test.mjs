@@ -58,7 +58,7 @@ describe('wait の待つ長さ', () => {
 		const { stdout } = await chat(['wait', '--wait-sec', '3']);
 		const elapsed = Date.now() - startedAt;
 
-		assert.match(stdout, /待受け開始（最大 3 秒/);
+		assert.match(stdout, /pid \d+ で待受け中（最大 3 秒/);
 		assert.match(stdout, /新着なし（3 秒待機/);
 		assert.ok(elapsed >= 2500, `待たずに返っている（${elapsed}ms）`);
 	});
@@ -85,7 +85,7 @@ describe('wait の待つ長さ', () => {
 		await chat(['say', '既定の確認'], 'test-connector2');
 		const { stdout } = await chat(['wait']);
 
-		assert.match(stdout, /待受け開始（最大 12 時間/);
+		assert.match(stdout, /pid \d+ で待受け中（最大 12 時間/);
 		assert.match(stdout, /新着 1 件/);
 	});
 
@@ -94,25 +94,25 @@ describe('wait の待つ長さ', () => {
 		await chat(['say', '上限なしの確認'], 'test-connector2');
 		const { stdout } = await chat(['wait', '--wait-sec', '0']);
 
-		assert.match(stdout, /待受け開始（最大 上限なし/);
+		assert.match(stdout, /pid \d+ で待受け中（最大 上限なし/);
 		assert.match(stdout, /新着 1 件/);
 	});
 
 	test('分と時でも同じ長さを指定できる', async () => {
 		await chat(['say', '単位の確認'], 'test-connector2');
 		const byMin = await chat(['wait', '--wait-min', '60']);
-		assert.match(byMin.stdout, /待受け開始（最大 1 時間/);
+		assert.match(byMin.stdout, /pid \d+ で待受け中（最大 1 時間/);
 
 		await chat(['say', '単位の確認 2'], 'test-connector2');
 		const byHour = await chat(['wait', '--wait-hour', '1']);
-		assert.match(byHour.stdout, /待受け開始（最大 1 時間/);
+		assert.match(byHour.stdout, /pid \d+ で待受け中（最大 1 時間/);
 	});
 
 	test('短い形 -w は --wait-hour と同じ', async () => {
 		await chat(['say', '短い形の確認'], 'test-connector2');
 		const { stdout } = await chat(['wait', '-w', '2']);
 
-		assert.match(stdout, /待受け開始（最大 2 時間/);
+		assert.match(stdout, /pid \d+ で待受け中（最大 2 時間/);
 	});
 });
 
@@ -156,6 +156,18 @@ describe('wait の指定を誤ったとき', () => {
 });
 
 describe('wait のログ', () => {
+	test('待受け中の行に pid が出る', async () => {
+		/*
+		 * この 1 行だけを見た相手に「終わった」と読ませないため、進行形にしてある。
+		 * pid は aichat waiters が名指しする値と同じで、走っているかを確かめる手がかりになる。
+		 */
+		const { stdout } = await chat(['wait', '--wait-sec', '1']);
+		const pid = /^pid (\d+) で待受け中（/.exec(stdout);
+
+		assert.ok(pid, `pid が出ていない:\n${stdout}`);
+		assert.ok(Number(pid[1]) > 0, `pid が数でない: ${pid[1]}`);
+	});
+
 	test('出るのは開始と終了の 2 行だけ', async () => {
 		/*
 		 * 240 秒ごとに「新着なし」を出していたため、12 時間で 180 行になっていた。
@@ -165,7 +177,7 @@ describe('wait のログ', () => {
 		const lines = stdout.trim().split('\n');
 
 		assert.equal(lines.length, 2, `2 行ではない:\n${stdout}`);
-		assert.match(lines[0], /^待受け開始（/);
+		assert.match(lines[0], /^pid \d+ で待受け中（/);
 		assert.match(lines[1], /^新着なし（/);
 		assert.doesNotMatch(stdout, /回目/);
 	});

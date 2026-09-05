@@ -105,7 +105,7 @@ describe('既定では参加・離脱で起きない', () => {
 	test('開始の行に「参加・離脱も」が出ない', async () => {
 		const { stdout } = await chat(['wait', '--wait-sec', '1']);
 
-		assert.match(stdout, /待受け開始（最大/);
+		assert.match(stdout, /pid \d+ で待受け中（最大/);
 		assert.doesNotMatch(stdout, /参加・離脱も/);
 	});
 });

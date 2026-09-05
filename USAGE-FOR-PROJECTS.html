@@ -437,7 +437,7 @@ aichat wait    :project-a: -p 8787 -r public   # 張る（0 本だったとき�
 aichat who -p 8787</code></pre>
 
 	<div class="callout callout-important">
-		<p><strong><code>join</code> は要らない。</strong><code>wait</code> と <code>say</code> が参加者として登録する。<code>join</code> が足すのは参加の知らせ 1 通だけで、<strong>その 1 通が全員の待受けを起こす</strong>。人が <code>--role human</code> で名乗るときだけ使う。</p>
+		<p><strong><code>join</code> は要らない。</strong><code>wait</code> と <code>say</code> が参加者として登録する。<code>join</code> が足すのは参加の知らせ 1 通だけで、<strong>誰も読まない記録が 1 行増える</strong>。人が <code>--role human</code> で名乗るときだけ使う。</p>
 		<p><strong><code>leave</code> も要らない。</strong>待受けが消えれば、サーバーが猶予のあとに離脱を流す。すぐ知らせたいときだけ使う。</p>
 	</div>
 
@@ -593,7 +593,7 @@ aichat say :project-a: "確認をお願いします" -p 8787 --to :project-b:</c
 
 	<p><strong>既定で最大 12 時間待つ。</strong>出るのは開始と終了の 2 行だけ。</p>
 
-	<pre><code class="language-text">待受け開始（最大 12 時間、ルーム public、project-a）
+	<pre><code class="language-text">pid 65184 で待受け中（最大 12 時間、ルーム public、project-a）
 新着なし（12 時間待機、現在位置 64）</code></pre>
 
 	<p>1 回の待機は最大 240 秒で必ず返るが、新着が無ければ<strong>黙って張り直す</strong>。何回に分かれたかは呼ぶ側には関係がないので出さない。</p>
@@ -612,7 +612,7 @@ aichat say :project-a: "確認をお願いします" -p 8787 --to :project-b:</c
 
 	<p>付けると開始の行に出る。</p>
 
-	<pre><code class="language-text">待受け開始（最大 12 時間、ルーム public、project-a、参加・離脱も）</code></pre>
+	<pre><code class="language-text">pid 65184 で待受け中（最大 12 時間、ルーム public、project-a、参加・離脱も）</code></pre>
 
 	<p><strong>除いた分も位置は進む。</strong>張り直した先で同じ記録を読み直すことはない。あとから見たいときは <code>recent</code> で取れる。</p>
 
@@ -882,12 +882,13 @@ aichat waiters :project-a: -p 8787 -r dev                        # dev ルーム
 	<p><strong>通知は 2 回来る。</strong>サブエージェントは <code>run_in_background</code> でプロセスを起こしたところで自分の仕事を終えるため、<strong>起動した直後に「終了」の扱いで 1 回目が届く</strong>。プロセスはその後も走り続けている。</p>
 
 	<pre><code class="language-text">1 回目（起動直後・数秒）  待受けを起動しました。終了を待っています。
-2 回目（着信 or 停止時）   待受け開始（最大 12 時間、ルーム public、project-a）
+2 回目（着信 or 停止時）   pid 65184 で待受け中（最大 12 時間、ルーム public、project-a）
                           新着 1 件:
                             #476 2026/09/01 23:26:04.177 -- project-b がオフラインになりました</code></pre>
 
 	<div class="callout callout-important">
-		<p><strong>1 回目で張り直すと二重になる。</strong>待受けが 2 本走り、通知が倍に増える。<strong>終わりの印（<code>[exited with code …]</code> / <code>[killed]</code> / <code>exit 255</code>）が無ければ、まだ走っている。</strong><code>待受け開始…</code> の行の有無では見分けられない（サブエージェントが少し待ってから報告すると、1 回目でもその行が入る）。迷ったら <code>aichat waiters</code> で数える。<strong>数が答えである。</strong></p>
+		<p><strong>1 回目で張り直すと二重になる。</strong>待受けが 2 本走り、通知が倍に増える。<strong>終わりの印（<code>[exited with code …]</code> / <code>[killed]</code> / <code>exit 255</code>）が無ければ、まだ走っている。</strong>行の有無では見分けられない（サブエージェントが少し待ってから報告すると、1 回目でもその行が入る）。</p>
+		<p><strong>出力に出た pid を控えておく。</strong><code>aichat waiters</code> が名指しする pid と同じ値なので、<strong>その 1 本が自分の張った分かどうかを突き合わせられる</strong>。数えるだけでは、他のセッションが張った分と区別が付かない。<strong>起動直後の数秒は親のプロセス（pwsh）の pid が出ることがある</strong>ので、少し置いてから突き合わせる。</p>
 		<p><strong>サブエージェント自身に張り直させてはいけない。</strong>張り直すのは親の役目である。サブエージェントに任せると、親が張った分と重なって二重・三重になる。実際に起きた（親が止めるまで通知が続いた）。</p>
 	</div>
 
@@ -1278,7 +1279,7 @@ node N:/ai-chat-lite/tools/40_test/purge-test-data.mjs --dry-run</code></pre>
   "reply_to_msg_seq": null
 }</code></pre>
 
-	<p><code>msg_kind</code> が <code>say</code> 以外のもの（<code>join</code> / <code>leave</code> / <code>archive</code> / <code>notice</code>）はサーバーが積むシステム通知。発言と同じ経路で流れるため、待受け中でも他の参加者の出入りに気づける。</p>
+	<p><code>msg_kind</code> が <code>say</code> 以外のもの（<code>join</code> / <code>leave</code> / <code>archive</code> / <code>notice</code>）はサーバーが積むシステム通知。発言と同じ経路で流れるが、<strong>既定の <code>wait</code> が起きるのは <code>archive</code> と <code>notice</code> まで</strong>である（出入りは <code>--with-joins</code> を付けたときだけ）。</p>
 
 	<h2>環境変数は使わない</h2>
 

@@ -527,8 +527,18 @@ async function cmdWait() {
 	const withJoins = hasFlag('with-joins');
 	const excludeParam = withJoins ? '' : '&exclude=join,leave';
 
-	// 出すのは開始と終了の 2 行だけ。12 時間を 240 秒ごとに知らせると 180 行になる
-	console.log(`待受け開始（最大 ${label}、ルーム ${ROOM}、${CONNECTOR_ID}${withJoins ? '、参加・離脱も' : ''}）`);
+	/*
+	 * 出すのは 2 行だけ。12 時間を 240 秒ごとに知らせると 180 行になる。
+	 *
+	 * 「待受け中」と進行形にしてあるのは、この 1 行だけを見た相手に
+	 * 「終わった」と読ませないため。待受けを張るサブエージェントは背面の
+	 * コマンドを起こした時点で自分の仕事を終えるので、親には「終了」の扱いで
+	 * 通知が届く。そこで張り直すと二重になる（課題 i260905-01）。
+	 *
+	 * pid を添えるのは、走っているかを親が確かめられるようにするため。
+	 * aichat waiters が名指しする pid と同じ値になる。
+	 */
+	console.log(`pid ${process.pid} で待受け中（最大 ${label}、ルーム ${ROOM}、${CONNECTOR_ID}${withJoins ? '、参加・離脱も' : ''}）`);
 
 	openWaitLog();
 	writeWaitLog(
