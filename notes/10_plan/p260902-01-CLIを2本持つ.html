@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CLI を 2 本持つ</title>
+<style>
+/* 共通のスタイル。docs\css\style.css と同じ内容を持たせている */
+@charset "UTF-8";
+
+/* ===================================================================
+   ai-chat-lite 共通スタイル
+   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   =================================================================== */
+
+:root {
+	/* 章に依存しない共通色 */
+	--navy1: #12224d;
+	--navy2: #2f5fbf;
+	--ink: #1c2330;
+	--ink-soft: #4a5568;
+	--line: #d9dfe8;
+	--code-bg: #f4f6fa;
+	--link: #1a4fa0;
+
+	/* 章クラスの外に置いた要素が色を失わないための既定値 */
+	--accent: #12224d;
+	--accent2: #2f5fbf;
+	--soft: #f2f5fb;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: #fdfdfe;
+	color: var(--ink, #1c2330);
+	font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+	font-size: 15.5px;
+	line-height: 1.85;
+}
+
+a {
+	color: var(--link, #1a4fa0);
+}
+
+/* ---------- タイトルバー ---------- */
+
+.titlebar {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 34px 30px 30px;
+}
+
+.titlebar .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+}
+
+.titlebar h1 {
+	font-size: 1.85em;
+	margin: 0 0 8px;
+	color: #fff;
+}
+
+.titlebar .lead {
+	margin: 0;
+	color: #d7e2f7;
+	font-size: 0.95em;
+}
+
+.titlebar .date {
+	margin: 10px 0 0;
+	color: #b9caea;
+	font-size: 0.88em;
+}
+
+.titlebar a {
+	color: #cfe0ff;
+}
+
+.titlebar code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+/* ---------- 本文の器 ---------- */
+
+.wrap {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding: 0 30px;
+}
+
+section {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 10px;
+	padding: 4px 26px 26px;
+	margin: 34px 0;
+}
+
+/* ---------- 見出し ---------- */
+
+section h1 {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-size: 1.4em;
+	padding: 14px 20px;
+	margin: 26px 0 20px;
+	border-radius: 8px;
+	box-shadow: 0 3px 10px rgba(20, 34, 70, 0.22);
+}
+
+section h1 code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+h2 {
+	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
+	color: var(--accent, #12224d);
+	font-size: 1.16em;
+	padding: 6px 12px;
+	margin: 30px 0 12px;
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 6px 6px 0;
+}
+
+h3 {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	font-size: 1.02em;
+	display: inline-block;
+	padding-bottom: 3px;
+	margin: 20px 0 8px;
+	border-bottom: 2px dotted var(--accent2, #2f5fbf);
+}
+
+/* ---------- 表 ---------- */
+
+.tablewrap {
+	overflow-x: auto;
+	margin: 14px 0;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 5px rgba(20, 34, 70, 0.10);
+}
+
+th {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	text-align: left;
+	padding: 9px 12px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+th code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+td {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	padding: 9px 12px;
+	border-top: 1px solid var(--line, #d9dfe8);
+	vertical-align: top;
+}
+
+tr:nth-child(even) td {
+	background: #fafbfe;
+	color: var(--ink, #1c2330);
+}
+
+td.num,
+th.num {
+	text-align: right;
+}
+
+td.nowrap,
+th.nowrap {
+	white-space: nowrap;
+}
+
+/* ---------- コード ---------- */
+
+code {
+	background: var(--code-bg, #f4f6fa);
+	color: #17335f;
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 4px;
+	padding: 1px 5px;
+	font-family: "Consolas", "Cascadia Mono", monospace;
+	font-size: 0.92em;
+}
+
+pre {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 5px solid var(--accent2, #2f5fbf);
+	border-radius: 0 8px 8px 0;
+	padding: 13px 16px;
+	overflow-x: auto;
+	line-height: 1.65;
+}
+
+pre code {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	border: none;
+	padding: 0;
+	font-size: 0.92em;
+}
+
+/* ---------- バッジ ---------- */
+
+.badge {
+	display: inline-block;
+	padding: 1px 9px;
+	margin-right: 6px;
+	border-radius: 11px;
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+	font-size: 0.84em;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.badge.b-ok {
+	background: linear-gradient(100deg, #1d7a3c, #45b56c);
+	color: #fff;
+}
+
+.badge.b-ng {
+	background: linear-gradient(100deg, #a51f22, #e05a5c);
+	color: #fff;
+}
+
+.badge.b-warn {
+	background: linear-gradient(100deg, #b8620a, #f0a548);
+	color: #fff;
+}
+
+.badge.b-none {
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+}
+
+/* ---------- callout ---------- */
+
+.callout {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 8px 8px 0;
+	padding: 12px 18px;
+	margin: 16px 0;
+}
+
+.callout strong {
+	color: var(--accent, #12224d);
+	background: transparent;
+}
+
+.callout p {
+	margin: 6px 0;
+}
+
+/* ---------- 目次 ---------- */
+
+.toc ol {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 0;
+	margin: 12px 0 4px;
+}
+
+.toc ul a {
+	color: var(--link, #1a4fa0);
+	background: transparent;
+}
+
+.toc ol li {
+	counter-increment: tocnum;
+	margin: 0;
+}
+
+.toc ol a {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: normal;
+	width: 310px;
+	max-width: 100%;
+	padding: 7px 13px;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+	line-height: 1.45;
+}
+
+.toc ol a::before {
+	content: counter(tocnum) ". ";
+	font-weight: 700;
+}
+
+/* ---------- 資料リンク・戻るリンク ---------- */
+
+.navlinks {
+	margin: 20px 0 0;
+}
+
+/*
+ * 幅は文字数で決まる（固定幅にしない）。
+ * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
+ * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
+ */
+a.doclink {
+	display: inline-block;
+	padding: 3px 12px;
+	margin: 0 8px 6px 0;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	font-size: 0.9em;
+	text-decoration: none;
+}
+
+/* ---------- SVG図 ---------- */
+
+.fig {
+	margin: 18px 0;
+	text-align: center;
+}
+
+.fig svg {
+	max-width: 100%;
+	height: auto;
+}
+
+.fig figcaption {
+	color: var(--ink-soft, #4a5568);
+	background: transparent;
+	font-size: 0.88em;
+	margin-top: 6px;
+}
+
+/* ---------- フッター ---------- */
+
+footer {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 18px 30px 0;
+	margin-top: 40px;
+}
+
+footer .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding-bottom: 18px;
+}
+
+footer a {
+	color: #cfe0ff;
+}
+</style>
+<style>
+/* この資料だけのもの: 章のアクセント色（5章 / 色相 280→0 を 70 刻み）と目次の採番 */
+.ch01 { --accent: hsl(280.0, 78%, 25%); --accent2: hsl(280.0, 58%, 55%); --soft: hsl(280.0, 28%, 95%); }
+.ch02 { --accent: hsl(210.0, 78%, 25%); --accent2: hsl(210.0, 58%, 55%); --soft: hsl(210.0, 28%, 95%); }
+.ch03 { --accent: hsl(140.0, 78%, 25%); --accent2: hsl(140.0, 58%, 55%); --soft: hsl(140.0, 28%, 95%); }
+.ch04 { --accent: hsl( 70.0, 78%, 25%); --accent2: hsl( 70.0, 58%, 55%); --soft: hsl( 70.0, 28%, 95%); }
+.ch05 { --accent: hsl(  0.0, 78%, 25%); --accent2: hsl(  0.0, 58%, 55%); --soft: hsl(  0.0, 28%, 95%); }
+.toc ol { counter-reset: tocnum; }
+</style>
+</head>
+
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>CLI を 2 本持つ</h1>
+		<p class="lead">node 版はそのままに、C# 版を並べる。定義は 1 か所から配る</p>
+		<p class="date">📅 作成: 2026-09-05 / 更新: 2026-09-05</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+<p>課題 <a class="doclink" href="../40_issues/issues.html#i260901-06">i260901-06</a> の計画である。<strong><code>csc</code> で <code>aichat.exe</code> を作り、node 版（<code>src/client/chat.mjs</code>）はそのまま残して両方を保守する。</strong></p>
+
+
+<section class="toc md-skip">
+	<h2>目次</h2>
+	<ol>
+		<li class="ch01"><a href="#ch01">なぜ 2 本持つのか</a></li>
+		<li class="ch02"><a href="#ch02">決めたこと</a></li>
+		<li class="ch03"><a href="#ch03">作ったもの</a></li>
+		<li class="ch04"><a href="#ch04">食い違いを防ぐ仕組み</a></li>
+		<li class="ch05"><a href="#ch05">速さは狙いにならなかった</a></li>
+	</ol>
+</section>
+
+<!-- ================= 01 ================= -->
+<section class="ch01" id="ch01">
+	<h1>なぜ 2 本持つのか</h1>
+
+	<p><strong>始まりはコマンドラインの長さである。</strong>node 版は <code>node ...\src\client\chat.mjs</code> と書かせる。この形は<strong>パスの区切りで 2 回落ちた</strong>。Bash に渡ると <code>\</code> がエスケープとして消え、<code>Cannot find module</code> になる。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">観点</th><th>いまの node 版</th><th>exe にしたら</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap">起動</td>
+				<td><code>node ...\chat.mjs</code> と書く。<strong>パスの区切りで 2 回落ちた</strong></td>
+				<td><code>aichat</code> だけ。パスを書かせない</td>
+			</tr>
+			<tr>
+				<td class="nowrap">Node への依存</td>
+				<td>要る（v22.5 以降。<code>node:sqlite</code> のため）</td>
+				<td>要らない。<strong>ただし CLI は DB を触らない</strong>ので、そもそも sqlite は不要</td>
+			</tr>
+			<tr>
+				<td class="nowrap">保守</td>
+				<td>1 本</td>
+				<td><strong>2 本になる。</strong>オプションを増やすたび両方を直す</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-warning">
+		<p><strong>2 本を保守すると、必ず食い違う。</strong>検討を始めた日にも <code>usage()</code> と USAGE の一覧が食い違っていた。<strong>食い違いを検出する手立てを、作る前に決める。</strong></p>
+	</div>
+
+	<h2>先に決めた 6 つの論点</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="num">#</th><th class="nowrap">論点</th><th>中身</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="num">1</td><td class="nowrap">どこまで作るか</td><td>全コマンドか、待受けとよく使う分（<code>wait</code> <code>say</code> <code>recent</code>）だけか</td></tr>
+			<tr><td class="num">2</td><td class="nowrap">食い違いをどう防ぐか</td><td>同じ振る舞いのテストを両方に当てる。オプションの表を 2 本の共通の元にできるか</td></tr>
+			<tr><td class="num">3</td><td class="nowrap">置き場</td><td>納品するものは <code>src/</code>。ビルドは <code>tools/20_build/</code>。exe の置き場も決める</td></tr>
+			<tr><td class="num">4</td><td class="nowrap">ビルドの前提</td><td><code>csc</code> はどこにあるか。.NET SDK か、Windows 同梱のものか。<strong>まず実測する</strong></td></tr>
+			<tr><td class="num">5</td><td class="nowrap">exe を Git に入れるか</td><td>ビルド済みを配るのか、各自でビルドするのか</td></tr>
+			<tr><td class="num">6</td><td class="nowrap">どちらを正とするか</td><td>資料に書くコマンドはどちらにするか。<strong>両方書くと読み手が迷う</strong></td></tr>
+		</tbody>
+	</table>
+	</div>
+</section>
+
+<!-- ================= 02 ================= -->
+<section class="ch02" id="ch02">
+	<h1>決めたこと</h1>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">項目</th><th>中身</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap">どこまで作るか</td><td><strong>全コマンド。</strong>「一部だけ」だと、どちらを使うか毎回考えることになる</td></tr>
+			<tr><td class="nowrap">食い違いの防ぎ方</td><td><code>src/client/options.mjs</code> を唯一の出どころにし、JSON を埋め込む</td></tr>
+			<tr><td class="nowrap">ビルド</td><td><code>csc</code> 単ファイル。<strong>SDK が要らない</strong></td></tr>
+			<tr><td class="nowrap">名前と置き場</td><td><code>aichat.exe</code> を root に置く。Git 管理外（作り直せる）</td></tr>
+			<tr><td class="nowrap">既定値</td><td><strong>接続先と ID は持たない。</strong>node 版と同じ。黙って本番に書く事故を防ぐ</td></tr>
+			<tr><td class="nowrap">ソースの置き場</td><td><code>src/cli-cs/</code>。他プロジェクトが使うものなので納品側</td></tr>
+			<tr><td class="nowrap">node 版の呼び方</td><td><code>aichat-node.cmd</code> を root に置き、PATH から呼べるようにした</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-tip">
+		<p><strong>node 版にも「パスを書かせない」利点を持たせた。</strong><code>aichat-node.cmd</code> の中身は node 版を呼ぶだけである。</p>
+		<p>おかげで<strong>プロセスを数える式が 1 つで済む。</strong>どちらで張っても、コマンドラインに <code>aichat</code> が残る。</p>
+	</div>
+</section>
+
+<!-- ================= 03 ================= -->
+<section class="ch03" id="ch03">
+	<h1>作ったもの</h1>
+
+	<p>2026-09-02 に作った。<strong>7 ファイルと、ビルド・書き出し・テストである。</strong></p>
+
+<pre><code class="language-text">aichat.exe                              root。42 KB。Git 管理外
+src/cli-cs/Program.cs                   入口・使い方の表示
+src/cli-cs/Commands.cs                  各コマンド
+src/cli-cs/Args.cs                      引数の解析
+src/cli-cs/Client.cs                    HTTP（繋ぎ直し・503・終了コード 3）
+src/cli-cs/Json.cs                      小さな JSON の読み書き
+src/cli-cs/Definition.cs                埋め込んだ定義を読む
+src/cli-cs/WaitLog.cs                   待受けの記録
+tools/20_build/export-options.mjs       options.mjs から JSON を書き出す
+aichat-node.cmd                         node 版を呼ぶだけの包み。root。PATH から呼べる
+tools/20_build/build-aichat.ps1 / .cmd  ビルド
+tools/40_test/measure-cli-startup.ps1   起動の速さを測る（20 回 × 2 巡）
+tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る（9 件）</code></pre>
+
+	<div class="callout callout-important">
+		<p><strong>exe を作り直すときは待受けを止めない。</strong>走っている待受けが <code>aichat.exe</code> を掴んでおり、そこには<strong>他プロジェクトの分も混ざる</strong>。<code>build-aichat.ps1</code> は掴まれているときだけ <code>tmp/</code> へ退避する。</p>
+	</div>
+</section>
+
+<!-- ================= 04 ================= -->
+<section class="ch04" id="ch04">
+	<h1>食い違いを防ぐ仕組み</h1>
+
+	<p><strong>定義は 1 か所にしかない。</strong><code>src/client/options.mjs</code> から JSON を書き出し、ビルド時に exe へ埋め込む（<code>csc /resource:</code>）。<strong>手で写していないので、オプションを増やしても 2 本がずれない。</strong></p>
+
+	<p>埋め込んだ JSON には <code>schema</code> を持たせた。<strong>形が変わったら C# 側が起動時に気づいて止まる。</strong></p>
+
+	<p>そのうえで <code>tests/cli-cs.test.mjs</code> が両方を実際に動かして出力を比べる。時刻や番号は揺れるので<strong>形だけを見る</strong>。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">見ていること</th><th>中身</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap"><code>--help</code></td><td>コマンドとオプションの並びが<strong>一字一句同じか</strong></td></tr>
+			<tr><td class="nowrap"><code>join</code></td><td>1 行目の形。参加者の一覧は増減するので数は見ない</td></tr>
+			<tr><td class="nowrap">相互に読めるか</td><td>C# 版で <code>say</code> したものを node 版の <code>recent</code> で読む</td></tr>
+			<tr><td class="nowrap">廃止したオプション</td><td>両方が同じ文で、終了コード 2 で止まるか</td></tr>
+			<tr><td class="nowrap">接続先なし</td><td>両方が終了コード 2 で止まるか</td></tr>
+			<tr><td class="nowrap">定義の出どころ</td><td>書き出した JSON と <code>options.mjs</code> が一致するか</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-tip">
+		<p><strong>1 度だけ食い違いが出て、テストが見つけた。</strong>説明を始める列が node 版 40・C# 版 37 でずれていた。中身は同じで表示だけが違う。</p>
+		<p><strong>目で読んで気づける差ではない。</strong>見つけたいのはまさにこの類である。</p>
+	</div>
+</section>
+
+<!-- ================= 05 ================= -->
+<section class="ch05" id="ch05">
+	<h1>速さは狙いにならなかった</h1>
+
+	<p><strong>20 回 × 2 巡（順序を入れ替え）、ウォームアップ 3 回を捨てて最小値で比べた。</strong>測るのは <code>tools/40_test/measure-cli-startup.cmd</code>。</p>
+
+	<p><strong>Node 自体の起動の方が、C#（.NET Framework）より速かった。</strong>CLR の初期化は V8 より重い。C# が勝っているのは、node が <code>options.mjs</code> などを読み込む分だけである。<strong>その差も、書き換える理由になる大きさではない。</strong></p>
+
+	<div class="callout callout-warning">
+		<p><strong>はじめの測定は粗かった。</strong>5 回の平均で、出力を <code>| Out-Null</code> に流していた。パイプラインの処理が乗り、プロセスの起動時間が埋もれる。ウォームアップも捨てていない。</p>
+		<p><strong>数字は結果として近かったが、根拠としては弱かった。</strong>測り方を決めてから測り直した。</p>
+	</div>
+
+	<h2>残った利点</h2>
+
+	<p><strong>残る利点は「パスを書かせない」ことだけである。</strong>それでも価値はある。パスの区切りで 2 回落ちたのは、コマンドラインが長いことが原因だった。<strong><code>aichat</code> と打てるなら、その手の事故は起きない。</strong></p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">観点</th><th>node 版</th><th>C# 版</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap">書き方</td><td><code>aichat-node wait :id: -p 8787</code></td><td><code>aichat wait :id: -p 8787</code></td></tr>
+			<tr><td class="nowrap">Node への依存</td><td>要る</td><td>要らない。<strong>ただしサーバーは Node で動く</strong>ので、同じ PC では意味が薄い</td></tr>
+			<tr><td class="nowrap">大きさ</td><td>—</td><td>42 KB。SDK も実行環境も要らない</td></tr>
+			<tr><td class="nowrap">起動の速さ</td><td colspan="2"><strong>差はあるが、書き換える理由になる大きさではない</strong></td></tr>
+		</tbody>
+	</table>
+	</div>
+</section>
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+</div>
+</body>
+</html>
