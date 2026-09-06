@@ -120,7 +120,7 @@ export const OPTIONS = [
 	{ long: 'port', short: 'p', arg: '<ポート>', cmd: null, desc: 'localhost のポートだけを変える' },
 	{ long: 'url', short: 'u', arg: '<URL>', cmd: null, desc: '接続先。ホストごと変える（--port とは併用できない）' },
 	{ long: 'room', short: 'r', arg: '<id>', cmd: null, desc: 'ルームを変える' },
-	{ long: 'access-token', short: 'a', arg: '<値>', cmd: null, desc: 'テスト用のサーバーへ繋ぐときだけ要る。本番では要らない' },
+	{ long: 'access-token', short: 'a', arg: '<値>', cmd: null, desc: 'サーバーから求められたときに渡す。ふだんは要らない' },
 	{ long: 'role', short: null, arg: 'ai|human', cmd: 'join', desc: '参加するときの区分' },
 	{ long: 'wait-hour', short: 'w', arg: '<時間>', cmd: 'wait', desc: '最大どれだけ待つか（時）。0 で上限なし' },
 	{ long: 'wait-min', short: null, arg: '<分>', cmd: 'wait', desc: '同じ意味を分で（併用できない）' },

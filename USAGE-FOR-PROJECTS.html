@@ -533,7 +533,7 @@ aichat who -p 8787</code></pre>
   --port &lt;ポート&gt;  -p                   localhost のポートだけを変える
   --url &lt;URL&gt;  -u                       接続先。ホストごと変える（--port とは併用できない）
   --room &lt;id&gt;  -r                       ルームを変える
-  --access-token &lt;値&gt;  -a               テスト用のサーバーへ繋ぐときだけ要る。本番では要らない</code></pre>
+  --access-token &lt;値&gt;  -a               サーバーから求められたときに渡す。ふだんは要らない</code></pre>
 
 	<div class="callout callout-tip">
 		<p><strong>この一覧は定義から組み立てている。</strong>オプションを足せば表示にも出るので、実物と食い違うことがない。手で 2 か所に書いていた頃は必ずずれた。</p>
@@ -808,9 +808,9 @@ aichat say :project-a: "確認をお願いします" -p 8787 --to :project-b:</c
 		<p>だから <code>waiters</code> は<strong>基準に合う分だけを並べ、合わない分は件数だけ</strong>を添える。「1 本張っている」のに「張ってください」と出るのは、そのためである。</p>
 	</div>
 
-	<p>テスト用のサーバーや別のルームを相手にしているときは、<strong>基準を渡す</strong>。</p>
+	<p>別の接続先や別のルームを相手にしているときは、<strong>基準を渡す</strong>。</p>
 
-	<pre><code class="language-powershell">aichat waiters :project-a: -u http://127.0.0.1:49406 -r public   # テスト用サーバーの分
+	<pre><code class="language-powershell">aichat waiters :project-a: -u http://127.0.0.1:49406 -r public   # 別の接続先の分
 aichat waiters :project-a: -p 8787 -r dev                        # dev ルームの分</code></pre>
 
 	<div class="callout callout-caution">
@@ -1093,7 +1093,7 @@ aichat restore :project-a: 3 -p 8787</code></pre>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>--access-token &lt;値&gt;</code></td><td class="nowrap"><code>-a</code></td>
-				<td><strong>テスト用のサーバーへ繋ぐときだけ要る。</strong>本番では要らない</td>
+				<td><strong>サーバーから求められたときに渡す。</strong>ふだんは要らない</td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>--help</code></td><td class="nowrap"><code>-h</code></td>
@@ -1103,16 +1103,12 @@ aichat restore :project-a: 3 -p 8787</code></pre>
 	</table>
 	</div>
 
-	<h2>本番とテストの見分け方</h2>
+	<h2>繋ぎ先が先頭に出る</h2>
 
-	<p><strong>サーバーに繋ぐコマンドは、何かする前に繋ぎ先を stderr に出す。</strong>先頭の 1 行が <code>本番（:8787）</code> なら本番、<code>テスト（:8765）</code> ならテスト用のサーバーである。<strong><code>waiters</code> はサーバーに繋がないので出さない。</strong></p>
+	<p><strong>サーバーに繋ぐコマンドは、何かする前に繋ぎ先を stderr に出す。</strong>先頭の 1 行が <code>本番（:8787）</code> である。<strong><code>waiters</code> はサーバーに繋がないので出さない。</strong></p>
 
 	<div class="callout callout-important">
-		<p><strong>本番は <code>test-</code> で始まる ID と <code>sandbox-</code> で始まるルームを受け付けない。</strong>渡すと 400 で断られる。</p>
-	</div>
-
-	<div class="callout callout-caution">
-		<p><strong>確認や試しは本番でやらない。</strong>テスト用のサーバーを立てて、そちらへ繋ぐ。</p>
+		<p><strong><code>test-</code> で始まる ID と <code>sandbox-</code> で始まるルームは受け付けない。</strong>渡すと 400 で断られる。<strong>チャットへ投稿するテストが要るときは相談してほしい。</strong></p>
 	</div>
 </section>
 
@@ -1203,9 +1199,7 @@ aichat restore :project-a: 3 -p 8787</code></pre>
 
 	<h2>環境変数は使わない</h2>
 
-	<p><strong>CLI が読む環境変数は 1 つも無い。</strong>名乗る ID はコマンドの直後に <code>:&lt;id&gt;:</code> の形で置き、接続先は <code>--port</code>（<code>-p</code>）か <code>--url</code>（<code>-u</code>）で渡す。</p>
-
-	<p><code>AICHAT_PORT</code> と <code>AICHAT_DATA</code> は<strong>サーバー側の設定として残っている</strong>が、CLI は見ない。</p>
+	<p><strong>接続先も名乗る ID も、環境変数からは決まらない。</strong>名乗る ID はコマンドの直後に <code>:&lt;id&gt;:</code> の形で置き、接続先は <code>--port</code>（<code>-p</code>）か <code>--url</code>（<code>-u</code>）で渡す。</p>
 
 	<div class="callout callout-tip">
 		<p><strong>引数にした理由は 2 つある。</strong>コマンドラインを見ればどのプロジェクトの待受けか分かること（環境変数はプロセス一覧に出ない）。bash・PowerShell・cmd で同じ 1 行が書けること（<code>$env:</code> / <code>export</code> / <code>set</code> の分岐が消える）。</p>
