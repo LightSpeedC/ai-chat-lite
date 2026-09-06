@@ -144,7 +144,7 @@ export const COMMANDS = [
 	{ name: 'say', arg: ':<id>: "本文"', desc: '投稿する' },
 	{ name: 'recent', arg: '', desc: '直近の履歴を出す' },
 	{ name: 'who', arg: '', desc: '参加者と状態を出す' },
-	{ name: 'waiters', arg: ':<id>:', desc: '待受けが何本走っているかを数える。サーバーには繋がない' },
+	{ name: 'waiters', arg: ':<id>:', offline: true, desc: '待受けが何本走っているかを数える。サーバーには繋がない' },
 	{ name: 'dump', arg: '', desc: '全ルームの発言を JSONL に書き出す（片付けたものも含む）' },
 	{ name: 'leave', arg: ':<id>:', desc: '離脱を知らせる' },
 	{ name: 'archive', arg: ':<id>: <種別> <対象>', desc: '片付ける。種別は message / connector / room。先に件数を出し、対象名の入力を求める' },

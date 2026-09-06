@@ -506,7 +506,12 @@ async function cmdWait() {
 	 * 長く待てる。何回に分かれたかは呼ぶ側には関係がないので出さない。
 	 */
 	if (!fromDefault && !unlimited && limitSec > FOREGROUND_SEC) {
-		console.error(`${label}（${limitSec} 秒）待つ設定です。`);
+		/*
+		 * 括弧は「11 分」を秒に直して見せるためのもの。--wait-sec で
+		 * 指定されたときは label 自体が秒なので、同じ値が 2 度出る。
+		 */
+		const detail = label === `${limitSec} 秒` ? label : `${label}（${limitSec} 秒）`;
+		console.error(`${detail}待つ設定です。`);
 		console.error(`  前面で呼ぶと ${FOREGROUND_SEC} 秒で背面に移されます。プロセスは走り続けますが、`);
 		console.error('  それまでの間、呼び出し側は待たされます。');
 		console.error('  はじめから run_in_background で呼んでください。');
@@ -1136,6 +1141,46 @@ async function cmdRestore() {
 	console.log(`  ${result.description}`);
 }
 
+/*
+ * どちらの環境に繋いだかを、何かする前に出す。
+ *
+ * テスト用の ID を名乗れば隔離される、と思い込んで本番へ繋いだ事故があった。
+ * 隔離しているのは AICHAT_DATA とポートで、ID は何も分けていない。ルーム名も
+ * 本番とテストで同じ public なので手がかりにならない。サーバーに聞けば必ず
+ * 分かるので、繋ぐコマンドでは毎回聞いて先頭に出す。
+ *
+ * 出すのは stderr。recent や dump の出力（stdout）に混ぜない。
+ */
+function isOfflineCommand(name) {
+	const def = [...COMMANDS, ...ADMIN_COMMANDS].find((c) => c.name === name);
+	return Boolean(def?.offline);
+}
+
+function describePlace() {
+	const found = /^http:\/\/localhost:(\d+)$/.exec(BASE ?? '');
+	return found ? `:${found[1]}` : BASE;
+}
+
+async function announceEnv() {
+	const base = requireBase();
+
+	/*
+	 * 取れなければ黙って諦める。印は補助なので、ここで粘る意味がない。
+	 * 粘ると、使い方の誤りが「繋がらない待ち」に埋もれる（--wait-hour と
+	 * --wait-min を同時に渡したときの終了コード 2 が、600 秒かけて 3 に
+	 * なっていた）。繋がらないことの案内は、本来の呼び出しが出す。
+	 */
+	let info;
+	try {
+		const res = await fetch(`${base}/api/version`, { signal: AbortSignal.timeout(3000) });
+		if (!res.ok) return;
+		info = await res.json();
+	} catch {
+		return;
+	}
+
+	console.error(`${info.env === 'test' ? 'テスト' : '本番'}（${describePlace()}）`);
+}
 const commands = {
 	join: cmdJoin,
 	wait: cmdWait,
@@ -1168,5 +1213,8 @@ if (wantsHelp || !run) {
 
 // 読むだけのコマンド以外は、名乗る ID が要る
 if (!READ_ONLY_COMMAND) requireConnectorId();
+
+// サーバーに繋ぐコマンドなら、どちらの環境かを先に出す
+if (!isOfflineCommand(command)) await announceEnv();
 
 await run();

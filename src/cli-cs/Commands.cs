@@ -85,7 +85,12 @@ namespace AiChat
 			 */
 			if (!spec.FromDefault && !unlimited && spec.Sec > ForegroundSec)
 			{
-				Console.Error.WriteLine(label + "（" + spec.Sec + " 秒）待つ設定です。");
+				/*
+				 * 括弧は「11 分」を秒に直して見せるためのもの。--wait-sec で
+				 * 指定されたときは label 自体が秒なので、同じ値が 2 度出る。
+				 */
+				string detail = label == spec.Sec + " 秒" ? label : label + "（" + spec.Sec + " 秒）";
+				Console.Error.WriteLine(detail + "待つ設定です。");
 				Console.Error.WriteLine("  前面で呼ぶと " + ForegroundSec + " 秒で背面に移されます。プロセスは走り続けますが、");
 				Console.Error.WriteLine("  それまでの間、呼び出し側は待たされます。");
 				Console.Error.WriteLine("  はじめから run_in_background で呼んでください。");

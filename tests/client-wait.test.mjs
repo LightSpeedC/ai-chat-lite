@@ -190,22 +190,49 @@ describe('wait のログ', () => {
 		await chat(['say', '警告の確認'], 'test-connector2');
 		const { stdout, stderr } = await chat(['wait', '--wait-min', '11']);
 
-		assert.match(stderr, /11 分/);
+		assert.match(stderr, /11 分（660 秒）待つ設定です。/);
 		assert.match(stderr, /run_in_background/);
 		// 警告を出すだけで、待つこと自体は妨げない
 		assert.match(stdout, /新着 1 件/);
 	});
 
-	test('短い設定では警告を出さない', async () => {
-		const { stderr } = await chat(['wait', '--wait-sec', '1']);
-		assert.equal(stderr, '');
+	test('秒で指定したときは括弧を繰り返さない', async () => {
+		/*
+		 * 括弧は「11 分」を秒に直して見せるためのもの。--wait-sec では
+		 * label 自体が秒なので、同じ値が 2 度出ていた
+		 */
+		await chat(['say', '括弧の確認'], 'test-connector2');
+		const { stderr } = await chat(['wait', '--wait-sec', '610']);
+
+		assert.match(stderr, /610 秒待つ設定です。/);
+		assert.doesNotMatch(stderr, /（610 秒）/);
 	});
 
-	test('既定の 12 時間では警告を出さない', async () => {
+	test('短い設定では背面実行の案内を出さない', async () => {
+		const { stderr } = await chat(['wait', '--wait-sec', '1']);
+
+		// 出るのはどちらの環境かの印だけ。案内は出ない
+		assert.match(stderr, /^テスト（/);
+		assert.doesNotMatch(stderr, /run_in_background/);
+	});
+
+	test('既定の 12 時間では背面実行の案内を出さない', async () => {
 		// 既定が 600 秒を超えているため、毎回出すと警告の意味がなくなる
 		await chat(['say', '既定では黙る'], 'test-connector2');
 		const { stderr } = await chat(['wait']);
 
-		assert.equal(stderr, '');
+		// 出るのはどちらの環境かの印だけ。案内は出ない
+		assert.match(stderr, /^テスト（/);
+		assert.doesNotMatch(stderr, /run_in_background/);
+	});
+
+	test('waiters ではどちらの環境かを出さない', async () => {
+		/*
+		 * サーバーに繋がないコマンドなので、聞く相手がいない。
+		 * 出すかどうかは options.mjs の offline で決まり、CLI 2 本が同じ値を読む。
+		 */
+		const { stderr } = await chat(['waiters']);
+
+		assert.doesNotMatch(stderr, /テスト（|本番（/);
 	});
 });

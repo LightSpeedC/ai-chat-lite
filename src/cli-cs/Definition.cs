@@ -37,6 +37,9 @@ namespace AiChat
 		public string Name;
 		public string Arg;
 		public string Desc;
+
+		// サーバーに繋がないコマンドか。繋ぐものだけ、どちらの環境かを先に出す
+		public bool Offline;
 	}
 
 	internal class RemovedDef
@@ -57,7 +60,7 @@ namespace AiChat
 	internal static class Definition
 	{
 		/// <summary>この版が読める JSON の形。上がったら合わせる</summary>
-		public const int ExpectedSchema = 3;
+		public const int ExpectedSchema = 4;
 
 		/// <summary>名乗る ID を囲む記号。options.mjs の ID_WRAP から来る</summary>
 		public static string IdWrap { get; private set; }
@@ -172,6 +175,7 @@ namespace AiChat
 					Name = Json.Str(c, "name"),
 					Arg = Json.Str(c, "arg", ""),
 					Desc = Json.Str(c, "desc", ""),
+					Offline = Json.Bool(c, "offline", false),
 				});
 			}
 			return list;

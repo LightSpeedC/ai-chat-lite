@@ -319,9 +319,16 @@ describe('定義の出どころが 1 つであること', () => {
 		const exported = JSON.parse(stdout);
 		const options = await import('../src/client/options.mjs');
 
-		assert.equal(exported.schema, 3, 'schema が上がったら C# 側も合わせる');
+		assert.equal(exported.schema, 4, 'schema が上がったら C# 側も合わせる');
 		assert.equal(exported.options.length, options.OPTIONS.length);
 		assert.equal(exported.commands.length, options.COMMANDS.length);
+
+		/*
+		 * サーバーに繋がないコマンドの印。ここが渡らないと C# 版だけ接続先を
+		 * 要求し、どちらの環境かの印も出す側と出さない側で食い違う
+		 */
+		const offline = exported.commands.filter((c) => c.offline).map((c) => c.name);
+		assert.deepEqual(offline, ['waiters']);
 
 		// ID の囲み・使える文字・待受けを探す式も、出どころは options.mjs 1 か所にする
 		assert.equal(exported.id_wrap, options.ID_WRAP);

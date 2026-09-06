@@ -36,13 +36,15 @@ namespace AiChat
 		};
 
 		/// <summary>
-		/// サーバーに繋がないコマンド。手元のプロセスだけを見る。
-		/// 接続先（--port / --url）を要求しない。
+		/// サーバーに繋がないコマンドか。手元のプロセスだけを見るものは接続先を要求しない。
+		/// 印は埋め込んだ定義（options.mjs）が持つ。ここに名前を書くと node 版と 2 か所になる。
 		/// </summary>
-		private static readonly HashSet<string> LocalOnly = new HashSet<string>
+		private static bool IsOfflineCommand(string name)
 		{
-			"waiters",
-		};
+			foreach (CommandDef c in Definition.Commands) if (c.Name == name) return c.Offline;
+			foreach (CommandDef c in Definition.AdminCommands) if (c.Name == name) return c.Offline;
+			return false;
+		}
 
 		/// <summary>
 		/// 前面のツール実行が背面に移されるまでの秒数。
@@ -112,9 +114,10 @@ namespace AiChat
 			 * サーバーに繋がないコマンドでは、接続先を要求しない。
 			 * waiters は手元のプロセスだけを見るので、--port も --url も要らない。
 			 */
-			if (!LocalOnly.Contains(command))
+			if (!IsOfflineCommand(command))
 			{
 				client = new Client(RequireBase(), accessToken, Definition.RetryFor(command), WaitLog.Write);
+				AnnounceEnv();
 			}
 
 			switch (command)
@@ -140,6 +143,45 @@ namespace AiChat
 
 		// --- 前提の確認 ---
 
+		/// <summary>
+		/// どちらの環境に繋いだかを、何かする前に出す。
+		///
+		/// テスト用の ID を名乗れば隔離される、と思い込んで本番へ繋いだ事故があった。
+		/// 隔離しているのは AICHAT_DATA とポートで、ID は何も分けていない。ルーム名も
+		/// 本番とテストで同じ public なので手がかりにならない。
+		///
+		/// 出すのは stderr。recent や dump の出力に混ぜない。
+		/// </summary>
+		private static void AnnounceEnv()
+		{
+			/*
+			 * 取れなければ黙って諦める。印は補助なので、ここで粘る意味がない。
+			 * 粘ると、使い方の誤りが「繋がらない待ち」に埋もれる。繋がらないことの
+			 * 案内は、本来の呼び出しが出す。だから繋ぎ直さない Client で聞く。
+			 */
+			try
+			{
+				var probe = new Client(RequireBase(), accessToken, 0, null);
+				Dictionary<string, object> info = probe.Get("/api/version", 3);
+				string env = Json.Str(info, "env", "") == "test" ? "テスト" : "本番";
+				Console.Error.WriteLine(env + "（" + DescribePlace() + "）");
+			}
+			catch (Exception)
+			{
+			}
+		}
+
+		/// <summary>接続先の短い表し方。ポートだけで済むならポートだけ出す</summary>
+		private static string DescribePlace()
+		{
+			const string prefix = "http://localhost:";
+			if (baseUrl != null && baseUrl.StartsWith(prefix, StringComparison.Ordinal))
+			{
+				string tail = baseUrl.Substring(prefix.Length);
+				if (tail.Length > 0 && tail.All(char.IsDigit)) return ":" + tail;
+			}
+			return baseUrl;
+		}
 		private static string RequireConnectorId()
 		{
 			if (!string.IsNullOrEmpty(connectorId)) return connectorId;

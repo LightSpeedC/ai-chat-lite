@@ -70,8 +70,9 @@ const definition = {
 	 *   2 … id_wrap / id_pattern を足し、removed に short を足した
 	 *       （--connector-id を廃止し、コマンドの直後に :id: を置く形へ）
 	 *   3 … waiter_pattern を足した（waiters コマンド）
+	 *   4 … commands に offline を足した（サーバーに繋がないコマンドの印）
 	 */
-	schema: 3,
+	schema: 4,
 	generated_from: 'src/client/options.mjs',
 
 	id_wrap: ID_WRAP,
