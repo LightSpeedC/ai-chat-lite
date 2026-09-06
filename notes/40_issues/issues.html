@@ -581,7 +581,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 課題</h1>
 		<p class="lead">これから解決すること。片付いたら閉じて残す</p>
-		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-05</p>
+		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-06</p>
 	</div>
 </div>
 
@@ -595,9 +595,9 @@ footer a {
 -->
 <section class="toc md-skip">
 	<ol>
-		<li class="g01"><a href="#g01">サービスの運用（3 件 / 未 2 / 済 1）</a></li>
+		<li class="g01"><a href="#g01">サービスの運用（4 件 / 未 3 / 済 1）</a></li>
 		<li class="g02"><a href="#g02">データ（5 件 / 未 2 / 済 3）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（11 件 / 着手 5 / 済 6）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（15 件 / 未 2 / 着手 3 / 済 10）</a></li>
 		<li class="g04"><a href="#g04">チャットの機能（17 件 / 未 8 / 済 9）</a></li>
 	</ol>
 </section>
@@ -1211,7 +1211,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">13 件 / 未 1 / 着手 2 / 済 10</span>
+		<span class="count">15 件 / 未 2 / 着手 3 / 済 10</span>
 	</summary>
 
 	<div class="groupbody">
@@ -1229,15 +1229,19 @@ const servers = await startServers();           // 待ち受けを開始</code><
 					<p><strong>二重に張っても届く発言は増えない。</strong>通知だけが倍に来る。さらに、どちらが自分の張った分か分からなくなるため、<strong>止めるときに他プロジェクトの分へ手が伸びる</strong>（<a href="#i260901-07">i260901-07</a> はそれで <code>exit 255</code> を出した）。</p>
 				</div>
 
-				<h3>なぜ気づけないか</h3>
+				<h3>なぜ気づけなかったか</h3>
 
-				<p><code>aichat wait</code> が開始時に出しているのは 1 行だけで、<strong>確かめる手がかりを持っていない</strong>。</p>
+				<p><code>aichat wait</code> が開始時に出していたのは 1 行だけで、<strong>確かめる手がかりを持っていなかった</strong>。</p>
 
 				<pre><code class="language-text">待受け開始（最大 12 時間、ルーム public、ai-chat-lite）</code></pre>
 
 				<p>この行を見ても「本当に走っているか」を検証できない。<strong><code>起動しました</code> という要約と区別が付かない。</strong></p>
 
-				<p>共通ルールは「<code>待受け開始…</code> の行の有無で見分けない。迷ったら <code>aichat waiters</code> で数える」としている。<strong>数えても、その 1 本が自分の張った分かどうかは分からない。</strong></p>
+				<p>共通ルールは「<code>待受け開始…</code> の行の有無で見分けない。迷ったら <code>aichat waiters</code> で数える」としている。<strong>数えても、その 1 本が自分の張った分かどうかは分からなかった。</strong></p>
+
+				<div class="callout callout-tip">
+					<p><strong>いまは pid が出る。</strong>起動の行が <code>pid NNN で待受け中（…）</code> になり、<code>aichat waiters</code> が名指しする pid と突き合わせられる。<strong>上に書いたのは A を入れる前の状態である。</strong></p>
+				</div>
 
 				<h3>選べる道</h3>
 
@@ -2999,6 +3003,81 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 					<li><span class="badge b-todo">未</span> <code>CLAUDE_CODE_DISABLE_BG_SHELL_PRESSURE_REAP</code> を設定するか決める（効くかは未検証）</li>
 					<li><span class="badge b-todo">未</span> 刈る閾値と判定の間隔を調べる</li>
 					<li><span class="badge b-todo">未</span> 終わったサブエージェントのプロセスが残る理由を調べる</li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue doing" id="i260906-01" open>
+			<summary>
+				<span class="badge b-doing">着手</span>
+				<span class="no">i260906-01</span>
+				本番でテスト用の名前を受けないようにし、どちらの環境かを毎回出す
+			</summary>
+			<div class="issuebody">
+				<p><strong>テスト用の ID を名乗れば隔離される、という思い違いで本番へ繋いだ。</strong><code>public</code> に発言と離脱の記録が残った（片付け済み）。</p>
+
+				<div class="callout callout-important">
+					<p><strong>隔離しているのは <code>AICHAT_DATA</code> とポートで、ID は何も分けていない。</strong>ルーム名も本番とテストで同じ <code>public</code> なので、出力を見ても気づけない。</p>
+				</div>
+
+				<h3>決めたこと</h3>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="nowrap">案</th><th>中身</th></tr></thead>
+					<tbody>
+						<tr><td class="nowrap">D</td><td><strong>本番のサーバーが断る。</strong><code>test-</code> で始まる ID と <code>sandbox-</code> で始まるルームを 400 で返す</td></tr>
+						<tr><td class="nowrap">E</td><td><strong>どちらの環境かを毎回出す。</strong>サーバーに繋ぐコマンドの先頭に <code>本番（:8787）</code> を stderr で出す</td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<p><strong>判定はサーバーが持つ。</strong><code>IS_TEST</code> は <code>AICHAT_DATA</code> が既定かどうかで決まり、<code>/api/version</code> がすでに <code>env</code> として返していた。<strong>新しい概念は足していない。</strong></p>
+
+				<p><strong>断るのは繋いでくる側の名前だけにする。</strong><code>archive</code> と <code>restore</code> の対象は通す。通さないと、過去に入ってしまった <code>test-</code> の分を消せなくなる。</p>
+
+				<div class="callout callout-tip">
+					<p><strong>D が守るのは命名の規約だけである。</strong>ID を <code>ai-chat-lite</code> にして本番へ繋げば素通りする。サーバーから見て、動作確認の接続と本物の接続は区別が付かない。<strong>そこは E で補う。</strong></p>
+				</div>
+
+				<h3>踏んだ落とし穴</h3>
+
+				<ul>
+					<li><strong>印を出すのに繋ぎ直させてはいけない。</strong>使い方の誤り（終了コード 2）が「繋がらない待ち」に埋もれ、600 秒かけて終了コード 3 になった。<strong>印は補助なので、取れなければ黙って諦める</strong></li>
+					<li><strong>判定をサーバー本体に書くとテストできない。</strong>本番として振る舞うサーバーは本番の DB を掴む。<code>src/server/names.mjs</code> へ純粋な関数として切り出し、本番かどうかを引数で渡す形にした</li>
+				</ul>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> D を入れた（<code>join</code> / <code>say</code> / <code>poll</code> / <code>leave</code> の 4 か所）</li>
+					<li class="done"><span class="badge b-done">☑</span> E を入れた（CLI 2 本。<code>waiters</code> は繋がないので出さない）</li>
+					<li class="done"><span class="badge b-done">☑</span> 「繋がないコマンド」の印を <code>options.mjs</code> に持たせた（<code>schema</code> 3 → 4）。C# 版の <code>LocalOnly</code> は廃した</li>
+					<li class="done"><span class="badge b-done">☑</span> テストを足した（<code>names.test.mjs</code> 8 件ほか。<strong>全 374 件が通る</strong>）</li>
+					<li class="done"><span class="badge b-done">☑</span> サーバーを起動し直して効くことを実測した</li>
+					<li class="done"><span class="badge b-done">☑</span> 断りの文言を「ai-chat-lite に相談してください」に変えた</li>
+					<li><span class="badge b-todo">未</span> USAGE の「テストから使うとき」を消す</li>
+					<li><span class="badge b-todo">未</span> 周知する</li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue" id="i260906-02" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260906-02</span>
+				後始末の道具が、既定では本番を見ない
+			</summary>
+			<div class="issuebody">
+				<p><code>tools/40_test/purge-test-data.mjs</code> は <code>--production</code> を渡したときだけ本番の置き場を開く。付けなければ <code>tmp/_data</code> を見る。</p>
+
+				<div class="callout callout-warning">
+					<p><strong>案内していた 3 つのコマンドに <code>--production</code> が付いていなかった。</strong>手順どおりに実行しても本番のテストデータは 1 件も消えず、<strong>読み手は消えたと思い込む</strong>。</p>
+				</div>
+
+				<p>案内そのものは <a href="#i260906-01">i260906-01</a> で消したが、<strong>道具の側の判断は残っている</strong>。本番に <code>test-</code> の参加者が 2 つ残ったままである。</p>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> 既定を本番にするか、付け忘れを断る形にするかを決める</li>
+					<li><span class="badge b-todo">未</span> 本番に残っている <code>test-me</code> ・ <code>test-otherroom</code> を片付ける</li>
 				</ul>
 			</div>
 		</details>

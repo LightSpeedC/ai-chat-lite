@@ -406,7 +406,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 設計</h1>
 		<p class="lead">ローカルPC内で AI セッションと人間が同席する簡易チャットの設計</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-05</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-06</p>
 	</div>
 </div>
 
@@ -1364,6 +1364,8 @@ if (mode.journal_mode !== 'wal') {
 		</tbody>
 	</table>
 	</div>
+
+	<p><strong>本番のサーバーは、<code>test-</code> で始まる ID と <code>sandbox-</code> で始まるルームを受け付けない。</strong><code>join</code> / <code>say</code> / <code>poll</code> / <code>leave</code> の 4 つで 400 を返す。判定は <code>AICHAT_DATA</code> が既定かどうか（<code>IS_TEST</code>）で決まる。<strong>判定だけを <code>src/server/names.mjs</code> に置き、本番かどうかを引数で渡す</strong>ので、サーバーを立てずにテストできる。<strong>片付け（<code>archive</code> / <code>restore</code>）の対象は通す。</strong>通さないと、過去に入った <code>test-</code> の分を消せなくなる。</p>
 
 	<p><code>room_id</code> は省略時 <code>public</code> として扱う。時間の向きでパラメータを分けており、<code>since</code> は「この <code>msg_seq</code> より新しい行」（未来方向）、<code>before</code> は「この <code>msg_seq</code> より古い行」（過去方向）を指す。</p>
 

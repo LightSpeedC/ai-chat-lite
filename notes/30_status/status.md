@@ -68,7 +68,7 @@
 | `maintenance-flow.test.mjs` | 7 | 実際に起動して通しで確認。印つき起動 → 503 → 明ける → 切り替え → 再開の案内 |
 | `markdown.test.mjs` | 16 | 生 HTML の無害化・javascript: を通さない・記法の描画 |
 | `server.test.mjs` | 44 | API 一式・long-poll・SSE・読んだ位置の記録・オフライン通知・離脱の猶予・admin/exit |
-| `client-wait.test.mjs` | 13 | 待つ長さの単位・上限なし・既定 12 時間・2 つ同時はエラー・廃止したオプション・ログ 2 行 |
+| `client-wait.test.mjs` | 15 | 待つ長さの単位・上限なし・既定 12 時間・2 つ同時はエラー・廃止したオプション・ログ 2 行 |
 | `client-usage.test.mjs` | 15 | 定義と usage() の一致・短い形の重複・-h の 4 通り・桁の揃い |
 | `client-unreachable.test.mjs` | 8 | 繋ぎ直しの 3 段・終了コード 3・503 は粘り 400 は粘らない |
 | `client-connector-id.test.mjs` | 20 | 名乗る ID の囲み・使える文字・前方一致の取り違え・`--to` の囲み・サーバー側の検査 |
@@ -76,7 +76,7 @@
 | `client-no-defaults.test.mjs` | 18 | 全コマンドで接続先が省略できないこと・環境変数では渡せないこと |
 | `client-reply.test.mjs` | 13 | 番号の表示・返信元の記録・`--to` との併用・日時の書式 |
 | `cli-cs.test.mjs` | 11 | C# 版と node 版の出力・終了コード・埋め込んだ定義の一致（`aichat.exe` が無ければスキップ） |
-| **合計** | **363** | **全件通過** |
+| **合計** | **365** | **全件通過** |
 
 ### ブラウザ画面
 
