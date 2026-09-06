@@ -16,6 +16,7 @@ import {
 } from './store.mjs';
 import { listPresence, getPresence, STATUS } from './presence.mjs';
 import { ID_PATTERN } from '../client/options.mjs';
+import { rejectionReason } from './names.mjs';
 import {
 	waitForMessages, publish, publishPresence,
 	addSseClient, removeSseClient, releaseAll,
@@ -67,6 +68,16 @@ function optionalId(value, name) {
 
 function roomOf(value) {
 	return optionalId(value, 'room_id') ?? DEFAULT_ROOM;
+}
+
+/**
+ * 本番では、テスト用の名前で繋がせない。判定は names.mjs が持つ。
+ *
+ * どちらの環境かを知っているのはサーバーだけなので、ここで断る。
+ */
+function rejectTestNames(connectorId, roomId) {
+	const reason = rejectionReason(connectorId, roomId, IS_TEST);
+	if (reason) throw new BadRequest(reason);
 }
 
 /**
@@ -221,6 +232,7 @@ async function handleJoin(req, res) {
 	const connectorId = requireId(input.connector_id, 'connector_id');
 	const role = roleOf(input.connector_role);
 	const roomId = roomOf(input.room_id);
+	rejectTestNames(connectorId, roomId);
 
 	const before = getPresence(connectorId);
 	joinConnector(connectorId, role);
@@ -248,6 +260,7 @@ async function handleSay(req, res) {
 	const fromConnectorId = requireId(input.from_connector_id ?? input.connector_id, 'from_connector_id');
 	const roomId = roomOf(input.room_id);
 	const toConnectorId = optionalId(input.to_connector_id, 'to_connector_id');
+	rejectTestNames(fromConnectorId, roomId);
 	const body = requireBody(input.msg_body);
 	const replyToMsgSeq = optionalMsgSeq(input.reply_to_msg_seq);
 
@@ -264,6 +277,7 @@ async function handlePoll(req, res, url) {
 	const roomId = roomOf(url.searchParams.get('room_id'));
 	const waitSec = Math.min(Math.max(numberOf(url.searchParams.get('wait'), MAX_WAIT_SEC), 0), MAX_WAIT_SEC);
 	const exclude = excludeOf(url.searchParams.get('exclude'));
+	rejectTestNames(connectorId, roomId);
 
 	/*
 	 * since を省略したら、サーバーが覚えている位置から続ける。
@@ -395,6 +409,7 @@ async function handleLeave(req, res) {
 	const input = await readJsonBody(req);
 	const connectorId = requireId(input.connector_id, 'connector_id');
 	const roomId = roomOf(input.room_id);
+	rejectTestNames(connectorId, roomId);
 
 	// 在席の表示だけは即座に変える。記録を待たせるのは積む判断だけ
 	broadcastPresence();
