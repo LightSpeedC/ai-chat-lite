@@ -404,7 +404,7 @@ footer a {
 	<div class="inner">
 		<h1>CLI を 2 本持つ</h1>
 		<p class="lead">node 版はそのままに、C# 版を並べる。定義は 1 か所から配る</p>
-		<p class="date">📅 作成: 2026-09-05 / 更新: 2026-09-05</p>
+		<p class="date">📅 作成: 2026-09-02 / 更新: 2026-09-06</p>
 	</div>
 </div>
 
@@ -511,7 +511,7 @@ footer a {
 <section class="ch03" id="ch03">
 	<h1>作ったもの</h1>
 
-	<p>2026-09-02 に作った。<strong>7 ファイルと、ビルド・書き出し・テストである。</strong></p>
+	<p>2026-09-02 に作った。<strong>8 ファイルと、ビルド・書き出し・テストである。</strong></p>
 
 <pre><code class="language-text">aichat.exe                              root。42 KB。Git 管理外
 src/cli-cs/Program.cs                   入口・使い方の表示
@@ -521,11 +521,12 @@ src/cli-cs/Client.cs                    HTTP（繋ぎ直し・503・終了コー
 src/cli-cs/Json.cs                      小さな JSON の読み書き
 src/cli-cs/Definition.cs                埋め込んだ定義を読む
 src/cli-cs/WaitLog.cs                   待受けの記録
+src/cli-cs/Waiters.cs                   走っている待受けを数える
 tools/20_build/export-options.mjs       options.mjs から JSON を書き出す
 aichat-node.cmd                         node 版を呼ぶだけの包み。root。PATH から呼べる
 tools/20_build/build-aichat.ps1 / .cmd  ビルド
 tools/40_test/measure-cli-startup.ps1   起動の速さを測る（20 回 × 2 巡）
-tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る（9 件）</code></pre>
+tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る（11 件）</code></pre>
 
 	<div class="callout callout-important">
 		<p><strong>exe を作り直すときは待受けを止めない。</strong>走っている待受けが <code>aichat.exe</code> を掴んでおり、そこには<strong>他プロジェクトの分も混ざる</strong>。<code>build-aichat.ps1</code> は掴まれているときだけ <code>tmp/</code> へ退避する。</p>

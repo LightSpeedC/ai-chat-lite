@@ -401,7 +401,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 開発状況</h1>
 		<p class="lead">実装の進み具合と、次にやること</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-05</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-06</p>
 	</div>
 </div>
 
@@ -568,33 +568,33 @@ footer a {
 	<div class="tablewrap">
 	<table>
 		<thead>
-			<tr><th class="nowrap">ファイル</th><th class="num nowrap">件数</th><th>主な内容</th></tr>
+			<tr><th class="nowrap">ファイル</th><th>主な内容</th></tr>
 		</thead>
 		<tbody>
-			<tr><td class="nowrap"><code>time.test.mjs</code></td><td class="num">5</td><td>固定長・JST・辞書順と時系列順の一致</td></tr>
-			<tr><td class="nowrap"><code>tables.test.mjs</code></td><td class="num">3</td><td>版が作るテーブルと <code>REQUIRED_TABLES</code> の一致・<code>versions</code> を入れないこと</td></tr>
-			<tr><td class="nowrap"><code>wait-kinds.test.mjs</code></td><td class="num">10</td><td>既定で参加・離脱では起きない・<code>--with-joins</code>・除いた分のカーソル・知らない種別は 400</td></tr>
-			<tr><td class="nowrap"><code>stale.test.mjs</code></td><td class="num">12</td><td>古い参加・離脱を画面から外す判定・種別ごとの扱い・旧書式が混ざったとき</td></tr>
-			<tr><td class="nowrap"><code>config.test.mjs</code></td><td class="num">11</td><td>既定値・環境変数の上書き・カレント非依存・起動ログ</td></tr>
-			<tr><td class="nowrap"><code>store.test.mjs</code></td><td class="num">24</td><td>採番・取得・接続数・CHECK 制約・WAL・インデックス利用</td></tr>
-			<tr><td class="nowrap"><code>presence.test.mjs</code></td><td class="num">15</td><td>3 状態の判定・猶予の境界・一覧の並び順</td></tr>
-			<tr><td class="nowrap"><code>migrate.test.mjs</code></td><td class="num">20</td><td>版の並び・空の DB から当てる・失敗で巻き戻す・指紋で書き換えを検出・控え</td></tr>
-			<tr><td class="nowrap"><code>archive.test.mjs</code></td><td class="num">23</td><td>下見・片付け・戻す・対象を列で持つ・既定のルームは断る</td></tr>
-			<tr><td class="nowrap"><code>backup.test.mjs</code></td><td class="num">32</td><td>WAL 込みの複製・世代の整理・印の取り合い・残骸の扱い・4 区分</td></tr>
-			<tr><td class="nowrap"><code>maintenance.test.mjs</code></td><td class="num">6</td><td>印があれば待つ・消えたら進む・理由を読む</td></tr>
-			<tr><td class="nowrap"><code>maintenance-handler.test.mjs</code></td><td class="num">11</td><td>印の読み取り・200 / 503 / 静的の使い分け・受け口の差し替えでポートが変わらない</td></tr>
-			<tr><td class="nowrap"><code>maintenance-flow.test.mjs</code></td><td class="num">7</td><td>実際に起動して通しで確認。印つき起動 → 503 → 明ける → 切り替え → 再開の案内</td></tr>
-			<tr><td class="nowrap"><code>markdown.test.mjs</code></td><td class="num">16</td><td>生 HTML の無害化・javascript: を通さない・記法の描画</td></tr>
-			<tr><td class="nowrap"><code>server.test.mjs</code></td><td class="num">44</td><td>API 一式・long-poll・SSE・読んだ位置の記録・オフライン通知・離脱の猶予・admin/exit</td></tr>
-			<tr><td class="nowrap"><code>client-wait.test.mjs</code></td><td class="num">15</td><td>待つ長さの単位・上限なし・既定 12 時間・2 つ同時はエラー・廃止したオプション・ログ 2 行</td></tr>
-			<tr><td class="nowrap"><code>client-usage.test.mjs</code></td><td class="num">15</td><td>定義と usage() の一致・短い形の重複・-h の 4 通り・桁の揃い</td></tr>
-			<tr><td class="nowrap"><code>client-unreachable.test.mjs</code></td><td class="num">8</td><td>繋ぎ直しの 3 段・終了コード 3・503 は粘り 400 は粘らない</td></tr>
-			<tr><td class="nowrap"><code>client-connector-id.test.mjs</code></td><td class="num">20</td><td>名乗る ID の囲み・使える文字・前方一致の取り違え・<code>--to</code> の囲み・サーバー側の検査</td></tr>
-			<tr><td class="nowrap"><code>client-waiters.test.mjs</code></td><td class="num">26</td><td>待受けの見つけ方・親を落として 1 本に数える・張り方 3 通り・接続先とルームの基準</td></tr>
-			<tr><td class="nowrap"><code>client-no-defaults.test.mjs</code></td><td class="num">18</td><td>全コマンドで接続先が省略できないこと・環境変数では渡せないこと</td></tr>
-			<tr><td class="nowrap"><code>client-reply.test.mjs</code></td><td class="num">13</td><td>番号の表示・返信元の記録・<code>--to</code> との併用・日時の書式</td></tr>
-			<tr><td class="nowrap"><code>cli-cs.test.mjs</code></td><td class="num">11</td><td>C# 版と node 版の出力・終了コード・埋め込んだ定義の一致（<code>aichat.exe</code> が無ければスキップ）</td></tr>
-			<tr><td class="nowrap"><strong>合計</strong></td><td class="num"><strong>365</strong></td><td><strong>全件通過</strong></td></tr>
+			<tr><td class="nowrap"><code>time.test.mjs</code></td><td>固定長・JST・辞書順と時系列順の一致</td></tr>
+			<tr><td class="nowrap"><code>tables.test.mjs</code></td><td>版が作るテーブルと <code>REQUIRED_TABLES</code> の一致・<code>versions</code> を入れないこと</td></tr>
+			<tr><td class="nowrap"><code>wait-kinds.test.mjs</code></td><td>既定で参加・離脱では起きない・<code>--with-joins</code>・除いた分のカーソル・知らない種別は 400</td></tr>
+			<tr><td class="nowrap"><code>stale.test.mjs</code></td><td>古い参加・離脱を画面から外す判定・種別ごとの扱い・旧書式が混ざったとき</td></tr>
+			<tr><td class="nowrap"><code>config.test.mjs</code></td><td>既定値・環境変数の上書き・カレント非依存・起動ログ</td></tr>
+			<tr><td class="nowrap"><code>store.test.mjs</code></td><td>採番・取得・接続数・CHECK 制約・WAL・インデックス利用</td></tr>
+			<tr><td class="nowrap"><code>presence.test.mjs</code></td><td>3 状態の判定・猶予の境界・一覧の並び順</td></tr>
+			<tr><td class="nowrap"><code>migrate.test.mjs</code></td><td>版の並び・空の DB から当てる・失敗で巻き戻す・指紋で書き換えを検出・控え</td></tr>
+			<tr><td class="nowrap"><code>archive.test.mjs</code></td><td>下見・片付け・戻す・対象を列で持つ・既定のルームは断る</td></tr>
+			<tr><td class="nowrap"><code>backup.test.mjs</code></td><td>WAL 込みの複製・世代の整理・印の取り合い・残骸の扱い・4 区分</td></tr>
+			<tr><td class="nowrap"><code>maintenance.test.mjs</code></td><td>印があれば待つ・消えたら進む・理由を読む</td></tr>
+			<tr><td class="nowrap"><code>maintenance-handler.test.mjs</code></td><td>印の読み取り・200 / 503 / 静的の使い分け・受け口の差し替えでポートが変わらない</td></tr>
+			<tr><td class="nowrap"><code>maintenance-flow.test.mjs</code></td><td>実際に起動して通しで確認。印つき起動 → 503 → 明ける → 切り替え → 再開の案内</td></tr>
+			<tr><td class="nowrap"><code>markdown.test.mjs</code></td><td>生 HTML の無害化・javascript: を通さない・記法の描画</td></tr>
+			<tr><td class="nowrap"><code>server.test.mjs</code></td><td>API 一式・long-poll・SSE・読んだ位置の記録・オフライン通知・離脱の猶予・admin/exit</td></tr>
+			<tr><td class="nowrap"><code>client-wait.test.mjs</code></td><td>待つ長さの単位・上限なし・既定 12 時間・2 つ同時はエラー・廃止したオプション・ログ 2 行・繋ぎ先の印</td></tr>
+			<tr><td class="nowrap"><code>client-usage.test.mjs</code></td><td>定義と usage() の一致・短い形の重複・-h の 4 通り・桁の揃い</td></tr>
+			<tr><td class="nowrap"><code>client-unreachable.test.mjs</code></td><td>繋ぎ直しの 3 段・終了コード 3・503 は粘り 400 は粘らない</td></tr>
+			<tr><td class="nowrap"><code>client-connector-id.test.mjs</code></td><td>名乗る ID の囲み・使える文字・前方一致の取り違え・<code>--to</code> の囲み・サーバー側の検査</td></tr>
+			<tr><td class="nowrap"><code>client-waiters.test.mjs</code></td><td>待受けの見つけ方・親を落として 1 本に数える・張り方 3 通り・接続先とルームの基準</td></tr>
+			<tr><td class="nowrap"><code>client-no-defaults.test.mjs</code></td><td>全コマンドで接続先が省略できないこと・環境変数では渡せないこと</td></tr>
+			<tr><td class="nowrap"><code>client-reply.test.mjs</code></td><td>番号の表示・返信元の記録・<code>--to</code> との併用・日時の書式</td></tr>
+			<tr><td class="nowrap"><code>cli-cs.test.mjs</code></td><td>C# 版と node 版の出力・終了コード・埋め込んだ定義の一致（<code>aichat.exe</code> が無ければスキップ）</td></tr>
+			<tr><td class="nowrap"><code>names.test.mjs</code></td><td>本番で <code>test-</code> の ID と <code>sandbox-</code> のルームを断ること・大小を区別しないこと・頭一致だけであること</td></tr>
 		</tbody>
 	</table>
 	</div>
