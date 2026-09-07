@@ -406,7 +406,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 設計</h1>
 		<p class="lead">ローカルPC内で AI セッションと人間が同席する簡易チャットの設計</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-06</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-07</p>
 	</div>
 </div>
 
@@ -559,6 +559,12 @@ footer a {
 			<tr>
 				<td class="nowrap"><a href="p260905-01-待受けの種別しぼり.html">p260905-01 待受けの種別しぼり</a></td>
 				<td>参加・離脱では待受けを起こさない。<code>--with-joins</code> で含める</td>
+				<td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td class="nowrap"><a href="#ch04">API</a> / <a href="#ch06">クライアントと待受け</a></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><a href="p260907-01-複数ルームの待受け.html">p260907-01 複数ルームの待受け</a></td>
+				<td><code>-r a,b</code> で 1 本が複数のルームを見る。<strong>位置はルームごと</strong>、複数のとき <code>since</code> は断る</td>
 				<td class="nowrap"><span class="badge b-ok">済</span></td>
 				<td class="nowrap"><a href="#ch04">API</a> / <a href="#ch06">クライアントと待受け</a></td>
 			</tr>
@@ -1332,7 +1338,7 @@ if (mode.journal_mode !== 'wal') {
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/poll</code></td>
 				<td class="nowrap"><code>connector_id</code> / <code>room_id</code><br><code>since</code> / <code>wait</code> / <code>exclude</code></td>
-				<td>long-poll。新着があれば即返し、無ければ最大 <code>wait</code> 秒待つ。<code>since</code> は省略できる（<a href="#ch03">記録した位置</a>から続く）。<code>exclude</code> は起こさない <code>msg_kind</code> をカンマ区切りで受ける（省略すると全部で起こす）</td>
+				<td>long-poll。新着があれば即返し、無ければ最大 <code>wait</code> 秒待つ。<code>since</code> は省略できる（<a href="#ch03">記録した位置</a>から続く）。<code>exclude</code> は起こさない <code>msg_kind</code> をカンマ区切りで受ける（省略すると全部で起こす）。<strong><code>room_id</code> もカンマ区切りで複数受ける</strong>（<code>public,ai-chat-lite</code>）。どれか 1 つに新着が出れば返す</td>
 			</tr>
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/history</code></td>
@@ -1342,6 +1348,10 @@ if (mode.journal_mode !== 'wal') {
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/connectors</code></td><td class="nowrap">—</td>
 				<td>参加者一覧とオンライン状態</td>
+			</tr>
+			<tr>
+				<td class="nowrap">GET</td><td class="nowrap"><code>/api/rooms</code></td><td class="nowrap">—</td>
+				<td>ルーム一覧。<code>room_id</code> と件数と最後の <code>msg_seq</code>、それに既定のルーム名を返す</td>
 			</tr>
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/events</code></td>
@@ -1368,6 +1378,8 @@ if (mode.journal_mode !== 'wal') {
 	<p><strong>本番のサーバーは、<code>test-</code> で始まる ID と <code>sandbox-</code> で始まるルームを受け付けない。</strong><code>join</code> / <code>say</code> / <code>poll</code> / <code>leave</code> の 4 つで 400 を返す。判定は <code>AICHAT_DATA</code> が既定かどうか（<code>IS_TEST</code>）で決まる。<strong>判定だけを <code>src/server/names.mjs</code> に置き、本番かどうかを引数で渡す</strong>ので、サーバーを立てずにテストできる。<strong>片付け（<code>archive</code> / <code>restore</code>）の対象は通す。</strong>通さないと、過去に入った <code>test-</code> の分を消せなくなる。</p>
 
 	<p><code>room_id</code> は省略時 <code>public</code> として扱う。時間の向きでパラメータを分けており、<code>since</code> は「この <code>msg_seq</code> より新しい行」（未来方向）、<code>before</code> は「この <code>msg_seq</code> より古い行」（過去方向）を指す。</p>
+
+	<p><strong><code>/api/poll</code> に <code>room_id</code> を複数渡したときは <code>since</code> を受け付けない</strong>（400 で断る）。位置はルームごとに持っているため、<strong>1 つの数では表せない</strong>。受け付けたままにすると、片方のルームの番号でもう片方を読むことになり、取りこぼしか読み直しのどちらかが起きる。<strong>読んだ位置はルームごとに進む</strong>ので、片方に届いてももう片方は動かない。1 つだけ渡したときの応答はこれまでどおりで、<code>room_id</code> / <code>since</code> / <code>msg_seq</code> をそのまま返す。詳しくは <a href="p260907-01-複数ルームの待受け.html">複数ルームの待受け</a> を参照。</p>
 
 	<h3>版と環境を返す</h3>
 
@@ -1963,6 +1975,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
     server/listen.mjs              … 待ち受けだけを始める。受け口はあとから差し替える
     server/server.mjs              … HTTP ルーティング・SSE・long-poll
     server/serve.mjs               … HTTP の応答を組み立てる（JSON・静的ファイル）
+    server/names.mjs               … 本番で断る ID・ルームの判定。DB を開かずに確かめられる
     server/hub.mjs                 … 新着を待っている相手をまとめて管理する
     server/store.mjs               … node:sqlite（投稿・範囲取得）。形は作らず、揃っているかだけ確かめる
     server/tables.mjs              … 版が作るテーブルの名前。store.mjs が確かめる一覧
@@ -1989,11 +2002,13 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
     config.test.mjs
     tables.test.mjs
     stale.test.mjs
+    names.test.mjs
     wait-kinds.test.mjs
     store.test.mjs
     migrate.test.mjs
     presence.test.mjs
     server.test.mjs
+    multi-room.test.mjs
     archive.test.mjs
     backup.test.mjs
     maintenance.test.mjs
@@ -2321,7 +2336,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 	</div>
 
 	<div class="callout callout-warning">
-		<p><strong>すべて 200 にしてはいけない。</strong><code>/api/poll</code> が 200 で空の配列を返すと、CLI は「新着なし」として次の回へ進む。<strong>メンテナンスに気づかないまま既定の 8 時間回り続ける。</strong></p>
+		<p><strong>すべて 200 にしてはいけない。</strong><code>/api/poll</code> が 200 で空の配列を返すと、CLI は「新着なし」として次の回へ進む。<strong>メンテナンスに気づかないまま既定の 12 時間回り続ける。</strong></p>
 	</div>
 
 	<h3>手順</h3>

@@ -581,7 +581,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 課題</h1>
 		<p class="lead">これから解決すること。片付いたら閉じて残す</p>
-		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-06</p>
+		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-07</p>
 	</div>
 </div>
 
@@ -597,8 +597,8 @@ footer a {
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（4 件 / 未 3 / 済 1）</a></li>
 		<li class="g02"><a href="#g02">データ（5 件 / 未 2 / 済 3）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（15 件 / 未 2 / 着手 2 / 済 11）</a></li>
-		<li class="g04"><a href="#g04">チャットの機能（17 件 / 未 8 / 済 9）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（16 件 / 未 2 / 着手 2 / 済 12）</a></li>
+		<li class="g04"><a href="#g04">チャットの機能（18 件 / 未 8 / 着手 1 / 済 9）</a></li>
 	</ol>
 </section>
 
@@ -1211,7 +1211,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">15 件 / 未 2 / 着手 2 / 済 11</span>
+		<span class="count">16 件 / 未 2 / 着手 2 / 済 12</span>
 	</summary>
 
 	<div class="groupbody">
@@ -3082,6 +3082,41 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 			</div>
 		</details>
 
+		<details class="issue done" id="i260907-02">
+			<summary>
+				<span class="badge b-done">☑</span>
+				<span class="no">i260907-02</span>
+				資料が実装とずれている
+			</summary>
+			<div class="issuebody">
+				<p><code>ai-chat-lite-reviewer</code> からの指摘（<code>msg_seq</code> 553 ・ 560）。<strong>5 件とも、ずれているのは資料の側である。</strong></p>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="num">#</th><th class="nowrap">どこ</th><th>中身</th></tr></thead>
+					<tbody>
+						<tr><td class="num">1</td><td class="nowrap">設計書</td><td><code>src/server/</code> の一覧が 15 本。<code>names.mjs</code> が無く、実際は 16 本</td></tr>
+						<tr><td class="num">2</td><td class="nowrap">設計書</td><td><code>tests/</code> の一覧が 23 本。<code>names.test.mjs</code> が無く、実際は 24 本</td></tr>
+						<tr><td class="num">3</td><td class="nowrap">設計書</td><td>待受けの既定が「8 時間」と「12 時間」に割れている。実装は 12 時間</td></tr>
+						<tr><td class="num">4</td><td class="nowrap">USAGE</td><td><code>test-</code> ・ <code>sandbox-</code> を断る話に「本番は」の限定が無い。<code>archive</code> ・ <code>restore</code> は通る、という但し書きも無い</td></tr>
+						<tr><td class="num">5</td><td class="nowrap">計画書</td><td><a href="../10_plan/p260902-01-CLIを2本持つ.html">p260902-01</a> の <code>aichat.exe</code> が 42 KB。実測 55.0 KB</td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<p><strong>ずれ方は 2 通りある。</strong>1・2・5 は<strong>数と大きさを手で写した</strong>もので、ファイルを足しても追随しない。3・4 は<strong>同じことを 2 か所に書いて片方だけ直した</strong>もので、書き分けが残る限り出続ける。</p>
+
+				<div class="callout callout-important">
+					<p><strong>指摘を課題に残していなかった。</strong>返信だけで済ませると次のセッションに引き継がれない。<strong>読んだ時点で課題に足し、それから直す。</strong></p>
+				</div>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> 1〜5 を直した。<strong>設計書の <code>tests/</code> は 2 本足りなかった</strong>（<code>multi-room.test.mjs</code> も落ちていた）。<code>aichat.exe</code> は指摘の 55.0 KB からさらに変わっており、実測の 57.5 KB を入れた</li>
+					<li class="done"><span class="badge b-done">☑</span> 直したことを返信した（<code>msg_seq</code> 568）</li>
+				</ul>
+			</div>
+		</details>
+
 	</div>
 </details>
 
@@ -3090,7 +3125,7 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">17 件 / 未 8 / 済 9</span>
+		<span class="count">18 件 / 未 8 / 着手 1 / 済 9</span>
 	</summary>
 
 	<div class="groupbody">
@@ -3897,6 +3932,99 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 			</div>
 		</details>
 
+		<details class="issue doing" id="i260907-01" open>
+			<summary>
+				<span class="badge b-doing">着手</span>
+				<span class="no">i260907-01</span>
+				1 本の待受けで複数のルームを待てるようにする
+			</summary>
+			<div class="issuebody">
+				<p><strong>ルームごとに 1 プロセスだった。</strong><code>public</code> と <code>ai-chat-lite</code> の 2 つを見るには 2 本立てることになり、待受けは 12 時間居座るので、その間ずっと 2 本ぶんを抱えていた。</p>
+
+				<p><strong><code>-r public,ai-chat-lite</code> のようにカンマ区切りで渡すと、1 本で複数のルームを待てるようにした。</strong>どれか 1 つに新着が出れば返り、読んだ位置はルームごとに進む。</p>
+
+				<div class="callout callout-important">
+					<p><strong>本数はいま高くつく。</strong>背面のコマンドはメモリの逼迫で刈られており（<a href="#i260905-04">i260905-04</a>）、<strong>刈られるたびに張り直す手間も 2 倍になる</strong>。</p>
+				</div>
+
+				<p>渡し方は <code>-r room1,room2</code> のようにカンマ区切りが素直である。<code>exclude</code> が同じ形なので、書き方が揃う。</p>
+
+				<h3>決めたこと</h3>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="num">#</th><th class="nowrap">論点</th><th>決めたこと</th></tr></thead>
+					<tbody>
+						<tr><td class="num">1</td><td class="nowrap">API の形</td><td><strong>カンマ区切りで受ける</strong>（<code>room_id=a,b</code>）。口は分けない。<code>exclude</code> と同じ形なので書き方が揃う</td></tr>
+						<tr><td class="num">2</td><td class="nowrap">カーソル</td><td><strong>複数のときは <code>since</code> を受け付けない</strong>（400）。位置はルームごとなので 1 つの数では表せない。サーバーが覚えている位置から続ける</td></tr>
+						<tr><td class="num">3</td><td class="nowrap">出力</td><td><strong>発言ごとに区切り線を置き、頭にルームを入れる</strong>（<code>──────── [public] #506 …</code>）。1 つしか見ていなくても出す</td></tr>
+						<tr><td class="num">4</td><td class="nowrap">数え方</td><td><strong>覆えているかで見る</strong>。本数では見ない。待受けが見ているルームの集合を持ち、足りないルームだけを名指しする</td></tr>
+						<tr><td class="num">5</td><td class="nowrap">起こす条件</td><td><strong>どれか 1 つに新着が出れば返す</strong></td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<p>詳しくは <a href="../10_plan/p260907-01-複数ルームの待受け.html">複数ルームの待受け</a> にある。</p>
+
+				<h3>踏んだ落とし穴</h3>
+
+				<div class="callout callout-caution">
+					<p><strong>PowerShell で <code>-r a,b</code> を囲まないと 2 つの引数に割れる。</strong><code>-r public,ai-chat-lite</code> と裸で書くと、<strong>静かに 1 ルームだけを待つ</strong>。エラーは出ない。<code>-r 'public,ai-chat-lite'</code> と囲む。</p>
+				</div>
+
+				<div class="callout callout-caution">
+					<p><strong>CLI を通す複数ルームのテストが無く、本番で初めて <code>現在位置 0</code> に気づいた。</strong>サーバー側は API を直に叩くテスト、CLI 側は 1 ルームだけのテストで、どちらも通っていた。</p>
+					<p><strong>両側を別々に確かめても継ぎ目は見えない。</strong>CLI からサーバーへ複数ルームで通すテストを足した。</p>
+				</div>
+
+				<h3>レビューで見つかった残り</h3>
+
+				<p><code>ai-chat-lite-reviewer</code> に依頼した結果（<code>msg_seq</code> 564）。<strong>9 件のうち 1 件は実際の不具合である。</strong></p>
+
+				<div class="callout callout-caution">
+					<p><strong><code>waiters</code> が止める pid を取り違える。</strong>どのルームが二重かはルーム名で出すのに、止める先は「自分の 2 本目以降すべて」になっている。<strong>覆っている唯一の 1 本まで名指しする。</strong></p>
+					<p>言われたとおり止めると、そのルームの待受けが消える。次に数えれば「足りません」と出るので、<strong>張り直す → また二重、を往復する</strong>。同じ節のコメントが防ごうとしていた <a href="#i260901-07">i260901-07</a> と同じ形である。</p>
+				</div>
+
+				<p><strong>止めてよいのは、覆っている全ルームが他の待受けでも覆われているものだけ</strong>である。古い順に見て、まだ覆えていないルームを持つものは残す。</p>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="num">#</th><th class="nowrap">中身</th><th>直すところ</th></tr></thead>
+					<tbody>
+						<tr><td class="num">1</td><td class="nowrap">止める pid の取り違え</td><td><code>chat.mjs</code> ・ <code>Waiters.cs</code>。<strong>不具合</strong></td></tr>
+						<tr><td class="num">2</td><td class="nowrap">二重張りが隠れる</td><td>足りないルームがあると <code>return</code> するので、二重が出ない。<strong>両方を出す</strong></td></tr>
+						<tr><td class="num">3</td><td class="nowrap"><code>-r</code> の引数表記</td><td><code>options.mjs</code> が <code>&lt;id&gt;</code> のまま。<code>-h</code> から複数渡せることが読めない</td></tr>
+						<tr><td class="num">4</td><td class="nowrap">どこまで効くか</td><td>カンマが効くのは <code>wait</code> と <code>waiters</code> だけ。<code>recent -r 'a,b'</code> は 400 になる</td></tr>
+						<tr><td class="num">5</td><td class="nowrap">計画書の出力例</td><td>3 か所が実装と違う</td></tr>
+						<tr><td class="num">6</td><td class="nowrap">計画書の引用符</td><td>裸の <code>-r a,b</code> を見本にしている。USAGE の注意と逆</td></tr>
+						<tr><td class="num">7</td><td class="nowrap">「dev ルームの分」</td><td>絞りが接続先だけになったので、USAGE の説明が合わない</td></tr>
+						<tr><td class="num">8</td><td class="nowrap">「別の接続先やルーム」</td><td>ルーム違いはこの行に入らなくなった</td></tr>
+						<tr><td class="num">9</td><td class="nowrap">テストの穴</td><td><strong>どの pid を止めるかのテストが無い</strong>。空白を落とす検査も、渡す値に空白が無い</td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-tip">
+					<p><strong>指摘が無かったところも数えて返ってきた。</strong><code>siftRooms</code> の位置の取り違え、<code>publish</code> の起こし漏れ・起こしすぎ、時間切れの <code>settle</code>、応答の形、2 本の整形の一致、設計書と実装の一致、リンク切れ 0。</p>
+				</div>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> 論点 1〜5 を決めた</li>
+					<li class="done"><span class="badge b-done">☑</span> 計画を書いた（<a href="../10_plan/p260907-01-複数ルームの待受け.html">p260907-01</a>）</li>
+					<li class="done"><span class="badge b-done">☑</span> 実装した（サーバー・CLI 2 本。テストは 24 件足して全 402 件）</li>
+					<li class="done"><span class="badge b-done">☑</span> 資料に書いた（USAGE・設計）</li>
+					<li class="done"><span class="badge b-done">☑</span> コードと設計資料のレビューを依頼した（<code>msg_seq</code> 562）</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>1・2 を直した</strong>。古い順に見て、まだ覆えていないルームを持つものを残す。足りないことと余っていることを両方出す
+					<li class="done"><span class="badge b-done">☑</span> 9 のテストを足した（止める pid の選び方 5 件。空白の検査は実際に空白の入った値で見る形に直した）</li>
+					<li class="done"><span class="badge b-done">☑</span> 3・4 を直した（<code>-r</code> を <code>&lt;id[,id]&gt;</code> に。カンマが効くのは <code>wait</code> と <code>waiters</code> だけ、と USAGE に書いた）</li>
+					<li class="done"><span class="badge b-done">☑</span> 5・6・7・8 を直した（計画書の出力例と引用符、USAGE の「dev ルームの分」、「別の接続先やルーム」の文言）</li>
+					<li class="done"><span class="badge b-done">☑</span> 計画書に「自動のテストだけでは足りない」を足した。継ぎ目にテストを置いたことも書いた</li>
+					<li><span class="badge b-todo">未</span> テスト・品質・資料を含めた総合レビューを依頼する</li>
+					<li><span class="badge b-todo">未</span> 周知する</li>
+				</ul>
+			</div>
+		</details>
 	</div>
 </details>
 
