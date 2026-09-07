@@ -597,8 +597,8 @@ footer a {
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（4 件 / 未 3 / 済 1）</a></li>
 		<li class="g02"><a href="#g02">データ（5 件 / 未 2 / 済 3）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（16 件 / 未 2 / 着手 2 / 済 12）</a></li>
-		<li class="g04"><a href="#g04">チャットの機能（18 件 / 未 8 / 着手 1 / 済 9）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（17 件 / 未 3 / 着手 2 / 済 12）</a></li>
+		<li class="g04"><a href="#g04">チャットの機能（19 件 / 未 9 / 着手 1 / 済 9）</a></li>
 	</ol>
 </section>
 
@@ -860,7 +860,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 
 				<ul>
 					<li><strong>サービスは追随していない。登録し直されていた。</strong><code>logs/node-ai-chat-lite-winsw.wrapper.log</code> に <code>2026-09-05 05:39 uninstalled</code> ／ <code>05:47 installed</code> の記録がある。いまの <code>ImagePath</code> は移動後の実体を指し、状態は <code>RUNNING</code></li>
-					<li><strong>バックアップのタスクは残っていない。</strong><code>\ai-chat-lite\</code> のタスクフォルダごと無い。控えの最新は <code>chat-20260905-050002.db.zip</code> で、<strong>05:00 以降は増えていない</strong></li>
+					<li><strong>バックアップのタスクは残っていなかった。</strong><code>\ai-chat-lite\</code> のタスクフォルダごと無く、控えの最新は <code>chat-20260905-050002.db.zip</code> で <strong>05:00 以降は増えていなかった</strong>。<strong>いまは 4 つとも登録し直してあり、<code>Ready</code> で回っている</strong>（2026-09-07 実測。<code>_backup/</code> は hourly 8 ・ daily 7 ・ weekly 4 ・ monthly 6 本）</li>
 					<li><strong>設計書に旧パスが残っている。</strong>install 手順が <code>cd /d C:\（実体のパス）\2026\ai-chat-lite</code> のまま。<strong>読んだ人が存在しないフォルダへ移動する</strong></li>
 				</ul>
 
@@ -1211,7 +1211,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">16 件 / 未 2 / 着手 2 / 済 12</span>
+		<span class="count">17 件 / 未 3 / 着手 2 / 済 12</span>
 	</summary>
 
 	<div class="groupbody">
@@ -3117,6 +3117,75 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 			</div>
 		</details>
 
+		<details class="issue" id="i260907-03" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260907-03</span>
+				変わったことの記録が 09-02 で止まっている
+			</summary>
+			<div class="issuebody">
+				<p><code>notes/60_releases/</code> の 1 本が <code>2026-09-02</code> までで、README はこれを「変わったこと」として資料一覧に並べている。<strong>読み手が最近の変更を探す場所が、4 回分古い。</strong></p>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="nowrap">日</th><th>入っていないもの</th></tr></thead>
+					<tbody>
+						<tr><td class="nowrap">09-04</td><td>返信（<code>--reply-to</code>）・番号の表示・日時 <code>yyyy/mm/dd</code></td></tr>
+						<tr><td class="nowrap">09-05</td><td>待受けの種別しぼり（<code>--with-joins</code>）・pid の表示・<code>waiters</code></td></tr>
+						<tr><td class="nowrap">09-06</td><td>繋ぎ先を毎回 stderr に出す・本番で <code>test-</code> ・ <code>sandbox-</code> を断る</td></tr>
+						<tr><td class="nowrap">09-07</td><td>複数ルームの待受け・出力の形（区切り線と <code>[ルーム]</code>）</td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-important">
+					<p><strong>09-06 の 2 点はチャットで周知済みだが、資料には無い。</strong>発言は流れていくので、<strong>あとから入ったプロジェクトはこの資料を見ることになる</strong>。周知した内容ほど資料に残っている必要がある。</p>
+				</div>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> 09-04 以降を書き足す（<strong>1 本に続けるか、日ごとに分けるかを決める</strong>）</li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue doing" id="i260907-05" open>
+			<summary>
+				<span class="badge b-doing">着手</span>
+				<span class="no">i260907-05</span>
+				<code>-r</code> の見本がシングルクォートで、cmd から実行すると壊れる
+			</summary>
+			<div class="issuebody">
+				<p><strong>クォートが要るのは PowerShell の都合である。</strong><code>-r public,ai-chat-lite</code> と裸で書くと、PowerShell はカンマを配列の区切りと読んで 2 つの引数に割る。資料はこれを避けるためシングルクォートで書いていた。</p>
+
+				<p><strong>cmd はシングルクォートを引用符として扱わない。</strong>クォートごと値に入る。実測は次のとおり。</p>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="nowrap">書き方</th><th class="nowrap">cmd から</th><th class="nowrap">PowerShell から</th></tr></thead>
+					<tbody>
+						<tr><td class="nowrap"><code>-r "public,ai-chat-lite"</code></td><td class="nowrap">通る</td><td class="nowrap">通る</td></tr>
+						<tr><td class="nowrap"><code>-r 'public,ai-chat-lite'</code></td><td class="nowrap"><strong>クォートが値に入る</strong></td><td class="nowrap">通る</td></tr>
+						<tr><td class="nowrap"><code>-r public,ai-chat-lite</code></td><td class="nowrap">通る</td><td class="nowrap"><strong>2 引数に割れる</strong></td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<p><strong>ダブルクォートだけが両方で通る。</strong>PowerShell では変数が展開されるが、ルームに使えるのは英数字・ハイフン・下線だけなので <code>$</code> は入らない。</p>
+
+				<div class="callout callout-important">
+					<p><strong>DB は汚れない。</strong><code>src/server/names.mjs</code> が <code>'</code> を含む <code>room_id</code> ・ <code>connector_id</code> を 400 で断るので、<code>wait</code> は起動に失敗して落ちる。</p>
+					<p><strong>効くのは <code>waiters</code> だけである。</strong>サーバーに繋がないので検査が働かない。クォート込みの基準で数え、<strong>正しい待受けがあるのに「待受けがありません」と出す</strong>。言われたとおり張れば二重になる。</p>
+				</div>
+
+				<p><strong>2026-09-07 17:22 に実際に起きた。</strong>別プロジェクトの待受けが <code>'public, ai-chat-lite'</code> というルームで数えられていた。<code>wait</code> の側は 400 で落ちており、24 秒後に正しい形で張り直されている。</p>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> 資料の見本をダブルクォートに揃えた（USAGE ・ <a href="../10_plan/p260907-01-複数ルームの待受け.html">p260907-01</a> ・ status ・ この一覧）</li>
+					<li><span class="badge b-todo">未</span> 共通ルールの <code>-r</code> の書き方を直す（<strong>シングルではなくダブル。理由は cmd で残るため</strong>）</li>
+				</ul>
+			</div>
+		</details>
+
 	</div>
 </details>
 
@@ -3125,7 +3194,7 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">18 件 / 未 8 / 着手 1 / 済 9</span>
+		<span class="count">19 件 / 未 9 / 着手 1 / 済 9</span>
 	</summary>
 
 	<div class="groupbody">
@@ -3969,7 +4038,7 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 				<h3>踏んだ落とし穴</h3>
 
 				<div class="callout callout-caution">
-					<p><strong>PowerShell で <code>-r a,b</code> を囲まないと 2 つの引数に割れる。</strong><code>-r public,ai-chat-lite</code> と裸で書くと、<strong>静かに 1 ルームだけを待つ</strong>。エラーは出ない。<code>-r 'public,ai-chat-lite'</code> と囲む。</p>
+					<p><strong>PowerShell で <code>-r a,b</code> を囲まないと 2 つの引数に割れる。</strong><code>-r public,ai-chat-lite</code> と裸で書くと、<strong>静かに 1 ルームだけを待つ</strong>。エラーは出ない。<code>-r "public,ai-chat-lite"</code> と囲む（シングルクォートは cmd で値に入る。<a href="#i260907-05">i260907-05</a>）。</p>
 				</div>
 
 				<div class="callout callout-caution">
@@ -3986,7 +4055,7 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 					<p>言われたとおり止めると、そのルームの待受けが消える。次に数えれば「足りません」と出るので、<strong>張り直す → また二重、を往復する</strong>。同じ節のコメントが防ごうとしていた <a href="#i260901-07">i260901-07</a> と同じ形である。</p>
 				</div>
 
-				<p><strong>止めてよいのは、覆っている全ルームが他の待受けでも覆われているものだけ</strong>である。古い順に見て、まだ覆えていないルームを持つものは残す。</p>
+				<p><strong>止めてよいのは、覆っている全ルームが他の待受けでも覆われているものだけ</strong>である。基準の外を多く持つ順に見て、まだ覆えていないルームを持つものは残す。</p>
 
 				<div class="tablewrap">
 				<table>
@@ -3995,7 +4064,7 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 						<tr><td class="num">1</td><td class="nowrap">止める pid の取り違え</td><td><code>chat.mjs</code> ・ <code>Waiters.cs</code>。<strong>不具合</strong></td></tr>
 						<tr><td class="num">2</td><td class="nowrap">二重張りが隠れる</td><td>足りないルームがあると <code>return</code> するので、二重が出ない。<strong>両方を出す</strong></td></tr>
 						<tr><td class="num">3</td><td class="nowrap"><code>-r</code> の引数表記</td><td><code>options.mjs</code> が <code>&lt;id&gt;</code> のまま。<code>-h</code> から複数渡せることが読めない</td></tr>
-						<tr><td class="num">4</td><td class="nowrap">どこまで効くか</td><td>カンマが効くのは <code>wait</code> と <code>waiters</code> だけ。<code>recent -r 'a,b'</code> は 400 になる</td></tr>
+						<tr><td class="num">4</td><td class="nowrap">どこまで効くか</td><td>カンマが効くのは <code>wait</code> と <code>waiters</code> だけ。<code>recent -r "a,b"</code> は 400 になる</td></tr>
 						<tr><td class="num">5</td><td class="nowrap">計画書の出力例</td><td>3 か所が実装と違う</td></tr>
 						<tr><td class="num">6</td><td class="nowrap">計画書の引用符</td><td>裸の <code>-r a,b</code> を見本にしている。USAGE の注意と逆</td></tr>
 						<tr><td class="num">7</td><td class="nowrap">「dev ルームの分」</td><td>絞りが接続先だけになったので、USAGE の説明が合わない</td></tr>
@@ -4009,19 +4078,78 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 					<p><strong>指摘が無かったところも数えて返ってきた。</strong><code>siftRooms</code> の位置の取り違え、<code>publish</code> の起こし漏れ・起こしすぎ、時間切れの <code>settle</code>、応答の形、2 本の整形の一致、設計書と実装の一致、リンク切れ 0。</p>
 				</div>
 
+				<h3>総合レビューで見つかった残り</h3>
+
+				<p>テスト・品質・資料を含めて依頼した結果（<code>msg_seq</code> 566）。<strong>9 件は直っていることを現物で確かめられ、新しく 6 件が出た。不具合は無い。</strong></p>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="num">#</th><th class="nowrap">中身</th><th>直すところ</th></tr></thead>
+					<tbody>
+						<tr><td class="num">1</td><td class="nowrap">「最後の行」と「後ろは全部」</td><td>USAGE の本文・表の見出しと callout が逆。<strong>読み手に直接効く</strong></td></tr>
+						<tr><td class="num">2</td><td class="nowrap">基準の外のルームが混ざる</td><td><code>held</code> に待受けの全ルームを入れており、<code>-r</code> で渡した基準で絞っていない。渡したルームが二重でも「すべて覆えています」と出て、渡していないルームの pid を止めろとも出る</td></tr>
+						<tr><td class="num">3</td><td class="nowrap"><code>strayMine</code> のコメント</td><td>「ルームを間違えた待受け」は同じ接続先なら <code>here</code> に入るので、この枝の対象から外れた</td></tr>
+						<tr><td class="num">4</td><td class="nowrap">選び方が 4 か所</td><td><code>chat.mjs</code> ・ <code>Waiters.cs</code> ・ テストの写し ・ 計画書の写し。<strong>テストが守るのは写しだけ</strong>で、<strong>計画書は次に直したときに古くなる側</strong></td></tr>
+						<tr><td class="num">5</td><td class="nowrap"><code>&lt;/li&gt;</code> の抜け</td><td><code>issues.html</code> のやること 1 件</td></tr>
+						<tr><td class="num">6</td><td class="nowrap">テストの件数が別の時点</td><td>「24 件足して全 402 件」と、その 5 行下の「5 件足した」が混ざる</td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-important">
+					<p><strong>2 と 4 は、直し方に選択肢がある。</strong>2 は「基準で絞る」と「絞らずに断り書きを足す」で出力が変わり、4 は選び方をどこへ寄せるか（純粋な関数に切り出す／C# 版との突き合わせを増やす）で持ち方が変わる。</p>
+				</div>
+
 				<ul class="todos">
 					<li class="done"><span class="badge b-done">☑</span> 論点 1〜5 を決めた</li>
 					<li class="done"><span class="badge b-done">☑</span> 計画を書いた（<a href="../10_plan/p260907-01-複数ルームの待受け.html">p260907-01</a>）</li>
-					<li class="done"><span class="badge b-done">☑</span> 実装した（サーバー・CLI 2 本。テストは 24 件足して全 402 件）</li>
+					<li class="done"><span class="badge b-done">☑</span> 実装した（サーバー・CLI 2 本。テストを足し、<strong>いまは全 402 件</strong>）</li>
 					<li class="done"><span class="badge b-done">☑</span> 資料に書いた（USAGE・設計）</li>
 					<li class="done"><span class="badge b-done">☑</span> コードと設計資料のレビューを依頼した（<code>msg_seq</code> 562）</li>
-					<li class="done"><span class="badge b-done">☑</span> <strong>1・2 を直した</strong>。古い順に見て、まだ覆えていないルームを持つものを残す。足りないことと余っていることを両方出す
+					<li class="done"><span class="badge b-done">☑</span> <strong>1・2 を直した</strong>。古い順に見て、まだ覆えていないルームを持つものを残す。足りないことと余っていることを両方出す</li>
 					<li class="done"><span class="badge b-done">☑</span> 9 のテストを足した（止める pid の選び方 5 件。空白の検査は実際に空白の入った値で見る形に直した）</li>
 					<li class="done"><span class="badge b-done">☑</span> 3・4 を直した（<code>-r</code> を <code>&lt;id[,id]&gt;</code> に。カンマが効くのは <code>wait</code> と <code>waiters</code> だけ、と USAGE に書いた）</li>
 					<li class="done"><span class="badge b-done">☑</span> 5・6・7・8 を直した（計画書の出力例と引用符、USAGE の「dev ルームの分」、「別の接続先やルーム」の文言）</li>
 					<li class="done"><span class="badge b-done">☑</span> 計画書に「自動のテストだけでは足りない」を足した。継ぎ目にテストを置いたことも書いた</li>
-					<li><span class="badge b-todo">未</span> テスト・品質・資料を含めた総合レビューを依頼する</li>
+					<li class="done"><span class="badge b-done">☑</span> テスト・品質・資料を含めた総合レビューを依頼した（<code>msg_seq</code> 565。結果は 566）</li>
+					<li class="done"><span class="badge b-done">☑</span> 総合レビューの 1・5・6 を直した</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>2 を直した</strong>（A-1）。<strong>判定に入れるのは <code>-r</code> で渡したルームに触れる待受けだけ</strong>にし、並びは基準の外を多く持つものを先にした。テストを 2 件足して全 404 件。<strong>テスト用サーバー（8765）で 3 通りを手で確かめ、node 版と C# 版の出力が一字一句同じ</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>止めてよいかを全ルームで見る形に直した</strong>（レビュー <code>msg_seq</code> 605 の 1 件。A）。基準の外を「数」でしか見ていなかったため、<strong>外の数が同じで中身が違うと、片方だけが持つルームの覆いが消えていた</strong>。数ではなく中身を見るので、<code>public,devA</code> と <code>public,devB</code> はどちらも残る。テストを 2 件足して全 406 件。<strong>テスト用サーバーで 4 通りを手で確かめ、2 本の出力は一字一句同じ</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>4 を直した</strong>（A）。選び方を <code>src/client/waiters-pick.mjs</code> に純粋な関数として出し、<code>chat.mjs</code> とテストが同じものを読む形にした。<strong>写しは 4 か所から 2 か所へ</strong>（node の実体と C# 版）。計画書はコードを貼るのをやめ、置き場を書いた。<strong><code>every</code> を <code>some</code> に変えるとテストが落ちることを実際に確かめた</strong>（写しだった間は落ちなかった）</li>
+					<li><span class="badge b-todo">未</span> 総合レビューの 3 を直す（<code>strayMine</code> のコメント。<strong>直し方を決める</strong>）</li>
 					<li><span class="badge b-todo">未</span> 周知する</li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue" id="i260907-04" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260907-04</span>
+				本番で断るルームの接頭辞に <code>test-</code> が入っていない
+			</summary>
+			<div class="issuebody">
+				<p><strong>断る接頭辞が、ID とルームで別々になっている。</strong><code>src/server/names.mjs</code> 18 ・ 21 行。</p>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="nowrap">相手</th><th class="nowrap">いま断るもの</th><th>これから</th></tr></thead>
+					<tbody>
+						<tr><td class="nowrap">名乗る ID</td><td class="nowrap"><code>test-</code></td><td>変えない</td></tr>
+						<tr><td class="nowrap">ルーム</td><td class="nowrap"><code>sandbox-</code></td><td><strong><code>test-</code> と <code>sandbox-</code> の両方</strong></td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-warning">
+					<p><strong><code>-r test-なにか</code> は本番で通る。</strong>テスト用のつもりで付けた名前が本番に残り、<strong>後始末の道具（<code>tools/40_test/purge-test-data.mjs</code>）の目印にも当たらない</strong>。ID を <code>test-</code> で断っているのと揃わない。</p>
+				</div>
+
+				<p>直すのは <code>names.mjs</code> の検査とエラーの文言。<strong>C# 版は関係ない</strong>（断るのはサーバーの側）。<code>purge-test-data.mjs</code> の目印と USAGE の記述も揃える。</p>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> ルームの検査に <code>test-</code> を足す</li>
+					<li><span class="badge b-todo">未</span> 目印と資料を揃える（<code>purge-test-data.mjs</code> ・ USAGE）</li>
 				</ul>
 			</div>
 		</details>

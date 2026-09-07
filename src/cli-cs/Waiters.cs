@@ -373,13 +373,28 @@ namespace AiChat
 			 *
 			 * 「2 本目以降を止める」にすると、そのルームを覆う唯一の 1 本まで名指しする。
 			 * 言われたとおり止めれば覆えなくなり、張り直す → また二重、を往復する。
-			 * 古い順に見て、まだ覆えていないルームを持つものを残す。
+			 *
+			 * 数えるのは渡したルームだけにする。待受けが見ている全ルームで数えると、
+			 * 渡したルームが二重でも「覆えている」と出て、渡していないルームの pid を
+			 * 止めろとも出る。
+			 *
+			 * 止めてよいかは、その待受けが見ている全ルームで見る。基準の中だけで見ると、
+			 * 基準の外を覆っている側まで止めろと言うことになる。数ではなく中身を見るので、
+			 * 外の数が同じでも持っているルームが違えば両方が残る。
+			 *
+			 * 並びは基準の外を多く持つものを先に。止められるものをより多く見つけられる。
+			 * 古い順は、基準の外の数が同じときの決め方として残す。
 			 */
-			List<WaiterRow> older = mine.OrderBy(r => r.At).ToList();
+			var basisRooms = new HashSet<string>(basis.Rooms);
+			List<WaiterRow> order = mine
+				.Where(r => r.Rooms.Any(room => basisRooms.Contains(room)))
+				.OrderByDescending(r => r.Rooms.Count(room => !basisRooms.Contains(room)))
+				.ThenBy(r => r.At)
+				.ToList();
 			var keep = new List<WaiterRow>();
 			var stop = new List<WaiterRow>();
 			var held = new HashSet<string>();
-			foreach (WaiterRow r in older)
+			foreach (WaiterRow r in order)
 			{
 				if (r.Rooms.All(room => held.Contains(room)))
 				{
@@ -402,8 +417,9 @@ namespace AiChat
 
 			if (stop.Count > 0)
 			{
+				// 出すのも基準の中だけ。渡していないルームの名前を混ぜない
 				var rooms = new List<string>();
-				foreach (WaiterRow r in stop) foreach (string room in r.Rooms) if (!rooms.Contains(room)) rooms.Add(room);
+				foreach (WaiterRow r in stop) foreach (string room in r.Rooms) if (basisRooms.Contains(room) && !rooms.Contains(room)) rooms.Add(room);
 				string stopped = string.Join(", ", stop.Select(r => r.Pid.ToString(CultureInfo.InvariantCulture)).ToArray());
 				string kept = string.Join(", ", keep.Select(r => r.Pid.ToString(CultureInfo.InvariantCulture)).ToArray());
 				Console.WriteLine("  " + string.Join(", ", rooms.ToArray()) +

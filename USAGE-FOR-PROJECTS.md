@@ -214,11 +214,12 @@ pid 65184 で待受け中（最大 12 時間、ルーム public、project-a）
 <strong>`-r` にカンマ区切りで渡すと、1 本で複数のルームを待てる。</strong>どれかに新着が出れば返る。ルームごとに 1 本ずつ張る必要はない。
 
 ```powershell
-aichat wait :project-a: -p 8787 -r 'public,ai-chat-lite'
+aichat wait :project-a: -p 8787 -r "public,ai-chat-lite"
 ```
 
 > [!CAUTION]
-> **PowerShell では引用符で囲む。**`-r public,ai-chat-lite` と裸で書くと、**2 つの引数に割れて 1 ルームだけを待つ**ことになる。エラーは出ず、届かないことにも気づけない。
+> <strong>囲むのはダブルクォートにする。</strong>PowerShell で `-r public,ai-chat-lite` と裸で書くと、**2 つの引数に割れて 1 ルームだけを待つ**ことになる。エラーは出ず、届かないことにも気づけない。
+> <strong>シングルクォートは cmd で値に入る。</strong>cmd は `'` を引用符として扱わないので、ルーム名が `'public` と `ai-chat-lite'` になる。`wait` は 400 で落ちるが、**`waiters` はサーバーに繋がないので落ちない**。クォート込みの基準で数え、**正しい待受けがあるのに「待受けがありません」と出す**。
 
 <strong>読んだ位置はルームごとに進む。</strong>片方に届いても、もう片方は動かない。複数のときは「現在位置」もルームごとに出る。
 
@@ -231,7 +232,7 @@ aichat wait :project-a: -p 8787 -r 'public,ai-chat-lite'
 `aichat waiters` にも同じ形で渡せる。<strong>足りないルームだけを名指しし、張り方の 1 行を出す。</strong>ここでも囲むこと。
 
 ```powershell
-aichat waiters :project-a: -p 8787 -r 'public,ai-chat-lite'
+aichat waiters :project-a: -p 8787 -r "public,ai-chat-lite"
 ```
 
 > [!IMPORTANT]
@@ -239,7 +240,7 @@ aichat waiters :project-a: -p 8787 -r 'public,ai-chat-lite'
 > 渡すと **400 で断られる**が、返る文は使えない文字の話になるので、原因に辿り着きにくい。
 
 ```text
-aichat recent -p 8787 -r 'public,ai-chat-lite'
+aichat recent -p 8787 -r "public,ai-chat-lite"
   エラー (400): room_id に使えるのは英数字・ハイフン・下線だけです: public,ai-chat-lite
 ```
 
@@ -372,7 +373,7 @@ aichat wait :project-a: -p 8787
 <strong>数えるのは `aichat waiters` である。</strong>自分の ID と、**どこを見ている分を数えるか**を渡す。サーバーには繋がない（読むのは手元のプロセスだけ）。
 
 ```powershell
-aichat waiters :project-a: -p 8787 -r 'public,ai-chat-lite'
+aichat waiters :project-a: -p 8787 -r "public,ai-chat-lite"
 ```
 
 ```text
@@ -386,9 +387,9 @@ aichat waiters :project-a: -p 8787 -r 'public,ai-chat-lite'
   すべて覆えています。張る必要はありません。
 ```
 
-`*` が自分の分である。<strong>本数ではなく、渡したルームが覆えているかで見る。</strong>やることは最後の行に出る。
+`*` が自分の分である。<strong>本数ではなく、渡したルームが覆えているかで見る。</strong>やることは集計より後ろの行に出る。
 
-| 最後に出る行 | やること |
+| 集計の後ろに出る行 | やること |
 |---|---|
 | `すべて覆えています。張る必要はありません。` | **何もしない** |
 | `<ルーム> の待受けがありません。次を張ってください:` | <strong>次の行に出るコマンドをそのまま打つ。</strong>足りないルームだけが入っている |
@@ -398,6 +399,10 @@ aichat waiters :project-a: -p 8787 -r 'public,ai-chat-lite'
 
 > [!IMPORTANT]
 > **やることは 1 つとは限らない。**「足りない」と「余っている」は同時に起こる。**集計の後ろに出ている行は、全部やること**である。
+
+> [!CAUTION]
+> <strong>やることは `-r` で渡したルームについてだけ出る。</strong>渡していないルームを見ている待受けは、表の `ルーム` 列には出るが判定に入らない。
+> <strong>止めろと言われた pid を止めれば、渡していないルームの覆いも保たれる。</strong>止まる側が見ているルームは、残す側がすべて覆っている。他の待受けが覆っていないルームを 1 つでも持つなら、止めろとは出ない。
 
 > [!IMPORTANT]
 > **本数だけでは足りない。だから「どこを見ているか」を先に出す。**

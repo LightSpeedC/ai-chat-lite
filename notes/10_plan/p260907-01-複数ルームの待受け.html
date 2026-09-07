@@ -412,7 +412,7 @@ footer a {
 
 <p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
 
-<p>課題 <a class="doclink" href="../40_issues/issues.html#i260907-01">i260907-01</a> の計画である。<strong><code>-r 'public,ai-chat-lite'</code> のように書けば、1 本の待受けで両方を見られるようにする。</strong></p>
+<p>課題 <a class="doclink" href="../40_issues/issues.html#i260907-01">i260907-01</a> の計画である。<strong><code>-r "public,ai-chat-lite"</code> のように書けば、1 本の待受けで両方を見られるようにする。</strong></p>
 
 <section class="toc md-skip">
 	<h2>目次</h2>
@@ -527,7 +527,7 @@ test-shape がオフラインになりました</code></pre>
 
 	<p><strong>「本数」ではなく「渡したルームが覆えているか」で見る。</strong></p>
 
-<pre><code class="language-text">aichat waiters :project-a: -p 8787 -r 'public,ai-chat-lite'
+<pre><code class="language-text">aichat waiters :project-a: -p 8787 -r "public,ai-chat-lite"
 
   :8787 を見ている待受け
 
@@ -564,12 +564,56 @@ pid 300  -r public           ← 本当に余っているのはこれ</code></pr
 
 <pre><code class="language-javascript">const keep = [];
 const stop = [];
-const covered = new Set();
+const held = new Set();          // 残した分が覆っているルーム
 for (const h of mine) {          // 古い順
-	if (h.rooms.every((room) => covered.has(room))) { stop.push(h); continue; }
+	if (h.rooms.every((room) => held.has(room))) { stop.push(h); continue; }
 	keep.push(h);
-	for (const room of h.rooms) covered.add(room);
+	for (const room of h.rooms) held.add(room);
 }</code></pre>
+
+	<h3>数えるのは渡したルームだけ</h3>
+
+	<p><strong>判定に入れるのは <code>-r</code> で渡したルームに触れる待受けだけ。</strong>基準を見ずに全部を古い順で並べると、2 つの向きにずれる。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">並び</th><th>素朴に書くと</th><th>いまの形</th></tr></thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>100 -r public</code><br><code>200 -r "public,dev"</code><br>基準 <code>public</code></td>
+				<td>古い順に見て 100 を残す。<strong><code>dev</code> の覆いが消える</strong></td>
+				<td>200 を先に見て残す。100 を止めても <code>dev</code> は残る</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>100 -r "public,dev"</code><br><code>200 -r dev</code><br>基準 <code>public</code></td>
+				<td><strong>渡していない <code>dev</code> の pid を止めろと出る</strong></td>
+				<td>判定に入らない。何も出ない</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p><strong>止めてよいかは、その待受けが見ている全ルームで見る。</strong>基準の中だけで見ると、基準の外を覆っている側まで止めろと言ってしまう。外のルームを 1 つでも自分だけで覆っているなら残る。</p>
+
+	<p><strong>並びは基準の外を多く持つものを先に見る。</strong>止められるものをより多く見つけられる。同じなら古い順。</p>
+
+	<div class="callout callout-important">
+		<p><strong>選び方の実体は <code>src/client/waiters-pick.mjs</code> にある。</strong>テストも同じものを読むので、<strong>ここにコードは貼らない</strong>。貼れば次に直したときに古くなる側になる。C# 版（<code>src/cli-cs/Waiters.cs</code>）は言語が違うので写しが残り、そちらは <code>tests/cli-cs.test.mjs</code> が出力の書式を突き合わせて守る。</p>
+	</div>
+
+	<p>外の数が同じで中身が違うときは、どちらも止められない。</p>
+
+<pre><code class="language-text">基準 = public
+
+pid 100  -r "public,devA"   基準の外 1
+pid 200  -r "public,devB"   基準の外 1
+
+→ 200 の devB は 100 が覆っていない。両方を残す
+→ 「すべて覆えています。張る必要はありません。」</code></pre>
+
+	<div class="callout callout-caution">
+		<p><strong>止めろと言った pid を止めれば、必ず覆いが保たれる。</strong>基準の中も外も、止まる側の全ルームは先に残した分が覆っている。<strong>数ではなく中身を見る。</strong>外の数が同じでも持っているルームが違えば、両方が残る。</p>
+	</div>
 
 	<h2>やることは 1 つとは限らない</h2>
 
@@ -587,7 +631,7 @@ pid 300  -r public           ← public が二重
 		<p><strong>やることは集計の後ろにまとめて出す。</strong>「最後の 1 行だけ読めばよい」は、やることが 1 つのときにしか成り立たない。<strong>出ている行は全部やること</strong>である。</p>
 	</div>
 
-	<p><strong>集合はコマンドラインから取る。</strong><code>waiters</code> はプロセスの一覧を読んで判定しており、サーバーには繋がない。<code>-r 'a,b'</code> と書いた待受けの <code>-r</code> をそのまま割れば集合になる。</p>
+	<p><strong>集合はコマンドラインから取る。</strong><code>waiters</code> はプロセスの一覧を読んで判定しており、サーバーには繋がない。<code>-r "a,b"</code> と書いた待受けの <code>-r</code> をそのまま割れば集合になる。</p>
 </section>
 
 <!-- ================= 05 ================= -->
@@ -600,7 +644,7 @@ pid 300  -r public           ← public が二重
 		<tbody>
 			<tr><td class="nowrap"><code>src/server/server.mjs</code></td><td><code>room_id</code> をカンマ区切りで受ける。複数のとき <code>since</code> を断る。ルームごとに位置を読み、ルームごとに進める</td></tr>
 			<tr><td class="nowrap"><code>src/server/hub.mjs</code></td><td>待つ相手がルームの配列と、ルームごとの位置を持つ。<code>publish</code> は該当するルームの相手だけ起こす</td></tr>
-			<tr><td class="nowrap"><code>src/client/chat.mjs</code></td><td><code>-r 'a,b'</code> を渡す。整形を新しい形にする。<code>waiters</code> の判定を覆えているかに変える</td></tr>
+			<tr><td class="nowrap"><code>src/client/chat.mjs</code></td><td><code>-r "a,b"</code> を渡す。整形を新しい形にする。<code>waiters</code> の判定を覆えているかに変える</td></tr>
 			<tr><td class="nowrap"><code>src/cli-cs/</code></td><td>同じものを C# 版にも。<strong>2 本の出力が一致することをテストで見る</strong></td></tr>
 			<tr><td class="nowrap"><code>tests/</code></td><td>複数ルーム・<code>since</code> の拒否・整形・覆えているかの判定</td></tr>
 		</tbody>
@@ -616,10 +660,10 @@ pid 300  -r public           ← public が二重
 	</div>
 
 	<ol>
-		<li><code>-r 'a,b'</code> で 1 本張り、<strong>両方のルームの投稿で起きる</strong>こと</li>
+		<li><code>-r "a,b"</code> で 1 本張り、<strong>両方のルームの投稿で起きる</strong>こと</li>
 		<li>片方に投稿したとき、<strong>もう片方の位置が動かない</strong>こと</li>
 		<li>複数のときに <code>since</code> を渡すと <strong>400 で断られる</strong>こと</li>
-		<li><code>waiters -r 'a,b'</code> が、<strong>足りないルームだけを名指しする</strong>こと</li>
+		<li><code>waiters -r "a,b"</code> が、<strong>足りないルームだけを名指しする</strong>こと</li>
 		<li>node 版と C# 版の出力が<strong>一字一句同じ</strong>であること</li>
 	</ol>
 

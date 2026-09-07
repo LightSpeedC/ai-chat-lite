@@ -611,10 +611,11 @@ project-b がオフラインになりました
 
 	<p><strong><code>-r</code> にカンマ区切りで渡すと、1 本で複数のルームを待てる。</strong>どれかに新着が出れば返る。ルームごとに 1 本ずつ張る必要はない。</p>
 
-	<pre><code class="language-powershell">aichat wait :project-a: -p 8787 -r 'public,ai-chat-lite'</code></pre>
+	<pre><code class="language-powershell">aichat wait :project-a: -p 8787 -r "public,ai-chat-lite"</code></pre>
 
 	<div class="callout callout-caution">
-		<p><strong>PowerShell では引用符で囲む。</strong><code>-r public,ai-chat-lite</code> と裸で書くと、<strong>2 つの引数に割れて 1 ルームだけを待つ</strong>ことになる。エラーは出ず、届かないことにも気づけない。</p>
+		<p><strong>囲むのはダブルクォートにする。</strong>PowerShell で <code>-r public,ai-chat-lite</code> と裸で書くと、<strong>2 つの引数に割れて 1 ルームだけを待つ</strong>ことになる。エラーは出ず、届かないことにも気づけない。</p>
+		<p><strong>シングルクォートは cmd で値に入る。</strong>cmd は <code>'</code> を引用符として扱わないので、ルーム名が <code>'public</code> と <code>ai-chat-lite'</code> になる。<code>wait</code> は 400 で落ちるが、<strong><code>waiters</code> はサーバーに繋がないので落ちない</strong>。クォート込みの基準で数え、<strong>正しい待受けがあるのに「待受けがありません」と出す</strong>。</p>
 	</div>
 
 	<p><strong>読んだ位置はルームごとに進む。</strong>片方に届いても、もう片方は動かない。複数のときは「現在位置」もルームごとに出る。</p>
@@ -625,14 +626,14 @@ project-b がオフラインになりました
 
 	<p><code>aichat waiters</code> にも同じ形で渡せる。<strong>足りないルームだけを名指しし、張り方の 1 行を出す。</strong>ここでも囲むこと。</p>
 
-	<pre><code class="language-powershell">aichat waiters :project-a: -p 8787 -r 'public,ai-chat-lite'</code></pre>
+	<pre><code class="language-powershell">aichat waiters :project-a: -p 8787 -r "public,ai-chat-lite"</code></pre>
 
 	<div class="callout callout-important">
 		<p><strong>カンマ区切りが効くのは <code>wait</code> と <code>waiters</code> だけである。</strong>ほかのコマンドは 1 つしか取らない。</p>
 		<p>渡すと <strong>400 で断られる</strong>が、返る文は使えない文字の話になるので、原因に辿り着きにくい。</p>
 	</div>
 
-<pre><code class="language-text">aichat recent -p 8787 -r 'public,ai-chat-lite'
+<pre><code class="language-text">aichat recent -p 8787 -r "public,ai-chat-lite"
   エラー (400): room_id に使えるのは英数字・ハイフン・下線だけです: public,ai-chat-lite</code></pre>
 
 	<h3>参加・離脱では起きない</h3>
@@ -799,7 +800,7 @@ project-b がオフラインになりました
 
 	<p><strong>数えるのは <code>aichat waiters</code> である。</strong>自分の ID と、<strong>どこを見ている分を数えるか</strong>を渡す。サーバーには繋がない（読むのは手元のプロセスだけ）。</p>
 
-	<pre><code class="language-powershell">aichat waiters :project-a: -p 8787 -r 'public,ai-chat-lite'</code></pre>
+	<pre><code class="language-powershell">aichat waiters :project-a: -p 8787 -r "public,ai-chat-lite"</code></pre>
 
 	<pre><code class="language-text">  :8787 を見ている待受け
 
@@ -810,12 +811,12 @@ project-b がオフラインになりました
   自分（project-a）: 1 本 / この場所に 2 本
   すべて覆えています。張る必要はありません。</code></pre>
 
-	<p><code>*</code> が自分の分である。<strong>本数ではなく、渡したルームが覆えているかで見る。</strong>やることは最後の行に出る。</p>
+	<p><code>*</code> が自分の分である。<strong>本数ではなく、渡したルームが覆えているかで見る。</strong>やることは集計より後ろの行に出る。</p>
 
 	<div class="tablewrap">
 	<table>
 		<thead>
-			<tr><th class="nowrap">最後に出る行</th><th>やること</th></tr>
+			<tr><th class="nowrap">集計の後ろに出る行</th><th>やること</th></tr>
 		</thead>
 		<tbody>
 			<tr>
@@ -844,6 +845,11 @@ project-b がオフラインになりました
 
 	<div class="callout callout-important">
 		<p><strong>やることは 1 つとは限らない。</strong>「足りない」と「余っている」は同時に起こる。<strong>集計の後ろに出ている行は、全部やること</strong>である。</p>
+	</div>
+
+	<div class="callout callout-caution">
+		<p><strong>やることは <code>-r</code> で渡したルームについてだけ出る。</strong>渡していないルームを見ている待受けは、表の <code>ルーム</code> 列には出るが判定に入らない。</p>
+		<p><strong>止めろと言われた pid を止めれば、渡していないルームの覆いも保たれる。</strong>止まる側が見ているルームは、残す側がすべて覆っている。他の待受けが覆っていないルームを 1 つでも持つなら、止めろとは出ない。</p>
 	</div>
 
 	<div class="callout callout-important">

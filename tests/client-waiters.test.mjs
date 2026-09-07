@@ -17,6 +17,11 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { WAITER_PATTERN, ID_WRAP } from '../src/client/options.mjs';
+/*
+ * 選び方は本体と同じものを使う。写しを検査すると、本体を壊しても通ってしまう。
+ * ここで実物を落とせるのは、chat.mjs から純粋な関数として出したためである。
+ */
+import { splitRedundant } from '../src/client/waiters-pick.mjs';
 import { DEFAULT_ROOM, PORT } from '../src/server/config.mjs';
 
 /** 一覧の 1 行を作る */
@@ -75,28 +80,6 @@ function missingRooms(mine, basis) {
 	const covered = new Set();
 	for (const t of mine) for (const room of t.rooms) covered.add(room);
 	return basis.rooms.filter((room) => !covered.has(room));
-}
-
-/**
- * 残すものと止めてよいものに分ける。chat.mjs の printWaiters と同じ選び方。
- *
- * 「2 本目以降を止める」にすると、そのルームを覆う唯一の 1 本まで名指しする。
- * 止めた結果、覆えなくなってはいけない。
- */
-function splitRedundant(mine) {
-	const older = [...mine].sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
-	const keep = [];
-	const stop = [];
-	const held = new Set();
-	for (const h of older) {
-		if (h.rooms.every((room) => held.has(room))) {
-			stop.push(h);
-			continue;
-		}
-		keep.push(h);
-		for (const room of h.rooms) held.add(room);
-	}
-	return { keep, stop };
 }
 
 /** pid・見ているルーム・いつからを持つ 1 本 */
@@ -446,6 +429,9 @@ describe('覆えているかで見る', () => {
 });
 
 describe('止めてよいのはどれか', () => {
+	/** 2 ルームを渡したときの基準 */
+	const BOTH = { port: PORT, rooms: ['public', 'ai-chat-lite'] };
+
 	/*
 	 * 【なぜ必要か】
 	 * 「2 本目以降を止める」にすると、そのルームを覆う唯一の 1 本まで名指しする。
@@ -459,7 +445,7 @@ describe('止めてよいのはどれか', () => {
 			waiter(300, ['public'], '2026-09-07 10:02:00'),
 		];
 
-		const { keep, stop } = splitRedundant(rows);
+		const { keep, stop } = splitRedundant(rows, BOTH);
 
 		assert.deepEqual(
 			stop.map((h) => h.pid),
@@ -480,7 +466,7 @@ describe('止めてよいのはどれか', () => {
 			waiter(300, ['ai-chat-lite'], '2026-09-07 10:02:00'),
 		];
 
-		const { keep, stop } = splitRedundant(rows);
+		const { keep, stop } = splitRedundant(rows, BOTH);
 		const covered = new Set(keep.flatMap((h) => h.rooms));
 
 		assert.deepEqual(
@@ -496,7 +482,7 @@ describe('止めてよいのはどれか', () => {
 			waiter(200, ['ai-chat-lite'], '2026-09-07 10:01:00'),
 		];
 
-		assert.deepEqual(splitRedundant(rows).stop, []);
+		assert.deepEqual(splitRedundant(rows, BOTH).stop, []);
 	});
 
 	test('古いほうを残す', () => {
@@ -507,10 +493,74 @@ describe('止めてよいのはどれか', () => {
 			waiter(100, ['public'], '2026-09-07 10:00:00'),
 		];
 
-		const { keep, stop } = splitRedundant(rows);
+		const { keep, stop } = splitRedundant(rows, PROD);
 
 		assert.deepEqual(keep.map((h) => h.pid), [100]);
 		assert.deepEqual(stop.map((h) => h.pid), [300]);
+	});
+
+	/*
+	 * 【なぜ必要か】
+	 * 覆いの判定に待受けの全ルームを入れると、渡したルームが二重でも
+	 * 「すべて覆えています」と出る。逆に、渡していないルームについて
+	 * 「pid を止めろ」とも出る。どちらも基準を渡した意味が効いていない形。
+	 */
+	test('渡したルームの二重は、基準の外も見ている分を残す', () => {
+		// 100 を止めれば dev の覆いは残る。200 を止めると dev が消える
+		const rows = [
+			waiter(100, ['public'], '2026-09-07 10:00:00'),
+			waiter(200, ['public', 'dev'], '2026-09-07 10:01:00'),
+		];
+
+		const { keep, stop } = splitRedundant(rows, PROD);
+
+		assert.deepEqual(stop.map((h) => h.pid), [100], '基準の外の覆いが消える側を止めようとしている');
+		assert.deepEqual(keep.map((h) => h.pid), [200]);
+	});
+
+	test('基準の外だけを見ている分は判定に入らない', () => {
+		// public を数えたつもりで dev の指示が返ってはいけない
+		const rows = [
+			waiter(100, ['public', 'dev'], '2026-09-07 10:00:00'),
+			waiter(200, ['dev'], '2026-09-07 10:01:00'),
+		];
+
+		const { keep, stop } = splitRedundant(rows, PROD);
+
+		assert.deepEqual(stop, [], '渡していないルームの pid を止めろと出ている');
+		assert.deepEqual(keep.map((h) => h.pid), [100]);
+	});
+
+	/*
+	 * 【なぜ必要か】
+	 * 基準の外を「数」で見ていた頃は、外が 1 対 1 で中身が違う形を取り違えた。
+	 * 数が同じなら古い順で決まるため、後の 1 本だけが持つ外のルームが消える。
+	 * 「止めろと言った pid を止めれば必ず覆いが保たれる」を崩す形になる。
+	 */
+	test('基準の外の数が同じで中身が違うなら、どちらも止めない', () => {
+		// devA と devB は互いに覆っていない。止めればどちらかが消える
+		const rows = [
+			waiter(100, ['public', 'devA'], '2026-09-07 10:00:00'),
+			waiter(200, ['public', 'devB'], '2026-09-07 10:01:00'),
+		];
+
+		const { keep, stop } = splitRedundant(rows, PROD);
+
+		assert.deepEqual(stop, [], '基準の外の覆いが消える側を止めようとしている');
+		assert.deepEqual(keep.map((h) => h.pid), [100, 200]);
+	});
+
+	test('基準の外を多く持つ側があっても、少ない側だけが持つルームは守る', () => {
+		// 200 を止めると devC が消える。外の数だけで残す側を決めてはいけない
+		const rows = [
+			waiter(100, ['public', 'devA', 'devB'], '2026-09-07 10:00:00'),
+			waiter(200, ['public', 'devC'], '2026-09-07 10:01:00'),
+		];
+
+		const { keep, stop } = splitRedundant(rows, PROD);
+
+		assert.deepEqual(stop, [], '外の数が多い側を残せば足りると見なしている');
+		assert.deepEqual(keep.map((h) => h.pid), [100, 200]);
 	});
 
 	test('足りないことと余っていることは同時に起こる', () => {
@@ -524,7 +574,7 @@ describe('止めてよいのはどれか', () => {
 		];
 
 		assert.deepEqual(missingRooms(rows, basis), ['ai-chat-lite'], '足りないルームが出ていない');
-		assert.deepEqual(splitRedundant(rows).stop.map((h) => h.pid), [300], '余っている分が出ていない');
+		assert.deepEqual(splitRedundant(rows, basis).stop.map((h) => h.pid), [300], '余っている分が出ていない');
 	});
 });
 

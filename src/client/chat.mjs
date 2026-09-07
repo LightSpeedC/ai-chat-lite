@@ -19,6 +19,7 @@ import {
 	EXIT_UNREACHABLE,
 	FLAGS,
 } from './options.mjs';
+import { splitRedundant } from './waiters-pick.mjs';
 
 /**
  * ai-chat-lite の CLI クライアント。
@@ -949,24 +950,11 @@ function printWaiters(all, basis, me) {
 	const missing = basis.rooms.filter((room) => !covered.has(room));
 
 	/*
-	 * 止めてよいのは、覆っている全ルームが他の待受けでも覆われているものだけ。
-	 *
-	 * 「2 本目以降を止める」にすると、そのルームを覆う唯一の 1 本まで名指しする。
-	 * 言われたとおり止めれば覆えなくなり、張り直す → また二重、を往復する。
-	 * 古い順に見て、まだ覆えていないルームを持つものを残す。
+	 * 残すものと止めてよいものに分ける。選び方は waiters-pick.mjs に置いた。
+	 * テストも同じものを使う。写しにすると、テストが守るのは写しだけになる。
 	 */
-	const older = [...mine].sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
-	const keep = [];
-	const stop = [];
-	const held = new Set();
-	for (const h of older) {
-		if (h.rooms.every((room) => held.has(room))) {
-			stop.push(h);
-			continue;
-		}
-		keep.push(h);
-		for (const room of h.rooms) held.add(room);
-	}
+	const basisRooms = new Set(basis.rooms);
+	const { keep, stop } = splitRedundant(mine, basis);
 
 	/*
 	 * やることは 1 つとは限らない。片方で打ち切ると、もう片方が隠れる。
@@ -980,7 +968,8 @@ function printWaiters(all, basis, me) {
 	}
 
 	if (stop.length > 0) {
-		const rooms = [...new Set(stop.flatMap((h) => h.rooms))].join(', ');
+		// 出すのも基準の中だけ。渡していないルームの名前を混ぜない
+		const rooms = [...new Set(stop.flatMap((h) => h.rooms.filter((room) => basisRooms.has(room))))].join(', ');
 		const stopped = stop.map((h) => h.pid).join(', ');
 		const kept = keep.map((h) => h.pid).join(', ');
 		console.log(`  ${rooms} を二重に張っています。pid ${stopped} を止めてください（pid ${kept} を残す）。`);
