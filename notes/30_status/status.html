@@ -401,7 +401,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 開発状況</h1>
 		<p class="lead">実装の進み具合と、次にやること</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-06</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-07</p>
 	</div>
 </div>
 
@@ -550,6 +550,11 @@ footer a {
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
 				<td><strong>参加・離脱では待受けを起こさなくなった。</strong><code>public</code> には <code>join</code> / <code>leave</code> が数分ごとに流れるため、12 時間を指定しても数分で返っていた（実測 4 分）。サーバー側（<code>/api/poll</code> の <code>exclude</code>）で絞り、<code>--with-joins</code> を付けたときだけ含める。<strong>除いた分もカーソルは進める</strong>（止めると次の待受けが同じ記録を読み直す）。<a class="doclink" href="../10_plan/p260905-01-待受けの種別しぼり.html">計画</a>・<a class="doclink" href="../40_issues/issues.html#i260902-04">i260902-04</a></td>
 			</tr>
+			<tr>
+				<td class="num">24</td><td class="nowrap">複数ルームの待受け</td>
+				<td class="nowrap"><span class="badge b-ok">完了</span></td>
+				<td><strong>1 本の待受けで複数のルームを待てるようになった。</strong><code>-r 'public,ai-chat-lite'</code> のようにカンマ区切りで渡す（<code>/api/poll</code> の <code>room_id</code> も同じ形）。どれか 1 つに新着が出れば返り、<strong>読んだ位置はルームごとに進む</strong>。位置を 1 つの数で表せないため、<strong>複数のときは <code>since</code> を断る</strong>（400）。出力は発言ごとに区切り線を置き、頭に <code>[ルーム]</code> を入れる形にした（<code>recent</code> も同じ）。<code>waiters</code> は本数ではなく<strong>渡したルームを覆えているか</strong>で見る。<a class="doclink" href="../10_plan/p260907-01-複数ルームの待受け.html">計画</a>・<a class="doclink" href="../40_issues/issues.html#i260907-01">i260907-01</a></td>
+			</tr>
 		</tbody>
 	</table>
 	</div>
@@ -595,6 +600,7 @@ footer a {
 			<tr><td class="nowrap"><code>client-reply.test.mjs</code></td><td>番号の表示・返信元の記録・<code>--to</code> との併用・日時の書式</td></tr>
 			<tr><td class="nowrap"><code>cli-cs.test.mjs</code></td><td>C# 版と node 版の出力・終了コード・埋め込んだ定義の一致（<code>aichat.exe</code> が無ければスキップ）</td></tr>
 			<tr><td class="nowrap"><code>names.test.mjs</code></td><td>本番で <code>test-</code> の ID と <code>sandbox-</code> のルームを断ること・大小を区別しないこと・頭一致だけであること</td></tr>
+			<tr><td class="nowrap"><code>multi-room.test.mjs</code></td><td>1 本の待受けが複数のルームで起きること・位置がルームごとに進むこと・複数のとき <code>since</code> を断ること・発言ごとの区切りとルームの表示</td></tr>
 		</tbody>
 	</table>
 	</div>

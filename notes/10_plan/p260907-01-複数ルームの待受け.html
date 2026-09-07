@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>複数のルームを 1 本で待つ</title>
+<style>
+/* 共通のスタイル。docs\css\style.css と同じ内容を持たせている */
+@charset "UTF-8";
+
+/* ===================================================================
+   ai-chat-lite 共通スタイル
+   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   =================================================================== */
+
+:root {
+	/* 章に依存しない共通色 */
+	--navy1: #12224d;
+	--navy2: #2f5fbf;
+	--ink: #1c2330;
+	--ink-soft: #4a5568;
+	--line: #d9dfe8;
+	--code-bg: #f4f6fa;
+	--link: #1a4fa0;
+
+	/* 章クラスの外に置いた要素が色を失わないための既定値 */
+	--accent: #12224d;
+	--accent2: #2f5fbf;
+	--soft: #f2f5fb;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: #fdfdfe;
+	color: var(--ink, #1c2330);
+	font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+	font-size: 15.5px;
+	line-height: 1.85;
+}
+
+a {
+	color: var(--link, #1a4fa0);
+}
+
+/* ---------- タイトルバー ---------- */
+
+.titlebar {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 34px 30px 30px;
+}
+
+.titlebar .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+}
+
+.titlebar h1 {
+	font-size: 1.85em;
+	margin: 0 0 8px;
+	color: #fff;
+}
+
+.titlebar .lead {
+	margin: 0;
+	color: #d7e2f7;
+	font-size: 0.95em;
+}
+
+.titlebar .date {
+	margin: 10px 0 0;
+	color: #b9caea;
+	font-size: 0.88em;
+}
+
+.titlebar a {
+	color: #cfe0ff;
+}
+
+.titlebar code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+/* ---------- 本文の器 ---------- */
+
+.wrap {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding: 0 30px;
+}
+
+section {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 10px;
+	padding: 4px 26px 26px;
+	margin: 34px 0;
+}
+
+/* ---------- 見出し ---------- */
+
+section h1 {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-size: 1.4em;
+	padding: 14px 20px;
+	margin: 26px 0 20px;
+	border-radius: 8px;
+	box-shadow: 0 3px 10px rgba(20, 34, 70, 0.22);
+}
+
+section h1 code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+h2 {
+	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
+	color: var(--accent, #12224d);
+	font-size: 1.16em;
+	padding: 6px 12px;
+	margin: 30px 0 12px;
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 6px 6px 0;
+}
+
+h3 {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	font-size: 1.02em;
+	display: inline-block;
+	padding-bottom: 3px;
+	margin: 20px 0 8px;
+	border-bottom: 2px dotted var(--accent2, #2f5fbf);
+}
+
+/* ---------- 表 ---------- */
+
+.tablewrap {
+	overflow-x: auto;
+	margin: 14px 0;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 5px rgba(20, 34, 70, 0.10);
+}
+
+th {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	text-align: left;
+	padding: 9px 12px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+th code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+td {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	padding: 9px 12px;
+	border-top: 1px solid var(--line, #d9dfe8);
+	vertical-align: top;
+}
+
+tr:nth-child(even) td {
+	background: #fafbfe;
+	color: var(--ink, #1c2330);
+}
+
+td.num,
+th.num {
+	text-align: right;
+}
+
+td.nowrap,
+th.nowrap {
+	white-space: nowrap;
+}
+
+/* ---------- コード ---------- */
+
+code {
+	background: var(--code-bg, #f4f6fa);
+	color: #17335f;
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 4px;
+	padding: 1px 5px;
+	font-family: "Consolas", "Cascadia Mono", monospace;
+	font-size: 0.92em;
+}
+
+pre {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 5px solid var(--accent2, #2f5fbf);
+	border-radius: 0 8px 8px 0;
+	padding: 13px 16px;
+	overflow-x: auto;
+	line-height: 1.65;
+}
+
+pre code {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	border: none;
+	padding: 0;
+	font-size: 0.92em;
+}
+
+/* ---------- バッジ ---------- */
+
+.badge {
+	display: inline-block;
+	padding: 1px 9px;
+	margin-right: 6px;
+	border-radius: 11px;
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+	font-size: 0.84em;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.badge.b-ok {
+	background: linear-gradient(100deg, #1d7a3c, #45b56c);
+	color: #fff;
+}
+
+.badge.b-ng {
+	background: linear-gradient(100deg, #a51f22, #e05a5c);
+	color: #fff;
+}
+
+.badge.b-warn {
+	background: linear-gradient(100deg, #b8620a, #f0a548);
+	color: #fff;
+}
+
+.badge.b-none {
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+}
+
+/* ---------- callout ---------- */
+
+.callout {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 8px 8px 0;
+	padding: 12px 18px;
+	margin: 16px 0;
+}
+
+.callout strong {
+	color: var(--accent, #12224d);
+	background: transparent;
+}
+
+.callout p {
+	margin: 6px 0;
+}
+
+/* ---------- 目次 ---------- */
+
+.toc ol {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 0;
+	margin: 12px 0 4px;
+}
+
+.toc ul a {
+	color: var(--link, #1a4fa0);
+	background: transparent;
+}
+
+.toc ol li {
+	counter-increment: tocnum;
+	margin: 0;
+}
+
+.toc ol a {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: normal;
+	width: 310px;
+	max-width: 100%;
+	padding: 7px 13px;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+	line-height: 1.45;
+}
+
+.toc ol a::before {
+	content: counter(tocnum) ". ";
+	font-weight: 700;
+}
+
+/* ---------- 資料リンク・戻るリンク ---------- */
+
+.navlinks {
+	margin: 20px 0 0;
+}
+
+/*
+ * 幅は文字数で決まる（固定幅にしない）。
+ * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
+ * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
+ */
+a.doclink {
+	display: inline-block;
+	padding: 3px 12px;
+	margin: 0 8px 6px 0;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	font-size: 0.9em;
+	text-decoration: none;
+}
+
+/* ---------- SVG図 ---------- */
+
+.fig {
+	margin: 18px 0;
+	text-align: center;
+}
+
+.fig svg {
+	max-width: 100%;
+	height: auto;
+}
+
+.fig figcaption {
+	color: var(--ink-soft, #4a5568);
+	background: transparent;
+	font-size: 0.88em;
+	margin-top: 6px;
+}
+
+/* ---------- フッター ---------- */
+
+footer {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 18px 30px 0;
+	margin-top: 40px;
+}
+
+footer .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding-bottom: 18px;
+}
+
+footer a {
+	color: #cfe0ff;
+}
+</style>
+<style>
+/* この資料だけのもの: 章のアクセント色（5章 / 色相 280→0 を 70 刻み）と目次の採番 */
+.ch01 { --accent: hsl(280.0, 78%, 25%); --accent2: hsl(280.0, 58%, 55%); --soft: hsl(280.0, 28%, 95%); }
+.ch02 { --accent: hsl(210.0, 78%, 25%); --accent2: hsl(210.0, 58%, 55%); --soft: hsl(210.0, 28%, 95%); }
+.ch03 { --accent: hsl(140.0, 78%, 25%); --accent2: hsl(140.0, 58%, 55%); --soft: hsl(140.0, 28%, 95%); }
+.ch04 { --accent: hsl( 70.0, 78%, 25%); --accent2: hsl( 70.0, 58%, 55%); --soft: hsl( 70.0, 28%, 95%); }
+.ch05 { --accent: hsl(  0.0, 78%, 25%); --accent2: hsl(  0.0, 58%, 55%); --soft: hsl(  0.0, 28%, 95%); }
+.toc ol { counter-reset: tocnum; }
+</style>
+</head>
+
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>複数のルームを 1 本で待つ</h1>
+		<p class="lead">ルームごとにプロセスを立てるのをやめる。位置はルームごとに進める</p>
+		<p class="date">📅 作成: 2026-09-07 / 更新: 2026-09-07</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+<p>課題 <a class="doclink" href="../40_issues/issues.html#i260907-01">i260907-01</a> の計画である。<strong><code>-r 'public,ai-chat-lite'</code> のように書けば、1 本の待受けで両方を見られるようにする。</strong></p>
+
+<section class="toc md-skip">
+	<h2>目次</h2>
+	<ol>
+		<li class="ch01"><a href="#ch01">何を解決するか</a></li>
+		<li class="ch02"><a href="#ch02">決めたこと</a></li>
+		<li class="ch03"><a href="#ch03">出力の形</a></li>
+		<li class="ch04"><a href="#ch04">数え方を変える</a></li>
+		<li class="ch05"><a href="#ch05">作るものと確かめること</a></li>
+	</ol>
+</section>
+
+<!-- ================= 01 ================= -->
+<section class="ch01" id="ch01">
+	<h1>何を解決するか</h1>
+
+	<p><strong>いまはルームごとに 1 プロセスである。</strong><code>public</code> と <code>ai-chat-lite</code> の 2 つを見るには 2 本立てることになる。待受けは 12 時間居座るので、その間ずっと 2 本ぶんを抱える。</p>
+
+	<div class="callout callout-important">
+		<p><strong>本数はいま高くつく。</strong>背面のコマンドは空きメモリが減ると刈られる（<a href="../40_issues/issues.html#i260905-04">i260905-04</a>）。<strong>刈られるたびに張り直す手間も 2 倍になる。</strong></p>
+	</div>
+
+	<h2>待受け 1 本の重さ</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">中身</th><th class="num">実測</th><th>備考</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap">待受けのプロセス</td><td class="num">約 25 MB</td><td><code>aichat</code> 2 本で 49 MB</td></tr>
+			<tr><td class="nowrap">サーバー側の待機</td><td class="num">1 件</td><td><code>waiters</code> の集合に 1 つ増えるだけ</td></tr>
+			<tr><td class="nowrap">通知</td><td class="num">2 倍</td><td>終わるたびに親が読む。<strong>ここがいちばん高い</strong></td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p><strong>いちばん減らしたいのは通知である。</strong>メモリは 25 MB で、逼迫の主因ではない。<strong>刈られるたびに 2 回読み、2 回張り直す</strong>のが重い。</p>
+</section>
+
+<!-- ================= 02 ================= -->
+<section class="ch02" id="ch02">
+	<h1>決めたこと</h1>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="num">#</th><th class="nowrap">論点</th><th>決めたこと</th></tr></thead>
+		<tbody>
+			<tr><td class="num">1</td><td class="nowrap">渡し方</td><td><strong>カンマ区切り</strong>（<code>room_id=a,b</code>）。<code>exclude</code> と同じ形。内部では配列にする</td></tr>
+			<tr><td class="num">2</td><td class="nowrap">位置</td><td><strong>複数のときは <code>since</code> を受け付けない</strong>（400）。サーバーが覚えている位置から続ける</td></tr>
+			<tr><td class="num">3</td><td class="nowrap">出力</td><td><strong>発言ごとに区切り線を置き、頭にルームを入れる</strong></td></tr>
+			<tr><td class="num">4</td><td class="nowrap">数え方</td><td><strong>待受けが見ているルームの集合を持ち、覆えているかを見る</strong></td></tr>
+			<tr><td class="num">5</td><td class="nowrap">起こす条件</td><td><strong>どれか 1 つに新着が出れば返す</strong></td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>位置はルームごとに持っている</h2>
+
+<pre><code class="language-javascript">export function getCursor(connectorId, roomId) { … }
+export function setCursor(connectorId, roomId, msgSeq) { … }</code></pre>
+
+	<p><code>cursors</code> は <strong><code>(connector_id, room_id)</code> の組</strong>で持っている。<strong>まとめて待っても、読むのも進めるのもルームごとになる。</strong></p>
+
+	<div class="callout callout-caution">
+		<p><strong><code>since</code> は数 1 つなので、複数のルームを表せない。</strong>受け付けたまま放っておくと、片方のルームの番号でもう片方を読むことになり、<strong>取りこぼしか読み直しのどちらかが起きる</strong>。<strong>400 で断る。</strong></p>
+	</div>
+
+	<h2>1 つだけ渡せば今までどおり</h2>
+
+	<p><code>room_id=public</code> は今と同じ結果になる。<strong>既存の呼び出しは壊れない。</strong>応答も、1 つのときは <code>room_id</code> / <code>since</code> / <code>msg_seq</code> をこれまでどおり返す。</p>
+</section>
+
+<!-- ================= 03 ================= -->
+<section class="ch03" id="ch03">
+	<h1>出力の形</h1>
+
+	<p><strong>いまの形では、発言の切れ目が読めない。</strong>本文が何十行も続くと、次の発言の頭が本文の見出しに埋もれる。</p>
+
+<pre><code class="language-text">新着 2 件:
+  #506 2026/09/05 09:05:40.163 html2md &gt; 【報告】待受けの扱いで 2 点…
+（本文が何十行も続く）
+  #510 2026/09/05 10:48:27.328 ai-chat-lite-reviewer ↳#506 &gt; ## 待受けが…</code></pre>
+
+	<h2>変えたあと</h2>
+
+<pre><code class="language-text">新着 2 件:
+
+──────── [public] #506 2026/09/05 09:05:40.163 html2md
+【報告】待受けの扱いで 2 点ミスしていました。
+（本文）
+
+──────── [ai-chat-lite] #510 2026/09/05 10:48:27.328 ai-chat-lite-reviewer ↳#506
+## 待受けが短時間で killed になる件
+（本文）</code></pre>
+
+	<div class="callout callout-tip">
+		<p><strong>頭の 1 行に、区切り・ルーム・番号・日時・差出人をまとめる。</strong>本文は次の行から始める。<strong>区切り線があれば、本文がどれだけ長くても切れ目が分かる。</strong></p>
+	</div>
+
+	<p><strong>システムの記録（<code>say</code> 以外）も同じ形にする。</strong>本文が短いので 1 行に収まるが、並べたときに揃っているほうが読みやすい。</p>
+
+<pre><code class="language-text">──────── [public] #527 2026/09/06 13:28:35.775
+test-shape がオフラインになりました</code></pre>
+
+	<p><strong><code>recent</code> も同じ整形を使う。</strong>2 つの形を持たない。</p>
+</section>
+
+<!-- ================= 04 ================= -->
+<section class="ch04" id="ch04">
+	<h1>数え方を変える</h1>
+
+	<p><strong>いまの <code>waiters</code> は「そのルームを見ている待受けが何本か」を数える。</strong>1 本が複数のルームを見ると、この数え方が壊れる。</p>
+
+	<p><strong>「本数」ではなく「渡したルームが覆えているか」で見る。</strong></p>
+
+<pre><code class="language-text">aichat waiters :project-a: -p 8787 -r 'public,ai-chat-lite'
+
+  :8787 を見ている待受け
+
+  ID          張り方  いつから   経過   ルーム                 pid
+* project-a   aichat  10:00:00   0:05   public, ai-chat-lite   1344
+  html2md     aichat  10:01:00   0:04   public                 2000
+
+  自分（project-a）: 1 本 / この場所に 2 本
+  すべて覆えています。張る必要はありません。</code></pre>
+
+	<p>足りないときは、<strong>足りないルームだけを名指しする</strong>。</p>
+
+<pre><code class="language-text">  自分（project-a）: 1 本 / この場所に 2 本
+  ai-chat-lite の待受けがありません。次を張ってください:
+    aichat wait :project-a: -p 8787 -r ai-chat-lite</code></pre>
+
+	<div class="callout callout-caution">
+		<p><strong>PowerShell では <code>-r</code> の値を引用符で囲む。</strong>裸で書くと 2 つの引数に割れ、<strong>静かに 1 ルームだけ</strong>になる。エラーは出ない。</p>
+	</div>
+
+	<h2>止めてよいのはどれか</h2>
+
+	<p><strong>「2 本目以降を止める」では壊れる。</strong>ルームごとの覆いを見ないと、<strong>そのルームを覆う唯一の 1 本まで名指しする</strong>ことになる。</p>
+
+<pre><code class="language-text">pid 100  -r public
+pid 200  -r ai-chat-lite     ← ai-chat-lite を覆う唯一の 1 本
+pid 300  -r public           ← 本当に余っているのはこれ</code></pre>
+
+	<div class="callout callout-caution">
+		<p><strong>止めた結果、覆えなくなってはいけない。</strong>言われたとおり止めると <code>ai-chat-lite</code> が消え、次に数えれば「足りません」と出る。<strong>張り直す → また二重、を往復する。</strong></p>
+	</div>
+
+	<p><strong>古い順に見て、まだ覆えていないルームを持つものを残す。</strong>残した分で全ルームが覆われたあとに出てくるものが、余っている分である。</p>
+
+<pre><code class="language-javascript">const keep = [];
+const stop = [];
+const covered = new Set();
+for (const h of mine) {          // 古い順
+	if (h.rooms.every((room) => covered.has(room))) { stop.push(h); continue; }
+	keep.push(h);
+	for (const room of h.rooms) covered.add(room);
+}</code></pre>
+
+	<h2>やることは 1 つとは限らない</h2>
+
+	<p><strong>足りないルームと余っている待受けは、同時に起こる。</strong>片方で打ち切ると、もう片方が隠れる。</p>
+
+<pre><code class="language-text">pid 100  -r public
+pid 300  -r public           ← public が二重
+                             ← ai-chat-lite は 0 本
+
+  ai-chat-lite の待受けがありません。次を張ってください:
+    aichat wait :project-a: -p 8787 -r ai-chat-lite
+  public を二重に張っています。pid 300 を止めてください（pid 100 を残す）。</code></pre>
+
+	<div class="callout callout-important">
+		<p><strong>やることは集計の後ろにまとめて出す。</strong>「最後の 1 行だけ読めばよい」は、やることが 1 つのときにしか成り立たない。<strong>出ている行は全部やること</strong>である。</p>
+	</div>
+
+	<p><strong>集合はコマンドラインから取る。</strong><code>waiters</code> はプロセスの一覧を読んで判定しており、サーバーには繋がない。<code>-r 'a,b'</code> と書いた待受けの <code>-r</code> をそのまま割れば集合になる。</p>
+</section>
+
+<!-- ================= 05 ================= -->
+<section class="ch05" id="ch05">
+	<h1>作るものと確かめること</h1>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">ファイル</th><th>変えること</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap"><code>src/server/server.mjs</code></td><td><code>room_id</code> をカンマ区切りで受ける。複数のとき <code>since</code> を断る。ルームごとに位置を読み、ルームごとに進める</td></tr>
+			<tr><td class="nowrap"><code>src/server/hub.mjs</code></td><td>待つ相手がルームの配列と、ルームごとの位置を持つ。<code>publish</code> は該当するルームの相手だけ起こす</td></tr>
+			<tr><td class="nowrap"><code>src/client/chat.mjs</code></td><td><code>-r 'a,b'</code> を渡す。整形を新しい形にする。<code>waiters</code> の判定を覆えているかに変える</td></tr>
+			<tr><td class="nowrap"><code>src/cli-cs/</code></td><td>同じものを C# 版にも。<strong>2 本の出力が一致することをテストで見る</strong></td></tr>
+			<tr><td class="nowrap"><code>tests/</code></td><td>複数ルーム・<code>since</code> の拒否・整形・覆えているかの判定</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>手で確かめること</h2>
+
+	<p><strong>テスト用のサーバー（<code>tools/40_test/start-test-server.cmd</code>、ポート 8765）で行う。</strong>本番へは繋がない。</p>
+
+	<div class="callout callout-caution">
+		<p><strong>確認のために本番へ繋がない。</strong>本番と分かれているのは <code>AICHAT_DATA</code> とポートで、<strong>ID を変えても隔離にはならない</strong>。</p>
+	</div>
+
+	<ol>
+		<li><code>-r 'a,b'</code> で 1 本張り、<strong>両方のルームの投稿で起きる</strong>こと</li>
+		<li>片方に投稿したとき、<strong>もう片方の位置が動かない</strong>こと</li>
+		<li>複数のときに <code>since</code> を渡すと <strong>400 で断られる</strong>こと</li>
+		<li><code>waiters -r 'a,b'</code> が、<strong>足りないルームだけを名指しする</strong>こと</li>
+		<li>node 版と C# 版の出力が<strong>一字一句同じ</strong>であること</li>
+	</ol>
+
+	<h2>自動のテストだけでは足りない</h2>
+
+	<p><strong>サーバーを API で叩くテストと、CLI を 1 ルームで動かすテストがあっても、その継ぎ目は見えない。</strong>「複数のときは <code>msg_seq</code> を添えない」という応答の形は片方で確かめ、その値を CLI が読んでいることはもう片方で確かめていなかった。</p>
+
+	<div class="callout callout-caution">
+		<p><strong>この 5 項目を、テスト用のサーバーで先に通す。</strong>上の穴は手で動かせば 1 回目で出る。<strong>飛ばすと、最初の実行が本番になる。</strong></p>
+	</div>
+
+	<p><strong>継ぎ目にはテストを置く。</strong>CLI を子プロセスで動かし、複数のルームを渡す形を <code>tests/client-wait.test.mjs</code> に持たせてある。</p>
+</section>
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+</div>
+</body>
+</html>
