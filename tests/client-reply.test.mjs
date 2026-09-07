@@ -77,25 +77,34 @@ describe('出力に番号が出る', () => {
 		assert.match(stdout, new RegExp(`#${seq} `), '番号が出ていない');
 	});
 
-	test('6 桁で右詰めになっている', async () => {
-		// 3 桁までなら左に空白が入る。日付の列が揃う
+	test('見出しの行に区切り・ルーム・番号・日時が並ぶ', async () => {
+		// 本文が何十行あっても切れ目が分かるように、頭を 1 行にまとめてある
 		const { stdout } = await cli(['recent', '-n', '1']);
 		const line = stdout.split(/\r?\n/).find((l) => l.includes('#'));
 
-		assert.match(line, /^ +#\d+ \d{4}\/\d{2}\/\d{2} /, `形が違う: [${line}]`);
+		assert.match(
+			line,
+			/^──────── \[[A-Za-z0-9_-]+\] #\d+ \d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}\.\d{3}/,
+			`形が違う: [${line}]`
+		);
 	});
 
-	test('仕組みからの発言にも番号が出る', async () => {
+	test('仕組みからの発言にも同じ見出しが出る', async () => {
 		/*
 		 * 種別で出し分けると、読み手が「番号が無い行は何か」を考えることになる。
-		 * join は参加の知らせを積む
+		 * join は参加の知らせを積む。見出しに差出人が付かないところだけが違う
 		 */
 		await cli(['join', wrapId('test-sys')]);
 		const { stdout } = await cli(['recent', '-n', '3']);
-		const line = stdout.split(/\r?\n/).find((l) => l.includes(' -- '));
+		const lines = stdout.split(/\r?\n/);
+		const at = lines.findIndex((l) => l.includes('test-sys が参加しました'));
 
-		assert.ok(line, '仕組みからの発言が無い');
-		assert.match(line, /^ +#\d+ \d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}\.\d{3} -- /, `形が違う: [${line}]`);
+		assert.ok(at > 0, '仕組みからの発言が無い');
+		assert.match(
+			lines[at - 1],
+			/^──────── \[[A-Za-z0-9_-]+\] #\d+ \d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/,
+			`形が違う: [${lines[at - 1]}]`
+		);
 	});
 });
 
@@ -105,7 +114,7 @@ describe('返信', () => {
 		await say('test-b', '返答です', ['--reply-to', String(parent)]);
 
 		const { stdout } = await cli(['recent', '-n', '1']);
-		assert.match(stdout, new RegExp(`↳#${parent} `), '返信先が出ていない');
+		assert.match(stdout, new RegExp(`↳#${parent}`), '返信先が出ていない');
 	});
 
 	test('先頭の # を付けても通る', async () => {
@@ -114,7 +123,7 @@ describe('返信', () => {
 		await say('test-b', '写して貼った', ['--reply-to', `#${parent}`]);
 
 		const { stdout } = await cli(['recent', '-n', '1']);
-		assert.match(stdout, new RegExp(`↳#${parent} `));
+		assert.match(stdout, new RegExp(`↳#${parent}`));
 	});
 
 	test('--to と併用できる', async () => {
@@ -123,7 +132,7 @@ describe('返信', () => {
 		await say('test-b', '名指しの返答', ['--to', wrapId('test-a'), '--reply-to', String(parent)]);
 
 		const { stdout } = await cli(['recent', '-n', '1']);
-		assert.match(stdout, new RegExp(`test-b @test-a ↳#${parent} > 名指しの返答`));
+		assert.match(stdout, new RegExp(`test-b @test-a ↳#${parent}\\r?\\n名指しの返答`));
 	});
 
 	test('渡さなければ ↳ が出ない', async () => {
@@ -142,7 +151,7 @@ describe('返信', () => {
 		await say('test-b', '未来の番号を指す', ['--reply-to', String(notYet)]);
 
 		const { stdout } = await cli(['recent', '-n', '1']);
-		assert.match(stdout, new RegExp(`↳#${notYet} `));
+		assert.match(stdout, new RegExp(`↳#${notYet}`));
 	});
 });
 

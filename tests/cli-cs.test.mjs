@@ -181,12 +181,15 @@ describe('C# 版と node 版で同じものが出る', () => {
 		});
 		const fromExe = await run(EXE, ['waiters', ':test-cli-cs:', ...basis], { env: { ...process.env } });
 
-		const BASIS = /^ {2}:\d+ \/ \S+ を見ている待受け$/;
-		const HEADER = /^ {2}ID {2,}張り方 {2,}いつから {2,}経過 {2,}pid$/;
-		const ROW = /^[* ] \S+ +\S+ +\d{2}:\d{2}:\d{2} +\d+:\d{2} +\d+$/;
+		const BASIS = /^ {2}:\d+ を見ている待受け$/;
+		const HEADER = /^ {2}ID {2,}張り方 {2,}いつから {2,}経過 {2,}ルーム {2,}pid$/;
+		const ROW = /^[* ] \S+ +\S+ +\d{2}:\d{2}:\d{2} +\d+:\d{2} +\S.* +\d+$/;
 		const SUMMARY = /^ {2}自分（[A-Za-z0-9_-]+）: \d+ 本 \/ この場所に \d+ 本$/;
-		// 集計のあとに付く行。別の場所・他プロジェクト・次にやること
-		const NOTE = /^ {2}(自分の分が別の場所に|他に |二重に張って|:\d+ \/ \S+ の待受けがありません)/;
+		/*
+		 * 集計のあとに付く行。別の場所・他プロジェクト・次にやること。
+		 * 「次を張ってください:」のあとは 4 字下げのコマンドが 1 行続く
+		 */
+		const NOTE = /^( {2}(自分の分が別の場所に|他に |.+ を二重に張って|.+ の待受けがありません|すべて覆えています)| {4}aichat wait )/;
 
 		for (const [name, out] of [['node 版', fromNode.stdout], ['C# 版', fromExe.stdout]]) {
 			const lines = out.split(/\r?\n/).filter((l) => l !== '');

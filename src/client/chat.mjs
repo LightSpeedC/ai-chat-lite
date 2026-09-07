@@ -391,17 +391,32 @@ const postJson = (path, body) =>
  * 仕組みからの発言（join / leave / archive / notice）にも番号を出す。
  * 種別で出し分けると、読み手が「番号が無い行は何か」を考えることになる。
  */
+/** 発言の区切り。本文が何十行あっても切れ目が分かるようにする */
+const SEPARATOR = '────────';
+
+/**
+ * 1 件を「見出しの行 ＋ 本文」に整える。
+ *
+ * 頭にルームを出すのは、1 本の待受けが複数のルームを見られるようになったため。
+ * 1 つしか見ていなくても出す。出し分けると、読み手が「無い行は何か」を考えることになる。
+ *
+ * 番号（#msg_seq）が要るのは、受け取った発言へ返信するときに指す先を書くためである。
+ * 仕組みからの発言（join / leave / archive / notice）にも同じ形で出す。
+ */
 function formatMessage(m) {
-	const seq = padStartW(`#${m.msg_seq}`, 6);
-	if (m.msg_kind !== 'say') return `${seq} ${m.sent_at} -- ${m.msg_body}`;
+	const head = `${SEPARATOR} [${m.room_id}] #${m.msg_seq} ${m.sent_at}`;
+	if (m.msg_kind !== 'say') return `${head}\n${m.msg_body}`;
 
 	const to = m.to_connector_id ? ` @${m.to_connector_id}` : '';
 	const reply = m.reply_to_msg_seq ? ` ↳#${m.reply_to_msg_seq}` : '';
-	return `${seq} ${m.sent_at} ${m.from_connector_id}${to}${reply} > ${m.msg_body}`;
+	return `${head} ${m.from_connector_id}${to}${reply}\n${m.msg_body}`;
 }
 
 function printMessages(messages) {
-	for (const m of messages) console.log(formatMessage(m));
+	for (const m of messages) {
+		console.log('');
+		console.log(formatMessage(m));
+	}
 }
 
 // --- コマンド ---
@@ -573,7 +588,7 @@ async function cmdWait() {
 		 */
 		writeWaitLog(
 			'INFO',
-			`待機中（経過 ${waited} 秒 / 上限 ${unlimited ? '無し' : limitSec + ' 秒'}、新着 ${last.messages.length} 件、現在位置 ${last.msg_seq}）`
+			`待機中（経過 ${waited} 秒 / 上限 ${unlimited ? '無し' : limitSec + ' 秒'}、新着 ${last.messages.length} 件、現在位置 ${describePositions(last)}）`
 		);
 
 		if (last.messages.length > 0) {
@@ -584,8 +599,20 @@ async function cmdWait() {
 		}
 	}
 
-	console.log(`新着なし（${label}待機、現在位置 ${last.msg_seq}）`);
+	console.log(`新着なし（${label}待機、現在位置 ${describePositions(last)}）`);
 	writeWaitLog('INFO', `新着なし。上限まで待ち切って終わります（${label}）`);
+}
+
+/**
+ * どこまで読んだかを 1 行で書く。
+ *
+ * 位置はルームごとに持っている。1 つだけなら数を、複数なら「ルーム 数」を並べる。
+ * 複数のときに 1 つの数で出すと、どのルームの位置か分からない。
+ */
+function describePositions(result) {
+	const rooms = result.rooms ?? [];
+	if (rooms.length <= 1) return String(result.msg_seq ?? rooms[0]?.msg_seq ?? 0);
+	return rooms.map((r) => `${r.room_id} ${r.msg_seq}`).join(' / ');
 }
 
 async function cmdRecent() {
@@ -646,7 +673,10 @@ async function cmdWaiters() {
 
 	if (all.length === 0) {
 		console.log('待受けは走っていません。');
-		console.log(`  ${basis.label} の待受けがありません。張ってください。`);
+		console.log(`  ${basis.rooms.join(', ')} の待受けがありません。次を張ってください:`);
+		const port = option('port');
+		const where = port !== null ? `-p ${port}` : `-u ${option('url')}`;
+		console.log(`    aichat wait ${ID_WRAP}${CONNECTOR_ID}${ID_WRAP} ${where} -r ${basis.rooms.join(',')}`);
 		return;
 	}
 
@@ -690,7 +720,8 @@ function basisOf() {
 		num = m ? Number(m[1]) : 0;
 	}
 
-	return { port: num, room: ROOM, label: `:${num} / ${ROOM}` };
+	const rooms = roomsFrom(ROOM);
+	return { port: num, rooms, label: `:${num}` };
 }
 
 /**
@@ -794,7 +825,9 @@ function readArg(cmd, long, short) {
 function targetOf(cmd) {
 	const port = readArg(cmd, 'port', 'p');
 	const url = readArg(cmd, 'url', 'u');
-	const room = readArg(cmd, 'room', 'r') ?? DEFAULT_ROOM;
+
+	// 1 本が複数のルームを見られる。カンマで割って集合として持つ
+	const rooms = roomsFrom(readArg(cmd, 'room', 'r'));
 
 	let target = '(未指定)';
 	let portNum = 0;
@@ -809,7 +842,19 @@ function targetOf(cmd) {
 		portNum = m ? Number(m[1]) : 0;
 	}
 
-	return { target, room, port: portNum };
+	return { target, rooms, port: portNum };
+}
+
+/** -r の値をルームの配列にする。省略なら既定のルーム 1 つ。重複は落とす */
+function roomsFrom(value) {
+	const raw = (value ?? '').trim();
+	if (!raw) return [DEFAULT_ROOM];
+	const seen = [];
+	for (const part of raw.split(',')) {
+		const room = part.trim();
+		if (room && !seen.includes(room)) seen.push(room);
+	}
+	return seen.length > 0 ? seen : [DEFAULT_ROOM];
 }
 
 /** 張り方の名前。出力に出るのは aichat / aichat-node / node の 3 つ */
@@ -834,9 +879,9 @@ function elapsedOf(at, now = new Date()) {
  * padEnd で数えると列がずれる。
  */
 function printWaiters(all, basis, me) {
-	// 基準に合う分だけを並べる。合わない分は件数だけ添える
-	const here = all.filter((h) => h.port === basis.port && h.room === basis.room);
-	const elsewhere = all.filter((h) => !(h.port === basis.port && h.room === basis.room));
+	// 同じ接続先の分を並べる。ルームは列に出す。1 本が複数を見ていることがある
+	const here = all.filter((h) => h.port === basis.port);
+	const elsewhere = all.filter((h) => h.port !== basis.port);
 
 	console.log(`  ${basis.label} を見ている待受け`);
 	console.log('');
@@ -844,19 +889,21 @@ function printWaiters(all, basis, me) {
 	if (here.length === 0) {
 		console.log('  ありません。');
 	} else {
+		const roomsOf = (h) => h.rooms.join(', ');
 		const idWidth = Math.max(width('ID'), ...here.map((h) => width(h.id)));
 		const viaWidth = Math.max(width('張り方'), ...here.map((h) => width(h.via)));
+		const roomWidth = Math.max(width('ルーム'), ...here.map((h) => width(roomsOf(h))));
 
 		console.log(
 			`  ${padEndW('ID', idWidth)}  ${padEndW('張り方', viaWidth)}  ${padEndW('いつから', 8)}  ` +
-				`${padStartW('経過', 5)}  ${padStartW('pid', 6)}`
+				`${padStartW('経過', 5)}  ${padEndW('ルーム', roomWidth)}  ${padStartW('pid', 6)}`
 		);
 		for (const h of here) {
 			// 自分の分に印を付ける。止めてよいのはこれだけである
 			const mark = h.id === me ? '*' : ' ';
 			console.log(
 				`${mark} ${padEndW(h.id, idWidth)}  ${padEndW(h.via, viaWidth)}  ${h.at.slice(11)}  ` +
-					`${padStartW(elapsedOf(h.at), 5)}  ${padStartW(String(h.pid), 6)}`
+					`${padStartW(elapsedOf(h.at), 5)}  ${padEndW(roomsOf(h), roomWidth)}  ${padStartW(String(h.pid), 6)}`
 			);
 		}
 	}
@@ -875,12 +922,13 @@ function printWaiters(all, basis, me) {
 	 */
 	const strayMine = elsewhere.filter((h) => h.id === me);
 	if (strayMine.length > 0) {
-		const shown = strayMine.map((h) => `pid ${h.pid}（${h.target} / ${h.room}）`).join('、');
+		const shown = strayMine.map((h) => `pid ${h.pid}（${h.target} / ${h.rooms.join(', ')}）`).join('、');
 		console.log(`  自分の分が別の場所に ${strayMine.length} 本: ${shown}`);
 	}
 
+	// elsewhere は接続先が違う分だけ。同じ接続先ならルームが違っても表に出ている
 	const others = elsewhere.length - strayMine.length;
-	if (others > 0) console.log(`  他に ${others} 本（別の接続先やルーム）`);
+	if (others > 0) console.log(`  他に ${others} 本（別の接続先）`);
 
 	/*
 	 * 次にやることを書く。事実だけ出すと、読み手が判断のためにルールを
@@ -890,13 +938,56 @@ function printWaiters(all, basis, me) {
 	 * 「1 本だけ残してください」のように読み手に選ばせると、他プロジェクトの
 	 * 待受けを止める事故が起きる（i260901-07）。
 	 */
-	if (mine.length === 0) {
-		console.log(`  ${basis.label} の待受けがありません。張ってください。`);
-	} else if (mine.length > 1) {
-		// 経過が長い方を残す。読み位置はサーバーが覚えているので取りこぼさない
-		const keep = mine[0];
-		const stop = mine.slice(1).map((h) => h.pid).join(', ');
-		console.log(`  二重に張っています。pid ${stop} を止めてください（pid ${keep.pid} を残す）。`);
+	/*
+	 * 覆えているかで見る。本数では見ない。
+	 *
+	 * 1 本が複数のルームを見られるようになったので、「2 ルームなら 2 本」は成り立たない。
+	 * 渡したルームが 1 つでも欠けていれば、そこを名指しして張り方を出す。
+	 */
+	const covered = new Set();
+	for (const h of mine) for (const room of h.rooms) covered.add(room);
+	const missing = basis.rooms.filter((room) => !covered.has(room));
+
+	/*
+	 * 止めてよいのは、覆っている全ルームが他の待受けでも覆われているものだけ。
+	 *
+	 * 「2 本目以降を止める」にすると、そのルームを覆う唯一の 1 本まで名指しする。
+	 * 言われたとおり止めれば覆えなくなり、張り直す → また二重、を往復する。
+	 * 古い順に見て、まだ覆えていないルームを持つものを残す。
+	 */
+	const older = [...mine].sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
+	const keep = [];
+	const stop = [];
+	const held = new Set();
+	for (const h of older) {
+		if (h.rooms.every((room) => held.has(room))) {
+			stop.push(h);
+			continue;
+		}
+		keep.push(h);
+		for (const room of h.rooms) held.add(room);
+	}
+
+	/*
+	 * やることは 1 つとは限らない。片方で打ち切ると、もう片方が隠れる。
+	 * 「足りない」と「余っている」は同時に起こる。
+	 */
+	if (missing.length > 0) {
+		const port = option('port');
+		const where = port !== null ? `-p ${port}` : `-u ${option('url')}`;
+		console.log(`  ${missing.join(', ')} の待受けがありません。次を張ってください:`);
+		console.log(`    aichat wait ${ID_WRAP}${me}${ID_WRAP} ${where} -r ${missing.join(',')}`);
+	}
+
+	if (stop.length > 0) {
+		const rooms = [...new Set(stop.flatMap((h) => h.rooms))].join(', ');
+		const stopped = stop.map((h) => h.pid).join(', ');
+		const kept = keep.map((h) => h.pid).join(', ');
+		console.log(`  ${rooms} を二重に張っています。pid ${stopped} を止めてください（pid ${kept} を残す）。`);
+	}
+
+	if (missing.length === 0 && stop.length === 0) {
+		console.log('  すべて覆えています。張る必要はありません。');
 	}
 }
 

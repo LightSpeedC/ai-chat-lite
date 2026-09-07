@@ -150,7 +150,7 @@ namespace AiChat
 				List<object> messages = Json.Arr(last, "messages");
 				WaitLog.Write("待機中（経過 " + waited + " 秒 / 上限 " +
 					(unlimited ? "無し" : spec.Sec + " 秒") + "、新着 " + messages.Count +
-					" 件、現在位置 " + Json.Int(last, "msg_seq") + "）");
+					" 件、現在位置 " + DescribePositions(last) + "）");
 
 				if (messages.Count > 0)
 				{
@@ -161,9 +161,35 @@ namespace AiChat
 				}
 			}
 
-			Console.WriteLine("新着なし（" + label + "待機、現在位置 " + Json.Int(last, "msg_seq") + "）");
+			Console.WriteLine("新着なし（" + label + "待機、現在位置 " + DescribePositions(last) + "）");
 			WaitLog.Write("新着なし。上限まで待ち切って終わります（" + label + "）");
 			return 0;
+		}
+
+		/// <summary>
+		/// どこまで読んだかを 1 行で書く。
+		///
+		/// 位置はルームごとに持っている。1 つだけなら数を、複数なら「ルーム 数」を並べる。
+		/// 複数のときに 1 つの数で出すと、どのルームの位置か分からない。
+		/// </summary>
+		private static string DescribePositions(Dictionary<string, object> result)
+		{
+			List<object> rooms = Json.Arr(result, "rooms");
+			if (rooms.Count <= 1)
+			{
+				if (result.ContainsKey("msg_seq")) return Json.Int(result, "msg_seq").ToString(CultureInfo.InvariantCulture);
+				var only = rooms.Count == 1 ? rooms[0] as Dictionary<string, object> : null;
+				return only == null ? "0" : Json.Int(only, "msg_seq").ToString(CultureInfo.InvariantCulture);
+			}
+
+			var parts = new List<string>();
+			foreach (object item in rooms)
+			{
+				var r = item as Dictionary<string, object>;
+				if (r == null) continue;
+				parts.Add(Json.Str(r, "room_id", "") + " " + Json.Int(r, "msg_seq"));
+			}
+			return string.Join(" / ", parts.ToArray());
 		}
 
 		/// <summary>待つ長さを人が読む形にする。0 は上限なし</summary>

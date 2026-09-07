@@ -119,7 +119,7 @@ export const OPTIONS = [
 	{ long: 'description', short: null, arg: '<説明>', cmd: 'archive', desc: '何をなぜ片付けたか。省略すると自動で組み立てる' },
 	{ long: 'port', short: 'p', arg: '<ポート>', cmd: null, desc: 'localhost のポートだけを変える' },
 	{ long: 'url', short: 'u', arg: '<URL>', cmd: null, desc: '接続先。ホストごと変える（--port とは併用できない）' },
-	{ long: 'room', short: 'r', arg: '<id>', cmd: null, desc: 'ルームを変える' },
+	{ long: 'room', short: 'r', arg: '<id[,id]>', cmd: null, desc: 'ルームを変える。カンマ区切りは wait と waiters だけ' },
 	{ long: 'access-token', short: 'a', arg: '<値>', cmd: null, desc: 'サーバーから求められたときに渡す。ふだんは要らない' },
 	{ long: 'role', short: null, arg: 'ai|human', cmd: 'join', desc: '参加するときの区分' },
 	{ long: 'wait-hour', short: 'w', arg: '<時間>', cmd: 'wait', desc: '最大どれだけ待つか（時）。0 で上限なし' },

@@ -236,3 +236,46 @@ describe('wait のログ', () => {
 		assert.doesNotMatch(stderr, /テスト（|本番（/);
 	});
 });
+
+describe('複数のルームを 1 本で待つ', () => {
+	/*
+	 * 【なぜ CLI を通して見るのか】
+	 * サーバー側は multi-room.test.mjs が API を直に叩いて確かめている。だが
+	 * 「複数のときは msg_seq を添えない」という応答の形を CLI が読んでおり、
+	 * その継ぎ目に穴があった（現在位置 0 と出た）。両側を別々に確かめても
+	 * 継ぎ目は見えない。CLI を動かして初めて分かる。
+	 */
+	test('1 ルームなら現在位置は数だけ', async () => {
+		const { stdout } = await chat(['wait', '--wait-sec', '1']);
+
+		assert.match(stdout, /新着なし（1 秒待機、現在位置 \d+）/);
+	});
+
+	test('複数ルームなら現在位置をルームごとに出す', async () => {
+		// 1 つの数で出すと、どのルームの位置か分からない
+		const { stdout } = await chat(['wait', '-r', 'public,sandbox-multi', '--wait-sec', '1']);
+
+		assert.match(stdout, /現在位置 public \d+ \/ sandbox-multi \d+/, `形が違う: [${stdout}]`);
+	});
+
+	test('どちらのルームの新着でも返る', async () => {
+		await chat(['say', '別のルームへ', '-r', 'sandbox-multi'], 'test-connector2');
+		const { stdout } = await chat(['wait', '-r', 'public,sandbox-multi', '--wait-sec', '5']);
+
+		assert.match(stdout, /新着 1 件/);
+		assert.match(stdout, /\[sandbox-multi\]/, 'どのルームの発言か出ていない');
+	});
+
+	test('見出しの行にルームが出る', async () => {
+		await chat(['say', 'ルームの印'], 'test-connector2');
+		const { stdout } = await chat(['wait', '--wait-sec', '5']);
+
+		assert.match(stdout, /^──────── \[public\] #\d+ /m, `形が違う: [${stdout}]`);
+	});
+
+	/*
+	 * since を渡したときに断られることは、multi-room.test.mjs が API を直に叩いて
+	 * 確かめている。CLI には since を渡す口が無い（どこまで読んだかはサーバーが
+	 * 覚えている）ので、ここでは確かめられない。
+	 */
+});

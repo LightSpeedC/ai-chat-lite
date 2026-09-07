@@ -45,7 +45,7 @@ namespace AiChat
 		public DateTime At;
 		public string Via;
 		public string Target;    // 接続先の表示（:8787 や host:port）
-		public string Room;      // 見ているルーム
+		public List<string> Rooms;   // 見ているルーム。1 本で複数を見られる
 		public int Port;         // 接続先のポート。読めなければ 0
 	}
 
@@ -53,7 +53,7 @@ namespace AiChat
 	internal class Basis
 	{
 		public int Port;
-		public string Room;
+		public List<string> Rooms;
 		public string Label;
 	}
 
@@ -67,12 +67,22 @@ namespace AiChat
 			if (all.Count == 0)
 			{
 				Console.WriteLine("待受けは走っていません。");
-				Console.WriteLine("  " + basis.Label + " の待受けがありません。張ってください。");
+				Console.WriteLine("  " + string.Join(", ", basis.Rooms.ToArray()) + " の待受けがありません。次を張ってください:");
+				Console.WriteLine("    " + WaitHint(basis.Rooms, connectorId));
 				return 0;
 			}
 
 			PrintWaiters(all, basis, connectorId);
 			return 0;
+		}
+
+		/// <summary>足りないルームを張るための 1 行を組み立てる</summary>
+		private static string WaitHint(List<string> rooms, string me)
+		{
+			string port = args.Option("port", null);
+			string where = port != null ? "-p " + port : "-u " + args.Option("url", "");
+			return "aichat wait " + Definition.IdWrap + me + Definition.IdWrap +
+				" " + where + " -r " + string.Join(",", rooms.ToArray());
 		}
 
 		/// <summary>
@@ -119,7 +129,24 @@ namespace AiChat
 				if (m.Success) int.TryParse(m.Groups[1].Value, out num);
 			}
 
-			return new Basis { Port = num, Room = room, Label = ":" + num + " / " + room };
+			return new Basis { Port = num, Rooms = RoomsFrom(room), Label = ":" + num };
+		}
+
+		/// <summary>-r の値をルームの一覧にする。省略なら既定のルーム 1 つ。重複は落とす</summary>
+		private static List<string> RoomsFrom(string value)
+		{
+			var rooms = new List<string>();
+			string raw = (value ?? "").Trim();
+			if (raw.Length > 0)
+			{
+				foreach (string part in raw.Split(','))
+				{
+					string room = part.Trim();
+					if (room.Length > 0 && !rooms.Contains(room)) rooms.Add(room);
+				}
+			}
+			if (rooms.Count == 0) rooms.Add(Definition.DefaultRoom);
+			return rooms;
 		}
 
 		/// <summary>
@@ -219,7 +246,7 @@ namespace AiChat
 			string url = ReadArg(cmd, "url", "u");
 			string room = ReadArg(cmd, "room", "r");
 
-			row.Room = room ?? Definition.DefaultRoom;
+			row.Rooms = RoomsFrom(room);
 			row.Target = "(未指定)";
 			int portNum = 0;
 
@@ -266,9 +293,9 @@ namespace AiChat
 		 */
 		private static void PrintWaiters(List<WaiterRow> all, Basis basis, string me)
 		{
-			// 基準に合う分だけを並べる。合わない分は件数だけ添える
-			List<WaiterRow> here = all.Where(r => r.Port == basis.Port && r.Room == basis.Room).ToList();
-			List<WaiterRow> elsewhere = all.Where(r => !(r.Port == basis.Port && r.Room == basis.Room)).ToList();
+			// 同じ接続先の分を並べる。ルームは列に出す。1 本が複数を見ていることがある
+			List<WaiterRow> here = all.Where(r => r.Port == basis.Port).ToList();
+			List<WaiterRow> elsewhere = all.Where(r => r.Port != basis.Port).ToList();
 
 			Console.WriteLine("  " + basis.Label + " を見ている待受け");
 			Console.WriteLine("");
@@ -281,9 +308,11 @@ namespace AiChat
 			{
 				int idWidth = Math.Max(Width("ID"), here.Max(r => Width(r.Id)));
 				int viaWidth = Math.Max(Width("張り方"), here.Max(r => Width(r.Via)));
+				int roomWidth = Math.Max(Width("ルーム"), here.Max(r => Width(string.Join(", ", r.Rooms.ToArray()))));
 
 				Console.WriteLine("  " + PadEndW("ID", idWidth) + "  " + PadEndW("張り方", viaWidth) + "  " +
-					PadEndW("いつから", 8) + "  " + PadStartW("経過", 5) + "  " + PadStartW("pid", 6));
+					PadEndW("いつから", 8) + "  " + PadStartW("経過", 5) + "  " +
+					PadEndW("ルーム", roomWidth) + "  " + PadStartW("pid", 6));
 
 				foreach (WaiterRow r in here)
 				{
@@ -292,6 +321,7 @@ namespace AiChat
 					Console.WriteLine(mark + " " + PadEndW(r.Id, idWidth) + "  " + PadEndW(r.Via, viaWidth) + "  " +
 						r.At.ToString("HH:mm:ss", CultureInfo.InvariantCulture) + "  " +
 						PadStartW(ElapsedOf(r.At), 5) + "  " +
+						PadEndW(string.Join(", ", r.Rooms.ToArray()), roomWidth) + "  " +
 						PadStartW(r.Pid.ToString(CultureInfo.InvariantCulture), 6));
 				}
 			}
@@ -312,12 +342,13 @@ namespace AiChat
 			if (strayMine.Count > 0)
 			{
 				string shown = string.Join("、", strayMine
-					.Select(r => "pid " + r.Pid + "（" + r.Target + " / " + r.Room + "）").ToArray());
+					.Select(r => "pid " + r.Pid + "（" + r.Target + " / " + string.Join(", ", r.Rooms.ToArray()) + "）").ToArray());
 				Console.WriteLine("  自分の分が別の場所に " + strayMine.Count + " 本: " + shown);
 			}
 
+			// elsewhere は接続先が違う分だけ。同じ接続先ならルームが違っても表に出ている
 			int others = elsewhere.Count - strayMine.Count;
-			if (others > 0) Console.WriteLine("  他に " + others + " 本（別の接続先やルーム）");
+			if (others > 0) Console.WriteLine("  他に " + others + " 本（別の接続先）");
 
 			/*
 			 * 次にやることを書く。事実だけ出すと、読み手が判断のためにルールを
@@ -327,16 +358,61 @@ namespace AiChat
 			 * 「1 本だけ残してください」のように読み手に選ばせると、他プロジェクトの
 			 * 待受けを止める事故が起きる（i260901-07）。
 			 */
-			if (mine.Count == 0)
+			/*
+			 * 覆えているかで見る。本数では見ない。
+			 *
+			 * 1 本が複数のルームを見られるようになったので、「2 ルームなら 2 本」は成り立たない。
+			 * 渡したルームが 1 つでも欠けていれば、そこを名指しして張り方を出す。
+			 */
+			var covered = new HashSet<string>();
+			foreach (WaiterRow r in mine) foreach (string room in r.Rooms) covered.Add(room);
+			List<string> missing = basis.Rooms.Where(room => !covered.Contains(room)).ToList();
+
+			/*
+			 * 止めてよいのは、覆っている全ルームが他の待受けでも覆われているものだけ。
+			 *
+			 * 「2 本目以降を止める」にすると、そのルームを覆う唯一の 1 本まで名指しする。
+			 * 言われたとおり止めれば覆えなくなり、張り直す → また二重、を往復する。
+			 * 古い順に見て、まだ覆えていないルームを持つものを残す。
+			 */
+			List<WaiterRow> older = mine.OrderBy(r => r.At).ToList();
+			var keep = new List<WaiterRow>();
+			var stop = new List<WaiterRow>();
+			var held = new HashSet<string>();
+			foreach (WaiterRow r in older)
 			{
-				Console.WriteLine("  " + basis.Label + " の待受けがありません。張ってください。");
+				if (r.Rooms.All(room => held.Contains(room)))
+				{
+					stop.Add(r);
+					continue;
+				}
+				keep.Add(r);
+				foreach (string room in r.Rooms) held.Add(room);
 			}
-			else if (mine.Count > 1)
+
+			/*
+			 * やることは 1 つとは限らない。片方で打ち切ると、もう片方が隠れる。
+			 * 「足りない」と「余っている」は同時に起こる。
+			 */
+			if (missing.Count > 0)
 			{
-				// 経過が長い方を残す。読み位置はサーバーが覚えているので取りこぼさない
-				string stop = string.Join(", ", mine.Skip(1)
-					.Select(r => r.Pid.ToString(CultureInfo.InvariantCulture)).ToArray());
-				Console.WriteLine("  二重に張っています。pid " + stop + " を止めてください（pid " + mine[0].Pid + " を残す）。");
+				Console.WriteLine("  " + string.Join(", ", missing.ToArray()) + " の待受けがありません。次を張ってください:");
+				Console.WriteLine("    " + WaitHint(missing, me));
+			}
+
+			if (stop.Count > 0)
+			{
+				var rooms = new List<string>();
+				foreach (WaiterRow r in stop) foreach (string room in r.Rooms) if (!rooms.Contains(room)) rooms.Add(room);
+				string stopped = string.Join(", ", stop.Select(r => r.Pid.ToString(CultureInfo.InvariantCulture)).ToArray());
+				string kept = string.Join(", ", keep.Select(r => r.Pid.ToString(CultureInfo.InvariantCulture)).ToArray());
+				Console.WriteLine("  " + string.Join(", ", rooms.ToArray()) +
+					" を二重に張っています。pid " + stopped + " を止めてください（pid " + kept + " を残す）。");
+			}
+
+			if (missing.Count == 0 && stop.Count == 0)
+			{
+				Console.WriteLine("  すべて覆えています。張る必要はありません。");
 			}
 		}
 

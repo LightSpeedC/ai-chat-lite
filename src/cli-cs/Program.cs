@@ -293,7 +293,18 @@ namespace AiChat
 
 		// --- 表示 ---
 
-		/// <summary>メッセージを並べる。仕組みからの発言は -- を付けて区別する</summary>
+		/// <summary>発言の区切り。本文が何十行あっても切れ目が分かるようにする</summary>
+		private const string Separator = "────────";
+
+		/// <summary>
+		/// メッセージを「見出しの行 ＋ 本文」で並べる。
+		///
+		/// 頭にルームを出すのは、1 本の待受けが複数のルームを見られるようになったため。
+		/// 1 つしか見ていなくても出す。出し分けると、読み手が「無い行は何か」を考えることになる。
+		///
+		/// 番号（#msg_seq）が要るのは、受け取った発言へ返信するときに指す先を書くためである。
+		/// 仕組みからの発言（join / leave / archive / notice）にも同じ形で出す。
+		/// </summary>
 		private static void PrintMessages(List<object> messages)
 		{
 			foreach (object item in messages)
@@ -304,20 +315,16 @@ namespace AiChat
 				string kind = Json.Str(m, "msg_kind", "say");
 				string sentAt = Json.Str(m, "sent_at", "");
 				string body = Json.Str(m, "msg_body", "");
+				string room = Json.Str(m, "room_id", "");
 
-				/*
-				 * 先頭に #<msg_seq> を 6 桁右詰めで出す。これが無いと、受け取った
-				 * 発言に返信しようにも指す先を書けない。# を付けるのは、付けないと
-				 * 「474 2026/09/04」と数が 2 つ並び、境目を読み手が判断することになるため。
-				 *
-				 * 仕組みからの発言（join / leave / archive / notice）にも番号を出す。
-				 * 種別で出し分けると、読み手が「番号が無い行は何か」を考えることになる。
-				 */
-				string seq = PadStartW("#" + Json.Int(m, "msg_seq"), 6);
+				string head = Separator + " [" + room + "] #" + Json.Int(m, "msg_seq") + " " + sentAt;
+
+				Console.WriteLine("");
 
 				if (kind != "say")
 				{
-					Console.WriteLine(seq + " " + sentAt + " -- " + body);
+					Console.WriteLine(head);
+					Console.WriteLine(body);
 					continue;
 				}
 
@@ -329,7 +336,8 @@ namespace AiChat
 					: "";
 
 				string at = to == null ? "" : " @" + to;
-				Console.WriteLine(seq + " " + sentAt + " " + from + at + reply + " > " + body);
+				Console.WriteLine(head + " " + from + at + reply);
+				Console.WriteLine(body);
 			}
 		}
 

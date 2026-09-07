@@ -71,6 +71,20 @@ function roomOf(value) {
 }
 
 /**
+ * ルームをカンマ区切りで受け、配列にする。
+ *
+ * 1 つだけ渡せば今までと同じ結果になる。区切りを exclude と同じカンマにしたのは、
+ * 書き方を 2 つ持たないため。重複は落とす。
+ */
+function roomsOf(value) {
+	const raw = String(value ?? '').trim();
+	if (!raw) return [DEFAULT_ROOM];
+	const seen = new Set();
+	for (const part of raw.split(',')) seen.add(requireId(part.trim(), 'room_id'));
+	return [...seen];
+}
+
+/**
  * 本番では、テスト用の名前で繋がせない。判定は names.mjs が持つ。
  *
  * どちらの環境かを知っているのはサーバーだけなので、ここで断る。
@@ -274,23 +288,36 @@ async function handleSay(req, res) {
 
 async function handlePoll(req, res, url) {
 	const connectorId = optionalId(url.searchParams.get('connector_id'), 'connector_id');
-	const roomId = roomOf(url.searchParams.get('room_id'));
+	const rooms = roomsOf(url.searchParams.get('room_id'));
 	const waitSec = Math.min(Math.max(numberOf(url.searchParams.get('wait'), MAX_WAIT_SEC), 0), MAX_WAIT_SEC);
 	const exclude = excludeOf(url.searchParams.get('exclude'));
-	rejectTestNames(connectorId, roomId);
+	for (const roomId of rooms) rejectTestNames(connectorId, roomId);
 
 	/*
 	 * since を省略したら、サーバーが覚えている位置から続ける。
 	 * クライアントが自分で位置を管理しなくて済み、実行した場所にも縛られない。
 	 * 明示的に渡された場合はそちらを優先する（ブラウザは自分で管理している）。
+	 *
+	 * ただし since は数 1 つなので、複数のルームを表せない。受け付けたままにすると
+	 * 片方の番号でもう片方を読むことになり、取りこぼしか読み直しが起きる。断る。
 	 */
 	const sinceParam = url.searchParams.get('since');
-	const since =
-		sinceParam !== null && sinceParam !== ''
-			? numberOf(sinceParam, 0)
-			: connectorId
-				? (getCursor(connectorId, roomId) ?? getMaxSeq(roomId))
-				: 0;
+	const hasSince = sinceParam !== null && sinceParam !== '';
+	if (hasSince && rooms.length > 1) {
+		throw new BadRequest('複数のルームを待つときは since を渡せません（サーバーが覚えている位置から続きます）');
+	}
+
+	const sinceByRoom = new Map();
+	for (const roomId of rooms) {
+		sinceByRoom.set(
+			roomId,
+			hasSince
+				? numberOf(sinceParam, 0)
+				: connectorId
+					? (getCursor(connectorId, roomId) ?? getMaxSeq(roomId))
+					: 0,
+		);
+	}
 
 	// 待っている間も在席とみなす。接続を保持しているので確実にいる
 	if (connectorId) {
@@ -303,7 +330,7 @@ async function handlePoll(req, res, url) {
 	req.on('close', () => { closed = true; });
 
 	try {
-		const { messages, scannedSeq } = await waitForMessages(roomId, since, waitSec * 1000, exclude);
+		const { messages, scanned } = await waitForMessages(rooms, sinceByRoom, waitSec * 1000, exclude);
 		if (closed) return;
 
 		/*
@@ -311,11 +338,24 @@ async function handlePoll(req, res, url) {
 		 *
 		 * 除いた分も進める。止めると、張り直した先で同じ join を読み、また除いて待つ。
 		 * 1 回で済むはずの走査が毎回積み上がる。
+		 *
+		 * 位置はルームごとに持つ。片方に届いても、もう片方の位置は動かさない。
 		 */
-		const msgSeq = Math.max(scannedSeq, since);
-		if (connectorId) setCursor(connectorId, roomId, msgSeq);
+		const roomsOut = rooms.map((roomId) => {
+			const since = sinceByRoom.get(roomId);
+			const msgSeq = Math.max(scanned.get(roomId) ?? since, since);
+			if (connectorId) setCursor(connectorId, roomId, msgSeq);
+			return { room_id: roomId, since, msg_seq: msgSeq };
+		});
 
-		sendJson(res, 200, { room_id: roomId, since, msg_seq: msgSeq, messages });
+		// 1 つだけのときは、これまでと同じ形も添える。既存の呼び出しを壊さないため
+		const body = { rooms: roomsOut, messages };
+		if (roomsOut.length === 1) {
+			body.room_id = roomsOut[0].room_id;
+			body.since = roomsOut[0].since;
+			body.msg_seq = roomsOut[0].msg_seq;
+		}
+		sendJson(res, 200, body);
 	} finally {
 		if (connectorId) {
 			removeConnection(connectorId);

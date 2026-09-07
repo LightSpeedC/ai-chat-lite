@@ -33,10 +33,22 @@ function readArg(cmd, long, short) {
 	return m ? m[1] : null;
 }
 
+/** -r の値をルームの配列にする。1 本で複数を見られる。重複は落とす */
+function roomsFrom(value) {
+	const raw = (value ?? '').trim();
+	if (!raw) return [DEFAULT_ROOM];
+	const seen = [];
+	for (const part of raw.split(',')) {
+		const room = part.trim();
+		if (room && !seen.includes(room)) seen.push(room);
+	}
+	return seen.length > 0 ? seen : [DEFAULT_ROOM];
+}
+
 function targetOf(cmd) {
 	const port = readArg(cmd, 'port', 'p');
 	const url = readArg(cmd, 'url', 'u');
-	const room = readArg(cmd, 'room', 'r') ?? DEFAULT_ROOM;
+	const rooms = roomsFrom(readArg(cmd, 'room', 'r'));
 
 	let target = '(未指定)';
 	let portNum = 0;
@@ -50,16 +62,50 @@ function targetOf(cmd) {
 		portNum = m ? Number(m[1]) : 0;
 	}
 
-	return { target, room, port: portNum };
+	return { target, rooms, port: portNum };
 }
 
-/** 基準に合うかどうか。合わない分は表に出さず、件数だけ添える */
+/** 表に出すかどうか。接続先で見る。ルームは列に出すので絞りに使わない */
 function isHere(t, basis) {
-	return t.port === basis.port && t.room === basis.room;
+	return t.port === basis.port;
+}
+
+/** 渡したルームのうち、覆えていないもの */
+function missingRooms(mine, basis) {
+	const covered = new Set();
+	for (const t of mine) for (const room of t.rooms) covered.add(room);
+	return basis.rooms.filter((room) => !covered.has(room));
+}
+
+/**
+ * 残すものと止めてよいものに分ける。chat.mjs の printWaiters と同じ選び方。
+ *
+ * 「2 本目以降を止める」にすると、そのルームを覆う唯一の 1 本まで名指しする。
+ * 止めた結果、覆えなくなってはいけない。
+ */
+function splitRedundant(mine) {
+	const older = [...mine].sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
+	const keep = [];
+	const stop = [];
+	const held = new Set();
+	for (const h of older) {
+		if (h.rooms.every((room) => held.has(room))) {
+			stop.push(h);
+			continue;
+		}
+		keep.push(h);
+		for (const room of h.rooms) held.add(room);
+	}
+	return { keep, stop };
+}
+
+/** pid・見ているルーム・いつからを持つ 1 本 */
+function waiter(pid, rooms, at) {
+	return { pid, rooms, at };
 }
 
 /** 既定の基準（本番の既定ルーム） */
-const PROD = { port: PORT, room: DEFAULT_ROOM };
+const PROD = { port: PORT, rooms: [DEFAULT_ROOM] };
 
 /*
  * chat.mjs の pickWaiters と同じ選び方をここに置く。
@@ -240,20 +286,20 @@ describe('どこを待っているかを読む', () => {
 		const t = targetOf('aichat.exe wait :project-a: -p 8787 -r dev');
 
 		assert.equal(t.target, ':8787');
-		assert.equal(t.room, 'dev');
+		assert.deepEqual(t.rooms, ['dev']);
 	});
 
 	test('ルームを書かなければ既定のルーム', () => {
 		const t = targetOf('aichat.exe wait :project-a: -p 8787');
 
-		assert.equal(t.room, DEFAULT_ROOM);
+		assert.deepEqual(t.rooms, [DEFAULT_ROOM]);
 	});
 
 	test('長い形でも読む', () => {
 		const t = targetOf('aichat.exe wait :project-a: --port 8787 --room dev');
 
 		assert.equal(t.target, ':8787');
-		assert.equal(t.room, 'dev');
+		assert.deepEqual(t.rooms, ['dev']);
 	});
 
 	test('--url からはホストとポートを取り、スキームは落とす', () => {
@@ -287,9 +333,15 @@ describe('基準に合う待受けだけを数える', () => {
 		assert.equal(isHere(targetOf('aichat.exe wait :project-a: -p 49999'), PROD), false);
 	});
 
-	test('ルームが違えば本番の分ではない', () => {
-		// 静かに壊れる方。ポート違いより見つけにくい
-		assert.equal(isHere(targetOf(`aichat.exe wait :project-a: -p ${PORT} -r dev`), PROD), false);
+	test('ルームが違っても表には出す。覆えていないことは別に見る', () => {
+		/*
+		 * 1 本が複数のルームを見られるので、ルームで表から外すと読めなくなる。
+		 * 表には出したうえで、渡したルームが覆えているかを別に数える。
+		 */
+		const t = targetOf(`aichat.exe wait :project-a: -p ${PORT} -r dev`);
+
+		assert.equal(isHere(t, PROD), true, '同じ接続先なのに表から外している');
+		assert.deepEqual(missingRooms([t], PROD), [DEFAULT_ROOM], '覆えていないことを見落としている');
 	});
 
 	test('--url で本番のポートを指していれば本番の分と数える', () => {
@@ -329,13 +381,150 @@ describe('基準に合う待受けだけを数える', () => {
 		 * 件数だけでは止めようがない。自分の分は pid まで出す。
 		 * 他プロジェクトの分は件数だけにする（止めてはいけないため）。
 		 */
-		const rows = [proc(100, 1, 'aichat.exe', `aichat.exe wait :project-a: -p ${PORT} -r dev`)];
+		const rows = [proc(100, 1, 'aichat.exe', 'aichat.exe wait :project-a: -p 49999 -r dev')];
 		const found = pickWaiters(rows, []).map((h) => ({ ...h, ...targetOf(rows[0].cmd) }));
 
 		const stray = found.filter((h) => h.id === 'project-a' && !isHere(h, PROD));
 		assert.equal(stray.length, 1);
 		assert.equal(stray[0].pid, 100, 'pid が取れていない');
-		assert.equal(stray[0].room, 'dev', 'どのルームを見ているか分からない');
+		assert.deepEqual(stray[0].rooms, ['dev'], 'どのルームを見ているか分からない');
+	});
+});
+
+describe('覆えているかで見る', () => {
+	/*
+	 * 1 本が複数のルームを見られるので、「2 ルームなら 2 本」は成り立たない。
+	 * 本数ではなく、渡したルームが 1 つでも欠けていないかで判断する。
+	 */
+	const BOTH = { port: PORT, rooms: ['public', 'ai-chat-lite'] };
+
+	test('1 本で 2 つとも見ていれば足りている', () => {
+		const t = targetOf(`aichat.exe wait :project-a: -p ${PORT} -r public,ai-chat-lite`);
+
+		assert.deepEqual(missingRooms([t], BOTH), []);
+	});
+
+	test('2 本で 1 つずつ見ていても足りている', () => {
+		const a = targetOf(`aichat.exe wait :project-a: -p ${PORT} -r public`);
+		const b = targetOf(`aichat.exe wait :project-a: -p ${PORT} -r ai-chat-lite`);
+
+		assert.deepEqual(missingRooms([a, b], BOTH), []);
+	});
+
+	test('欠けているルームだけを名指しする', () => {
+		// 「1 本足りません」では、どれを張ればよいか読み手が考えることになる
+		const t = targetOf(`aichat.exe wait :project-a: -p ${PORT} -r public`);
+
+		assert.deepEqual(missingRooms([t], BOTH), ['ai-chat-lite']);
+	});
+
+	test('1 本も無ければ全部が欠けている', () => {
+		assert.deepEqual(missingRooms([], BOTH), ['public', 'ai-chat-lite']);
+	});
+
+	test('渡していないルームを見ていても足しにはならない', () => {
+		const t = targetOf(`aichat.exe wait :project-a: -p ${PORT} -r dev`);
+
+		assert.deepEqual(missingRooms([t], BOTH), ['public', 'ai-chat-lite']);
+	});
+
+	test('同じルームを 2 回書いても 1 つとして数える', () => {
+		const t = targetOf(`aichat.exe wait :project-a: -p ${PORT} -r public,public`);
+
+		assert.deepEqual(t.rooms, ['public']);
+	});
+
+	test('区切りの前後の空白は落とす', () => {
+		/*
+		 * 人が書くので、カンマの後ろに空白が入ることがある。
+		 * ただしコマンドラインから読むほうは空白で切れるため、ここに空白は来ない。
+		 * 空白が来るのは自分の -r（引用符で囲んで渡された値）を割るときである。
+		 */
+		assert.deepEqual(roomsFrom('public, ai-chat-lite'), ['public', 'ai-chat-lite']);
+		assert.deepEqual(roomsFrom('  public ,  dev  '), ['public', 'dev']);
+	});
+});
+
+describe('止めてよいのはどれか', () => {
+	/*
+	 * 【なぜ必要か】
+	 * 「2 本目以降を止める」にすると、そのルームを覆う唯一の 1 本まで名指しする。
+	 * 言われたとおり止めれば覆えなくなり、張り直す → また二重、を往復する。
+	 * 同じ節が防ごうとしていた i260901-07 と同じ形の事故になる。
+	 */
+	test('唯一の 1 本は止めない', () => {
+		const rows = [
+			waiter(100, ['public'], '2026-09-07 10:00:00'),
+			waiter(200, ['ai-chat-lite'], '2026-09-07 10:01:00'),
+			waiter(300, ['public'], '2026-09-07 10:02:00'),
+		];
+
+		const { keep, stop } = splitRedundant(rows);
+
+		assert.deepEqual(
+			stop.map((h) => h.pid),
+			[300],
+			'唯一の 1 本まで止めようとしている'
+		);
+		assert.deepEqual(
+			keep.map((h) => h.pid),
+			[100, 200]
+		);
+	});
+
+	test('止めたあとも全部が覆えている', () => {
+		// 止める判断そのものより、止めた結果が壊れていないことが要点
+		const rows = [
+			waiter(100, ['public', 'ai-chat-lite'], '2026-09-07 10:00:00'),
+			waiter(200, ['public'], '2026-09-07 10:01:00'),
+			waiter(300, ['ai-chat-lite'], '2026-09-07 10:02:00'),
+		];
+
+		const { keep, stop } = splitRedundant(rows);
+		const covered = new Set(keep.flatMap((h) => h.rooms));
+
+		assert.deepEqual(
+			stop.map((h) => h.pid),
+			[200, 300]
+		);
+		assert.ok(covered.has('public') && covered.has('ai-chat-lite'), '覆えなくなっている');
+	});
+
+	test('余りが無ければ 1 本も止めない', () => {
+		const rows = [
+			waiter(100, ['public'], '2026-09-07 10:00:00'),
+			waiter(200, ['ai-chat-lite'], '2026-09-07 10:01:00'),
+		];
+
+		assert.deepEqual(splitRedundant(rows).stop, []);
+	});
+
+	test('古いほうを残す', () => {
+		// 読み位置はサーバーが覚えているので、どちらを残しても取りこぼさない。
+		// 経過の長いほうを残すと、次に刈られるまでの間隔が読みやすい
+		const rows = [
+			waiter(300, ['public'], '2026-09-07 10:02:00'),
+			waiter(100, ['public'], '2026-09-07 10:00:00'),
+		];
+
+		const { keep, stop } = splitRedundant(rows);
+
+		assert.deepEqual(keep.map((h) => h.pid), [100]);
+		assert.deepEqual(stop.map((h) => h.pid), [300]);
+	});
+
+	test('足りないことと余っていることは同時に起こる', () => {
+		/*
+		 * 片方で打ち切ると、もう片方が隠れる。隠すと、張る → 二重、の往復になる。
+		 */
+		const basis = { port: PORT, rooms: ['public', 'ai-chat-lite'] };
+		const rows = [
+			waiter(100, ['public'], '2026-09-07 10:00:00'),
+			waiter(300, ['public'], '2026-09-07 10:02:00'),
+		];
+
+		assert.deepEqual(missingRooms(rows, basis), ['ai-chat-lite'], '足りないルームが出ていない');
+		assert.deepEqual(splitRedundant(rows).stop.map((h) => h.pid), [300], '余っている分が出ていない');
 	});
 });
 

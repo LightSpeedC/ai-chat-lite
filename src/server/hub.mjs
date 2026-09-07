@@ -11,7 +11,7 @@ import { getSince } from './store.mjs';
  * 投稿したメッセージが届かなくなる。
  */
 
-/** long-poll で待っている人。{ roomId, since, exclude, settle, timer } */
+/** long-poll で待っている人。{ rooms: Set<string>, since: Map<string, number>, exclude, settle, timer } */
 const waiters = new Set();
 
 /** 何も除かないときの空集合。待つ相手ごとに作らずに済ませる */
@@ -34,26 +34,55 @@ function sift(roomId, since, exclude) {
 const sseClients = new Set();
 
 /**
+ * 複数のルームをまとめて走査する。
+ *
+ * 位置はルームごとに持つ。cursors が (connector_id, room_id) の組で持っているため、
+ * まとめて待っても、読むのも進めるのもルームごとになる。
+ *
+ * 並びは msg_seq の昇順にする。msg_seq はルームをまたいだ通し番号なので、
+ * これだけで届いた順に並ぶ。
+ *
+ * @param {string[]} rooms
+ * @param {Map<string, number>} sinceByRoom
+ * @param {Set<string>} exclude
+ * @returns {{messages: object[], scanned: Map<string, number>}}
+ */
+function siftRooms(rooms, sinceByRoom, exclude) {
+	const messages = [];
+	const scanned = new Map();
+	for (const roomId of rooms) {
+		const since = sinceByRoom.get(roomId) ?? 0;
+		const one = sift(roomId, since, exclude);
+		scanned.set(roomId, one.scannedSeq);
+		for (const m of one.messages) messages.push(m);
+	}
+	messages.sort((a, b) => a.msg_seq - b.msg_seq);
+	return { messages, scanned };
+}
+
+/**
  * 新着メッセージを待つ。すでにあれば待たずに返す。
  * 時間切れになったときは空配列を返す（着信が無かったことと区別できる）。
  *
- * exclude に入れた msg_kind では起こさない。除いた分でも scannedSeq は進むので、
+ * ルームは複数渡せる。どれか 1 つに新着が出れば返す。
+ *
+ * exclude に入れた msg_kind では起こさない。除いた分でも位置は進むので、
  * 呼ぶ側はそこまで読んだものとして記録できる。進めないと、次の待受けが同じ記録を
  * 読み直して同じ所で待つことになる。
  *
- * @param {string} roomId
- * @param {number} since この msg_seq より新しいものを待つ
+ * @param {string[]} rooms
+ * @param {Map<string, number>} sinceByRoom ルームごとに、この msg_seq より新しいものを待つ
  * @param {number} timeoutMs
  * @param {Set<string>} [exclude] 起こさない msg_kind
- * @returns {Promise<{messages: object[], scannedSeq: number}>}
+ * @returns {Promise<{messages: object[], scanned: Map<string, number>}>}
  */
-export function waitForMessages(roomId, since, timeoutMs, exclude = NOTHING) {
-	const first = sift(roomId, since, exclude);
+export function waitForMessages(rooms, sinceByRoom, timeoutMs, exclude = NOTHING) {
+	const first = siftRooms(rooms, sinceByRoom, exclude);
 	if (first.messages.length > 0) return Promise.resolve(first);
 
 	return new Promise((resolve) => {
 		// 除く分だけが積まれていたら、待つ位置をそこまで進めてから待つ
-		const waiter = { roomId, since: first.scannedSeq, exclude };
+		const waiter = { rooms: new Set(rooms), since: first.scanned, exclude };
 		waiter.settle = (result) => {
 			if (!waiters.has(waiter)) return; // 二重に呼ばれても 1 回だけ
 			waiters.delete(waiter);
@@ -61,8 +90,8 @@ export function waitForMessages(roomId, since, timeoutMs, exclude = NOTHING) {
 			resolve(result);
 		};
 		// unref しておくと、待機中でもプロセスの終了を妨げない
-		// 時間切れでも since を返す。除く分で進んだ位置を呼ぶ側が記録できる
-		waiter.timer = setTimeout(() => waiter.settle({ messages: [], scannedSeq: waiter.since }), timeoutMs);
+		// 時間切れでも位置を返す。除く分で進んだ位置を呼ぶ側が記録できる
+		waiter.timer = setTimeout(() => waiter.settle({ messages: [], scanned: waiter.since }), timeoutMs);
 		waiter.timer.unref?.();
 		waiters.add(waiter);
 	});
@@ -75,13 +104,13 @@ export function waitForMessages(roomId, since, timeoutMs, exclude = NOTHING) {
  */
 export function publish(message) {
 	for (const waiter of [...waiters]) {
-		if (waiter.roomId !== message.room_id) continue;
-		if (message.msg_seq <= waiter.since) continue;
+		if (!waiter.rooms.has(message.room_id)) continue;
+		if (message.msg_seq <= (waiter.since.get(message.room_id) ?? 0)) continue;
 
-		const result = sift(waiter.roomId, waiter.since, waiter.exclude);
+		const result = siftRooms([...waiter.rooms], waiter.since, waiter.exclude);
 		if (result.messages.length === 0) {
 			// 除く種別だけだった。起こさず、位置だけ進めて待ち続ける
-			waiter.since = result.scannedSeq;
+			waiter.since = result.scanned;
 			continue;
 		}
 		waiter.settle(result);
@@ -109,7 +138,7 @@ export function removeSseClient(client) {
 
 /** 待っている人を全員起こす。サーバーを畳むときに使う */
 export function releaseAll() {
-	for (const waiter of [...waiters]) waiter.settle({ messages: [], scannedSeq: waiter.since });
+	for (const waiter of [...waiters]) waiter.settle({ messages: [], scanned: waiter.since });
 }
 
 /** 診断用。待機の数が想定どおりかを外から確かめる */

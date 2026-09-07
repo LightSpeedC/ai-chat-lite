@@ -79,7 +79,7 @@ describe('ID はコマンドの直後に置く', () => {
 		assert.match(stdout, /送信しました/);
 
 		const { stdout: recent } = await raw(['recent', '-n', '1']);
-		assert.match(recent, /test-id1 > 位置の確認/);
+		assert.match(recent, /test-id1\r?\n位置の確認/);
 	});
 
 	test('読むだけのコマンドは ID を取らない', async () => {
@@ -184,7 +184,7 @@ describe('--to も囲む', () => {
 
 		const { stdout } = await raw(['recent', '-n', '1']);
 
-		assert.match(stdout, /test-id1 @test-id2 > 名指しの確認/);
+		assert.match(stdout, /test-id1 @test-id2\r?\n名指しの確認/);
 	});
 
 	test('--to の囲みが無ければ断る', async () => {
