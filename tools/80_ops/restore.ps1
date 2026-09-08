@@ -108,7 +108,8 @@ $notice = @"
 再開したらこのルームに知らせます。それまで待受けは繋がりません。
 "@
 
-$sayOutput = & node $clientPath say $notice --port $serverPort --connector-id ai-chat-lite 2>&1
+# 名乗る ID はコマンドの直後に、コロンで囲んで置く（--connector-id は廃止した）
+$sayOutput = & node $clientPath say :ai-chat-lite: $notice --port $serverPort --room public 2>&1
 if ($LASTEXITCODE -eq 0) {
 	Write-Host '[0/5] 停止することを知らせました（10 秒待ちます）'
 	Start-Sleep -Seconds 10
@@ -141,7 +142,7 @@ try {
 
 	# & node は終了コードが非ゼロでも例外を投げない。catch では拾えないので
 	# $LASTEXITCODE を見る。握りつぶすと、止まっていないのに次へ進んでしまう
-	$stopOutput = & node $clientPath restart --port $serverPort --connector-id restore 2>&1
+	$stopOutput = & node $clientPath restart :restore: --port $serverPort 2>&1
 	if ($LASTEXITCODE -eq 0) {
 		Write-Host '[2/5] サーバーを落としました（10 秒後に起動し直します）'
 	} else {

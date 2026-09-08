@@ -69,8 +69,27 @@ Write-Host ('[{0}] DB のスナップショットを取得しています...' -f
 	エラーにしない。メンテナンス中は想定内の状態で、タスクの履歴を赤くしても
 	対処のしようがない。何が起きたかは Node 側が標準エラーに書いている
 #>
-$output = & node (Join-Path $PSScriptRoot 'backup.mjs') $Kind $workDir 2>&1
-$exitCode = $LASTEXITCODE
+<#
+	ここだけ $ErrorActionPreference を緩める。
+
+	2>&1 で受けた標準エラーは ErrorRecord として返る（下の選別がそれを前提に
+	している）。Stop のままだと、backup.mjs が 1 行書いた時点で
+	NativeCommandError が投げられて終わる。
+
+	印と重なって「30 秒待ちます」が出たときがこれに当たり、待機の途中で落ちて
+	いた。スナップショットまで作って zip を作らずに終わるため、控えは増えず、
+	下のコメントが「ERROR で残す」と書いているその ERROR も書かれない。
+
+	成否は $LASTEXITCODE で見る。& node は非ゼロでも例外を投げない
+#>
+$prevEap = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+try {
+	$output = & node (Join-Path $PSScriptRoot 'backup.mjs') $Kind $workDir 2>&1
+	$exitCode = $LASTEXITCODE
+} finally {
+	$ErrorActionPreference = $prevEap
+}
 
 <#
 	標準エラーに出た説明から、記録に残す 1 行を選ぶ。

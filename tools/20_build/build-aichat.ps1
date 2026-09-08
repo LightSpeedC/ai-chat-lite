@@ -1,5 +1,4 @@
-﻿#Requires -Version 7
-<#
+﻿<#
 	C# 版 CLI（aichat.exe）を作る。
 
 	  1. 動いている待受けが掴んでいる古い exe を退避する
