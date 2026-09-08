@@ -369,6 +369,17 @@ function connectEvents() {
 	});
 	source.addEventListener('presence', (e) => renderConnectors(JSON.parse(e.data)));
 	source.addEventListener('version', (e) => checkVersion(JSON.parse(e.data)));
+
+	/*
+	 * 切れている間に届いた分が多すぎて、サーバーが途中で流すのをやめた。
+	 *
+	 * このまま続けると、欠けたところを飛ばして新しい分だけが並ぶ。
+	 * 読み飛ばしと区別がつかないので、読み直す。
+	 */
+	source.addEventListener('truncated', () => {
+		showBanner('切れている間の発言が多いため、読み直します…');
+		setTimeout(() => location.reload(), 1500);
+	});
 	source.addEventListener('open', hideBanner);
 	source.addEventListener('error', () => {
 		// EventSource は自動で繋ぎ直す。繋がるまでは帯を出しておく
@@ -417,8 +428,52 @@ async function switchRoom(next, force = false) {
 	await start();
 }
 
+/*
+ * メンテナンス中かどうかを尋ねる。
+ *
+ * 印がある間、API は 503 を返すが /api/version だけは 200 で状態を返す
+ * （src/server/maintenance-handler.mjs）。SSE も 503 なので、帯を出せるのは
+ * この口だけである。ここを叩いていなかったため、印があるときの画面は
+ * 版が「—」・参加者 0 人・ログ空・入力欄は使えるまま、という姿だった。
+ *
+ * @returns {Promise<boolean>} メンテナンス中か
+ */
+async function checkMaintenance() {
+	try {
+		const res = await fetch(withAccessToken('/api/version'));
+		if (!res.ok) return false;
+		const info = await res.json();
+		el.version.textContent = info.version;
+		applyEnv(info.env);
+		applyMaintenance(info.maintenance, info.maintenance_since, info.maintenance_reason);
+		return Boolean(info.maintenance);
+	} catch {
+		// 繋がらないのは別の帯が出す。ここでは判定しない
+		return false;
+	}
+}
+
+/** 明けるまで見に行く。明けたら読み直す */
+function waitUntilCleared() {
+	const timer = setInterval(async () => {
+		if (await checkMaintenance()) return;
+		clearInterval(timer);
+		showBanner('メンテナンスが明けました。読み直します…');
+		setTimeout(() => location.reload(), 1000);
+	}, 5000);
+}
+
 async function start() {
 	el.me.textContent = connectorId;
+
+	/*
+	 * 先に印を見る。メンテナンス中に join や history を投げると 503 になり、
+	 * 例外の帯（繋がりません）が出て、本当の理由が伝わらない
+	 */
+	if (await checkMaintenance()) {
+		waitUntilCleared();
+		return;
+	}
 
 	const joined = await api('/api/join', {
 		method: 'POST',

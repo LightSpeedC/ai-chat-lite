@@ -120,7 +120,8 @@
 		<p>ルーム名を入れてください。最初の発言があった時点で一覧に並びます。</p>
 		<input type="text" id="room-input" maxlength="64" required>
 		<menu>
-			<button value="cancel" formnovalue>やめる</button>
+			<!-- required な入力があるので、formnovalidate が無いと「やめる」で閉じない -->
+			<button value="cancel" formnovalidate>やめる</button>
 			<button value="ok">決定</button>
 		</menu>
 	</form>

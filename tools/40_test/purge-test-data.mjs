@@ -94,12 +94,30 @@ const dataDir = toProduction
 	: (process.env.AICHAT_DATA ?? join(root, 'tmp', '_data'));
 const dbPath = join(dataDir, 'chat.db');
 
-/** --names で渡された名前。空なら接頭辞で全部を対象にする */
-const namesArg = args[namesValueIndex];
-const names =
-	args.includes('--names') && namesArg
-		? namesArg.split(',').map((s) => s.trim()).filter(Boolean)
-		: [];
+/** --names で渡された名前。指定が無ければ空で、接頭辞に当たるものすべてが対象になる */
+const wantsNames = args.includes('--names');
+/*
+ * 次の引数が - で始まるなら、それは値ではなく別のオプションである。
+ * 値として拾うと、--names --dry-run が「--dry-run という名前を消す」になる。
+ */
+const namesArg = namesValueIndex >= 0 ? args[namesValueIndex] : undefined;
+const namesValue = namesArg && !namesArg.startsWith('-') ? namesArg : undefined;
+const names = namesValue
+	? namesValue.split(',').map((s) => s.trim()).filter(Boolean)
+	: [];
+
+/*
+ * --names を渡したのに名前が取れないときは断る。
+ *
+ * 空のまま進めると names.length === 0 が「接頭辞で全部」と同じ意味になり、
+ * 絞ったつもりで全部消える。値の付け忘れ（--names だけ）・空文字・
+ * カンマだけ、のどれもここで止める。
+ */
+if (wantsNames && names.length === 0) {
+	console.error('--names には消す名前を渡してください（カンマ区切り）。');
+	console.error('値を付けずに実行すると、接頭辞に当たるものすべてが対象になります。');
+	process.exit(2);
+}
 
 const where = dbPath.replace(root, '.');
 console.log(`相手: ${where}${toProduction ? '  ← 本番' : ''}`);

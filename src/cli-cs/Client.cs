@@ -53,6 +53,28 @@ namespace AiChat
 			return Send("POST", path, jsonBody, timeoutSec);
 		}
 
+		/// <summary>
+		/// 1 回だけ試して、繋がらなければ null を返す。プロセスは終えない。
+		///
+		/// Get は繋ぎ直しが尽きた時点で Environment.Exit する。印を出すだけの
+		/// 用途でそれを使うと、サーバーが閉じているだけで即 exit 3 になり、
+		/// 本来の呼び出し（粘る Client）が一度も走らなかった。restart の直後に
+		/// wait を張ると、node 版は最大 10 分粘るのに C# 版だけが即座に落ちていた。
+		///
+		/// node 版の announceEnv も、失敗したら黙って諦める形になっている。
+		/// </summary>
+		public Dictionary<string, object> TryGet(string path, int timeoutSec = 60)
+		{
+			try
+			{
+				return SendOnce("GET", path, null, timeoutSec);
+			}
+			catch (Exception)
+			{
+				return null;
+			}
+		}
+
 		private Dictionary<string, object> Send(string method, string path, string jsonBody, int timeoutSec)
 		{
 			bool announced = false;

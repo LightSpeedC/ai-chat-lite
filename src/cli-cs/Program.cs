@@ -158,11 +158,17 @@ namespace AiChat
 			 * 取れなければ黙って諦める。印は補助なので、ここで粘る意味がない。
 			 * 粘ると、使い方の誤りが「繋がらない待ち」に埋もれる。繋がらないことの
 			 * 案内は、本来の呼び出しが出す。だから繋ぎ直さない Client で聞く。
+			 *
+			 * 聞くのは TryGet にする。Get は繋ぎ直しが尽きた時点で
+			 * Environment.Exit するため、例外にならず catch も動かない。
+			 * サーバーが閉じているだけで即 exit 3 になり、本来の呼び出しが
+			 * 一度も走らなかった（restart の直後に wait を張ると落ちる）。
 			 */
 			try
 			{
 				var probe = new Client(RequireBase(), accessToken, 0, null);
-				Dictionary<string, object> info = probe.Get("/api/version", 3);
+				Dictionary<string, object> info = probe.TryGet("/api/version", 3);
+				if (info == null) return;
 				string env = Json.Str(info, "env", "") == "test" ? "テスト" : "本番";
 				Console.Error.WriteLine(env + "（" + DescribePlace() + "）");
 			}
