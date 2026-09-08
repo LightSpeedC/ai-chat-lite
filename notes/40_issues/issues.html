@@ -597,8 +597,8 @@ footer a {
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（5 件 / 未 3 / 着手 1 / 済 1）</a></li>
 		<li class="g02"><a href="#g02">データ（6 件 / 未 2 / 済 4）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（20 件 / 未 4 / 着手 3 / 済 13）</a></li>
-		<li class="g04"><a href="#g04">チャットの機能（20 件 / 未 9 / 着手 1 / 済 10）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（20 件 / 未 3 / 着手 4 / 済 13）</a></li>
+		<li class="g04"><a href="#g04">チャットの機能（21 件 / 未 10 / 着手 1 / 済 10）</a></li>
 	</ol>
 </section>
 
@@ -895,7 +895,8 @@ const servers = await startServers();           // 待ち受けを開始</code><
 
 				<ul class="todos">
 					<li class="done"><span class="badge b-done">☑</span> <strong>成功した経路だけで消す形にした</strong>。<code>finally</code> をやめ、入れ替えが終わった後に消す。失敗した経路では印を残し、<strong>DB の有無と控えの置き場を出して人を待つ</strong>。別の印へ置き換える案は採らない（見る場所が 2 つになる）</li>
-					<li><span class="badge b-todo">未</span> <code>tests/</code> に <code>restore.ps1</code> を通すものを足す（<a href="#i260908-05">i260908-05</a> の「手順が実行できない」と同じ場所）</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>廃止した <code>--connector-id</code> を使っていた 2 行も直した</strong>（<a href="#i260908-05">i260908-05</a> の 1）。直す前は <code>exit 2</code> で最初の 1 行から進まなかった</li>
+					<li><span class="badge b-todo">未</span> <code>tests/</code> に <code>restore.ps1</code> を通すものを足す</li>
 				</ul>
 			</div>
 		</details>
@@ -1275,7 +1276,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">20 件 / 未 4 / 着手 3 / 済 13</span>
+		<span class="count">20 件 / 未 3 / 着手 4 / 済 13</span>
 	</summary>
 
 	<div class="groupbody">
@@ -3278,9 +3279,9 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 			</div>
 		</details>
 
-		<details class="issue" id="i260908-05" open>
+		<details class="issue doing" id="i260908-05" open>
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-doing">着手</span>
 				<span class="no">i260908-05</span>
 				レビュー #19 の残り（運用の手順・読み手の判断・low）
 			</summary>
@@ -3330,10 +3331,28 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 				</div>
 
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> 運用の手順（1 ・ 2 ・ 3）を直す。<strong>戻す手順が動かないのは、控えを取っている意味が消える</strong></li>
-					<li><span class="badge b-todo">未</span> 読み手が判断を誤るもの（4〜11）を直す。<strong>4 ・ 5 ・ 6 ・ 7 は実装、8 ・ 11 は資料</strong></li>
-					<li><span class="badge b-todo">未</span> low を見て、直すものと落とすものを分ける</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>運用の手順（1 ・ 2 ・ 3）を直した。</strong>1 は <code>say :ai-chat-lite:</code> ・ <code>restart :restore:</code> の形に（<code>--room public</code> も明示）。2 は <code>$ErrorActionPreference</code> をその 1 行だけ <code>Continue</code> にした。3 は <strong><code>#Requires -Version 7</code> が実際には不要だった</strong>ので外し、<code>powershell.exe</code> → <code>powershell</code> に直した。<strong>5.1 で完走することを実測</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>読み手が判断を誤るもの（4〜11）を直した。</strong>下の表を参照</li>
+					<li><span class="badge b-todo">未</span> low を見て、直すものと落とすものを分ける（<strong>19 件は場所だけの指摘で、直し方も未検討</strong>）</li>
 				</ul>
+
+				<h3>直した中身（4〜11）</h3>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="num">#</th><th class="nowrap">どこ</th><th>直したこと</th></tr></thead>
+					<tbody>
+						<tr><td class="num">4</td><td class="nowrap"><code>server.mjs</code></td><td><code>close</code> で接続を戻す形にした（印を付けるだけだった）。<strong>あわせて <code>hub.waitForMessages</code> に <code>signal</code> を渡し、切れたら待機もやめるようにした</strong>。居座った待機が後続の検査に干渉したことで見つかった。テストを 1 件足した</td></tr>
+						<tr><td class="num">5</td><td class="nowrap"><code>server.mjs</code> ・ <code>chat.js</code></td><td>SSE の補完を 500 件ずつ進めて追いつく形にした。<code>SSE_CATCHUP_MAX</code>（2000 件）を超えたら <code>truncated</code> を送り、<strong>画面が読み直す</strong></td></tr>
+						<tr><td class="num">6</td><td class="nowrap"><code>chat.js</code></td><td>起動時に <code>/api/version</code> を見る形にした。印がある間は <code>join</code> ・ <code>history</code> を投げず、帯を出して 5 秒ごとに明けたかを確かめる</td></tr>
+						<tr><td class="num">7</td><td class="nowrap"><code>Client.cs</code> ・ <code>Program.cs</code></td><td><code>TryGet</code> を足し、<code>AnnounceEnv</code> がそれを使う形にした。<strong>閉じたポートへの <code>recent</code> で 2 本とも「1 分（10 秒 × 6 回）まで繋ぎ直します」を出すことを実測</strong>（直す前の C# 版はこの行が出ずに即 <code>exit 3</code>）</td></tr>
+						<tr><td class="num">8</td><td class="nowrap">設計書</td><td>各段階の SQL と検索条件の一覧に <code>archived_seq IS NULL</code> を入れた。<code>dump</code> だけ絞らないことと、<code>archive.test.mjs</code> が足し忘れを落とすことも書いた</td></tr>
+						<tr><td class="num">9</td><td class="nowrap"><code>index.html</code></td><td><code>formnovalue</code> → <code>formnovalidate</code></td></tr>
+						<tr><td class="num">10</td><td class="nowrap"><code>purge-test-data.mjs</code></td><td><code>--names</code> に名前が渡っていなければ <code>exit 2</code> で断る。<strong><code>--names --dry-run</code> が「<code>--dry-run</code> という名前」と読まれていたのも直した</strong>（次が <code>-</code> で始まるなら値と見ない）</td></tr>
+						<tr><td class="num">11</td><td class="nowrap">USAGE</td><td>「小さいサブエージェントに待たせる」→「<strong>親から背面で張る</strong>」。設計書は「サブエージェントを使わない」と書いており、USAGE が古い側だった。あわせて「60 分で止められる」を<strong>メモリで刈られる話</strong>に直した</td></tr>
+					</tbody>
+				</table>
+				</div>
 			</div>
 		</details>
 
@@ -3345,7 +3364,7 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">20 件 / 未 9 / 着手 1 / 済 10</span>
+		<span class="count">21 件 / 未 10 / 着手 1 / 済 10</span>
 	</summary>
 
 	<div class="groupbody">
@@ -4328,6 +4347,52 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 				<ul class="todos">
 					<li class="done"><span class="badge b-done">☑</span> <strong>両方直した</strong>。<code>escapeText</code> に <code>"</code> → <code>&amp;quot;</code> を足し、自動リンクの文字集合を <code>[^\s&amp;"']+</code> にした（<code>'</code> も外した）。<strong>片方に頼ると、エスケープの範囲を変えたときに黙って開く</strong></li>
 					<li class="done"><span class="badge b-done">☑</span> テストを 3 件足した（<code>tests/markdown.test.mjs</code>）。攻撃の形（<code>https://example.com/a"onmouseover="alert(1)</code>）を入れて、<strong>タグの中に属性が生えず本文として残る</strong>ことを見ている</li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue" id="i260908-06" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260908-06</span>
+				ID とルームにピリオドを使えるようにする
+			</summary>
+			<div class="issuebody">
+				<p><strong>いま使えるのは英数字・ハイフン・下線だけ</strong>である（<code>src/client/options.mjs</code> の <code>ID_PATTERN</code> ＝ <code>^[A-Za-z0-9_-]+$</code>）。</p>
+
+				<p><strong>プロジェクトのフォルダ名にピリオドを含むものがある。</strong>名乗る ID はフォルダ名を使う決めなので、そのままでは名乗れない。</p>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="nowrap">どこ</th><th>直すもの</th></tr></thead>
+					<tbody>
+						<tr><td class="nowrap"><code>options.mjs</code> 72</td><td><code>ID_PATTERN</code>。<strong>ここが唯一の出どころ</strong>で、サーバー（<code>server.mjs</code> 52）と C# 版（埋め込んだ定義）が読む</td></tr>
+						<tr><td class="nowrap"><code>options.mjs</code> 85</td><td><code>WAITER_PATTERN</code> の中の ID の文字集合</td></tr>
+						<tr><td class="nowrap"><code>Definition.cs</code> 105 ・ 107</td><td>読めなかったときの既定値。<strong>2 か所とも同じ形にする</strong></td></tr>
+						<tr><td class="nowrap"><code>server.mjs</code> 59</td><td>断るときの文言「英数字・ハイフン・下線だけです」</td></tr>
+						<tr><td class="nowrap">テスト</td><td><code>client-connector-id.test.mjs</code> ・ <code>names.test.mjs</code> の期待値</td></tr>
+						<tr><td class="nowrap">資料</td><td>USAGE ・ 設計書 ・ 共通ルールの「ID に使えるのは英数字・ハイフン・下線だけ」</td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-warning">
+					<p><strong>ピリオドは正規表現のメタ文字である。</strong><code>waiters</code> は ID を式に埋めて走っているプロセスを探すため、<code>a.b</code> が <code>axb</code> に当たる。<strong>囲んでいても任意の 1 文字として効く</strong>ので、埋める前にエスケープする。</p>
+					<p>前方一致の取り違えで他プロジェクトを止めた事故（<a href="#i260901-07">i260901-07</a>）と同じ形になる。</p>
+				</div>
+
+				<div class="callout callout-important">
+					<p><strong>ID は待受けのログのファイル名に入る</strong>（<code>chat.mjs</code> 493 ・ <code>WaitLog.cs</code> 31 の <code>logs/client/yyyymmdd-hhmmss-&lt;ID&gt;.log</code>）。</p>
+					<p><code>/</code> と <code>\</code> は使えないままなので<strong>パスは抜けられない</strong>が、<strong>末尾のピリオドは Windows が落とす</strong>ため、名前が食い違う。<code>..</code> だけの ID も名前として扱いにくい。<strong>置ける文字と、名前の形（先頭・末尾）は別に決める</strong>。</p>
+				</div>
+
+				<p><strong>優先度は低い。</strong>いま名乗れなくて困っているものは無い。</p>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> 使える形を決める（<strong>ピリオドを足すだけにするか、先頭・末尾に置けないようにするか</strong>）</li>
+					<li><span class="badge b-todo">未</span> 出どころ 1 か所とその写しを直す。<strong>C# 版の既定値も揃える</strong></li>
+					<li><span class="badge b-todo">未</span> <code>waiters</code> の式に埋める前のエスケープを足す</li>
+					<li><span class="badge b-todo">未</span> テストと資料を揃える</li>
 				</ul>
 			</div>
 		</details>

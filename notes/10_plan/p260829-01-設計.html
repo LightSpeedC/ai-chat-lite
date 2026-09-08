@@ -406,7 +406,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 設計</h1>
 		<p class="lead">ローカルPC内で AI セッションと人間が同席する簡易チャットの設計</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-07</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-08</p>
 	</div>
 </div>
 
@@ -1479,19 +1479,30 @@ if (mode.journal_mode !== 'wal') {
 	<h3>各段階で発行する SQL</h3>
 
 	<pre><code class="language-sql">-- ① join：参加登録のあと、現在位置と参加者一覧を返す
-SELECT MAX(msg_seq) FROM messages WHERE room_id = ?;
-SELECT * FROM connectors ORDER BY last_active_at DESC;
+SELECT COALESCE(MAX(msg_seq), 0) FROM messages
+WHERE archived_seq IS NULL AND room_id = ?;
+SELECT * FROM connectors
+WHERE archived_seq IS NULL
+ORDER BY last_active_at DESC;
 
 -- ② history：直近 50 件。受け取った側で昇順に並べ替えて表示する
 SELECT * FROM messages
-WHERE room_id = ?
+WHERE archived_seq IS NULL AND room_id = ?
 ORDER BY msg_seq DESC
 LIMIT ?;
 
 -- ③ events：接続直後に、取りこぼした分をまず流す
 SELECT * FROM messages
-WHERE room_id = ? AND msg_seq &gt; ?
-ORDER BY msg_seq ASC;</code></pre>
+WHERE archived_seq IS NULL AND room_id = ? AND msg_seq &gt; ?
+ORDER BY msg_seq ASC
+LIMIT ?;</code></pre>
+
+	<div class="callout callout-caution">
+		<p><strong>読み出しには必ず <code>archived_seq IS NULL</code> を入れる。</strong>足し忘れると、片付けたはずのものが出る。例外は <code>dump</code> だけで、そこは中身を確かめるためのものなので絞らない（<a href="p260830-02-アーカイブ機能.html">アーカイブ機能</a>）。</p>
+		<p><code>tests/archive.test.mjs</code> が「<strong>messages を読む関数はすべて絞り込みを持つ</strong>」を検査している。SQL の文字列を見て回るので、足し忘れた関数はそこで落ちる。</p>
+	</div>
+
+	<p><strong>③ には上限が付く。</strong>1 回で 500 件（<code>MAX_HISTORY_LIMIT</code>）までしか返らないため、サーバーは 500 件ずつ進めて追いつく。多すぎるときは打ち切り、画面に読み直させる。</p>
 
 	<p>② は <code>(room_id, msg_seq)</code> のインデックスを逆から読むだけで済むため、並べ替えの処理は発生しない。</p>
 
@@ -1500,7 +1511,7 @@ ORDER BY msg_seq ASC;</code></pre>
 	<p>画面の上端までスクロールしたら、表示中で最も古い <code>msg_seq</code> を <code>before</code> に渡す。</p>
 
 	<pre><code class="language-sql">SELECT * FROM messages
-WHERE room_id = ? AND msg_seq &lt; ?
+WHERE archived_seq IS NULL AND room_id = ? AND msg_seq &lt; ?
 ORDER BY msg_seq DESC
 LIMIT ?;</code></pre>
 
@@ -1576,23 +1587,27 @@ LIMIT ?;</code></pre>
 		<tbody>
 			<tr>
 				<td class="nowrap">初期表示</td><td class="nowrap"><code>/api/history</code></td>
-				<td><code>room_id = ?</code> → <code>ORDER BY msg_seq DESC LIMIT ?</code></td>
+				<td><code>archived_seq IS NULL AND room_id = ?</code> → <code>ORDER BY msg_seq DESC LIMIT ?</code></td>
 			</tr>
 			<tr>
 				<td class="nowrap">遡り</td><td class="nowrap"><code>/api/history</code></td>
-				<td><code>room_id = ? AND msg_seq &lt; ?</code> → <code>ORDER BY msg_seq DESC LIMIT ?</code></td>
+				<td><code>archived_seq IS NULL AND room_id = ? AND msg_seq &lt; ?</code> → <code>ORDER BY msg_seq DESC LIMIT ?</code></td>
 			</tr>
 			<tr>
 				<td class="nowrap">未読取得</td><td class="nowrap"><code>/api/poll</code></td>
-				<td><code>room_id = ? AND msg_seq &gt; ?</code> → <code>ORDER BY msg_seq ASC</code></td>
+				<td><code>archived_seq IS NULL AND room_id = ? AND msg_seq &gt; ?</code> → <code>ORDER BY msg_seq ASC LIMIT ?</code></td>
 			</tr>
 			<tr>
 				<td class="nowrap">SSE 接続直後</td><td class="nowrap"><code>/api/events</code></td>
-				<td>同上</td>
+				<td>同上。<strong>1 回で 500 件までなので、500 件ずつ進めて追いつく</strong></td>
 			</tr>
 			<tr>
 				<td class="nowrap">参加者一覧</td><td class="nowrap"><code>/api/connectors</code></td>
-				<td><code>ORDER BY last_active_at DESC</code></td>
+				<td><code>archived_seq IS NULL</code> → <code>ORDER BY last_active_at DESC</code></td>
+			</tr>
+			<tr>
+				<td class="nowrap">中身の確認</td><td class="nowrap"><code>/api/dump</code></td>
+				<td><strong>絞らない。</strong>片付けたものも <code>archived_seq</code> ごと書き出す</td>
 			</tr>
 		</tbody>
 	</table>
