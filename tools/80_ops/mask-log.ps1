@@ -29,10 +29,23 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$projectKey = 'N--2026-ai-chat-lite'
 
+<#
+	会話ログの置き場は、プロジェクトのパスから決まる。区切り（: と \）を - に
+	置き換えた名前になる（N:\ai-chat-lite → N--ai-chat-lite）。
+
+	名前を決め打ちにしていたため、プロジェクトを移したときに黙って対象から
+	外れていた。伏せられるのは etc\history\jsonl のコピーだけになり、
+	次のセッションで本体からコピーし直されて伏せた分が戻る形だった。
+
+	前方一致で探してはいけない。N--ai-chat-lite は N--ai-chat-lite-reviewer に
+	当たり、他プロジェクトのログを書き換えることになる。
+#>
+$projectKey = ($root -replace '[:\\/]', '-')
+
+$mainLog = Join-Path $env:USERPROFILE ".claude\projects\$projectKey"
 $targets = @(
-	Join-Path $env:USERPROFILE ".claude\projects\$projectKey"
+	$mainLog
 	Join-Path $root 'etc\history\jsonl'
 )
 
@@ -90,6 +103,20 @@ foreach ($dir in $targets) {
 }
 
 Write-Host ''
+
+<#
+	本体が無いまま「伏せました」「残っていません」と出してはいけない。
+
+	コピーの側だけを伏せても、次のセッションでフックが本体からコピーし直す。
+	伏せたつもりで残る形になるため、ここで止めて場所を出す。
+#>
+if (-not (Test-Path $mainLog)) {
+	Write-Host '★ 本体の会話ログが見つかりません。伏せても次のセッションで戻ります。' -ForegroundColor Red
+	Write-Host ('  探した場所: ~\.claude\projects\{0}' -f $projectKey)
+	Write-Host '  プロジェクトを移した直後なら、フォルダ名が変わっています'
+	exit 1
+}
+
 if ($WhatIfOnly) {
 	Write-Host ("{0} ファイル・{1} 件が見つかりました（書き換えていません）" -f $totalFile, $totalHit)
 } elseif ($totalHit -eq 0) {

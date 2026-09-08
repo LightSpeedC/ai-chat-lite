@@ -224,18 +224,50 @@ console.log(r.c + ' 件 / 最大 msg_seq ' + (r.m ?? 'なし'));
 		'復旧 {0} から {1} / 前の DB は {2} へ' -f (Split-Path $Path -Leaf), $check, (Split-Path $prevDir -Leaf)
 	)
 
+	<#
+		--- 5. 印を消す。入れ替えが終わったときだけ ---
+
+		失敗した経路では消さない。危ないのは chat.db を prev- へ移したあと、
+		控えを置く前に落ちた場合で、このとき DB が無い状態になる。
+
+		印を消せばサーバーが起動し、DatabaseSync は無ければ作るため、
+		空の DB に版が当たって本番として立ち上がる。唯一の現物は prev- に
+		残ったまま、参加者には「取りこぼしなし」が流れる。
+
+		止まったままのほうが直せる。印は人が確かめてから消す。
+	#>
+	if (Test-Path $lockPath) {
+		Remove-Item -LiteralPath $lockPath -Force
+	}
+	Write-Host '[5/5] メンテナンスの印を消しました。サーバーが自分から起動します'
+
 } catch {
 	# 途中で止まった場合も記録に残す。DB が中途半端な状態かもしれない
 	Write-OpsLog -Level E -Kind restore -LogsDir $logsDir -Message (
 		'復旧に失敗 {0} / {1}' -f (Split-Path $Path -Leaf), ($_.Exception.Message -replace "`r?`n", ' ')
 	)
-	throw
-} finally {
-	# --- 5. 印を消す。途中で失敗しても必ず消す ---
+
+	<#
+		印を残す。DB が無い・中途半端なまま起動させないため。
+
+		どこで落ちたかは人が見て判断する。見るべき場所を出しておく。
+	#>
 	if (Test-Path $lockPath) {
-		Remove-Item -LiteralPath $lockPath -Force
+		Write-Host ''
+		Write-Host 'メンテナンスの印を残しました。サーバーは起動しません' -ForegroundColor Yellow
+		Write-Host '  印   _data\MAINTENANCE'
+		if (Test-Path $dbPath) {
+			Write-Host '  DB   _data\chat.db … あります'
+		} else {
+			Write-Host '  DB   _data\chat.db … ありません' -ForegroundColor Red
+			Write-Host '       入れ替えの途中で止まっています。prev- の中身を戻してください' -ForegroundColor Red
+		}
+		if ($prevDir -and (Test-Path $prevDir)) {
+			Write-Host ('  控え _data\{0}' -f (Split-Path $prevDir -Leaf))
+		}
+		Write-Host '  中身を確かめたら、印を消すとサーバーが自分から起動します'
 	}
-	Write-Host '[5/5] メンテナンスの印を消しました。サーバーが自分から起動します'
+	throw
 }
 
 Write-Host ''
