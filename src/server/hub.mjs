@@ -70,29 +70,38 @@ function siftRooms(rooms, sinceByRoom, exclude) {
  * 呼ぶ側はそこまで読んだものとして記録できる。進めないと、次の待受けが同じ記録を
  * 読み直して同じ所で待つことになる。
  *
+ * signal を渡すと、切れた時点で待機をやめる。渡さないと、相手が切っても
+ * 時間切れまで（既定 240 秒）待機が居座る。
+ *
  * @param {string[]} rooms
  * @param {Map<string, number>} sinceByRoom ルームごとに、この msg_seq より新しいものを待つ
  * @param {number} timeoutMs
  * @param {Set<string>} [exclude] 起こさない msg_kind
+ * @param {AbortSignal} [signal] 待つのをやめる合図
  * @returns {Promise<{messages: object[], scanned: Map<string, number>}>}
  */
-export function waitForMessages(rooms, sinceByRoom, timeoutMs, exclude = NOTHING) {
+export function waitForMessages(rooms, sinceByRoom, timeoutMs, exclude = NOTHING, signal = null) {
 	const first = siftRooms(rooms, sinceByRoom, exclude);
 	if (first.messages.length > 0) return Promise.resolve(first);
+	// もう切れている。待たずに、進んだ位置だけ返す
+	if (signal?.aborted) return Promise.resolve({ messages: [], scanned: first.scanned });
 
 	return new Promise((resolve) => {
 		// 除く分だけが積まれていたら、待つ位置をそこまで進めてから待つ
 		const waiter = { rooms: new Set(rooms), since: first.scanned, exclude };
+		const onAbort = () => waiter.settle({ messages: [], scanned: waiter.since });
 		waiter.settle = (result) => {
 			if (!waiters.has(waiter)) return; // 二重に呼ばれても 1 回だけ
 			waiters.delete(waiter);
 			clearTimeout(waiter.timer);
+			signal?.removeEventListener('abort', onAbort);
 			resolve(result);
 		};
 		// unref しておくと、待機中でもプロセスの終了を妨げない
 		// 時間切れでも位置を返す。除く分で進んだ位置を呼ぶ側が記録できる
 		waiter.timer = setTimeout(() => waiter.settle({ messages: [], scanned: waiter.since }), timeoutMs);
 		waiter.timer.unref?.();
+		signal?.addEventListener('abort', onAbort, { once: true });
 		waiters.add(waiter);
 	});
 }

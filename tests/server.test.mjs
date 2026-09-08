@@ -159,6 +159,40 @@ test('待っている間はオンライン扱いになる', async () => {
 	assert.equal(gone.status, 'grace', 'ただし猶予の内なのでオフラインではない');
 });
 
+/*
+ * 【なぜ必要か】
+ * close は印を付けるだけで、接続を戻すのは待ち終えた後の finally だった。
+ * そのルームに新着が無ければ最大 240 秒はそのまま数えられ、オフラインに
+ * なるのは猶予 90 秒を足した 330 秒後になる。「90 秒でオフライン」を読んだ
+ * 相手が、生死を読み違える。
+ */
+test('待受けを切れば、待ち切る前に接続が外れる', async () => {
+	// get() は signal を取らないので、ここだけ fetch を直に使う
+	const controller = new AbortController();
+	const polling = fetch(`${base}/api/poll?connector_id=test-cut&room_id=public&since=99999&wait=10`, {
+		headers: AUTH,
+		signal: controller.signal,
+	}).catch(() => {});
+	await new Promise((r) => setTimeout(r, 150));
+
+	const { json } = await get('/api/connectors');
+	const before = json.connectors.find((u) => u.connector_id === 'test-cut');
+	assert.equal(before.connected, true, '待っている間は接続として数える');
+
+	assert.ok(hub.stats().waiters >= 1, '待機が hub に入っている');
+
+	controller.abort();
+	await polling;
+	// 切れたことがサーバーに届くのを待つ。待ち切る 10 秒よりずっと短い
+	await new Promise((r) => setTimeout(r, 250));
+
+	const { json: after } = await get('/api/connectors');
+	const cut = after.connectors.find((c) => c.connector_id === 'test-cut');
+	assert.equal(cut.connected, false, '切っても接続として数え続けている');
+	assert.equal(cut.status, 'grace', '猶予の内なのでオフラインにはしない');
+	assert.equal(hub.stats().waiters, 0, '切れても待機が hub に居座っている');
+});
+
 test('別のルームには届かない', async () => {
 	// ルーム名の接頭辞は sandbox-（テストデータの規約）
 	await post('/api/say', { room_id: 'sandbox-other', from_connector_id: 'test-connector1', msg_body: '別室' });

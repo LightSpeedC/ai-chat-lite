@@ -3,7 +3,7 @@ import { startListening, setHandler, closeListening } from './listen.mjs';
 
 import {
 	PORT, HOSTS, DEFAULT_ROOM, MAX_WAIT_SEC, OFFLINE_CHECK_MS,
-	MAX_ID_LENGTH, MAX_BODY_LENGTH, DEFAULT_HISTORY_LIMIT,
+	MAX_ID_LENGTH, MAX_BODY_LENGTH, DEFAULT_HISTORY_LIMIT, MAX_HISTORY_LIMIT,
 	VERSION, STARTED_AT, IS_TEST, TEST_ACCESS_TOKEN,
 } from './config.mjs';
 import { log } from './log.mjs';
@@ -138,6 +138,14 @@ function numberOf(value, fallback) {
 
 /** messages.msg_kind に入る値。版の SQL の CHECK と同じ並び */
 const MSG_KINDS = ['say', 'join', 'leave', 'archive', 'notice'];
+
+/*
+ * SSE で繋ぎ直したときに、まとめて流す上限。
+ *
+ * これを超える分は流さず、truncated を送って画面に履歴を取り直させる。
+ * 全部流すと、長く切れていた 1 人のために大量の書き込みが続く
+ */
+const SSE_CATCHUP_MAX = 2000;
 
 /**
  * 待受けを起こさない msg_kind を読む。省略されていたら空（全部で起こす）。
@@ -320,17 +328,52 @@ async function handlePoll(req, res, url) {
 	}
 
 	// 待っている間も在席とみなす。接続を保持しているので確実にいる
+	let counted = false;
 	if (connectorId) {
 		touchConnector(connectorId);
 		addConnection(connectorId);
+		counted = true;
 		broadcastPresence();
 	}
 
+	/*
+	 * 数えた接続を戻す。切れたときと、待ち終えたときの両方から呼ぶ。
+	 *
+	 * close で印を付けるだけにしていたため、実際に減るのは待ち終えた後の
+	 * finally だった。そのルームに新着が無ければ最大 240 秒はそのまま数えられ、
+	 * オフラインになるのは猶予 90 秒を足した 330 秒後になっていた。
+	 * 「90 秒でオフライン」を読んだ側は、相手の生死を読み違える。
+	 *
+	 * 二重に減らさないよう counted で守る。MAX(0, …) でも下限は守られるが、
+	 * それに頼ると別の接続の分まで食う
+	 */
+	const release = () => {
+		if (!counted) return;
+		counted = false;
+		removeConnection(connectorId);
+		broadcastPresence();
+	};
+
+	/*
+	 * 切れたら待機もやめる。印を付けるだけにすると、相手がいないのに
+	 * 時間切れまで（既定 240 秒）待機が居座る。
+	 */
 	let closed = false;
-	req.on('close', () => { closed = true; });
+	const cancel = new AbortController();
+	req.on('close', () => {
+		closed = true;
+		release();
+		cancel.abort();
+	});
 
 	try {
-		const { messages, scanned } = await waitForMessages(rooms, sinceByRoom, waitSec * 1000, exclude);
+		const { messages, scanned } = await waitForMessages(
+			rooms,
+			sinceByRoom,
+			waitSec * 1000,
+			exclude,
+			cancel.signal
+		);
 		if (closed) return;
 
 		/*
@@ -357,10 +400,7 @@ async function handlePoll(req, res, url) {
 		}
 		sendJson(res, 200, body);
 	} finally {
-		if (connectorId) {
-			removeConnection(connectorId);
-			broadcastPresence();
-		}
+		release();
 	}
 }
 
@@ -688,9 +728,33 @@ function handleEvents(req, res, url) {
 		addConnection(connectorId);
 	}
 
-	// 履歴を取ってから繋ぐまでの隙間に届いた分を、まず流す
+	/*
+	 * 履歴を取ってから繋ぐまでの隙間に届いた分を、まず流す。
+	 *
+	 * getSince は 1 回で MAX_HISTORY_LIMIT（500）件までしか返さない。1 回だけ
+	 * 呼んでいたため、切れている間に 500 件を超えると、その先が永久に届かなかった。
+	 * 画面は開いた時点の since を URL に焼き付けるので、繋ぎ直しても同じ所から
+	 * 500 件で切れる。読み飛ばしと区別できず、見ている側は欠けに気づけない。
+	 *
+	 * 500 件ずつ進めて追いつく。多すぎるときは打ち切り、画面に読み直させる
+	 */
 	if (since !== null) {
-		for (const message of getSince(roomId, since)) client.send('message', message);
+		let cursor = Number(since) || 0;
+		let sent = 0;
+		for (;;) {
+			const batch = getSince(roomId, cursor);
+			if (batch.length === 0) break;
+			for (const message of batch) client.send('message', message);
+			sent += batch.length;
+			cursor = batch[batch.length - 1].msg_seq;
+			// 1 回分に満たなければ追いついた
+			if (batch.length < MAX_HISTORY_LIMIT) break;
+			if (sent >= SSE_CATCHUP_MAX) {
+				// これ以上は流さない。画面が履歴を取り直す
+				client.send('truncated', { from: cursor, sent });
+				break;
+			}
+		}
 	}
 	// 版を先に伝える。前と違えばブラウザ側が読み直す
 	client.send('version', { version: VERSION, started_at: STARTED_AT, env: ENV_NAME });
