@@ -581,7 +581,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 課題</h1>
 		<p class="lead">これから解決すること。片付いたら閉じて残す</p>
-		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-07</p>
+		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-08</p>
 	</div>
 </div>
 
@@ -595,10 +595,10 @@ footer a {
 -->
 <section class="toc md-skip">
 	<ol>
-		<li class="g01"><a href="#g01">サービスの運用（4 件 / 未 3 / 済 1）</a></li>
-		<li class="g02"><a href="#g02">データ（5 件 / 未 2 / 済 3）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（17 件 / 未 3 / 着手 2 / 済 12）</a></li>
-		<li class="g04"><a href="#g04">チャットの機能（19 件 / 未 9 / 着手 1 / 済 9）</a></li>
+		<li class="g01"><a href="#g01">サービスの運用（5 件 / 未 3 / 着手 1 / 済 1）</a></li>
+		<li class="g02"><a href="#g02">データ（6 件 / 未 2 / 済 4）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（20 件 / 未 4 / 着手 3 / 済 13）</a></li>
+		<li class="g04"><a href="#g04">チャットの機能（20 件 / 未 9 / 着手 1 / 済 10）</a></li>
 	</ol>
 </section>
 
@@ -607,7 +607,7 @@ footer a {
 	<summary>
 		<span class="badge b-todo">未</span>
 		サービスの運用
-		<span class="count">4 件 / 未 3 / 済 1</span>
+		<span class="count">5 件 / 未 3 / 着手 1 / 済 1</span>
 	</summary>
 
 	<div class="groupbody">
@@ -875,6 +875,31 @@ const servers = await startServers();           // 待ち受けを開始</code><
 			</div>
 		</details>
 
+		<details class="issue doing" id="i260908-04" open>
+			<summary>
+				<span class="badge b-doing">着手</span>
+				<span class="no">i260908-04</span>
+				復旧が途中で失敗しても印を消すため、空の DB が本番として起動する
+			</summary>
+			<div class="issuebody">
+				<p><code>tools/80_ops/restore.ps1</code> の <code>finally</code>（233-239 行）が、<strong>どこで落ちても無条件に <code>_data/MAINTENANCE</code> を消す</strong>。コメントも「途中で失敗しても必ず消す」と書いてある。</p>
+
+				<div class="callout callout-caution">
+					<p><strong>危ないのは 215 行と 220 行の間である。</strong>212-218 行で <code>chat.db</code> ・ <code>-wal</code> ・ <code>-shm</code> を <code>prev-*</code> へ移し、220 行で控えを <code>chat.db</code> の位置へ移す。<strong>その間で落ちると、DB が無い状態で印が外れる。</strong></p>
+					<p><code>migrate.mjs</code> の <code>DatabaseSync</code> は無ければ作り、起動路に DB の実在を見る門が無い。<strong>空の DB に版 1〜5 が当たって本番として立ち上がる。</strong>唯一の現物は <code>prev-*</code> に残ったままで、参加者には「取りこぼしなし」が流れる。</p>
+				</div>
+
+				<p>印を消してよいのは、入れ替えが終わったときだけである。<strong>失敗した経路では印を残し、何が起きたかを出して人を待つ</strong>のが筋になる。</p>
+
+				<p>指摘は <code>ai-chat-lite-reviewer</code> のレビュー #19（<code>msg_seq</code> 648）。<strong>実物で確かめた。</strong></p>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> <strong>成功した経路だけで消す形にした</strong>。<code>finally</code> をやめ、入れ替えが終わった後に消す。失敗した経路では印を残し、<strong>DB の有無と控えの置き場を出して人を待つ</strong>。別の印へ置き換える案は採らない（見る場所が 2 つになる）</li>
+					<li><span class="badge b-todo">未</span> <code>tests/</code> に <code>restore.ps1</code> を通すものを足す（<a href="#i260908-05">i260908-05</a> の「手順が実行できない」と同じ場所）</li>
+				</ul>
+			</div>
+		</details>
+
 	</div>
 </details>
 
@@ -883,7 +908,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-todo">未</span>
 		データ
-		<span class="count">5 件 / 未 2 / 済 3</span>
+		<span class="count">6 件 / 未 2 / 済 4</span>
 	</summary>
 
 	<div class="groupbody">
@@ -1203,6 +1228,45 @@ const servers = await startServers();           // 待ち受けを開始</code><
 			</div>
 		</details>
 
+		<details class="issue done" id="i260908-01">
+			<summary>
+				<span class="badge b-done">☑</span>
+				<span class="no">i260908-01</span>
+				片付けた行が主キーを占めるため、繋ぎ直しても復活しない
+			</summary>
+			<div class="issuebody">
+				<p><code>src/server/store.mjs</code> の <code>upsertConnector</code>（105-111 行）・<code>touchConnector</code>（112-116 行）・<code>upsertCursor</code>（131-137 行）の <code>DO UPDATE</code> に <strong><code>archived_seq = NULL</code> が無い</strong>。</p>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="nowrap">テーブル</th><th class="nowrap">主キー</th><th>読み出しの条件</th></tr></thead>
+					<tbody>
+						<tr><td class="nowrap"><code>connectors</code></td><td class="nowrap"><code>connector_id</code></td><td><code>archived_seq IS NULL</code>（127 ・ 128 行）</td></tr>
+						<tr><td class="nowrap"><code>cursors</code></td><td class="nowrap"><code>(connector_id, room_id)</code></td><td><code>archived_seq IS NULL</code>（130 ・ 138 行）</td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<p><strong>片付けた行が枠を占め続けるので、同じ ID の <code>INSERT</code> は必ず <code>DO UPDATE</code> に落ちる。</strong>読み出しは <code>archived_seq IS NULL</code> で弾くため、<strong>書けるのに読めない行</strong>になる。</p>
+
+				<div class="callout callout-caution">
+					<p><strong>読んだ位置が戻らない。</strong><code>server.mjs</code> 317 行の <code>getCursor(...) ?? getMaxSeq(...)</code> が毎回 null を受けるので、<strong><code>poll</code> の起点が毎回「いまの最大値」</strong>になる。待受けを張っていない間の発言を黙って飛ばす。</p>
+					<p><strong><code>archive room &lt;room&gt;</code> は被害が広い。</strong><code>store.mjs</code> 347 行は <code>WHERE archived_seq IS NULL AND room_id = ?</code> でルームだけを絞るため、<strong>そのルームを読んでいた全参加者</strong>の位置を一度に壊す。</p>
+				</div>
+
+				<p><code>who</code> と画面の参加者一覧にも永久に出ない。<code>join</code> ・ <code>leave</code> の知らせは積まれ続ける。設計書（<a href="../10_plan/p260829-01-設計.html">p260829-01</a> 982 行）の「<strong>join し直しても記録があれば触らない（未読を飛ばさないため）</strong>」が、片付けの後だけ成り立たなくなる。</p>
+
+				<p><code>archived_seq</code> を <code>NULL</code> に戻すのは <code>restore()</code>（385 行）だけである。<strong><code>tests/archive.test.mjs</code> 128-130 行は片付け後に <code>getCursor</code> が null を返すことまで見て、そのあと書けるかを見ていない。</strong></p>
+
+				<p>指摘は <code>ai-chat-lite-reviewer</code> のレビュー #19（<code>msg_seq</code> 648）。<strong>主キーの定義（版 1 の <code>001-initial.sql</code>・版 2 の <code>001-connector.sql</code>）まで実物で確かめた。</strong></p>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> <strong><code>DO UPDATE</code> で <code>archived_seq = NULL</code> に戻す形にした</strong>。片付けた行を消して入れ直す案は採らない。<code>restore()</code> が <code>archived_seq</code> でまとめて戻すため、行を消すと戻せなくなる。<strong>片付けは過去のものを隠すためで、ID が二度と使えなくなることではない</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> 「片付けたあとに書いて、読めるか」のテストを 3 件足した（<code>tests/archive.test.mjs</code>。参加者 ・ 読んだ位置 ・ <code>archive room</code> の後）</li>
+				</ul>
+			</div>
+		</details>
+
 	</div>
 </details>
 
@@ -1211,7 +1275,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">17 件 / 未 3 / 着手 2 / 済 12</span>
+		<span class="count">20 件 / 未 4 / 着手 3 / 済 13</span>
 	</summary>
 
 	<div class="groupbody">
@@ -3186,6 +3250,93 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 			</div>
 		</details>
 
+		<details class="issue done" id="i260908-03">
+			<summary>
+				<span class="badge b-done">☑</span>
+				<span class="no">i260908-03</span>
+				伏せ字にする道具が、本体のログを触っていない
+			</summary>
+			<div class="issuebody">
+				<p><code>tools/80_ops/mask-log.ps1</code> 32 行の <code>$projectKey</code> が <strong>移す前のフォルダ名のまま</strong>である（<a href="#i260905-02">i260905-02</a> でプロジェクトを移したときに追随していない）。</p>
+
+				<p>34-37 行の対象は 2 つあり、<strong>本体側は常に存在しない</strong>。57-59 行の <code>Test-Path</code> で「対象がありません」を 1 行出して飛ばす。伏せられるのは <code>etc/history/jsonl</code> のコピーだけになる。</p>
+
+				<div class="callout callout-caution">
+					<p><strong>伏せた分は次のセッションで戻る。</strong>本体が伏せられていないので、SessionStart / Stop のフックが<strong>伏せる前のものをコピーし直す</strong>。</p>
+					<p>それでも 96 行は「残っている語はありませんでした。」、99 行は「次にセッションを開くと、伏せた後のログがコピーされます。」と出す。<strong>伏せたつもりで残る形である。</strong></p>
+				</div>
+
+				<p>直し方は 2 つある。<strong>フォルダ名を実際のものに直す</strong>か、<strong>名前を決め打ちにせず探す</strong>か。決め打ちは移すたびに同じことが起きる。</p>
+
+				<p>指摘は <code>ai-chat-lite-reviewer</code> のレビュー #19（<code>msg_seq</code> 648）。<strong>いまのフォルダ名と 32 行の値が違うことを実物で確かめた。</strong></p>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> <strong>パスから組み立てる形にした</strong>（<code>N:\ai-chat-lite</code> → <code>N--ai-chat-lite</code>）。決め打ちは移すたびに壊れる。<strong>前方一致では探さない</strong>（<code>-reviewer</code> を巻き込むため）</li>
+					<li class="done"><span class="badge b-done">☑</span> 本体が無ければ <code>exit 1</code> で止め、探した場所を出すようにした。<strong>コピーだけ伏せて成功と出す形をやめた</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> <code>-WhatIfOnly</code> で走らせ、<strong>本体が実際に走査対象に入った</strong>ことを確かめた（前は「対象がありません」で飛ばしていた）</li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue" id="i260908-05" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260908-05</span>
+				レビュー #19 の残り（運用の手順・読み手の判断・low）
+			</summary>
+			<div class="issuebody">
+				<p><code>ai-chat-lite-reviewer</code> のレビュー #19（<code>msg_seq</code> 648）で挙がった <strong>high 以外</strong>をここに集める。high は <a href="#i260908-01">i260908-01</a> ・ <a href="#i260908-02">i260908-02</a> ・ <a href="#i260908-03">i260908-03</a> ・ <a href="#i260908-04">i260908-04</a> に個別に立てた。</p>
+
+				<p><strong>まだ 1 度も見ていなかった 9 領域</strong>（DB ・ web UI ・ 運用スクリプト ・ C# 版）の点検である。確定 40 件のうち、<strong>49 件が未検証で残っている</strong>とのこと。</p>
+
+				<h3>運用の手順が実行できない</h3>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="num">#</th><th class="nowrap">どこ</th><th>中身</th></tr></thead>
+					<tbody>
+						<tr><td class="num">1</td><td class="nowrap"><code>restore.ps1</code> 111 ・ 144</td><td>廃止済みの <code>--connector-id</code> を渡すので <code>exit 2</code> で止まる。<strong>バックアップから戻す唯一の手順が最初の 1 行で止まる</strong>。111 行は本文の位置もずれている。設計 ch07 の停止手順 0 ・ 2 も同じ理由で実行されない。<code>tests/</code> に <code>restore.ps1</code> を通すものが無い</td></tr>
+						<tr><td class="num">2</td><td class="nowrap"><code>backup.ps1</code> 72</td><td><code>$ErrorActionPreference = 'Stop'</code> のまま <code>2&gt;&amp;1</code> で受けるため、<code>backup.mjs</code> が stderr に 1 行書いた時点で <code>NativeCommandError</code> で終わる。<strong>印と重なって「待ってから取れた」ときは、スナップショットまで作って zip を作らずに落ちる</strong></td></tr>
+						<tr><td class="num">3</td><td class="nowrap"><code>build-aichat.cmd</code> 4</td><td><code>#requires -Version 7.0</code> の ps1 を 5.1 で呼ぶので、cmd から起動できない。共通ルールの「ps1 は 5.1 で動くように書く」にも当たる</td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<h3>読み手が判断を誤るもの</h3>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="num">#</th><th class="nowrap">どこ</th><th>中身</th></tr></thead>
+					<tbody>
+						<tr><td class="num">4</td><td class="nowrap">「90 秒でオフライン」</td><td><code>server.mjs</code> 330 行の close は印だけで、<code>removeConnection</code> は 359-364 行の finally にある。<strong>そのルームに新着が無ければ最大 240 秒は ● 接続中のまま</strong>（合計 330 秒）。USAGE 1062 行と設計書 2741 行の受け入れ確認が成立しない</td></tr>
+						<tr><td class="num">5</td><td class="nowrap">SSE の取りこぼし補完</td><td><code>server.mjs</code> 692-693 行が limit を渡さず 500 で切り、<code>chat.js</code> 360-362 行が開いた時点の cursor を URL に焼き付ける。<strong>500 件を超えたあとに切断すると、切れている間の発言が永久に届かない</strong></td></tr>
+						<tr><td class="num">6</td><td class="nowrap">メンテナンス中の帯</td><td>設計 ・ 課題 ・ 実装コメントの 3 つが「画面は <code>/api/version</code> を見て帯を出す」と書き課題は済だが、<strong><code>src/web</code> に <code>/api/version</code> を叩く箇所が 1 つも無い</strong>。<code>applyMaintenance</code> に true が渡ることは無い</td></tr>
+						<tr><td class="num">7</td><td class="nowrap">C# 版の繋ぎ直し</td><td><code>Program.cs</code> 155-172 行の <code>AnnounceEnv()</code> が retryTimes=0 の probe で叩き、閉じていると <code>Client.cs</code> 91-93 行で <code>Environment.Exit(3)</code>。例外ではないので catch も動かない。<strong><code>restart</code> 直後に <code>wait</code> を張ると即 exit 3</strong>（node 版は最大 10 分粘る）</td></tr>
+						<tr><td class="num">8</td><td class="nowrap">設計書の検索条件</td><td><a href="../10_plan/p260829-01-設計.html">p260829-01</a> 1479-1494 ・ 1502-1505 ・ 1569-1599 に <code>archived_seq IS NULL</code> が 1 箇所も無い。列と索引は反映済みで、<strong>読み出し条件だけが archive 前の姿</strong></td></tr>
+						<tr><td class="num">9</td><td class="nowrap"><code>index.html</code> 123</td><td><code>formnovalidate</code> を <strong><code>formnovalue</code></strong> と綴っており無視される。同じ form に <code>required</code> があるため、<strong>「やめる」で閉じない</strong>。<code>chat.js</code> 504 行が開く直前に入力を空にするので必ず起きる</td></tr>
+						<tr><td class="num">10</td><td class="nowrap"><code>purge-test-data.mjs</code> 74-76 ・ 98-102</td><td><code>--names</code> の値が無いと接頭辞での全消しに落ちる（<a href="#i260906-02">i260906-02</a> と同じ道具）</td></tr>
+						<tr><td class="num">11</td><td class="nowrap">USAGE 763-779</td><td>「小さいサブエージェントに待たせる」と書いているが、<strong>設計は「サブエージェントを使わない」</strong></td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<h3>low（場所だけ）</h3>
+
+				<p><code>store.mjs</code> 354-358（archive の投稿自体が対象外になっていない）／ USAGE の <code>wait</code> の出力例が既定の <code>exclude</code> では起こり得ない ／ backup のログの「取得 N 件」が控えではなく稼働中の元 DB の値 ／ <code>backup.ps1</code> のヘルプが「諦めたら 0」（実装と全文書は非 0）／ <code>msg_kind=notice</code> を書く経路が 1 つも無い ／ ルーム名を検証せずに localStorage へ書く ／ <code>dump --out</code> に階層なしの名前で C# 版が落ちる ／ 定義の形が違うときの案内が出ない ／ <code>status.html</code> が <code>archive.test.mjs</code> に帰した「既定のルームは断る」検査が無い ／ 「web の外は参照できない」がパストラバーサルを送っていない ／ テスト名と本文が反対（<code>AICHAT_URL</code> は定義そのものが無い）／ <code>local-rule.html</code> が共通ルールと同じ文を持つ ／ <code>measure-cli-startup.ps1</code> ほか 2 本の ps1 の BOM ・ CRLF が崩れている ／ <code>WaitLog.cs</code> 65-70 だけ日付が <code>-</code> 区切り ／ <code>--reply-to</code> の受け方が 2 本で違う ／ <a href="../10_plan/p260830-03-テストデータ.html">p260830-03</a> の「決めていないこと」が未のまま ／ <a href="../10_plan/p260904-01-返信.html">p260904-01</a> 540 行の版 5 の SQL のファイル名が実物と違う ／ 資料の CLI 呼び出しが ID の位置引数化に追随していない ／ USAGE 内で「600 秒で打ち切られる」と「打ち切られない」が併存</p>
+
+				<div class="callout callout-important">
+					<p><strong>ここに集めたのは、直し方に選択肢があるか、まとめて直すほうが早いものである。</strong>1 件ずつ課題を立てると、同じ資料を何度も開くことになる。</p>
+					<p><strong>9 は綴り 1 文字、3 は共通ルールに直接当たる</strong>ので、先に片付けられる。</p>
+				</div>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> 運用の手順（1 ・ 2 ・ 3）を直す。<strong>戻す手順が動かないのは、控えを取っている意味が消える</strong></li>
+					<li><span class="badge b-todo">未</span> 読み手が判断を誤るもの（4〜11）を直す。<strong>4 ・ 5 ・ 6 ・ 7 は実装、8 ・ 11 は資料</strong></li>
+					<li><span class="badge b-todo">未</span> low を見て、直すものと落とすものを分ける</li>
+				</ul>
+			</div>
+		</details>
+
 	</div>
 </details>
 
@@ -3194,7 +3345,7 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">19 件 / 未 9 / 着手 1 / 済 9</span>
+		<span class="count">20 件 / 未 9 / 着手 1 / 済 10</span>
 	</summary>
 
 	<div class="groupbody">
@@ -4150,6 +4301,33 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 				<ul class="todos">
 					<li><span class="badge b-todo">未</span> ルームの検査に <code>test-</code> を足す</li>
 					<li><span class="badge b-todo">未</span> 目印と資料を揃える（<code>purge-test-data.mjs</code> ・ USAGE）</li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue done" id="i260908-02">
+			<summary>
+				<span class="badge b-done">☑</span>
+				<span class="no">i260908-02</span>
+				発言本文の自動リンクが <code>href</code> 属性から抜け出せる
+			</summary>
+			<div class="issuebody">
+				<p><code>src/web/js/markdown.js</code> の <code>escapeText</code>（13-18 行）が <code>&amp;</code> ・ <code>&lt;</code> ・ <code>&gt;</code> の 3 文字だけを置換し、<strong><code>"</code> を素通しする</strong>。41 行の自動リンクはその値を <code>href="$1"</code> に埋め、URL の文字集合が <code>[^\s&amp;]+</code> なので、<strong>空白と <code>&amp;</code> を含まない形で <code>"</code> を混ぜた本文が href を閉じて、続きを新しい属性にできる</strong>。</p>
+
+				<div class="callout callout-caution">
+					<p><strong>他の参加者が書いた本文で、画面を開いた人のブラウザで任意の JS が動く。</strong>タグは作れないが、<code>on…</code> の属性を足せば足りる。</p>
+					<p><strong>同一オリジンから <code>/api/admin/*</code> が本番では認証なしで叩ける</strong>（<code>server.mjs</code> 740-768 行の <code>isAllowed</code> はテスト用サーバーのトークン検査だけ）。<code>archive</code> ・ <code>restore</code> ・ <code>exit</code> がすべて届くので、<strong>片付けとサーバー停止まで画面越しに実行される</strong>。</p>
+				</div>
+
+				<p>冒頭のコメント（1-10 行）は「<strong>先に全体をエスケープしてから記法を処理する。この順にすれば、本文に生の HTML が含まれていてもタグとして解釈される経路が無い</strong>」と書いている。<strong>タグは塞げているが、属性の中は塞げていない。</strong></p>
+
+				<p>直す先は 2 つある。<strong><code>escapeText</code> に <code>"</code> を足す</strong>のが素直で、41 行の URL の文字集合から <code>"</code> を外すのも要る（属性値として埋める前に確かめる形）。<strong>どちらか一方では足りない</strong>かどうかは、直すときに確かめる。</p>
+
+				<p>指摘は <code>ai-chat-lite-reviewer</code> のレビュー #19（<code>msg_seq</code> 648）。<strong>3 文字だけの置換と <code>href="$1"</code> の組み合わせ、<code>/api/admin/*</code> に認証が無いことを実物で確かめた。</strong></p>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> <strong>両方直した</strong>。<code>escapeText</code> に <code>"</code> → <code>&amp;quot;</code> を足し、自動リンクの文字集合を <code>[^\s&amp;"']+</code> にした（<code>'</code> も外した）。<strong>片方に頼ると、エスケープの範囲を変えたときに黙って開く</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> テストを 3 件足した（<code>tests/markdown.test.mjs</code>）。攻撃の形（<code>https://example.com/a"onmouseover="alert(1)</code>）を入れて、<strong>タグの中に属性が生えず本文として残る</strong>ことを見ている</li>
 				</ul>
 			</div>
 		</details>

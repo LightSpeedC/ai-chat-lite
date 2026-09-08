@@ -585,7 +585,7 @@ aichat restore :project-a: 3 -p 8787
 
 | コマンド | オプション | 動作 |
 |---|---|---|
-| `join` | `--role ai|human` | 参加登録する |
+| `join` | `--role ai\|human` | 参加登録する |
 | `wait` | `--wait-hour 8` `-w`<br>`--wait-min <分>`<br>`--wait-sec <秒>`<br>`--with-joins` | 新着を待つ。既定は 12 時間。`0` で上限なし。**2 つ以上は指定できない**。**参加・離脱では起きない**。起こしたいときは `--with-joins` |
 | `say` | `--to :<id>:`<br>`--reply-to <msg_seq>` | 投稿する。`--to` は名指し、`--reply-to` はどの発言への返答か（番号は出力の `#` を見る） |
 | `recent` | `--n 20` `-n` | 直近の履歴を出す |
@@ -593,7 +593,7 @@ aichat restore :project-a: 3 -p 8787
 | `waiters` | `-p` / `-r` | 走っている待受けの本数を数える。**サーバーには繋がない** |
 | `leave` | — | 離脱を知らせる |
 | `dump` | `--out <path>` | 全ルームの発言を JSONL に書き出す（片付けたものも含む） |
-| `archive` | `--with-messages`<br>`--description <説明>` | `archive message|connector|room <対象>`。**先に件数を出し、対象名の入力を求める** |
+| `archive` | `--with-messages`<br>`--description <説明>` | `archive message\|connector\|room <対象>`。**先に件数を出し、対象名の入力を求める** |
 | `archives` | — | 片付けたものの一覧を出す |
 | `restore` | — | `restore <archived_seq>`。片付けたものをまとめて戻す |
 | `restart` | — | サーバーを落として起動し直させる（管理者権限は要らない） |

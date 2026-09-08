@@ -140,7 +140,7 @@
 | いま | あと | 備考 |
 |---|---|---|
 | `who` | **変えない** | <strong>コマンド名は据え置く。</strong>他プロジェクトの手順を二度変えないため（`--connector-id` の周知を今日すでに 1 回出している）。`/api/connectors` とは揃わないが、`who` は「誰が」を尋ねる語として意味が通る |
-| `--role ai|human` | **変えない** | `role` に `user` は入っていない |
+| `--role ai\|human` | **変えない** | `role` に `user` は入っていない |
 | `--to <id>` | **変えない** | 同上 |
 | `join` `wait` `say` `recent` `dump` `leave` | **変えない** | 同上 |
 | `USER_ID`（内部の定数） | `CONNECTOR_ID` |  |

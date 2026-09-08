@@ -2,7 +2,7 @@
 
 実装の進み具合と、次にやること
 
-> 📅 作成: 2026-08-29 / 更新: 2026-09-07
+> 📅 作成: 2026-08-29 / 更新: 2026-09-08
 
 [README へ戻る](../../README.md)
 
@@ -62,12 +62,12 @@
 | `store.test.mjs` | 採番・取得・接続数・CHECK 制約・WAL・インデックス利用 |
 | `presence.test.mjs` | 3 状態の判定・猶予の境界・一覧の並び順 |
 | `migrate.test.mjs` | 版の並び・空の DB から当てる・失敗で巻き戻す・指紋で書き換えを検出・控え |
-| `archive.test.mjs` | 下見・片付け・戻す・対象を列で持つ・既定のルームは断る |
+| `archive.test.mjs` | 下見・片付け・戻す・対象を列で持つ・既定のルームは断る・片付けたあとに繋ぎ直せること |
 | `backup.test.mjs` | WAL 込みの複製・世代の整理・印の取り合い・残骸の扱い・4 区分 |
 | `maintenance.test.mjs` | 印があれば待つ・消えたら進む・理由を読む |
 | `maintenance-handler.test.mjs` | 印の読み取り・200 / 503 / 静的の使い分け・受け口の差し替えでポートが変わらない |
 | `maintenance-flow.test.mjs` | 実際に起動して通しで確認。印つき起動 → 503 → 明ける → 切り替え → 再開の案内 |
-| `markdown.test.mjs` | 生 HTML の無害化・javascript: を通さない・記法の描画 |
+| `markdown.test.mjs` | 生 HTML の無害化・javascript: を通さない・`"` が属性から抜け出せないこと・記法の描画 |
 | `server.test.mjs` | API 一式・long-poll・SSE・読んだ位置の記録・オフライン通知・離脱の猶予・admin/exit |
 | `client-wait.test.mjs` | 待つ長さの単位・上限なし・既定 12 時間・2 つ同時はエラー・廃止したオプション・ログ 2 行・繋ぎ先の印 |
 | `client-usage.test.mjs` | 定義と usage() の一致・短い形の重複・-h の 4 通り・桁の揃い |
