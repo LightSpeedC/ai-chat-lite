@@ -33,6 +33,35 @@ test('& が二重にエスケープされない', () => {
 	assert.equal(renderBody('a & b'), 'a &amp; b');
 });
 
+/*
+ * 【なぜ必要か】
+ * タグを塞いでも、属性の中に入る値は " 1 文字で抜け出せる。自動リンクが
+ * href="…" に埋めるため、URL の文字集合が " を含んでいると、他の参加者の
+ * 本文で on… の属性を足せた。同一オリジンから /api/admin/* が本番では
+ * 認証なしに通るので、片付けとサーバー停止まで画面越しに届いていた。
+ */
+test('" は属性から抜け出せない', () => {
+	const out = renderBody('https://example.com/a"onmouseover="alert(1)');
+	// タグの中に属性が生えていない。href は 1 つだけ
+	assert.ok(!/<a [^>]*onmouseover/.test(out), out);
+	assert.equal((out.match(/href=/g) ?? []).length, 1, out);
+	// 抜け出そうとしたクォートは実体参照になり、本文として残る
+	assert.ok(out.includes('&quot;onmouseover=&quot;'), out);
+});
+
+test('" は実体参照になる', () => {
+	assert.equal(escapeText('a " b'), 'a &quot; b');
+	assert.equal(renderBody('a " b'), 'a &quot; b');
+});
+
+test('リンクの直後の " はリンクに含まれない', () => {
+	// 文字集合から外したので、URL はクォートの手前で切れる
+	const out = renderBody('https://example.com" data-x=1');
+	assert.ok(out.includes('href="https://example.com"'), out);
+	assert.ok(!out.includes('data-x=1"'), out);
+	assert.ok(out.includes('&quot;'), out);
+});
+
 // --- 通す記法 ---
 
 test('太字', () => {
