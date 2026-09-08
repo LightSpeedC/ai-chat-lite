@@ -102,17 +102,28 @@ const stmt = {
 	maxSeq: db.prepare(
 		'SELECT COALESCE(MAX(msg_seq), 0) AS max_seq FROM messages WHERE archived_seq IS NULL AND room_id = ?'
 	),
+	/*
+	 * 片付けた行は主キーの枠を占め続ける（connector_id が主キー）。INSERT は必ず
+	 * DO UPDATE に落ちるので、archived_seq = NULL に戻さないと、読み出し側の
+	 * archived_seq IS NULL に弾かれて「書けるのに読めない行」になる。
+	 *
+	 * 繋ぎ直したら復活させるのが筋である。片付けは過去のものを隠すためで、
+	 * その ID が二度と使えなくなることではない。
+	 */
 	upsertConnector: db.prepare(`
 		INSERT INTO connectors (connector_id, connector_role, first_joined_at, last_active_at, active_connection_count)
 		VALUES (?, ?, ?, ?, 0)
 		ON CONFLICT(connector_id) DO UPDATE SET
 			connector_role      = excluded.connector_role,
-			last_active_at = excluded.last_active_at
+			last_active_at = excluded.last_active_at,
+			archived_seq   = NULL
 	`),
 	touchConnector: db.prepare(`
 		INSERT INTO connectors (connector_id, connector_role, first_joined_at, last_active_at, active_connection_count)
 		VALUES (?, ?, ?, ?, 0)
-		ON CONFLICT(connector_id) DO UPDATE SET last_active_at = excluded.last_active_at
+		ON CONFLICT(connector_id) DO UPDATE SET
+			last_active_at = excluded.last_active_at,
+			archived_seq   = NULL
 	`),
 	addConnection: db.prepare(`
 		UPDATE connectors
@@ -128,12 +139,20 @@ const stmt = {
 	selectConnector: db.prepare('SELECT * FROM connectors WHERE archived_seq IS NULL AND connector_id = ?'),
 	setLastActiveAt: db.prepare('UPDATE connectors SET last_active_at = ? WHERE connector_id = ?'),
 	selectCursor: db.prepare('SELECT msg_seq FROM cursors WHERE archived_seq IS NULL AND connector_id = ? AND room_id = ?'),
+	/*
+	 * cursors も同じ。主キーは (connector_id, room_id) で、片付けた行が枠を占める。
+	 *
+	 * 戻さないと getCursor が毎回 null を返し、server.mjs の
+	 * getCursor(...) ?? getMaxSeq(...) が「いまの最大値」を起点にする。
+	 * 待受けを張っていない間の発言を黙って飛ばすことになる。
+	 */
 	upsertCursor: db.prepare(`
 		INSERT INTO cursors (connector_id, room_id, msg_seq, updated_at)
 		VALUES (?, ?, ?, ?)
 		ON CONFLICT(connector_id, room_id) DO UPDATE SET
-			msg_seq    = excluded.msg_seq,
-			updated_at = excluded.updated_at
+			msg_seq      = excluded.msg_seq,
+			updated_at   = excluded.updated_at,
+			archived_seq = NULL
 	`),
 	selectCursorsOf: db.prepare('SELECT * FROM cursors WHERE archived_seq IS NULL AND connector_id = ? ORDER BY room_id'),
 };

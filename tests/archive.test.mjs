@@ -192,6 +192,77 @@ describe('参加者を片付ける', () => {
 	});
 });
 
+describe('片付けたあとに繋ぎ直す', () => {
+	/*
+	 * 【なぜ必要か】
+	 * connectors（主キー connector_id）と cursors（主キー connector_id, room_id）は、
+	 * 片付けた行が枠を占め続ける。INSERT は必ず DO UPDATE に落ちるので、
+	 * archived_seq を NULL に戻さないと、読み出し側の archived_seq IS NULL に
+	 * 弾かれて「書けるのに読めない行」になる。
+	 *
+	 * 片付けた直後に null が返ることは上の検査が見ていたが、そのあと書けるかを
+	 * 見ていなかった。読めないままだと getCursor(...) ?? getMaxSeq(...) が毎回
+	 * 「いまの最大値」を起点にし、待受けを張っていない間の発言を黙って飛ばす。
+	 */
+	test('参加者は join し直せば一覧に戻る', () => {
+		store.joinConnector('test-rejoin', 'ai');
+		store.archive({ kind: 'connector', id: 'test-rejoin', byConnectorId: 'test-connector1', description: '繋ぎ直しの検査' });
+		assert.equal(store.getConnector('test-rejoin'), undefined, '片付いていない');
+
+		store.joinConnector('test-rejoin', 'ai');
+
+		assert.ok(store.getConnector('test-rejoin'), '繋ぎ直しても一覧に戻らない');
+		assert.ok(
+			store.listConnectors().map((c) => c.connector_id).includes('test-rejoin'),
+			'listConnectors に出ない'
+		);
+	});
+
+	test('読んだ位置は書き直せば読める', () => {
+		store.joinConnector('test-rejoin-cursor', 'ai');
+		const m = say('public', 'test-rejoin-cursor', '位置の検査');
+		store.setCursor('test-rejoin-cursor', 'public', m.msg_seq);
+		store.archive({
+			kind: 'connector',
+			id: 'test-rejoin-cursor',
+			byConnectorId: 'test-connector1',
+			description: '位置の検査',
+		});
+		assert.equal(store.getCursor('test-rejoin-cursor', 'public'), null, '片付いていない');
+
+		store.setCursor('test-rejoin-cursor', 'public', m.msg_seq);
+
+		assert.equal(store.getCursor('test-rejoin-cursor', 'public'), m.msg_seq, '書いた位置が読めない');
+		assert.ok(
+			store.listCursors('test-rejoin-cursor').map((c) => c.room_id).includes('public'),
+			'listCursors に出ない'
+		);
+	});
+
+	test('ルームを片付けても、その後に書いた位置は読める', () => {
+		// archive room はそのルームを読んでいた全参加者の位置を一度に片付ける
+		store.joinConnector('test-room-cursor', 'ai');
+		const m = say('sandbox-rejoin', 'test-room-cursor', 'ルームの検査');
+		store.setCursor('test-room-cursor', 'sandbox-rejoin', m.msg_seq);
+		store.archive({
+			kind: 'room',
+			id: 'sandbox-rejoin',
+			byConnectorId: 'test-connector1',
+			description: 'ルームの検査',
+		});
+		assert.equal(store.getCursor('test-room-cursor', 'sandbox-rejoin'), null, '片付いていない');
+
+		const after = say('sandbox-rejoin', 'test-room-cursor', '片付けた後の発言');
+		store.setCursor('test-room-cursor', 'sandbox-rejoin', after.msg_seq);
+
+		assert.equal(
+			store.getCursor('test-room-cursor', 'sandbox-rejoin'),
+			after.msg_seq,
+			'書いた位置が読めない'
+		);
+	});
+});
+
 describe('発言 1 件を片付ける', () => {
 	test('その 1 件だけが消える', () => {
 		const a = say('sandbox-one', 'test-connector1', '消す');
