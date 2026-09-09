@@ -402,7 +402,7 @@ footer a {
 	<div class="inner">
 		<h1>バックアップの手引き</h1>
 		<p class="lead">控えの取り方・戻し方・困ったときの見どころ</p>
-		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-01</p>
+		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-09</p>
 	</div>
 </div>
 
@@ -542,7 +542,7 @@ tools\80_ops\register-backup-tasks.cmd</code></pre>
 	<p><strong>いまの DB は消していない。</strong><code>_data\prev-yyyymmdd-hhmmss\</code> に 3 つのファイルが入っている。元に戻すには、印を置いてサーバーを落とし、3 つとも <code>_data</code> へ戻す。</p>
 
 	<pre><code class="language-powershell">echo 戻し直しています &gt; _data\MAINTENANCE
-node src\client\chat.mjs restart
+node src\client\chat.mjs restart :restore: --port 8787
 
 # _data\prev-… の中身 3 つを _data\ へ移す（chat.db / chat.db-wal / chat.db-shm）
 

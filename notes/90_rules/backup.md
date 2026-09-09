@@ -2,7 +2,7 @@
 
 控えの取り方・戻し方・困ったときの見どころ
 
-> 📅 作成: 2026-08-30 / 更新: 2026-09-01
+> 📅 作成: 2026-08-30 / 更新: 2026-09-09
 
 [README へ戻る](../../README.md)
 
@@ -106,7 +106,7 @@ tools\80_ops\restore.ps1 -EstimatedMinutes 20
 
 ```powershell
 echo 戻し直しています > _data\MAINTENANCE
-node src\client\chat.mjs restart
+node src\client\chat.mjs restart :restore: --port 8787
 
 # _data\prev-… の中身 3 つを _data\ へ移す（chat.db / chat.db-wal / chat.db-shm）
 

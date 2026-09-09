@@ -371,7 +371,7 @@ CREATE TABLE archives (
 
 	<div class="callout callout-important">
 		<p><strong>対象は <code>description</code> とは別の列で持つ。</strong><code>--description</code> で書き換えられるため、本文だけを頼りにすると「何を片付けたか」が追えなくなる。</p>
-		<p>実装の途中でこれに気づいた。<code>--description '整理のため'</code> と書いた行から対象が分からず、<strong>戻す判断ができない</strong>。版 3 は本番へ当てる前だったため、新しい版を足さずにこの版へ列を入れた。</p>
+		<p>実装の途中でこれに気づいた。<code>--description "整理のため"</code> と書いた行から対象が分からず、<strong>戻す判断ができない</strong>。版 3 は本番へ当てる前だったため、新しい版を足さずにこの版へ列を入れた。</p>
 	</div>
 
 	<h2>読み出しは archived_seq IS NULL で絞る</h2>
