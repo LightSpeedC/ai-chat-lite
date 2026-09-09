@@ -1,7 +1,28 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { join, dirname } from 'node:path';
 
 import { renderBody, escapeText } from '../src/web/js/markdown.js';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const MARKDOWN_JS_PATH = join(HERE, '..', 'src', 'web', 'js', 'markdown.js');
+
+/*
+ * 【なぜ必要か】
+ * PLACEHOLDER をバイト値 0 の 1 文字リテラルで書くと、git がこのファイルを
+ * -text（バイナリ）と判定する。以後 diff は "Binary files … differ" にしか
+ * ならず、ripgrep も定義の行を返さない。escapeText や自動リンクの文字集合が
+ * 1 文字戻っても diff に出ず、grep は 0 件を返す（0 件が正常に見える失敗）。
+ * XSS 対策を止めている唯一のファイルが、レビューもコミット前確認も
+ * 素通りすることになる。ソースをそのまま読んで確かめる。
+ */
+test('ソースに NUL バイトが無い（git のバイナリ判定を避けるため）', () => {
+	const bytes = readFileSync(MARKDOWN_JS_PATH);
+	const nulAt = bytes.indexOf(0);
+	assert.equal(nulAt, -1, `${nulAt} バイト目に NUL がある。PLACEHOLDER はエスケープ記法（\\u0000）で書く`);
+});
 
 // --- ここが画面で唯一の攻撃面になるため、通す・通さないを明示的に固定する ---
 
@@ -52,6 +73,21 @@ test('" は属性から抜け出せない', () => {
 test('" は実体参照になる', () => {
 	assert.equal(escapeText('a " b'), 'a &quot; b');
 	assert.equal(renderBody('a " b'), 'a &quot; b');
+});
+
+/*
+ * 【なぜ必要か】
+ * 自動リンクの文字集合に < > が残っていると、直後に自分で生成したタグ
+ * （<code> や <strong>、コードブロックを戻した <pre><code>）を URL ごと
+ * 飲み込む。href の中に入るだけなら実害は無いが、リンクの表示文字にも
+ * 同じ値を使っているため、そちらは innerHTML としてそのまま解釈される。
+ * 飲み込まれた <code> がタグとして生き返り、意図しない入れ子になる。
+ */
+test('自動リンクは直後の生成タグを飲み込まない', () => {
+	const out = renderBody('https://example.com/`x`');
+	assert.ok(!out.includes('<code>x</code>" '), out);
+	assert.ok(!/href="[^"]*<code>/.test(out), out);
+	assert.equal(out, '<a href="https://example.com/" target="_blank" rel="noopener">https://example.com/</a><code>x</code>');
 });
 
 test('リンクの直後の " はリンクに含まれない', () => {
