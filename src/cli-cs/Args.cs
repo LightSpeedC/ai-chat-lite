@@ -132,15 +132,21 @@ namespace AiChat
 		///
 		/// 先頭の # は落とす。出力には #474 と出るので、画面から写した人が
 		/// そのまま貼っても通るようにする。# は表示のためのもので、値の一部ではない。
+		///
+		/// node 版（/^\d+$/）と同じ厳格さにする。int.TryParse の既定
+		/// （NumberStyles.Integer）は前後の空白・先頭の符号（+/-）も通してしまい、
+		/// int の範囲（約 21 億）も node 版（Number、実質無制限）より狭い
+		/// （レビュー #19、i260908-05）
 		/// </summary>
-		public int ReplyToMsgSeq()
+		public long ReplyToMsgSeq()
 		{
 			string raw = Option("reply-to");
 			if (raw == null) return 0;
 
 			string value = raw.StartsWith("#") ? raw.Substring(1) : raw;
-			int parsed;
-			if (!int.TryParse(value, out parsed) || parsed < 1)
+			long parsed = 0;
+			bool digitsOnly = value.Length > 0 && value.All(char.IsDigit);
+			if (!digitsOnly || !long.TryParse(value, out parsed) || parsed < 1)
 			{
 				Console.Error.WriteLine("--reply-to には 1 以上の数を渡してください: " + raw);
 				Console.Error.WriteLine("  番号は出力の先頭に #474 の形で出ています。");

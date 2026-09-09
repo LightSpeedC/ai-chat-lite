@@ -9,7 +9,7 @@
  */
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { existsSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { execFile } from 'node:child_process';
@@ -176,6 +176,50 @@ describe('C# 版と node 版で同じものが出る', () => {
 		}
 	});
 
+	/*
+	 * 【なぜ必要か】
+	 * node 版（/^\d+$/）は前後の空白・符号を許さない厳格な一致だが、C# 版は
+	 * int.TryParse の既定（NumberStyles.Integer）で空白・先頭の符号（+/-）も
+	 * 通してしまい、int の範囲（約 21 億）も node 版（Number）より狭かった。
+	 * tests/client-reply.test.mjs は node 版だけを見ており、両者の突き合わせが
+	 * 無かった（レビュー #19、i260908-05）
+	 */
+	test('--reply-to の受け方が node 版と揃う', async (t) => {
+		if (!built) return t.skip('aichat.exe が無い');
+
+		const cases = [' 5', '+5', '5 ', '5.0', '999999999999'];
+		for (const value of cases) {
+			const node = await viaNode(['say', '本文', '--reply-to', value]).catch((e) => e);
+			const exe = await viaExe(['say', '本文', '--reply-to', value]).catch((e) => e);
+			assert.equal(exe.code ?? 0, node.code ?? 0, `--reply-to "${value}" の終了コードが違う`);
+		}
+	});
+
+	/*
+	 * 【なぜ必要か】
+	 * Path.GetDirectoryName(outPath) は、階層なしの名前（例: messages.jsonl）
+	 * を渡すと空文字列を返す。Directory.CreateDirectory("") は
+	 * ArgumentException を投げるため、C# 版だけが --out に相対ファイル名を
+	 * 渡すと落ちていた。node 版は dirname(out) を使わず常に ROOT/tmp だけ
+	 * mkdir するので同条件でも落ちない（レビュー #19、i260908-05）
+	 */
+	test('dump --out に階層なしの名前を渡しても落ちない', async (t) => {
+		if (!built) return t.skip('aichat.exe が無い');
+
+		const cwd = join(ROOT, 'tmp');
+		const outName = 'cli-cs-dump-test.jsonl';
+		const outPath = join(cwd, outName);
+		if (existsSync(outPath)) rmSync(outPath);
+		try {
+			await run(EXE, [
+				...withId(['dump'], 'test-cli-cs'), '--url', base, '--access-token', TEST_ACCESS_TOKEN, '--out', outName,
+			], { cwd });
+			assert.ok(existsSync(outPath), '出力ファイルが作られていない');
+		} finally {
+			if (existsSync(outPath)) rmSync(outPath);
+		}
+	});
+
 	test('who の出力が揃う', async (t) => {
 		if (!built) return t.skip('aichat.exe が無い');
 
@@ -199,6 +243,31 @@ describe('C# 版と node 版で同じものが出る', () => {
 			assert.match(stdout, /recent --since-day 1/);
 			assert.match(stdout, /カーソルを立てました。改めて wait を実行してください。/);
 			assert.doesNotMatch(stdout, /pid \d+ で待受け中/, '即終わらず、通常の待受けに入ってしまっている');
+		}
+	});
+
+	/*
+	 * 【なぜ必要か】
+	 * 初めての接続案内のあとの wait=0 poll が、指定した room 全体（既存
+	 * カーソルを持つルームも含む）に対して行われると、既存ルームの未読の
+	 * 新着まで取得したうえで画面に出さずカーソルだけ最新へ進めてしまう。
+	 * node 版・C# 版とも同じ穴を持っていた（実際に他プロジェクトから
+	 * 報告があった事故）
+	 */
+	test('初めてのルームと混ぜても、既存ルームの未読は消えない（両方で確認）', async (t) => {
+		if (!built) return t.skip('aichat.exe が無い');
+
+		for (const [via, id] of [[viaNode, 'test-cli-mixed-node'], [viaExe, 'test-cli-mixed-exe']]) {
+			await via(['join'], id);
+			await via(['wait', '--wait-sec', '1'], id); // public のカーソルを立てる
+
+			await viaNode(['say', 'これは読めるはず'], 'test-cli-mixed-writer');
+
+			// 初めてのルームを混ぜて待つ。案内を出して終わる 1 回を消費する
+			await via(['wait', '-r', 'public,sandbox-cli-mixed', '--wait-sec', '1'], id);
+
+			const { stdout } = await via(['wait', '-r', 'public,sandbox-cli-mixed', '--wait-sec', '3'], id);
+			assert.match(stdout, /これは読めるはず/, `${id} で既存ルームの未読が消えている`);
 		}
 	});
 
@@ -293,6 +362,36 @@ describe('C# 版と node 版で同じものが出る', () => {
 		assert.ok(fromExe, 'C# 版が止まっていない');
 		assert.equal(fromExe.code, 2, '終了コードが 2 でない');
 		assert.equal(fromNode.code, 2);
+		assert.equal(shape(fromExe.stderr), shape(fromNode.stderr), '案内の文が違う');
+	});
+
+	/*
+	 * 【なぜ必要か】
+	 * waiters の -r はカンマで分割するだけで、文字種の検証をしていなかった。
+	 * waiters はサーバーに繋がないため、サーバー側の room_id 検証を経由できず、
+	 * シングルクォート等の不正な文字を含む値がそのまま「ルーム名」として
+	 * 扱われていた（実際に指摘があった）。node 版・C# 版とも直した
+	 */
+	test('waiters の -r に不正な文字を含むと両方が同じように止める', async (t) => {
+		if (!built) return t.skip('aichat.exe が無い');
+
+		const fail = async (fn) => {
+			try {
+				await fn();
+				return null;
+			} catch (err) {
+				return err;
+			}
+		};
+
+		const bad = "'public,ai-chat-lite'";
+		const fromNode = await fail(() => viaNode(['waiters', '-r', bad]));
+		const fromExe = await fail(() => viaExe(['waiters', '-r', bad]));
+
+		assert.ok(fromNode, 'node 版が止まっていない');
+		assert.ok(fromExe, 'C# 版が止まっていない');
+		assert.equal(fromNode.code, 2);
+		assert.equal(fromExe.code, 2, '終了コードが 2 でない');
 		assert.equal(shape(fromExe.stderr), shape(fromNode.stderr), '案内の文が違う');
 	});
 

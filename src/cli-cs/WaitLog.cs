@@ -47,7 +47,7 @@ namespace AiChat
 			if (path == null) return;
 			try
 			{
-				File.AppendAllText(path, NowJst() + " " + level.PadRight(5) + " " + body + "\n", new UTF8Encoding(false));
+				File.AppendAllText(path, JstTime.NowJst() + " " + level.PadRight(5) + " " + body + "\n", new UTF8Encoding(false));
 			}
 			catch
 			{
@@ -62,11 +62,5 @@ namespace AiChat
 			return jst.ToString("yyyyMMdd-HHmmss");
 		}
 
-		/// <summary>サーバーと同じ 23 文字の JST。yyyy-MM-dd HH:mm:ss.fff</summary>
-		public static string NowJst()
-		{
-			DateTime jst = DateTime.UtcNow.AddHours(9);
-			return jst.ToString("yyyy-MM-dd HH:mm:ss.fff");
-		}
 	}
 }

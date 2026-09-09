@@ -129,7 +129,25 @@ namespace AiChat
 				if (m.Success) int.TryParse(m.Groups[1].Value, out num);
 			}
 
-			return new Basis { Port = num, Rooms = RoomsFrom(room), Label = ":" + num };
+			List<string> rooms = RoomsFrom(room);
+
+			/*
+			 * RoomsFrom はカンマで分割するだけで、文字種は見ていない。waiters は
+			 * サーバーに繋がないため、サーバー側の room_id 検証を経由できない。
+			 * シングルクォートで囲んで渡すと、cmd はクォート文字ごと値に含めて
+			 * しまい（'public,ai-chat-lite' のような壊れた値になる）、そのまま
+			 * カンマで割ると不正な文字を含む「ルーム名」がエラーにならず素通り
+			 * していた（実際に指摘があった）。ここで弾く
+			 */
+			foreach (string r in rooms)
+			{
+				if (Regex.IsMatch(r, Definition.IdPattern)) continue;
+				Console.Error.WriteLine("ルーム名に使えない文字が入っています: " + r);
+				Console.Error.WriteLine("  使えるのは英数字・ハイフン・下線・ピリオドだけです。ピリオドは先頭と末尾には置けません。");
+				Environment.Exit(2);
+			}
+
+			return new Basis { Port = num, Rooms = rooms, Label = ":" + num };
 		}
 
 		/// <summary>-r の値をルームの一覧にする。省略なら既定のルーム 1 つ。重複は落とす</summary>

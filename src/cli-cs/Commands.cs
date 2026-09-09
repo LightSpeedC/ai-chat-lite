@@ -57,7 +57,7 @@ namespace AiChat
 			}
 
 			string to = args.OptionalWrappedId("to");
-			int replyTo = args.ReplyToMsgSeq();
+			long replyTo = args.ReplyToMsgSeq();
 			string body = "{" +
 				"\"from_connector_id\":" + Json.Quote(connectorId) + "," +
 				"\"room_id\":" + Json.Quote(room) + "," +
@@ -124,7 +124,20 @@ namespace AiChat
 			{
 				string port = args.Option("port");
 				string where = port != null ? "-p " + port : "-u " + args.Option("url");
-				Console.WriteLine("初めての接続です。参加より前の発言は待ちません。過去が必要なら recent で取ってください（例）:");
+
+				/*
+				 * 初めてなのは、指定したルームのうち一部だけのことがある
+				 * （first_time はいずれか 1 つでも初めてなら true）。
+				 */
+				var firstRooms = new List<string>();
+				foreach (object item in Json.Arr(cursorStatus, "rooms"))
+				{
+					var r = item as Dictionary<string, object>;
+					if (r != null && Json.Bool(r, "first_time")) firstRooms.Add(Json.Str(r, "room_id"));
+				}
+				string firstRoomsJoined = string.Join(", ", firstRooms.ToArray());
+
+				Console.WriteLine("初めての接続です（" + firstRoomsJoined + "）。参加より前の発言は待ちません。過去が必要なら recent で取ってください（例）:");
 				Console.WriteLine("    aichat recent --find \"ルール\" " + where + "   # ルール変更の周知をまとめて見る");
 				Console.WriteLine("    aichat recent --since-day 1 " + where + "     # 1 日前からの発言を見る");
 				Console.WriteLine("");
@@ -133,8 +146,14 @@ namespace AiChat
 				 * 案内を出したら、待たずに終わる。理由は node 版と同じ
 				 * （wait は完了時にしか通知が来ないため、案内を出しても待ち続けると
 				 * 誰の目にも触れない）。wait=0 で 1 回だけ poll を叩き、カーソルだけ立てる。
+				 *
+				 * 対象は初めてのルームだけに絞る。room 全体（既存カーソルを持つ
+				 * ルームも含む）に対してこれを呼ぶと、既存ルームの未読の新着まで
+				 * 実際には取得したうえで、画面に出さないままカーソルだけ最新に
+				 * 進めてしまう（i260909-03）。
 				 */
-				client.Get("/api/poll?" + Query("connector_id", connectorId) + "&" + Query("room_id", room) + "&wait=0");
+				string firstRoomsParam = string.Join(",", firstRooms.ToArray());
+				client.Get("/api/poll?" + Query("connector_id", connectorId) + "&" + Query("room_id", firstRoomsParam) + "&wait=0");
 				Console.WriteLine("カーソルを立てました。改めて wait を実行してください。");
 				return 0;
 			}
@@ -402,7 +421,14 @@ namespace AiChat
 			Dictionary<string, object> result = client.Get("/api/dump");
 			List<object> messages = Json.Arr(result, "messages");
 
-			Directory.CreateDirectory(Path.GetDirectoryName(outPath));
+			/*
+			 * --out に階層なしの名前（例: messages.jsonl）を渡すと
+			 * Path.GetDirectoryName が空文字列を返し、Directory.CreateDirectory("")
+			 * は ArgumentException を投げていた。カレントに作るだけなので、
+			 * 親ディレクトリが要る場合だけ作る（レビュー #19、i260908-05）
+			 */
+			string outDir = Path.GetDirectoryName(outPath);
+			if (!string.IsNullOrEmpty(outDir)) Directory.CreateDirectory(outDir);
 			var sb = new StringBuilder();
 			int archived = 0;
 			foreach (object item in messages)

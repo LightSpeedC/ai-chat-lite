@@ -583,7 +583,12 @@ async function cmdWait() {
 	if (cursorStatus.first_time) {
 		const port = option('port');
 		const where = port !== null ? `-p ${port}` : `-u ${option('url')}`;
-		console.log('初めての接続です。参加より前の発言は待ちません。過去が必要なら recent で取ってください（例）:');
+		/*
+		 * 初めてなのは、指定したルームのうち一部だけのことがある
+		 * （first_time はいずれか 1 つでも初めてなら true）。
+		 */
+		const firstRooms = cursorStatus.rooms.filter((r) => r.first_time).map((r) => r.room_id);
+		console.log(`初めての接続です（${firstRooms.join(', ')}）。参加より前の発言は待ちません。過去が必要なら recent で取ってください（例）:`);
 		console.log(`    aichat recent --find "ルール" ${where}   # ルール変更の周知をまとめて見る`);
 		console.log(`    aichat recent --since-day 1 ${where}     # 1 日前からの発言を見る`);
 		console.log('');
@@ -599,8 +604,14 @@ async function cmdWait() {
 		 * （poll は新着の有無に関係なく、実行時点の最大 msg_seq をカーソルに
 		 * するため、これで「今から」の状態になる）。2 回目の wait は今までどおり
 		 * 普通に待つ。
+		 *
+		 * 対象は初めてのルームだけに絞る。ROOM 全体（既存カーソルを持つ
+		 * ルームも含む）に対してこれを呼ぶと、既存ルームの未読の新着まで
+		 * 実際には取得したうえで、画面に出さないままカーソルだけ最新に
+		 * 進めてしまう。取りこぼしではなく「表示せずに既読化する」形の
+		 * データ消失になる（実際に他プロジェクトから報告があった事故。i260909-03）
 		 */
-		await call(`/api/poll?connector_id=${encodeURIComponent(CONNECTOR_ID)}&room_id=${encodeURIComponent(ROOM)}&wait=0`);
+		await call(`/api/poll?connector_id=${encodeURIComponent(CONNECTOR_ID)}&room_id=${encodeURIComponent(firstRooms.join(','))}&wait=0`);
 		console.log('カーソルを立てました。改めて wait を実行してください。');
 		return;
 	}
@@ -864,6 +875,22 @@ function basisOf() {
 	}
 
 	const rooms = roomsFrom(ROOM);
+
+	/*
+	 * roomsFrom はカンマで分割するだけで、文字種は見ていない。waiters は
+	 * サーバーに繋がないため、サーバー側の room_id 検証を経由できない。
+	 * シングルクォートで囲んで渡すと、cmd はクォート文字ごと値に含めてしまい
+	 * （'public,ai-chat-lite' のような壊れた値になる）、そのままカンマで
+	 * 割ると不正な文字を含む「ルーム名」がエラーにならず素通りしていた
+	 * （実際に指摘があった）。ここで弾く
+	 */
+	for (const room of rooms) {
+		if (new RegExp(ID_PATTERN).test(room)) continue;
+		console.error(`ルーム名に使えない文字が入っています: ${room}`);
+		console.error('  使えるのは英数字・ハイフン・下線・ピリオドだけです。ピリオドは先頭と末尾には置けません。');
+		process.exit(2);
+	}
+
 	return { port: num, rooms, label: `:${num}` };
 }
 

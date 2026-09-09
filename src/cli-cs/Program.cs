@@ -70,7 +70,18 @@ namespace AiChat
 			}
 			catch (Exception e)
 			{
-				Console.Error.WriteLine("止まりました: " + e.Message);
+				/*
+				 * Definition の静的コンストラクタが投げる例外（埋め込んだ定義の形が
+				 * 違うときの案内）は、CLR が TypeInitializationException で包む。
+				 * e.Message をそのまま出すと「The type initializer for
+				 * 'Definition' threw an exception.」という汎用文にしかならず、
+				 * 案内文は InnerException.Message に埋もれて出ない
+				 * （レビュー #19、i260908-05）
+				 */
+				string message = (e is TypeInitializationException && e.InnerException != null)
+					? e.InnerException.Message
+					: e.Message;
+				Console.Error.WriteLine("止まりました: " + message);
 				return 1;
 			}
 		}

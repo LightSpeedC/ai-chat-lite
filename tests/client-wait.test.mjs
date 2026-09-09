@@ -282,4 +282,30 @@ describe('複数のルームを 1 本で待つ', () => {
 	 * 確かめている。CLI には since を渡す口が無い（どこまで読んだかはサーバーが
 	 * 覚えている）ので、ここでは確かめられない。
 	 */
+
+	/*
+	 * 【なぜ必要か】
+	 * 「初めての接続」判定（i260909-01）は、指定したルームのうち 1 つでも
+	 * 初めてなら true になる（server.mjs の some()）。案内を出したあとの
+	 * wait=0 の poll は、指定したルーム全部（初めてでない public も含めて）に
+	 * 対して行われる。public に既存の未読があっても、その戻り値を画面に出さず
+	 * カーソルだけ最新まで進めていたため、初めてのルームを 1 つ混ぜて wait
+	 * しただけで、既存ルームの未読が「読んだこと」にされ二度と出なくなっていた
+	 * （実際に他プロジェクトから報告があった事故）
+	 */
+	test('初めてのルームと混ぜても、既存ルームの未読は消えない', async () => {
+		const me = 'test-mixed-first';
+		await chat(['join'], me);
+		await chat(['wait', '--wait-sec', '1'], me); // public のカーソルを立てる
+
+		// public に、me からはまだ見えていない新着を作る
+		await chat(['say', 'これは読めるはず'], 'test-connector2');
+
+		// sandbox-firstmix は初めて。public は既存カーソルあり。案内を出して終わる 1 回
+		await chat(['wait', '-r', 'public,sandbox-firstmix', '--wait-sec', '1'], me);
+
+		// 改めて待つと、public の未読が届くはず
+		const { stdout } = await chat(['wait', '-r', 'public,sandbox-firstmix', '--wait-sec', '3'], me);
+		assert.match(stdout, /これは読めるはず/, '既存ルームの未読が消えている');
+	});
 });

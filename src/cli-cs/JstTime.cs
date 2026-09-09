@@ -1,9 +1,9 @@
 /*
  * JST の文字列（yyyy/mm/dd HH:mm:ss.fff）を組み立てる。
  *
- * WaitLog.NowJst() は既存の書式（ハイフン区切り）のままにしてある
- * （i260908-07 の low で指摘済み・別課題）。ここは recent --since /
- * --before 用に、サーバーの sent_at と同じスラッシュ区切りで作る。
+ * recent --since / --before 用に、サーバーの sent_at と同じスラッシュ区切りで
+ * 作る。WaitLog も同じ書式に揃えている（以前はハイフン区切りの独自メソッドを
+ * 持ち、node 版の writeWaitLog と食い違っていた。レビュー #20、i260908-05）。
  *
  * DateTime.UtcNow に 9 時間足すだけで、OS のタイムゾーン設定には
  * 依存しない（node 版の nowJst() と同じ考え方）。

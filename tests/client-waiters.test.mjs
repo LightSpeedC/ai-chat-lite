@@ -604,6 +604,39 @@ describe('接続先は省略できない', () => {
 	});
 });
 
+describe('-r の値は英数字・ハイフン・下線・ピリオドだけ', () => {
+	/*
+	 * 【なぜ必要か】
+	 * roomsFrom はカンマで分割するだけで、文字種の検証を一切していなかった。
+	 * waiters はサーバーに繋がないコマンドなので、サーバー側の room_id 検証
+	 * （英数字・ハイフン・下線・ピリオドのみ）を経由できない。シングルクォートで
+	 * 囲んで渡すと、cmd はクォート文字を値に含めてしまう（'public,ai-chat-lite'
+	 * のような壊れた値になる）が、waiters はそれをカンマで割ってそのまま
+	 * 「ルーム名」として扱い、エラーにならなかった（実際に指摘があった）。
+	 */
+	test('不正な文字を含むと終了コード 2 で止まる', async () => {
+		const { execFile } = await import('node:child_process');
+		const { promisify } = await import('node:util');
+		const { fileURLToPath } = await import('node:url');
+		const { dirname, join } = await import('node:path');
+
+		const run = promisify(execFile);
+		const client = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'client', 'chat.mjs');
+
+		try {
+			await run(
+				process.execPath,
+				[client, 'waiters', ':test-basis:', '-p', '8787', '-r', "'public,ai-chat-lite'"],
+				{ env: { ...process.env } }
+			);
+			assert.fail('エラーにならなかった');
+		} catch (err) {
+			assert.equal(err.code, 2);
+			assert.match(err.stderr, /ルーム名に使えない文字/);
+		}
+	});
+});
+
 describe('式の置き場', () => {
 	test('式は options.mjs 1 か所から来る', () => {
 		// CLI 2 本が同じ式を見る。写すと必ずずれる
