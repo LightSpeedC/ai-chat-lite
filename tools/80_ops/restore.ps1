@@ -23,6 +23,14 @@
 	再開までの見込み（分）。停止の案内と、メンテナンス中の Retry-After に使う。
 	既定は 5 分。実測では 1 分前後で終わるが、短く言って外すより余裕を持たせる。
 
+.PARAMETER DataRoot
+	_data・_backup・tmp\restore-work・logs の親を差し替える。テスト用。
+	省略するとこのスクリプトの実体の場所（本番）を使う。
+
+.PARAMETER AccessToken
+	CLI に渡すアクセストークン。本番は既定でトークンを求めないため通常は要らない。
+	テスト用サーバー（ポート 8765）はトークンを求めるため、確かめるときに使う。
+
 .EXAMPLE
 	.\restore.ps1
 	.\restore.ps1 -Path ..\..\_backup\chat-20260830-123456.db.zip
@@ -31,24 +39,33 @@
 param(
 	[string] $Path,
 	[switch] $Force,
-	[int] $EstimatedMinutes = 5
+	[int] $EstimatedMinutes = 5,
+	# 【テスト用】_data・_backup・tmp\restore-work・logs の親を差し替える。
+	# 省略時はこのスクリプトの実体の場所（＝本番）から計算する。
+	# node を呼ぶ側（$clientPath）は差し替えない。CLI の実体は常にここにしかない
+	[string] $DataRoot,
+	[string] $AccessToken
 )
 
 $ErrorActionPreference = 'Stop'
 
-$root        = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+$scriptRoot  = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+$root        = if ($DataRoot) { $DataRoot } else { $scriptRoot }
 $backupDir   = Join-Path $root '_backup'
 $dataDir     = Join-Path $root '_data'
 $dbPath      = Join-Path $dataDir 'chat.db'
 $lockPath    = Join-Path $dataDir 'MAINTENANCE'
 $workDir     = Join-Path $root 'tmp\restore-work'
-$clientPath  = Join-Path $root 'src\client\chat.mjs'
+$clientPath  = Join-Path $scriptRoot 'src\client\chat.mjs'
 
 # CLI は接続先の既定値を持たない。テストのつもりの操作が本番へ入るのを防ぐため、
 # --port か --url を必ず渡す作りにしてある。ここは本番を戻すスクリプトなので本番のポート。
 # 既定 8787 は config.mjs と同じ値。片方だけ変えると噛み合わなくなる
 $serverPort  = if ($env:AICHAT_PORT) { $env:AICHAT_PORT } else { 8787 }
 $logsDir     = Join-Path $root 'logs'
+
+# 渡されたときだけ --access-token を足す。配列を splat して node に渡す
+$tokenArgs   = if ($AccessToken) { @('--access-token', $AccessToken) } else { @() }
 
 # 記録は others のログへ。復旧は頻度が低いので hourly と分ける必要がない
 . (Join-Path $PSScriptRoot 'log.ps1')
@@ -108,8 +125,24 @@ $notice = @"
 再開したらこのルームに知らせます。それまで待受けは繋がりません。
 "@
 
-# 名乗る ID はコマンドの直後に、コロンで囲んで置く（--connector-id は廃止した）
-$sayOutput = & node $clientPath say :ai-chat-lite: $notice --port $serverPort --room public 2>&1
+<#
+	ここだけ $ErrorActionPreference を緩める。
+
+	2>&1 で受けた標準エラーは Stop のままだと NativeCommandError になる。
+	node 側の announceEnv（chat.mjs）は繋ぐコマンドすべてで環境名を必ず標準エラーに
+	書くため、この 1 行は素の Stop では毎回落ちていた（レビュー #20）。
+	backup.ps1 の $ErrorActionPreference の緩め方と同じ形にする。
+
+	成否は $LASTEXITCODE で見る。& node は非ゼロでも例外を投げない
+#>
+$prevEap = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+try {
+	# 名乗る ID はコマンドの直後に、コロンで囲んで置く（--connector-id は廃止した）
+	$sayOutput = & node $clientPath say :ai-chat-lite: $notice --port $serverPort --room public @tokenArgs 2>&1
+} finally {
+	$ErrorActionPreference = $prevEap
+}
 if ($LASTEXITCODE -eq 0) {
 	Write-Host '[0/5] 停止することを知らせました（10 秒待ちます）'
 	Start-Sleep -Seconds 10
@@ -142,7 +175,17 @@ try {
 
 	# & node は終了コードが非ゼロでも例外を投げない。catch では拾えないので
 	# $LASTEXITCODE を見る。握りつぶすと、止まっていないのに次へ進んでしまう
-	$stopOutput = & node $clientPath restart :restore: --port $serverPort 2>&1
+	#
+	# ここも $ErrorActionPreference を緩める。node 側の announceEnv が繋ぐ
+	# コマンドすべてで環境名を必ず標準エラーに書くため、Stop のままだと
+	# say の呼び出し（[0/5]）と同じ理由で NativeCommandError になる（レビュー #20）
+	$prevEap = $ErrorActionPreference
+	$ErrorActionPreference = 'Continue'
+	try {
+		$stopOutput = & node $clientPath restart :restore: --port $serverPort @tokenArgs 2>&1
+	} finally {
+		$ErrorActionPreference = $prevEap
+	}
 	if ($LASTEXITCODE -eq 0) {
 		Write-Host '[2/5] サーバーを落としました（10 秒後に起動し直します）'
 	} else {
