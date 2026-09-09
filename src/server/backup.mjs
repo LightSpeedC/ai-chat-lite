@@ -86,7 +86,20 @@ export function vacuumInto(dest, src = DB_PATH) {
 		// SQLite の文字列リテラルの規則に従い、シングルクォートを 2 つ重ねて逃がす
 		const quoted = "'" + dest.split("'").join("''") + "'";
 		db.exec('VACUUM INTO ' + quoted);
-		const messages = db.prepare('SELECT count(*) AS c FROM messages').get().c;
+
+		/*
+		 * 件数は dest（実際に取れたスナップショット）を数える。src（稼働中の
+		 * 元 DB）を数えると、VACUUM INTO 中〜直後に書き込みがあった場合、
+		 * ログの「取得 N 件」が実際の zip の中身と食い違う（レビュー #19、
+		 * i260908-05）
+		 */
+		const destDb = new DatabaseSync(dest, { readOnly: true });
+		let messages;
+		try {
+			messages = destDb.prepare('SELECT count(*) AS c FROM messages').get().c;
+		} finally {
+			destDb.close();
+		}
 		return { dest, bytes: statSync(dest).size, ms: Date.now() - startedAt, messages };
 	} finally {
 		db.close();

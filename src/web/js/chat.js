@@ -409,6 +409,15 @@ async function loadRooms() {
 	el.roomSelect.value = room;
 }
 
+/*
+ * サーバー側（src/server/server.mjs の requireId）と同じ規則。変えたら両方直す。
+ *
+ * 検証せずに localStorage へ書くと、誤入力した名前がそのまま固定され、
+ * リロードのたびに同じ失敗（サーバーの 400）を繰り返す（レビュー #19、
+ * i260908-05）。
+ */
+const ROOM_ID_RE = /^[A-Za-z0-9_-](?:[A-Za-z0-9_.-]*[A-Za-z0-9_-])?$/;
+
 /**
  * ルームを切り替える。表示を空にしてから読み直す。
  *
@@ -563,7 +572,12 @@ el.newRoom.addEventListener('click', () => {
 el.roomDialog.addEventListener('close', () => {
 	if (el.roomDialog.returnValue !== 'ok') return;
 	const name = el.roomInput.value.trim();
-	if (name) switchRoom(name);
+	if (!name) return;
+	if (!ROOM_ID_RE.test(name)) {
+		showBanner(`ルーム名に使えるのは英数字・ハイフン・下線・ピリオド（先頭と末尾には置けません）だけです: ${name}`);
+		return;
+	}
+	switchRoom(name);
 });
 
 /*

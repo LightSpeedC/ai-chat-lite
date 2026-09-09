@@ -96,6 +96,43 @@ describe('バックアップ', () => {
 		assert.equal(found, 30, 'WAL の内容が複製に入っていない');
 	});
 
+	/*
+	 * 【なぜ必要か】
+	 * vacuumInto は VACUUM INTO で dest にスナップショットを作った直後、
+	 * messages 件数を「同じ db 接続（＝生きている src）」に対して数えていた。
+	 * dest 自体は数えていないため、VACUUM 中〜直後に src へ書き込みがあると、
+	 * ログの「取得 N 件」は実際に取れた dest の中身と食い違う（レビュー #19、
+	 * i260908-05）。VACUUM INTO 実行直後・count 実行前というピンポイントの
+	 * タイミングに割り込む必要があるため、DatabaseSync.prototype.exec を
+	 * 差し替えて競合を確実に再現する
+	 */
+	test('VACUUM INTO の直後に src へ書き込みがあっても、messages は dest の中身のまま', () => {
+		const dest = join(WORK, 'race.db');
+
+		const originalExec = DatabaseSync.prototype.exec;
+		DatabaseSync.prototype.exec = function (sql, ...rest) {
+			const result = originalExec.call(this, sql, ...rest);
+			if (typeof sql === 'string' && sql.startsWith('VACUUM INTO')) {
+				// dest ができた直後、count が走る前に src へ割り込んで書く
+				const writer = new DatabaseSync(SRC);
+				writer
+					.prepare('INSERT INTO messages (from_connector_id, msg_body) VALUES (?, ?)')
+					.run('race', '割り込み書き込み');
+				writer.close();
+			}
+			return result;
+		};
+
+		let result;
+		try {
+			result = vacuumInto(dest, SRC);
+		} finally {
+			DatabaseSync.prototype.exec = originalExec;
+		}
+
+		assert.equal(result.messages, 30, 'src の最新値を数えてしまっている（dest の中身を数えるべき）');
+	});
+
 	test('複製は -wal を伴わず単体で開ける', () => {
 		// 復旧のとき zip の中の 1 ファイルだけを置けば済むことを保証する
 		const dest = join(WORK, 'standalone.db');

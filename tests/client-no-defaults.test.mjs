@@ -14,17 +14,19 @@
  */
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
-import { COMMANDS, ADMIN_COMMANDS, OPTIONS } from '../src/client/options.mjs';
+import { COMMANDS, ADMIN_COMMANDS } from '../src/client/options.mjs';
 import { wrapId } from './helpers/cli-args.mjs';
 
 const run = promisify(execFile);
 const here = dirname(fileURLToPath(import.meta.url));
 const CLIENT = join(here, '..', 'src', 'client', 'chat.mjs');
+const OPTIONS_SRC = join(here, '..', 'src', 'client', 'options.mjs');
 
 /*
  * 置き場をテスト側に向ける。
@@ -115,11 +117,18 @@ describe('環境変数では渡せない', () => {
 		assert.match(stderr, /接続先が指定されていません/);
 	});
 
+	/*
+	 * 【なぜ必要か】
+	 * OPTIONS（CLI オプションの定義）に port・url が有ることを確かめても、
+	 * 「環境変数を読む口が無い」ことの検査にはならない（レビュー #19、
+	 * i260908-05）。読む口が無いことは、ソース自体に process.env.AICHAT_*
+	 * が現れないことでしか確かめられない
+	 */
 	test('AICHAT_URL のような変数は定義そのものが無い', () => {
-		// 読む口を増やしていないことを、定義の側から確かめる
-		const names = OPTIONS.map((o) => o.long);
-		assert.ok(names.includes('port'));
-		assert.ok(names.includes('url'));
+		const clientSrc = readFileSync(CLIENT, 'utf8');
+		const optionsSrc = readFileSync(OPTIONS_SRC, 'utf8');
+		assert.doesNotMatch(clientSrc, /process\.env\.AICHAT_/, 'chat.mjs が AICHAT_ 系の環境変数を読んでいる');
+		assert.doesNotMatch(optionsSrc, /process\.env\.AICHAT_/, 'options.mjs が AICHAT_ 系の環境変数を読んでいる');
 	});
 });
 

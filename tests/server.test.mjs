@@ -21,6 +21,7 @@ const hub = await import('../src/server/hub.mjs');
 const store = await import('../src/server/store.mjs');
 const { jstBefore } = await import('../src/server/time.mjs');
 const { TEST_ACCESS_TOKEN } = await import('../src/server/config.mjs');
+const { serveStatic } = await import('../src/server/serve.mjs');
 
 let servers;
 let base;
@@ -199,6 +200,25 @@ test('別のルームには届かない', async () => {
 	const { json } = await get('/api/history?room_id=sandbox-other&limit=10');
 	assert.equal(json.messages.length, 1);
 	assert.equal(json.messages[0].msg_body, '別室');
+});
+
+/*
+ * 【なぜ必要か】
+ * 既定のルーム（public）は参加時の行き先になっているため、片付けると
+ * 誰も参加できなくなる。ガード自体は server.mjs にあるが、それを通る
+ * テストが無かった（status.html は archive.test.mjs に帰していたが、
+ * archive.test.mjs は store.mjs を直接叩くだけで、このガードは HTTP
+ * ハンドラ層にしかない）。レビュー #19、i260908-05
+ */
+test('既定のルームは archive で断る', async () => {
+	const { status, json } = await post('/api/admin/archive', {
+		kind: 'room',
+		id: 'public',
+		connector_id: 'test-connector1',
+		confirm: 'public',
+	});
+	assert.equal(status, 400);
+	assert.match(json.error, /public は片付けられません/);
 });
 
 describe('片付けたものの見え方', () => {
@@ -504,9 +524,33 @@ test('wait を省略しても即座に返らない（既定が効いている）
 	assert.ok(Date.now() - started < 5000);
 });
 
-test('web の外は参照できない', async () => {
+/*
+ * 【なぜ必要か】
+ * fetch（WHATWG URL）は .. セグメントを送信前にクライアント側で正規化して
+ * しまうため、このテストは実際には ../ を 1 つもサーバーへ送っておらず、
+ * 単に存在しないパスの 404 で「たまたま」通っていた（レビュー #19、
+ * i260908-05）。サーバー側も new URL(req.url, …) で受けているため、
+ * Node core の http.request で生のパスを送っても、その時点で正規化されて
+ * しまい 404 にしかならない（実測で確認済み）。実際に .. を含む生のパスが
+ * serveStatic まで届いた場合の防御は、関数を直接叩いて確かめる
+ */
+test('web の外は参照できない（404 になる。実際に .. を送れていないことも記録する）', async () => {
 	const res = await fetch(base + '/../../src/server/store.mjs');
-	assert.ok(res.status === 403 || res.status === 404, `status=${res.status}`);
+	assert.equal(res.status, 404);
+});
+
+test('serveStatic は生の .. パスを渡されても WEB_DIR の外に出さない', async () => {
+	const res = {
+		statusCode: null,
+		headers: {},
+		writeHead(status, headers) {
+			this.statusCode = status;
+			Object.assign(this.headers, headers);
+		},
+		end() {},
+	};
+	await serveStatic(res, '/../../src/server/store.mjs');
+	assert.equal(res.statusCode, 403);
 });
 
 // --- どこまで読んだかをサーバーが覚える ---
