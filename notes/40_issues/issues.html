@@ -597,7 +597,7 @@ footer a {
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（5 件 / 未 3 / 着手 1 / 済 1）</a></li>
 		<li class="g02"><a href="#g02">データ（7 件 / 未 3 / 済 4）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（21 件 / 未 2 / 着手 5 / 済 14）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（22 件 / 未 2 / 着手 5 / 済 15）</a></li>
 		<li class="g04"><a href="#g04">チャットの機能（24 件 / 未 9 / 着手 1 / 済 14）</a></li>
 	</ol>
 </section>
@@ -1301,7 +1301,7 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">21 件 / 未 2 / 着手 5 / 済 14</span>
+		<span class="count">22 件 / 未 2 / 着手 5 / 済 15</span>
 	</summary>
 
 	<div class="groupbody">
@@ -3433,6 +3433,29 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 					</tbody>
 				</table>
 				</div>
+			</div>
+		</details>
+
+		<details class="issue done" id="i260910-01" open>
+			<summary>
+				<span class="badge b-done">☑</span>
+				<span class="no">i260910-01</span>
+				<code>tools/40_test</code> の ps1 2 本が、cmd から起動できない
+			</summary>
+			<div class="issuebody">
+				<p><code>run-ui-tests.ps1</code> と <code>measure-cli-startup.ps1</code> の 1 行目に <code>#Requires -Version 7</code> が残っていた。どちらも同名の cmd が <code>powershell.exe</code>（5.1）で呼ぶ作りなので、<strong>ダブルクリックでは起動時点で <code>ScriptRequiresUnmatchedPSVersion</code> になり、一度も動かない</strong>。共通ルールの「ps1 は 5.1 で動くように書く」にも当たる（<a href="#i260908-05">i260908-05</a> で <code>build-aichat.cmd</code> について直したのと同じ形）。</p>
+
+				<div class="callout callout-important">
+					<p><strong>2 本で事情が違った。</strong><code>run-ui-tests.ps1</code> は pwsh 7 固有の機能を使っておらず、外すだけで済んだ。<code>measure-cli-startup.ps1</code> は<strong>外すと壊れた</strong>ので、<code>#Requires</code> には意味があった。</p>
+				</div>
+
+				<p><code>measure-cli-startup.ps1</code> は「素の起動」を <code>node -e ''</code> で測っていた。<strong>Windows PowerShell 5.1 はネイティブコマンドへ空の引数を渡せない</strong>（pwsh 7 の <code>PSNativeCommandArgumentPassing</code> で直った挙動）ため、<code>node -e</code> だけが渡って <code>-e requires an argument</code> で即座に落ちる。<strong>エラー終了までの時間を「Node 自体の起動」として測っていた</strong>（21.5 ms。直すと 41.1 ms になり、module の読み込み時間の見積もりも 49.0 ms → 16.1 ms へ変わった）。</p>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> <code>run-ui-tests.ps1</code> から <code>#Requires -Version 7</code> を外した。<strong>5.1 で全 75 件（74 成功・1 skip）が完走することを実測</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> <code>measure-cli-startup.ps1</code> は空文字列を渡さない形（<code>node -e '0'</code>）に直してから <code>#Requires</code> を外した。<strong>5.1 ・ pwsh 7 の両方で正しく測れることを実測</strong>。<code>0</code> は評価しても何も起きない式なので、測る中身は変わらない</li>
+					<li class="done"><span class="badge b-done">☑</span> 残る ps1 4 本（<code>log.ps1</code> ・ <code>register-backup-tasks.ps1</code> ・ <code>backup.ps1</code> ・ <code>migrate-backup-layout.ps1</code>）は <code>#Requires -Version 5.1</code> で、問題なし。<code>restore.ps1</code> も同じ</li>
+				</ul>
 			</div>
 		</details>
 

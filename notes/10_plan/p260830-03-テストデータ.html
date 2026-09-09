@@ -211,7 +211,7 @@ svg { max-width: 100%; height: auto; }
 	<div class="inner">
 		<h1>テストデータの規約と物理削除</h1>
 		<div class="lead">テストが作ったものを、名前で見分けて消せるようにする</div>
-		<div class="date">📅 作成: 2026-08-30 / 更新: 2026-08-31</div>
+		<div class="date">📅 作成: 2026-08-30 / 更新: 2026-09-10</div>
 	</div>
 </div>
 
@@ -509,7 +509,7 @@ expect(connectors).toBeGreaterThan(0);         // 参加者がいる前提</code
 <tr><td class="nowrap"><span class="badge b-ok">済</span></td><td>Playwright 側の <code>test-data.ts</code>（規約・断り文・後始末をまとめたもの）</td></tr>
 <tr><td class="nowrap"><span class="badge b-ok">済</span></td><td>4 つの spec を規約に寄せた（<code>chat-ui</code> <code>reload-leave</code> <code>leave-beacon</code> <code>leave-methods</code>）</td></tr>
 <tr><td class="nowrap"><span class="badge b-none">未</span></td><td>この計画の承認</td></tr>
-<tr><td class="nowrap"><span class="badge b-none">未</span></td><td>テスト専用のサーバー（4 章の内容）</td></tr>
+<tr><td class="nowrap"><span class="badge b-ok">済</span></td><td><strong>テスト専用のサーバー（4 章の内容）。</strong><code>tools/40_test/start-test-server.mjs</code>（別ポート・別 DB で立て、<code>tmp/_data/server.json</code> に接続情報を書く）・<code>run-ui-tests.ps1</code>（立てる → 回す → 止めて置き場ごと捨てる）・<code>stop-test-server.cmd</code>。Playwright 側の <code>test-data.ts</code> は <code>server.json</code> を読み、立っていなければ<strong>本番へ落ちずに止まる</strong></td></tr>
 </tbody>
 </table>
 </div>
@@ -524,9 +524,14 @@ expect(connectors).toBeGreaterThan(0);         // 参加者がいる前提</code
 
 <p>後始末は「自分が登録した名前」しか消さない。<strong><code>freshNames()</code> も <code>register()</code> も通さずに名前を作ると、消えずに残る。</strong>回収するには <code>purge-test-data.cmd</code> を手で叩く。</p>
 
-<h3>ドキュメント側のテストが古い</h3>
+<h3>ドキュメント側のテストが古い（解消）</h3>
 
-<p>今回の作業とは別に、<strong>6 件が落ちたままである。</strong>いずれもドキュメントを書き換えたのにテストが追随していないもので、テストデータとは関係しない。</p>
+<div class="callout callout-tip">
+	<p><strong>2026-09-10 に実測したところ 0 件だった。</strong><code>run-ui-tests.ps1</code> で全 75 件を通し、<strong>74 件成功・1 skip・失敗 0</strong>。下の 6 件はいずれも、その後の作業で追随済みである。</p>
+	<p>ただし <code>issues-shot</code> は<strong>この確認の直前まで 1 件落ちていた</strong>。原因はテスト側ではなく <code>issues.html</code> の書き方で、「移動」の行が状態バッジを持たずに <code>b-moved</code> だけを先頭に置いていた（凡例は「元の行は済にし、移動 を付ける」と定めている）。<strong>テストが規約違反を捕まえていた。</strong></p>
+</div>
+
+<p>当時落ちていたのは次の 6 件。いずれもドキュメントを書き換えたのにテストが追随していないもので、テストデータとは関係しなかった。</p>
 
 <div class="tablewrap">
 <table>
@@ -534,11 +539,16 @@ expect(connectors).toBeGreaterThan(0);         // 参加者がいる前提</code
 <tr><th class="nowrap">spec</th><th class="num">件数</th><th>中身</th></tr>
 </thead>
 <tbody>
-<tr><td class="nowrap"><code>issues-shot</code></td><td class="num">3</td><td>管理番号を <code>i260830-nn</code> に変えたのに <code>yyyymmdd-nn</code> を期待している。バッジのクラス名も変わった</td></tr>
-<tr><td class="nowrap"><code>shot</code></td><td class="num">2</td><td>設計書のスクショ。中身を書き換えて選択子が合わなくなった</td></tr>
+<tr><td class="nowrap"><code>issues-shot</code></td><td class="num">3</td><td>管理番号を <code>i260830-nn</code> に変えたのに <code>yyyymmdd-nn</code> を期待していた。バッジのクラス名も変わった</td></tr>
+<tr><td class="nowrap"><code>shot</code></td><td class="num">2</td><td>設計書のスクショ。中身を書き換えて選択子が合わなくなっていた</td></tr>
 <tr><td class="nowrap"><code>log-html</code></td><td class="num">1</td><td>HTML ログの検証</td></tr>
 </tbody>
 </table>
+</div>
+
+<div class="callout callout-caution">
+	<p><strong>プロジェクトを移したとき、Playwright 側の spec が追随していなかった。</strong>6 本が旧パス（<code>N:\2026\ai-chat-lite</code>・<code>N:\2026\PlayWright</code>）を持ったままで、<code>file:///</code> で直に開くものと外部プロセスを呼ぶものは 1 件も動かない状態だった（2026-09-10 に直した）。</p>
+	<p><code>archives-ui.spec.ts</code> は<strong>コミットもされていなかった</strong>。PlayWright の <code>USAGE-FOR-PROJECTS.md</code> は「テストスクリプトは必ず commit する」と定めている。</p>
 </div>
 
 </section>
