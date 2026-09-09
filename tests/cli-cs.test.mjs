@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { createServer } from 'node:http';
 
 import { prepareTestDb } from './helpers/prepare-db.mjs';
 import { withId } from './helpers/cli-args.mjs';
@@ -398,5 +399,55 @@ describe('定義の出どころが 1 つであること', () => {
 			exported.commands.map((c) => c.name),
 			options.COMMANDS.map((c) => c.name)
 		);
+	});
+});
+
+/*
+ * TryGet（C# 版だけの経路）が Environment.Exit を貫通させないかを確かめる。
+ *
+ * node 版には対応する道具が無い（node 版の announceEnv はもともと素直に
+ * try/catch で諦めるだけなので、この穴が最初から無い）。node 版との
+ * 突き合わせではなく、C# 版だけの単体テストになる。
+ */
+describe('TryGet は Environment.Exit を貫通させない（レビュー #20）', () => {
+	/*
+	 * /api/version だけ 404 を返し、他のパスは正常な応答を返す偽サーバーを立てる。
+	 *
+	 * AnnounceEnv は TryGet 経由で /api/version を叩く。ここが 503 以外の
+	 * エラー応答（404 など）を受けたとき、直しの前は SendOnce が
+	 * Environment.Exit(1) を呼び、TryGet の catch を素通りして即終了していた
+	 * （ポートを取り違えて別サーバーに繋いだときに起きる）。
+	 *
+	 * 直っていれば、AnnounceEnv は黙って諦め、本来のコマンド（who）が
+	 * 続けて走る。誤ったポートでも本来のコマンドまでは辿り着くことを見る。
+	 */
+	let fakeServer;
+	let fakeBase;
+
+	before(async () => {
+		fakeServer = createServer((req, res) => {
+			if (req.url.startsWith('/api/version')) {
+				res.writeHead(404, { 'Content-Type': 'application/json' });
+				res.end(JSON.stringify({ error: '無い道' }));
+				return;
+			}
+			res.writeHead(200, { 'Content-Type': 'application/json' });
+			res.end(JSON.stringify({ connectors: [] }));
+		});
+		await new Promise((resolve) => fakeServer.listen(0, '127.0.0.1', resolve));
+		fakeBase = `http://127.0.0.1:${fakeServer.address().port}`;
+	});
+
+	after(() => new Promise((resolve) => fakeServer.close(resolve)));
+
+	test('/api/version が 404 でも、本来のコマンドまで辿り着く', async (t) => {
+		if (!built) return t.skip('aichat.exe が無い');
+
+		// 直る前は who まで辿り着かず exit 1 になるため、execFile が reject する。
+		// reject でも stdout/stderr は積まれているので、そこから中身を見る
+		const { stdout, stderr } = await run(EXE, ['who', '-u', fakeBase]).catch((err) => err);
+		assert.match(stdout ?? '', /まだ誰も参加していません/, `who まで辿り着いていない\n${stderr}`);
+		// AnnounceEnv は諦めたときに何も出さない（node 版と同じ「黙って諦める」）
+		assert.doesNotMatch(stderr ?? '', /エラー \(404\)/, 'AnnounceEnv の 404 が外に漏れている');
 	});
 });

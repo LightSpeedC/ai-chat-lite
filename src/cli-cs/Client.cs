@@ -108,6 +108,16 @@ namespace AiChat
 						announced = true;
 					}
 				}
+				catch (HttpError e)
+				{
+					// 503 以外のエラー応答。繋がってはいるので粘る意味が無く、その場で終える。
+					// TryGet はここを通らない（SendOnce の例外を直接 catch して null を返す）
+					Console.Error.WriteLine("エラー (" + e.Status + "): " + Json.Str(e.Body, "error", "不明"));
+					string detail = Json.Str(e.Body, "detail");
+					if (detail != null) Console.Error.WriteLine("  " + detail);
+					Environment.Exit(1);
+					return null; // ここには来ない
+				}
 			}
 
 			Console.Error.WriteLine("諦めました: " + lastReason);
@@ -163,11 +173,7 @@ namespace AiChat
 						throw new UnderMaintenance(Json.Str(json, "detail", "理由の記載なし"));
 					}
 
-					Console.Error.WriteLine("エラー (" + status + "): " + Json.Str(json, "error", "不明"));
-					string detail = Json.Str(json, "detail");
-					if (detail != null) Console.Error.WriteLine("  " + detail);
-					Environment.Exit(1);
-					return null;
+					throw new HttpError(status, json);
 				}
 			}
 		}
@@ -199,6 +205,23 @@ namespace AiChat
 		private class UnderMaintenance : Exception
 		{
 			public UnderMaintenance(string message) : base(message) { }
+		}
+
+		/// <summary>
+		/// 503 以外の HTTP エラー応答。以前はここで直に Environment.Exit していたが、
+		/// それだと例外ではないので TryGet の catch (Exception) を素通りしていた
+		/// （レビュー #20）。例外にして投げ、Send() 側だけが Exit する形にする。
+		/// </summary>
+		private class HttpError : Exception
+		{
+			public int Status { get; private set; }
+			public Dictionary<string, object> Body { get; private set; }
+
+			public HttpError(int status, Dictionary<string, object> body) : base("HTTP " + status)
+			{
+				Status = status;
+				Body = body;
+			}
 		}
 	}
 }
