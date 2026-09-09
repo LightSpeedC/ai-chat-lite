@@ -218,6 +218,30 @@ describe('片付けたあとに繋ぎ直す', () => {
 		);
 	});
 
+	/*
+	 * 【なぜ必要か】
+	 * 上の検査は joinConnector 経由の復活しか見ていなかった。実際には
+	 * join を経ずに touchConnector（say・poll・SSE 接続のたびに呼ばれる）
+	 * だけで登録・復活する参加者もいる（レビュー #20、i260908-07）。
+	 * upsertConnector と touchConnector は別の SQL 文で、どちらも
+	 * archived_seq = NULL を持つが、touchConnector 側だけ検査が無いと
+	 * 足し忘れに気づけない。
+	 */
+	test('join を経ず touchConnector だけで片付けた参加者も戻る', () => {
+		store.touchConnector('test-retouch');
+		store.archive({ kind: 'connector', id: 'test-retouch', byConnectorId: 'test-connector1', description: 'touchConnector の検査' });
+		assert.equal(store.getConnector('test-retouch'), undefined, '片付いていない');
+
+		// join ではなく touchConnector（say・poll・SSE 接続と同じ経路）で戻す
+		store.touchConnector('test-retouch');
+
+		assert.ok(store.getConnector('test-retouch'), 'touchConnector で戻しても一覧に戻らない');
+		assert.ok(
+			store.listConnectors().map((c) => c.connector_id).includes('test-retouch'),
+			'listConnectors に出ない'
+		);
+	});
+
 	test('読んだ位置は書き直せば読める', () => {
 		store.joinConnector('test-rejoin-cursor', 'ai');
 		const m = say('public', 'test-rejoin-cursor', '位置の検査');
