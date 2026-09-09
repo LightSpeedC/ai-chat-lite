@@ -1,5 +1,4 @@
-﻿#Requires -Version 7
-<#
+﻿<#
 	2 つの CLI の起動の速さを測る。
 
 	  aichat.exe --help
@@ -10,7 +9,7 @@
 	  最小値と中央値を見る      平均は外れ値に引っ張られる。最小値がその環境の素の速さに近い
 	  出力はリダイレクトで捨てる  | Out-Null はパイプライン処理が乗り、起動時間が埋もれる
 	  順序を入れ替えて 2 巡する  先に測った方が有利／不利にならないかを見る
-	  素の起動も測る            node -e "" と比べて、module 読み込みの分を切り分ける
+	  素の起動も測る            node -e 0 と比べて、module 読み込みの分を切り分ける
 
 	  measure-cli-startup.ps1              既定（20 回 / ウォームアップ 3 回）
 	  measure-cli-startup.ps1 -Times 50    回数を変える
@@ -72,7 +71,14 @@ Write-Host ''
 $targets = [ordered]@{
 	'aichat.exe --help' = { & $exe --help }
 	'node chat.mjs --help' = { & node $client --help }
-	'node -e ""（素の起動）' = { & node -e '' }
+	<#
+		空文字列を渡さない。Windows PowerShell 5.1 はネイティブコマンドへ
+		空の引数を渡せず（pwsh 7 の PSNativeCommandArgumentPassing で直った）、
+		node -e だけが渡って「-e requires an argument」で即座に落ちる。
+		エラー終了までの時間を「素の起動」として測ってしまう。
+		0 は評価しても何も起きない式なので、測る中身は変わらない
+	#>
+	'node -e 0（素の起動）' = { & node -e '0' }
 }
 
 # 1 巡目
@@ -101,7 +107,7 @@ $bareMin = ($first + $second | Where-Object { $_.対象 -like 'node -e*' } | Mea
 Write-Host '=== まとめ（2 巡の最小値どうしを比べる） ==='
 Write-Host ("  aichat.exe          {0,7:N1} ms" -f $exeMin)
 Write-Host ("  node chat.mjs       {0,7:N1} ms" -f $nodeMin)
-Write-Host ("  node -e ''          {0,7:N1} ms  ← Node 自体の起動" -f $bareMin)
+Write-Host ("  node -e 0           {0,7:N1} ms  ← Node 自体の起動" -f $bareMin)
 Write-Host ''
 Write-Host ("  差（chat.mjs - exe） {0,7:N1} ms" -f ($nodeMin - $exeMin))
 Write-Host ("  うち module の読み込み {0,7:N1} ms" -f ($nodeMin - $bareMin))
