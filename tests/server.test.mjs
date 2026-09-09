@@ -16,7 +16,7 @@ process.env.AICHAT_NO_EXIT = '1';
 process.env.AICHAT_LEAVE_GRACE_MS = '150';
 await prepareTestDb(TEST_DATA);
 
-const { startServers, stopServers, sweepOffline } = await import('../src/server/server.mjs');
+const { startServers, stopServers, sweepOffline, SSE_CATCHUP_MAX } = await import('../src/server/server.mjs');
 const hub = await import('../src/server/hub.mjs');
 const store = await import('../src/server/store.mjs');
 const { jstBefore } = await import('../src/server/time.mjs');
@@ -361,6 +361,49 @@ test('SSE で受け取れる', async () => {
 	assert.equal(message.msg_body, 'SSE のテスト');
 
 	controller.abort();
+});
+
+/*
+ * 【なぜ必要か】
+ * 補完ループは 500 件（MAX_HISTORY_LIMIT）ずつ進め、SSE_CATCHUP_MAX（2000 件）を
+ * 超えたら truncated を送る。滞留がちょうど SSE_CATCHUP_MAX 件で終わっている
+ * ときは、最後のバッチも満杯（500 件）で届くため、バッチの長さだけでは
+ * 「続きがあるか」を判別できない。続きが無いのに truncated を送ると、
+ * 画面は不要な読み直しをする（レビュー #20）。
+ */
+test('滞留がちょうど SSE_CATCHUP_MAX 件で終わっているときは truncated を送らない', async () => {
+	const roomId = 'test-sse-catchup';
+	for (let i = 0; i < SSE_CATCHUP_MAX; i++) {
+		store.addMessage({ roomId, fromConnectorId: 'test-flooder', body: `msg ${i}` });
+	}
+
+	const controller = new AbortController();
+	const res = await fetch(`${base}/api/events?connector_id=test-catchup-reader&room_id=${roomId}&since=0`, {
+		signal: controller.signal,
+		headers: AUTH,
+	});
+
+	const reader = res.body.getReader();
+	const decoder = new TextDecoder();
+	let buffer = '';
+	let messageCount = 0;
+	let truncated = false;
+
+	// version は補完ループのあとに送られる。それまで読み切る
+	while (!buffer.includes('event: version')) {
+		const { value, done } = await reader.read();
+		if (done) throw new Error('切断された');
+		buffer += decoder.decode(value, { stream: true });
+	}
+	for (const block of buffer.split('\n\n')) {
+		if (block.includes('event: message')) messageCount++;
+		if (block.includes('event: truncated')) truncated = true;
+	}
+
+	controller.abort();
+
+	assert.equal(messageCount, SSE_CATCHUP_MAX, `${SSE_CATCHUP_MAX} 件すべて届くはず`);
+	assert.equal(truncated, false, '続きが無いのに truncated を送ってしまっている');
 });
 
 test('connector_id が無いと 400', async () => {

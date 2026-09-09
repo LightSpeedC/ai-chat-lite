@@ -145,7 +145,7 @@ const MSG_KINDS = ['say', 'join', 'leave', 'archive', 'notice'];
  * これを超える分は流さず、truncated を送って画面に履歴を取り直させる。
  * 全部流すと、長く切れていた 1 人のために大量の書き込みが続く
  */
-const SSE_CATCHUP_MAX = 2000;
+export const SSE_CATCHUP_MAX = 2000;
 
 /**
  * 待受けを起こさない msg_kind を読む。省略されていたら空（全部で起こす）。
@@ -791,8 +791,15 @@ function handleEvents(req, res, url) {
 			// 1 回分に満たなければ追いついた
 			if (batch.length < MAX_HISTORY_LIMIT) break;
 			if (sent >= SSE_CATCHUP_MAX) {
-				// これ以上は流さない。画面が履歴を取り直す
-				client.send('truncated', { from: cursor, sent });
+				/*
+				 * バッチが満杯のまま上限に達した。ここで無条件に打ち切ると、
+				 * 滞留がちょうど上限で終わっている場合まで truncated を送って
+				 * しまう（満杯かどうかだけでは続きの有無が分からない）。
+				 * 1 件だけ覗いて、本当に続きがあるときだけ送る
+				 */
+				if (getSince(roomId, cursor, 1).length > 0) {
+					client.send('truncated', { from: cursor, sent });
+				}
 				break;
 			}
 		}
