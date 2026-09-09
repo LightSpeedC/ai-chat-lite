@@ -200,6 +200,61 @@ export function getBefore(roomId, before, limit) {
 	return stmt.selectBefore.all(roomId, Number(before), clampLimit(limit, 50)).reverse();
 }
 
+/**
+ * 期間・検索・差出人で絞り込んで返す（recent の --since 系）。古い順。
+ *
+ * 条件は渡された分だけ足す。組み合わせが 16 通りあるため、あらかじめ
+ * 用意した prepared statement では足りず、呼ぶたびに組み立てる。
+ * recent は連打されるものではないので、都度の prepare で困らない。
+ *
+ * @param {string} roomId
+ * @param {{ sinceTs?: string, beforeTs?: string, find?: string, from?: string, limit?: number }} opts
+ */
+export function getFiltered(roomId, { sinceTs, beforeTs, find, from, limit } = {}) {
+	const clauses = ['archived_seq IS NULL', 'room_id = ?'];
+	const params = [roomId];
+
+	if (sinceTs) {
+		clauses.push('sent_at >= ?');
+		params.push(sinceTs);
+	}
+	if (beforeTs) {
+		clauses.push('sent_at < ?');
+		params.push(beforeTs);
+	}
+	if (find) {
+		/*
+		 * | で区切ると OR 検索になる（--find "rule|ルール"）。前後の空白は trim し、
+		 * 空項（"rule|" の末尾など）は無視する。1 語だけのときは今までどおり。
+		 *
+		 * 大文字小文字は SQLite の LIKE が ASCII を既定で区別しない（実測済み）。
+		 * 日本語には大小の区別が無いので、この点はどちらにしろ影響しない。
+		 */
+		const terms = String(find)
+			.split('|')
+			.map((t) => t.trim())
+			.filter((t) => t.length > 0);
+
+		if (terms.length > 0) {
+			// % _ \ を \ でエスケープし、LIKE のワイルドカードとして働かないようにする。
+			// エスケープしないと --find "50%" が「50 のあと何でも」に化ける。
+			clauses.push(`(${terms.map(() => "msg_body LIKE ? ESCAPE '\\'").join(' OR ')})`);
+			for (const term of terms) params.push(`%${term.replace(/[\\%_]/g, (c) => `\\${c}`)}%`);
+		}
+	}
+	if (from) {
+		clauses.push('from_connector_id = ?');
+		params.push(from);
+	}
+
+	params.push(clampLimit(limit, 50));
+
+	return db
+		.prepare(`SELECT * FROM messages WHERE ${clauses.join(' AND ')} ORDER BY msg_seq DESC LIMIT ?`)
+		.all(...params)
+		.reverse();
+}
+
 /** 全メッセージ。dump 用 */
 export function getAllMessages() {
 	return stmt.selectAll.all();

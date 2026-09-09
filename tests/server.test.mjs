@@ -505,6 +505,40 @@ test('位置はルームごとに別々', async () => {
 	assert.equal(devNext.json.messages[0].msg_body, 'dev の 2 つ目');
 });
 
+/*
+ * 初めての接続かを返す（wait の起動時の案内・i260909-01 用）。
+ * setCursor は呼ばないので、何度呼んでも答えが変わらない（poll と違い進めない）。
+ */
+describe('/api/cursor-status', () => {
+	test('カーソルが無ければ first_time は true', async () => {
+		const { json } = await get('/api/cursor-status?connector_id=test-cursor-status-a&room_id=public');
+		assert.equal(json.first_time, true);
+		assert.equal(json.rooms.length, 1);
+		assert.equal(json.rooms[0].room_id, 'public');
+		assert.equal(json.rooms[0].first_time, true);
+	});
+
+	test('呼んだだけではカーソルは進まない（何度呼んでも true のまま）', async () => {
+		await get('/api/cursor-status?connector_id=test-cursor-status-b&room_id=public');
+		const { json } = await get('/api/cursor-status?connector_id=test-cursor-status-b&room_id=public');
+		assert.equal(json.first_time, true, 'cursor-status 自身が setCursor を呼んでしまっている');
+	});
+
+	test('poll で一度でも読めば false になる', async () => {
+		await get('/api/poll?connector_id=test-cursor-status-c&room_id=public&wait=0');
+		const { json } = await get('/api/cursor-status?connector_id=test-cursor-status-c&room_id=public');
+		assert.equal(json.first_time, false);
+	});
+
+	test('複数ルームのうち 1 つでも初めてなら、全体の first_time は true', async () => {
+		await get('/api/poll?connector_id=test-cursor-status-d&room_id=public&wait=0');
+		const { json } = await get('/api/cursor-status?connector_id=test-cursor-status-d&room_id=public,dev');
+		assert.equal(json.rooms.find((r) => r.room_id === 'public').first_time, false);
+		assert.equal(json.rooms.find((r) => r.room_id === 'dev').first_time, true);
+		assert.equal(json.first_time, true);
+	});
+});
+
 test('since を明示すれば、そちらが優先される', async () => {
 	// ブラウザは自分で位置を持っているため、記録に左右されない
 	const { json } = await get('/api/poll?connector_id=test-reader&since=0&wait=0');
@@ -578,4 +612,106 @@ test('/api/version が環境を名乗る', async () => {
 	const { json } = await get('/api/version');
 	assert.equal(json.env, 'test', '置き場を差し替えているので test のはず');
 	assert.ok(json.version, '版も返る');
+});
+
+/*
+ * recent の絞り込み（since_ts / before_ts / find / from_connector_id）。
+ *
+ * 専用のルーム（sandbox-since-filter）に積んで、他のテストの発言と混ざらない
+ * ようにする。CLI 側（--since の書式・未来への丸め）は since-parse.test.mjs が
+ * 見ているので、ここでは API がパラメータをそのまま SQL に渡していることだけを見る。
+ */
+describe('recent の絞り込み', () => {
+	const ROOM = 'sandbox-since-filter';
+
+	before(async () => {
+		await post('/api/say', { from_connector_id: 'test-filter-a', room_id: ROOM, msg_body: 'ルールを更新しました' });
+		await post('/api/say', { from_connector_id: 'test-filter-b', room_id: ROOM, msg_body: '雑談です' });
+		await post('/api/say', { from_connector_id: 'test-filter-a', room_id: ROOM, msg_body: '割引は50%です' });
+	});
+
+	test('絞り込みが無ければ今までどおり全件返る', async () => {
+		const { json } = await get(`/api/history?room_id=${ROOM}&limit=10`);
+		assert.equal(json.messages.length, 3);
+	});
+
+	test('since_ts で、それ以降の発言だけになる', async () => {
+		const since = jstBefore(1000); // 1 秒前。3 件とも含まれるはず
+		const { json } = await get(`/api/history?room_id=${ROOM}&limit=10&since_ts=${encodeURIComponent(since)}`);
+		assert.equal(json.messages.length, 3);
+
+		const future = jstBefore(-1000 * 60 * 60); // 1 時間後（未来）。何も含まれない
+		const { json: none } = await get(`/api/history?room_id=${ROOM}&limit=10&since_ts=${encodeURIComponent(future)}`);
+		assert.equal(none.messages.length, 0);
+	});
+
+	test('before_ts で、それより前の発言だけになる', async () => {
+		const past = jstBefore(1000 * 60 * 60); // 1 時間前。何も含まれない
+		const { json } = await get(`/api/history?room_id=${ROOM}&limit=10&before_ts=${encodeURIComponent(past)}`);
+		assert.equal(json.messages.length, 0);
+
+		const future = jstBefore(-1000 * 60 * 60); // 1 時間後。3 件とも含まれる
+		const { json: all } = await get(`/api/history?room_id=${ROOM}&limit=10&before_ts=${encodeURIComponent(future)}`);
+		assert.equal(all.messages.length, 3);
+	});
+
+	test('形が正しくない since_ts / before_ts は 400', async () => {
+		const { status } = await get(`/api/history?room_id=${ROOM}&limit=10&since_ts=${encodeURIComponent('2026-08-01')}`);
+		assert.equal(status, 400, 'ハイフン区切りは受けない形（内部の sent_at はスラッシュ区切り）');
+	});
+
+	test('find で、本文にその文字列を含むものだけになる', async () => {
+		const { json } = await get(`/api/history?room_id=${ROOM}&limit=10&find=${encodeURIComponent('ルール')}`);
+		assert.equal(json.messages.length, 1);
+		assert.match(json.messages[0].msg_body, /ルール/);
+	});
+
+	test('find の値は % _ をワイルドカードとして働かせない', async () => {
+		// 「50%」を検索して「500」のような別物を拾わないことを確かめる
+		await post('/api/say', { from_connector_id: 'test-filter-a', room_id: ROOM, msg_body: '在庫は500個' });
+
+		const { json: percent } = await get(`/api/history?room_id=${ROOM}&limit=10&find=${encodeURIComponent('50%')}`);
+		assert.equal(percent.messages.length, 1, '50% のワイルドカードが効いて 500 まで拾ってしまっている');
+		assert.match(percent.messages[0].msg_body, /50%/);
+	});
+
+	test('find は | で区切ると OR 検索になる', async () => {
+		const { json } = await get(`/api/history?room_id=${ROOM}&limit=10&find=${encodeURIComponent('ルール|雑談')}`);
+		assert.equal(json.messages.length, 2, '「ルール」と「雑談」の両方が拾えていない');
+	});
+
+	test('find の OR 検索は、前後の空白を trim し空項を無視する', async () => {
+		const { json } = await get(`/api/history?room_id=${ROOM}&limit=10&find=${encodeURIComponent(' ルール |  ')}`);
+		assert.equal(json.messages.length, 1, '空白つき・空項混じりの扱いが違う');
+		assert.match(json.messages[0].msg_body, /ルール/);
+	});
+
+	test('find の OR 検索も % _ をワイルドカードとして働かせない', async () => {
+		const { json } = await get(`/api/history?room_id=${ROOM}&limit=10&find=${encodeURIComponent('50%|絶対に無い文字列xyz')}`);
+		assert.equal(json.messages.length, 1, '50% のワイルドカードが OR の中で効いてしまっている（500 まで拾う）');
+		assert.match(json.messages[0].msg_body, /50%/);
+	});
+
+	test('from_connector_id で、その相手の発言だけになる', async () => {
+		const { json } = await get(`/api/history?room_id=${ROOM}&limit=10&from_connector_id=test-filter-b`);
+		assert.equal(json.messages.length, 1);
+		assert.equal(json.messages[0].from_connector_id, 'test-filter-b');
+	});
+
+	test('組み合わせても AND で絞れる', async () => {
+		const { json } = await get(
+			`/api/history?room_id=${ROOM}&limit=10&since_ts=${encodeURIComponent(jstBefore(1000))}` +
+				`&from_connector_id=test-filter-a&find=${encodeURIComponent('ルール')}`
+		);
+		assert.equal(json.messages.length, 1);
+		assert.equal(json.messages[0].from_connector_id, 'test-filter-a');
+		assert.match(json.messages[0].msg_body, /ルール/);
+	});
+
+	test('既存の before（msg_seq によるページ送り）は今までどおり動く', async () => {
+		const { json: all } = await get(`/api/history?room_id=${ROOM}&limit=10`);
+		const secondSeq = all.messages[1].msg_seq;
+		const { json } = await get(`/api/history?room_id=${ROOM}&limit=10&before=${secondSeq}`);
+		assert.ok(json.messages.every((m) => m.msg_seq < secondSeq), 'before（msg_seq）で絞れていない');
+	});
 });

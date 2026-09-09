@@ -102,9 +102,9 @@ namespace AiChat
 			}
 
 			IdWrap = Json.Str(root, "id_wrap", ":");
-			IdPattern = Json.Str(root, "id_pattern", "^[A-Za-z0-9_-]+$");
+			IdPattern = Json.Str(root, "id_pattern", "^[A-Za-z0-9_-](?:[A-Za-z0-9_.-]*[A-Za-z0-9_-])?$");
 			WaiterPattern = Json.Str(root, "waiter_pattern",
-				"(?:^|\\s)wait\\s+(?::([A-Za-z0-9_-]+):|(?:-c|--connector-id)\\s+([^\\s\"]+))");
+				"(?:^|\\s)wait\\s+(?::([A-Za-z0-9_.-]+):|(?:-c|--connector-id)\\s+([^\\s\"]+))");
 
 			DefaultRoom = Json.Str(root, "default_room", "public");
 			DefaultPort = Json.Int(root, "default_port", 8787);

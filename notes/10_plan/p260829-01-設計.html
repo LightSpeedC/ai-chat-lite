@@ -406,7 +406,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 設計</h1>
 		<p class="lead">ローカルPC内で AI セッションと人間が同席する簡易チャットの設計</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-08</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-09</p>
 	</div>
 </div>
 
@@ -444,7 +444,7 @@ footer a {
 		<tbody>
 			<tr><td class="nowrap">動作範囲</td><td>ローカル PC 内で完結する。外部ネットワークには出さない</td></tr>
 			<tr><td class="nowrap">参加者</td><td>AI セッションと人間の両方</td></tr>
-			<tr><td class="nowrap">ID</td><td>自己申告。<strong>コマンドの直後に <code>:id:</code> の形で明示する</strong>。project フォルダ名を使うことを想定している。使えるのは英数字・ハイフン・下線だけ</td></tr>
+			<tr><td class="nowrap">ID</td><td>自己申告。<strong>コマンドの直後に <code>:id:</code> の形で明示する</strong>。project フォルダ名を使うことを想定している。使えるのは英数字・ハイフン・下線・ピリオド（ピリオドは先頭と末尾には置けない）</td></tr>
 			<tr><td class="nowrap">アクセス制御</td><td>初期仕様では設けない。誰でも参加でき、誰の発言も全員が読める</td></tr>
 			<tr><td class="nowrap">在席表示</td><td>誰がいまオンラインかが分かる</td></tr>
 			<tr><td class="nowrap">AI の待受け</td><td>サブエージェントを常駐させ、着信に反応する</td></tr>
@@ -567,6 +567,12 @@ footer a {
 				<td><code>-r a,b</code> で 1 本が複数のルームを見る。<strong>位置はルームごと</strong>、複数のとき <code>since</code> は断る</td>
 				<td class="nowrap"><span class="badge b-ok">済</span></td>
 				<td class="nowrap"><a href="#ch04">API</a> / <a href="#ch06">クライアントと待受け</a></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><a href="p260909-01-recentの絞り込み.html">p260909-01 recent の絞り込み</a></td>
+				<td><code>recent</code> に期間（相対・絶対・範囲）・検索・差出人の絞り込みを足した。<code>notice</code> 種別とルーム横断は対象外</td>
+				<td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td class="nowrap"><a href="#ch03">データ設計</a> / <a href="#ch04">API</a> / <a href="#ch06">クライアントと待受け</a></td>
 			</tr>
 		</tbody>
 	</table>
@@ -1101,15 +1107,19 @@ CREATE INDEX connectors_ix_archived_seq  ON connectors(archived_seq);</code></pr
 
 	<pre><code class="language-sql">CREATE INDEX messages_ix_room_id_msg_seq ON messages(room_id, msg_seq);</code></pre>
 
-	<h3>sent_at のインデックスは張らない</h3>
+	<h3>sent_at のインデックス（版 6）</h3>
 
-	<p>画面の初期表示・遡り・未読取得のいずれも <code>msg_seq</code> だけで引けるため、<code>sent_at</code> は検索条件に出てこない（<a href="#ch04">検索条件の一覧</a>を参照）。並び順も <code>msg_seq</code> で代用できる。同じルーム内では <strong><code>msg_seq</code> の順序と <code>sent_at</code> の順序が一致する</strong>ためで、これは次の 3 つが揃っていることで成り立つ。</p>
+	<p>画面の初期表示・遡り・未読取得のいずれも <code>msg_seq</code> だけで引けるため、当初は <code>sent_at</code> を検索条件に使っていなかった（並び順も <code>msg_seq</code> で代用できた。同じルーム内では <strong><code>msg_seq</code> の順序と <code>sent_at</code> の順序が一致する</strong>ため。これは次の 3 つが揃っていることで成り立つ）。</p>
 
 	<ul>
 		<li>書き込むプロセスが 1 つだけ（サーバーのみが <code>INSERT</code> する）</li>
 		<li>Node が単一スレッドで、時刻を取ってから <code>INSERT</code> するまでに他のリクエストが割り込まない</li>
 		<li><code>node:sqlite</code> が同期 API で、実行が完了するまで次に進まない</li>
 	</ul>
+
+	<p><strong>版 6 で <code>(room_id, sent_at)</code> の複合インデックスを足した。</strong><code>recent --since</code> / <code>--before</code>（<a href="p260909-01-recentの絞り込み.html">計画</a>）が <code>sent_at &gt;= ?</code> / <code>sent_at &lt; ?</code> で絞るため、<code>msg_seq</code> の索引だけでは効かない。</p>
+
+	<pre><code class="language-sql">CREATE INDEX messages_ix_room_id_sent_at ON messages(room_id, sent_at);</code></pre>
 
 	<div class="callout">
 		<p><strong>時刻はサーバーで採番する。</strong>クライアントに時刻を生成させて送らせると、PC の時計のずれや送信の遅れで <code>msg_seq</code> と <code>sent_at</code> の順序が逆転し、上の前提が崩れる。</p>
@@ -1342,8 +1352,13 @@ if (mode.journal_mode !== 'wal') {
 			</tr>
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/history</code></td>
-				<td class="nowrap"><code>room_id</code> / <code>before</code> / <code>limit</code></td>
-				<td>履歴取得。待たずにすぐ返す</td>
+				<td class="nowrap"><code>room_id</code> / <code>before</code> / <code>limit</code><br><code>since_ts</code> / <code>before_ts</code> / <code>find</code> / <code>from_connector_id</code></td>
+				<td>履歴取得。待たずにすぐ返す。<code>before</code> は <code>msg_seq</code> によるページ送り（画面の遡り）。<strong><code>since_ts</code> / <code>before_ts</code>（<code>sent_at</code> と同じ書式の日時文字列）・<code>find</code>（本文の部分一致）・<code>from_connector_id</code></strong> は <code>recent</code> の絞り込み用（<a href="p260909-01-recentの絞り込み.html">計画</a>）。すべて省略可で、渡さなければ今までどおり</td>
+			</tr>
+			<tr>
+				<td class="nowrap">GET</td><td class="nowrap"><code>/api/cursor-status</code></td>
+				<td class="nowrap"><code>connector_id</code> / <code>room_id</code>（カンマ区切り可）</td>
+				<td>渡したルームのどれかで初めての接続なら <code>first_time: true</code>。<strong>読むだけで <code>setCursor</code> を呼ばない</strong>（poll と違い進めない）。<code>wait</code> の起動時の案内（<a href="../40_issues/issues.html#i260909-01">i260909-01</a>）に使う</td>
 			</tr>
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/connectors</code></td><td class="nowrap">—</td>
@@ -1594,6 +1609,10 @@ LIMIT ?;</code></pre>
 				<td><code>archived_seq IS NULL AND room_id = ? AND msg_seq &lt; ?</code> → <code>ORDER BY msg_seq DESC LIMIT ?</code></td>
 			</tr>
 			<tr>
+				<td class="nowrap"><code>recent</code> の絞り込み</td><td class="nowrap"><code>/api/history</code></td>
+				<td><code>archived_seq IS NULL AND room_id = ?</code> に、渡された分だけ <code>AND sent_at &gt;= ?</code>（<code>since_ts</code>）／ <code>AND sent_at &lt; ?</code>（<code>before_ts</code>）／ <code>AND (msg_body LIKE ? ESCAPE '\' [OR msg_body LIKE ? ESCAPE '\' …])</code>（<code>find</code>。<code>|</code> 区切りで OR）／ <code>AND from_connector_id = ?</code> を足す → <code>ORDER BY msg_seq DESC LIMIT ?</code>。条件は都度組み立てる（<a href="p260909-01-recentの絞り込み.html">計画</a>）</td>
+			</tr>
+			<tr>
 				<td class="nowrap">未読取得</td><td class="nowrap"><code>/api/poll</code></td>
 				<td><code>archived_seq IS NULL AND room_id = ? AND msg_seq &gt; ?</code> → <code>ORDER BY msg_seq ASC LIMIT ?</code></td>
 			</tr>
@@ -1785,9 +1804,9 @@ LIMIT ?;</code></pre>
 		</thead>
 		<tbody>
 			<tr><td class="nowrap"><code>join</code></td><td>参加登録。読み始めの位置はサーバーが記録する</td></tr>
-			<tr><td class="nowrap"><code>wait</code></td><td>long-poll。前回の続きから待ち、新着を整形して標準出力に書いて終了する。無ければ待ち直す（既定は最大 12 時間）。<strong>参加・離脱では起きない</strong>（<code>--with-joins</code> で含める）</td></tr>
+			<tr><td class="nowrap"><code>wait</code></td><td>long-poll。前回の続きから待ち、新着を整形して標準出力に書いて終了する。無ければ待ち直す（既定は最大 12 時間）。<strong>参加・離脱では起きない</strong>（<code>--with-joins</code> で含める）。<strong>渡したルームのどれかが初めてなら、案内を出してカーソルを立て、待たずに終わる</strong>（<a href="../40_issues/issues.html#i260909-01">i260909-01</a>）。実際に待ち始めるのは次の <code>wait</code> から</td></tr>
 			<tr><td class="nowrap"><code>say</code></td><td>投稿。<code>--to :&lt;id&gt;:</code> で名指しできる</td></tr>
-			<tr><td class="nowrap"><code>recent</code></td><td>直近の履歴を表示する</td></tr>
+			<tr><td class="nowrap"><code>recent</code></td><td>直近の履歴を表示する。<code>--since</code> / <code>--since-day</code> / <code>--since-hour</code> / <code>--before</code>（期間）・<code>--find</code>（検索）・<code>--from</code>（差出人）でも絞れる（<a href="p260909-01-recentの絞り込み.html">計画</a>）</td></tr>
 			<tr><td class="nowrap"><code>who</code></td><td>参加者一覧とオンライン状態を表示する</td></tr>
 			<tr><td class="nowrap"><code>waiters</code></td><td>走っている待受けの本数を数える。<strong>サーバーには繋がず、手元のプロセスだけを見る</strong></td></tr>
 			<tr><td class="nowrap"><code>dump</code></td><td>全メッセージを JSONL に書き出す</td></tr>

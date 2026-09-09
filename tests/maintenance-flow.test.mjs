@@ -211,12 +211,18 @@ describe('メンテナンスの通し', () => {
 		}
 	});
 
-	test('メンテナンス中に張った待受けは、明けてから新着で終わる', async () => {
+	test('メンテナンス中に張った待受けは、明けてから繋ぎ直す（初回はカーソルを立てて終わる）', async () => {
 		/*
 		 * 粘って繋がる道筋を見る。諦める道筋は wait だと 10 分かかるので、
 		 * 粘らないコマンド（stop）で別に見ている（client-unreachable）。
 		 *
 		 * 間隔が 10 秒なので、印を消してから最初の繋ぎ直しまで最大 10 秒かかる。
+		 *
+		 * 【1 回目と 2 回目に分けた理由】
+		 * test-connector1 はこの DB では初めての接続になる。初回の wait は
+		 * カーソルを立てて案内を出したらすぐ終わる（i260909-01）ため、
+		 * メンテ明けの繋ぎ直し自体は 1 回目で確かめ、新着を受け取る確認は
+		 * （初回でなくなった）2 回目で行う。
 		 */
 		const data = join(ROOT, 'tmp', '_data', 'unit-maintenance-flow-retry');
 		await removeWhenFree(data);
@@ -236,30 +242,31 @@ describe('メンテナンスの通し', () => {
 			if (m) tok = m[1];
 		});
 
+		/*
+		 * 置き場を渡す。渡さないと本番の置き場を見ていることになり、
+		 * CLI が logs/client/ に記録を残してしまう（実際に残った）。
+		 */
+		const spawnWaiter = (extraArgs) =>
+			spawn(
+				process.execPath,
+				[CLIENT, 'wait', wrapId('test-connector1'), '--port', String(p), '--access-token', tok, ...extraArgs],
+				{ env: { ...process.env, AICHAT_DATA: data } }
+			);
+
 		try {
 			await until(async () => (await (await fetch(`http://127.0.0.1:${p}/api/version`)).json()).maintenance === true, {
 				what: 'メンテナンス中での待ち受け',
 			});
 
-			// メンテナンス中に待受けを張る。ここでは繋がらず、粘りに入る
-			let outText = '';
-			let errText = '';
-			/*
-			 * 置き場を渡す。渡さないと本番の置き場を見ていることになり、
-			 * CLI が logs/client/ に記録を残してしまう（実際に残った）。
-			 */
-			const waiter = spawn(
-				process.execPath,
-				[
-					CLIENT, 'wait', wrapId('test-connector1'), '--port', String(p), '--access-token', tok, '--wait-sec', '45',
-				],
-				{ env: { ...process.env, AICHAT_DATA: data } }
-			);
-			waiter.stdout.setEncoding('utf8');
-			waiter.stderr.setEncoding('utf8');
-			waiter.stdout.on('data', (c) => { outText += c; });
-			waiter.stderr.on('data', (c) => { errText += c; });
-			const waiting = new Promise((resolve) => waiter.once('exit', resolve));
+			// --- 1 回目: 初めての接続。メンテ中は粘り、明けたらカーソルを立てて終わる ---
+			let outText1 = '';
+			let errText1 = '';
+			const waiter1 = spawnWaiter(['--wait-sec', '45']);
+			waiter1.stdout.setEncoding('utf8');
+			waiter1.stderr.setEncoding('utf8');
+			waiter1.stdout.on('data', (c) => { outText1 += c; });
+			waiter1.stderr.on('data', (c) => { errText1 += c; });
+			const waiting1 = new Promise((resolve) => waiter1.once('exit', resolve));
 
 			/*
 			 * 粘りに入ったことを確かめてから明ける。
@@ -267,10 +274,27 @@ describe('メンテナンスの通し', () => {
 			 * 先に明けると、CLI が最初の要求を出す前に通常へ戻ってしまい、
 			 * 一度も断られずに繋がる。それでは繋ぎ直しを見たことにならない。
 			 */
-			await until(() => errText.includes('メンテナンス中です'), { what: '粘りに入ること', timeoutMs: 15000 });
+			await until(() => errText1.includes('メンテナンス中です'), { what: '粘りに入ること', timeoutMs: 15000 });
 
 			// 明ける
 			rmSync(marker, { force: true });
+
+			assert.equal(await waiting1, 0, `1 回目（初回）が正常に終わっていない\n${errText1}`);
+
+			// 粘ったことは始めの 1 行で分かる。途中は出さない
+			assert.match(errText1, /メンテナンス中です/);
+			assert.equal(errText1.split('\n').filter((l) => l.includes('メンテナンス中です')).length, 1, '途中も出している');
+			assert.match(outText1, /初めての接続です/, '初回の案内が出ていない（メンテ明けの判定より前に first_time が確定している可能性）');
+
+			// --- 2 回目: 初回ではなくなったので、普通に待つ ---
+			let outText2 = '';
+			let errText2 = '';
+			const waiter2 = spawnWaiter(['--wait-sec', '45']);
+			waiter2.stdout.setEncoding('utf8');
+			waiter2.stderr.setEncoding('utf8');
+			waiter2.stdout.on('data', (c) => { outText2 += c; });
+			waiter2.stderr.on('data', (c) => { errText2 += c; });
+			const waiting2 = new Promise((resolve) => waiter2.once('exit', resolve));
 
 			/*
 			 * 繋ぎ直しを待ってから投稿する。
@@ -286,7 +310,7 @@ describe('メンテナンスの通し', () => {
 					const { connectors } = await r.json();
 					return connectors.some((c) => c.connector_id === 'test-connector1' && c.status === 'online');
 				},
-				{ what: '待受けの繋ぎ直し', timeoutMs: 30000 }
+				{ what: '2 回目の待受けの接続', timeoutMs: 10000 }
 			);
 
 			const posted = await fetch(`http://127.0.0.1:${p}/api/say`, {
@@ -296,13 +320,10 @@ describe('メンテナンスの通し', () => {
 			});
 			assert.ok(posted.ok, '投稿できなかった');
 
-			assert.equal(await waiting, 0, `待受けが正常に終わっていない\n${errText}`);
-
-			// 粘ったことは始めの 1 行で分かる。途中は出さない
-			assert.match(errText, /メンテナンス中です/);
-			assert.equal(errText.split('\n').filter((l) => l.includes('メンテナンス中です')).length, 1, '途中も出している');
-			assert.match(outText, /新着 1 件/);
-			assert.match(outText, /メンテ明けの発言/);
+			assert.equal(await waiting2, 0, `2 回目が正常に終わっていない\n${errText2}`);
+			assert.doesNotMatch(outText2, /初めての接続です/, '2 回目なのに、また初回の案内が出ている');
+			assert.match(outText2, /新着 1 件/);
+			assert.match(outText2, /メンテ明けの発言/);
 		} finally {
 			await killAndWait(server);
 			await removeWhenFree(data);

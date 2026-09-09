@@ -3,7 +3,8 @@ import { writeFileSync, mkdirSync, appendFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
 import { ROOT, PORT, DEFAULT_ROOM, MAX_WAIT_SEC, IS_TEST } from '../server/config.mjs';
-import { nowJst } from '../server/time.mjs';
+import { nowJst, jstBefore } from '../server/time.mjs';
+import { resolveDateTimeArg } from './since-parse.mjs';
 import {
 	WAIT_UNITS,
 	DEFAULT_WAIT_SEC,
@@ -169,7 +170,7 @@ function unwrapId(raw, where) {
 		if (new RegExp(ID_PATTERN).test(id)) return id;
 
 		console.error(`ID に使えない文字が入っています（${where}）: ${raw}`);
-		console.error('  使えるのは英数字・ハイフン・下線だけです。');
+		console.error('  使えるのは英数字・ハイフン・下線・ピリオドだけです。ピリオドは先頭と末尾には置けません。');
 		process.exit(2);
 	}
 
@@ -263,6 +264,27 @@ function positional() {
 function optionalWrappedId(name) {
 	const raw = option(name);
 	return raw === null ? null : unwrapId(raw, `--${name}`);
+}
+
+/**
+ * ID を読む。コロンで囲んでいれば剥がし、囲んでいなければそのまま使う。
+ *
+ * --from はコロンの有無を問わない。--to や waiters の囲み必須は
+ * 「前方一致で探す式に埋め込むため」の制約だが、--from は完全一致の
+ * SQL 条件（from_connector_id = ?）にするだけなので、その制約が要らない。
+ */
+function optionalFlexibleId(name) {
+	const raw = option(name);
+	if (raw === null) return null;
+
+	const w = ID_WRAP;
+	const id = raw.length > w.length * 2 && raw.startsWith(w) && raw.endsWith(w) ? raw.slice(w.length, -w.length) : raw;
+
+	if (new RegExp(ID_PATTERN).test(id)) return id;
+
+	console.error(`ID に使えない文字が入っています（--${name}）: ${raw}`);
+	console.error('  使えるのは英数字・ハイフン・下線・ピリオドだけです。ピリオドは先頭と末尾には置けません。');
+	process.exit(2);
 }
 
 /**
@@ -549,6 +571,41 @@ async function cmdWait() {
 	const excludeParam = withJoins ? '' : '&exclude=join,leave';
 
 	/*
+	 * 初めての接続なら案内を出す（i260909-01）。
+	 *
+	 * 「参加より前の発言は待たない」（USAGE「どこまで読んだかは覚えている」）は
+	 * 資料に書いてあるが、読んでいても初回は踏むという報告があった。過去ログを
+	 * 自動で流し込むのではなく、recent で自分から取りに行く形を案内するだけにする。
+	 */
+	const cursorStatus = await call(
+		`/api/cursor-status?connector_id=${encodeURIComponent(CONNECTOR_ID)}&room_id=${encodeURIComponent(ROOM)}`
+	);
+	if (cursorStatus.first_time) {
+		const port = option('port');
+		const where = port !== null ? `-p ${port}` : `-u ${option('url')}`;
+		console.log('初めての接続です。参加より前の発言は待ちません。過去が必要なら recent で取ってください（例）:');
+		console.log(`    aichat recent --find "ルール" ${where}   # ルール変更の周知をまとめて見る`);
+		console.log(`    aichat recent --since-day 1 ${where}     # 1 日前からの発言を見る`);
+		console.log('');
+
+		/*
+		 * 案内を出したら、待たずに終わる。
+		 *
+		 * wait は run_in_background で背面に張る運用が前提で、完了時にしか通知が
+		 * 来ない。ここで案内を出しても、そのまま既定 12 時間待ち続けると、次の
+		 * 新着が来るか時間が経つまで案内そのものが誰の目にも触れない。
+		 *
+		 * wait=0 で 1 回だけ poll を叩き、カーソルだけ正しく立てて終わる
+		 * （poll は新着の有無に関係なく、実行時点の最大 msg_seq をカーソルに
+		 * するため、これで「今から」の状態になる）。2 回目の wait は今までどおり
+		 * 普通に待つ。
+		 */
+		await call(`/api/poll?connector_id=${encodeURIComponent(CONNECTOR_ID)}&room_id=${encodeURIComponent(ROOM)}&wait=0`);
+		console.log('カーソルを立てました。改めて wait を実行してください。');
+		return;
+	}
+
+	/*
 	 * 出すのは 2 行だけ。12 時間を 240 秒ごとに知らせると 180 行になる。
 	 *
 	 * 「待受け中」と進行形にしてあるのは、この 1 行だけを見た相手に
@@ -616,15 +673,100 @@ function describePositions(result) {
 	return rooms.map((r) => `${r.room_id} ${r.msg_seq}`).join(' / ');
 }
 
+/**
+ * --since / --since-day / --since-hour から 1 つを解決する。
+ *
+ * 3 つは排他。2 つ以上渡されたらエラー（exit 2）。どれも無ければ null。
+ * --wait-hour / --wait-min / --wait-sec の resolveWaitSec() と同じ形。
+ */
+function resolveSinceTs() {
+	const given = [
+		{ long: 'since', raw: option('since') },
+		{ long: 'since-day', raw: option('since-day') },
+		{ long: 'since-hour', raw: option('since-hour') },
+	].filter((u) => u.raw !== null);
+
+	if (given.length > 1) {
+		const names = given.map((u) => `--${u.long}`).join(' と ');
+		console.error(`期間の起点は 1 つだけ指定してください: ${names} が両方あります。`);
+		process.exit(2);
+	}
+	if (given.length === 0) return null;
+
+	const [u] = given;
+	if (u.long === 'since') return parseSinceOrBeforeArg(u.raw, null);
+
+	if (!/^\d+$/.test(u.raw)) {
+		console.error(`--${u.long} には 0 以上の数だけを渡してください: ${u.raw}`);
+		process.exit(2);
+	}
+	const unitMs = u.long === 'since-day' ? 24 * 60 * 60 * 1000 : 60 * 60 * 1000;
+	return jstBefore(Number(u.raw) * unitMs);
+}
+
+/**
+ * --before を解決する。--since とは別に、単独でも渡せる（範囲検索は両方渡す）。
+ *
+ * sinceTs（--since 系がすでに解決した値）を渡すと、年・日付を省いた分は
+ * それを引き継ぐ（「いま」とは比べない）。渡さない・null なら「いま」と比べる。
+ * 引き継がないと、「--since 9/9 --before 9/10」（今日と明日）で明日だけが
+ * 独立に未来と判定されて去年に丸まり、今日と去年の組み合わせになってしまう。
+ */
+function resolveBeforeTs(sinceTs) {
+	const raw = option('before');
+	return raw === null ? null : parseSinceOrBeforeArg(raw, sinceTs);
+}
+
+/**
+ * --since / --before の値を解決する。書式・丸めは since-parse.mjs を見る。
+ * どちらも同じ関数を使う（分けると組み合わせたときに丸めが非対称になる）。
+ */
+function parseSinceOrBeforeArg(raw, anchorTs) {
+	try {
+		return resolveDateTimeArg(raw, anchorTs);
+	} catch (e) {
+		console.error(e.message);
+		process.exit(2);
+	}
+}
+
+/** 見出し行に出す、絞り込みの説明。分単位まで（秒・ミリ秒は削る） */
+function describeFilter(sinceTs, beforeTs, find, from) {
+	const parts = [];
+	if (sinceTs) parts.push(`${sinceTs.slice(0, 16)} 以降`);
+	if (beforeTs) parts.push(`${beforeTs.slice(0, 16)} より前`);
+	if (find) parts.push(`「${find}」を含む`);
+	if (from) parts.push(`${from} からの`);
+	return parts.length === 0 ? '直近 ' : ` ${parts.join('・')} `;
+}
+
 async function cmdRecent() {
-	// -n も --n も option() が解決する。ここで個別に見る必要はない
-	const limit = Number(option('n', 20)) || 20;
-	const result = await call(`/api/history?room_id=${encodeURIComponent(ROOM)}&limit=${limit}`);
+	const sinceTs = resolveSinceTs();
+	const beforeTs = resolveBeforeTs(sinceTs);
+	const find = option('find');
+	const from = optionalFlexibleId('from');
+	const hasFilter = sinceTs !== null || beforeTs !== null || find !== null || from !== null;
+
+	/*
+	 * 絞り込みのどれかを指定したときは既定の件数上限を 500（MAX_HISTORY_LIMIT）にする。
+	 * -n を明示すればそちらが勝つ。期間・検索で自然に絞られているのに、
+	 * 既定の 20 件で黙って古い方が切り捨てられると気づきにくいため。
+	 */
+	const nRaw = option('n');
+	const limit = nRaw !== null ? Number(nRaw) || 20 : hasFilter ? 500 : 20;
+
+	let query = `/api/history?room_id=${encodeURIComponent(ROOM)}&limit=${limit}`;
+	if (sinceTs) query += `&since_ts=${encodeURIComponent(sinceTs)}`;
+	if (beforeTs) query += `&before_ts=${encodeURIComponent(beforeTs)}`;
+	if (find) query += `&find=${encodeURIComponent(find)}`;
+	if (from) query += `&from_connector_id=${encodeURIComponent(from)}`;
+
+	const result = await call(query);
 	if (result.messages.length === 0) {
-		console.log(`${ROOM} にはまだ何もありません`);
+		console.log(hasFilter ? `${ROOM} には該当する発言がありません` : `${ROOM} にはまだ何もありません`);
 		return;
 	}
-	console.log(`${ROOM} の直近 ${result.messages.length} 件:`);
+	console.log(`${ROOM} の${describeFilter(sinceTs, beforeTs, find, from)}${result.messages.length} 件:`);
 	printMessages(result.messages);
 }
 

@@ -280,6 +280,21 @@ describe('実際に置いてある版', () => {
 		}
 	});
 
+	test('版 6 で (room_id, sent_at) の索引が張られる（recent --since 系）', () => {
+		const dbPath = newDbPath();
+		migrate({ dbPath, dir: REAL_DIR });
+
+		const db = new DatabaseSync(dbPath);
+		try {
+			const plan = db
+				.prepare('EXPLAIN QUERY PLAN SELECT * FROM messages WHERE room_id = ? AND sent_at >= ?')
+				.all('public', '2026/01/01 00:00:00.000');
+			assert.match(JSON.stringify(plan), /messages_ix_room_id_sent_at/);
+		} finally {
+			db.close();
+		}
+	});
+
 	test('版 5 で reply_to_msg_seq が足される', () => {
 		const dbPath = newDbPath();
 		migrate({ dbPath, dir: REAL_DIR });
@@ -348,9 +363,11 @@ describe('実際に置いてある版', () => {
 			before.close();
 		}
 
-		// 版 5 を当てる
+		// 残り全部（版 5 以降）を当てる。件数は版フォルダの数から数える
+		// （版を足すたびにここを書き換えずに済むように）
+		const latest = listVersions(REAL_DIR).length;
 		const result = migrate({ dbPath, dir: REAL_DIR });
-		assert.equal(result.to, 5, `版が 5 に上がっていない（${result.to}）`);
+		assert.equal(result.to, latest, `版が最新（${latest}）に上がっていない（${result.to}）`);
 
 		const db = new DatabaseSync(dbPath);
 		try {

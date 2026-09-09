@@ -9,7 +9,7 @@ import {
 import { log } from './log.mjs';
 import { nowJst } from './time.mjs';
 import {
-	addMessage, getSince, getLatest, getBefore, getMaxSeq,
+	addMessage, getSince, getLatest, getBefore, getFiltered, getMaxSeq,
 	joinConnector, touchConnector, addConnection, removeConnection, listRooms,
 	getCursor, setCursor, closeDb, getConnector,
 	previewArchive, archive, restore, listArchives, getAllMessages,
@@ -56,7 +56,7 @@ function requireId(value, name) {
 	if (!id) throw new BadRequest(`${name} は必須です`);
 	if (id.length > MAX_ID_LENGTH) throw new BadRequest(`${name} は ${MAX_ID_LENGTH} 文字までです`);
 	if (!ID_RE.test(id)) {
-		throw new BadRequest(`${name} に使えるのは英数字・ハイフン・下線だけです: ${id}`);
+		throw new BadRequest(`${name} に使えるのは英数字・ハイフン・下線・ピリオド（先頭と末尾には置けません）だけです: ${id}`);
 	}
 	return id;
 }
@@ -404,16 +404,57 @@ async function handlePoll(req, res, url) {
 	}
 }
 
+/**
+ * sent_at と同じ形（yyyy/mm/dd HH:MM:SS.mmm 固定 23 文字）かを確かめて返す。
+ *
+ * CLI 側（node 版・C# 版とも）は、期間の書式・未来への丸めを解決したあと
+ * 必ずこの形にして渡す。ここでは形だけを見る（値の意味までは踏み込まない）。
+ * 直に叩かれたときのために、サーバー側でも軽く確かめておく。
+ */
+const SENT_AT_RE = /^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/;
+
+function tsParam(url, name) {
+	const raw = url.searchParams.get(name);
+	if (!raw) return null;
+	if (!SENT_AT_RE.test(raw)) throw new BadRequest(`${name} の形が正しくありません（yyyy/mm/dd HH:MM:SS.mmm）: ${raw}`);
+	return raw;
+}
+
 function handleHistory(res, url) {
 	const roomId = roomOf(url.searchParams.get('room_id'));
 	const limit = numberOf(url.searchParams.get('limit'), DEFAULT_HISTORY_LIMIT);
 	const beforeParam = url.searchParams.get('before');
+	const sinceTs = tsParam(url, 'since_ts');
+	const beforeTs = tsParam(url, 'before_ts');
+	const find = url.searchParams.get('find') || null;
+	const fromConnectorId = optionalId(url.searchParams.get('from_connector_id'), 'from_connector_id');
 
-	const messages = beforeParam
-		? getBefore(roomId, numberOf(beforeParam, 0), limit)
-		: getLatest(roomId, limit);
+	/*
+	 * 新しい絞り込み（since_ts・before_ts・find・from_connector_id）のどれか 1 つでも
+	 * あれば getFiltered を使う。無ければ今までどおり（before は msg_seq のページ送り）。
+	 * 既存の呼び出しはこの4つを渡さないので、今までと同じ経路のまま動く。
+	 */
+	const messages =
+		sinceTs || beforeTs || find || fromConnectorId
+			? getFiltered(roomId, { sinceTs, beforeTs, find, from: fromConnectorId, limit })
+			: beforeParam
+				? getBefore(roomId, numberOf(beforeParam, 0), limit)
+				: getLatest(roomId, limit);
 
 	sendJson(res, 200, { room_id: roomId, messages });
+}
+
+/**
+ * その connector が、渡したルームのどれかで「初めての接続」かを返す。
+ *
+ * wait の起動時に出す案内（i260909-01）に使う。読むだけで、setCursor は
+ * 呼ばない（poll と違い、待たない・進めない）。何度呼んでも同じ答えを返す。
+ */
+function handleCursorStatus(res, url) {
+	const connectorId = requireId(url.searchParams.get('connector_id'), 'connector_id');
+	const rooms = roomsOf(url.searchParams.get('room_id'));
+	const roomsOut = rooms.map((roomId) => ({ room_id: roomId, first_time: getCursor(connectorId, roomId) === null }));
+	sendJson(res, 200, { rooms: roomsOut, first_time: roomsOut.some((r) => r.first_time) });
 }
 
 /**
@@ -820,6 +861,7 @@ export async function handleRequest(req, res) {
 		if (req.method === 'GET') {
 			if (path === '/api/poll') return await handlePoll(req, res, url);
 			if (path === '/api/history') return handleHistory(res, url);
+			if (path === '/api/cursor-status') return handleCursorStatus(res, url);
 			if (path === '/api/dump') return handleDump(res);
 			if (path === '/api/connectors') return handleConnectors(res);
 			if (path === '/api/rooms') return handleRooms(res);

@@ -401,7 +401,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 開発状況</h1>
 		<p class="lead">実装の進み具合と、次にやること</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-08</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-09</p>
 	</div>
 </div>
 
@@ -554,6 +554,16 @@ footer a {
 				<td class="num">24</td><td class="nowrap">複数ルームの待受け</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
 				<td><strong>1 本の待受けで複数のルームを待てるようになった。</strong><code>-r "public,ai-chat-lite"</code> のようにカンマ区切りで渡す（<code>/api/poll</code> の <code>room_id</code> も同じ形）。どれか 1 つに新着が出れば返り、<strong>読んだ位置はルームごとに進む</strong>。位置を 1 つの数で表せないため、<strong>複数のときは <code>since</code> を断る</strong>（400）。出力は発言ごとに区切り線を置き、頭に <code>[ルーム]</code> を入れる形にした（<code>recent</code> も同じ）。<code>waiters</code> は本数ではなく<strong>渡したルームを覆えているか</strong>で見る。<a class="doclink" href="../10_plan/p260907-01-複数ルームの待受け.html">計画</a>・<a class="doclink" href="../40_issues/issues.html#i260907-01">i260907-01</a></td>
+			</tr>
+			<tr>
+				<td class="num">25</td><td class="nowrap">recent の絞り込み</td>
+				<td class="nowrap"><span class="badge b-ok">完了</span></td>
+				<td><strong>期間（相対・絶対・範囲）・検索・差出人で絞れるようになった。</strong><code>--since</code> / <code>--since-day</code> / <code>--since-hour</code> / <code>--before</code> / <code>--find</code> / <code>--from</code>。<code>(room_id, sent_at)</code> の索引を版 6 で追加（本番は再起動後に反映）。<code>--before</code> は <code>--since</code> の解決値を anchor として引き継ぐ（分けて丸めると組み合わせ時に範囲が壊れるため）。node 版・C# 版の出力一致を実測。<code>notice</code> 種別の新設とルーム横断は対象外。<a class="doclink" href="../10_plan/p260909-01-recentの絞り込み.html">計画</a>・<a class="doclink" href="../40_issues/issues.html#i260909-01">i260909-01</a></td>
+			</tr>
+			<tr>
+				<td class="num">26</td><td class="nowrap">初回の wait に案内を出す</td>
+				<td class="nowrap"><span class="badge b-ok">完了</span></td>
+				<td><strong>渡したルームのどれかで初めての接続なら、wait が案内を出して終わる。</strong><code>GET /api/cursor-status</code> を新設し、<code>recent --find "ルール"</code>・<code>recent --since-day 1</code> の 2 例を出す。案内後は <code>wait=0</code> で 1 回だけ <code>poll</code> を叩いてカーソルを立て、<strong>待たずに終わる</strong>（<code>run_in_background</code> は完了時にしか通知が来ないため、待ち続けると案内が誰の目にも触れない）。実際に待ち始めるのは 2 回目の <code>wait</code> から。「初回」はコネクタ単位ではなく<strong>ルーム単位</strong>で判定する。node 版・C# 版の出力一致を実測。<a class="doclink" href="../40_issues/issues.html#i260909-01">i260909-01</a></td>
 			</tr>
 		</tbody>
 	</table>

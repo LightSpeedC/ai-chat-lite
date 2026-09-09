@@ -56,7 +56,7 @@ namespace AiChat
 		/// 「コマンドの次の語が ID」という前提が崩れ、探す側が場所を決め打ちできない。
 		/// それが廃止の目的そのものなので、ここは緩めない。
 		///
-		/// 正規表現は使わず 1 文字ずつ見る。埋め込んだ規則（英数字・ハイフン・下線）と
+		/// 正規表現は使わず 1 文字ずつ見る。埋め込んだ規則（英数字・ハイフン・下線・ピリオド）と
 		/// 同じ判定を、参照を増やさずに書けるため。
 		/// </summary>
 		public static string UnwrapId(string raw, string where)
@@ -68,7 +68,7 @@ namespace AiChat
 				if (IsValidId(id)) return id;
 
 				Console.Error.WriteLine("ID に使えない文字が入っています（" + where + "）: " + raw);
-				Console.Error.WriteLine("  使えるのは英数字・ハイフン・下線だけです。");
+				Console.Error.WriteLine("  使えるのは英数字・ハイフン・下線・ピリオドだけです。ピリオドは先頭と末尾には置けません。");
 				Environment.Exit(2);
 			}
 
@@ -81,10 +81,15 @@ namespace AiChat
 		private static bool IsValidId(string id)
 		{
 			if (id.Length == 0) return false;
-			foreach (char c in id)
+			for (int i = 0; i < id.Length; i++)
 			{
-				bool ok = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
-						  (c >= '0' && c <= '9') || c == '-' || c == '_';
+				char c = id[i];
+				bool isEdgeChar = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+								   (c >= '0' && c <= '9') || c == '-' || c == '_';
+				// ピリオドは先頭・末尾には置けない。Windows がファイル名の末尾の
+				// ピリオドを落とすため（待受けのログが <ID> を含む名前で残る）
+				bool isMiddleChar = isEdgeChar || c == '.';
+				bool ok = (i == 0 || i == id.Length - 1) ? isEdgeChar : isMiddleChar;
 				if (!ok) return false;
 			}
 			return true;
@@ -95,6 +100,31 @@ namespace AiChat
 		{
 			string raw = Option(longName);
 			return raw == null ? null : UnwrapId(raw, "--" + longName);
+		}
+
+		/// <summary>
+		/// ID を読む。コロンで囲んでいれば剥がし、囲んでいなければそのまま使う。
+		///
+		/// --from はコロンの有無を問わない。--to や waiters の囲み必須は
+		/// 「前方一致で探す式に埋め込むため」の制約だが、--from は完全一致の
+		/// SQL 条件（from_connector_id = ?）にするだけなので、その制約が要らない。
+		/// </summary>
+		public string OptionalFlexibleId(string longName)
+		{
+			string raw = Option(longName);
+			if (raw == null) return null;
+
+			string w = Definition.IdWrap;
+			string id = raw.Length > w.Length * 2 && raw.StartsWith(w) && raw.EndsWith(w)
+				? raw.Substring(w.Length, raw.Length - w.Length * 2)
+				: raw;
+
+			if (IsValidId(id)) return id;
+
+			Console.Error.WriteLine("ID に使えない文字が入っています（--" + longName + "）: " + raw);
+			Console.Error.WriteLine("  使えるのは英数字・ハイフン・下線・ピリオドだけです。ピリオドは先頭と末尾には置けません。");
+			Environment.Exit(2);
+			return null;
 		}
 
 		/// <summary>

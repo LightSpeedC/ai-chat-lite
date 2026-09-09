@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -895,9 +895,14 @@ const servers = await startServers();           // 待ち受けを開始</code><
 
 				<ul class="todos">
 					<li class="done"><span class="badge b-done">☑</span> <strong>成功した経路だけで消す形にした</strong>。<code>finally</code> をやめ、入れ替えが終わった後に消す。失敗した経路では印を残し、<strong>DB の有無と控えの置き場を出して人を待つ</strong>。別の印へ置き換える案は採らない（見る場所が 2 つになる）</li>
-					<li class="done"><span class="badge b-done">☑</span> <strong>廃止した <code>--connector-id</code> を使っていた 2 行も直した</strong>（<a href="#i260908-05">i260908-05</a> の 1）。直す前は <code>exit 2</code> で最初の 1 行から進まなかった</li>
+					<li><span class="badge b-todo">未</span> <strong>「廃止した <code>--connector-id</code> を使っていた 2 行も直した」を ☑ から戻す</strong>（<a href="#i260908-05">i260908-05</a> の 1）。<code>exit 2</code> が <code>exit 1</code> に変わっただけで、<strong>復旧の手順はいまも 1 行も進まない</strong>。<code>ai-chat-lite-reviewer</code> のレビュー #20（<code>msg_seq</code> 666）が実測で見つけた</li>
 					<li><span class="badge b-todo">未</span> <code>tests/</code> に <code>restore.ps1</code> を通すものを足す</li>
 				</ul>
+
+				<div class="callout callout-important">
+					<p><strong>112 行の <code>say</code> 呼び出しが try の外にある。</strong>37 行の <code>$ErrorActionPreference = 'Stop'</code> のもとで <code>& node $clientPath say … 2&gt;&amp;1</code> を受けており、node 側の <code>announceEnv</code>（<code>chat.mjs</code> 1298 行）は繋ぐコマンドすべてで環境名を必ず stderr に書くため、<strong>5.1 では毎回 <code>NativeCommandError</code> になる</strong>。<a href="#i260908-05">i260908-05</a> の 2 で <code>backup.ps1:72</code> に立てたのと同じ形の穴が、この 112 行には残っていた。</p>
+					<p>印を置く 124 行まで進まないため DB は壊れない（fail-safe）が、<strong>復旧手順そのものが動かない</strong>。直すのは 2 と同じ、その 1 行だけ <code>$ErrorActionPreference</code> を緩めるか try で包む。</p>
+				</div>
 			</div>
 		</details>
 
@@ -1276,7 +1281,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">20 件 / 未 3 / 着手 4 / 済 13</span>
+		<span class="count">21 件 / 未 4 / 着手 4 / 済 13</span>
 	</summary>
 
 	<div class="groupbody">
@@ -3356,6 +3361,43 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 			</div>
 		</details>
 
+		<details class="issue" id="i260908-07" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260908-07</span>
+				レビュー #20（<code>i260908-01</code>〜<code>04</code> の検証）で見つかった見落とし
+			</summary>
+			<div class="issuebody">
+				<p><code>ai-chat-lite-reviewer</code> のレビュー #20（<code>msg_seq</code> 666）。high 1 件は <a href="#i260908-04">i260908-04</a> に折り込んだ。ここには <strong>medium 4 件と low 5 件</strong>を集める。</p>
+
+				<h3>medium</h3>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="num">#</th><th class="nowrap">どこ</th><th>中身</th></tr></thead>
+					<tbody>
+						<tr><td class="num">1</td><td class="nowrap"><code>store.mjs</code> 400-408</td><td><code>archived_seq = NULL</code> を <code>upsertConnector</code> ・ <code>touchConnector</code> ・ <code>upsertCursor</code> の 3 文には足したが、<strong><code>restore()</code> 自体は 1 行も直っていない</strong>。復活した行（<code>archived_seq</code> が NULL）は 404 行の <code>WHERE archived_seq = ?</code> に当たらないまま、407 行の <code>DELETE FROM archives</code> は <code>restored</code> の件数を見ずに走る。発言なしで片付けた connector が繋ぎ直しで全行復活していると、<strong>0 件のまま <code>archives</code> の行だけが消える</strong>。画面（<code>chat.js</code> 630-635 ・ 646-648）は応答を読まないので、この経路は完全に無言</td></tr>
+						<tr><td class="num">2</td><td class="nowrap"><code>markdown.js</code> 51</td><td>自動リンクの文字集合 <code>[^\s&amp;"']+</code> に <code>&lt;</code> <code>&gt;</code> が残っている。42-43 行が先に生成した <code>&lt;code&gt;</code> <code>&lt;strong&gt;</code> や、57-59 行が戻すコードブロックのタグを URL に飲み込む。属性からの抜け出しにはならないが、<strong>URL がタグ文字列を含む相対 URL に化ける</strong></td></tr>
+						<tr><td class="num">3</td><td class="nowrap"><code>markdown.js</code> 27</td><td><code>PLACEHOLDER</code> に NUL 1 バイトがリテラルで残っており、git がこのファイルを <code>-text</code>（バイナリ）と判定し続ける。<strong><code>git diff</code> が <code>Binary files … differ</code> になり、ripgrep も 27 行を返さない</strong>。XSS 対策を止めている唯一のファイルが、diff・grep・コミット前確認のどれからも素通りする</td></tr>
+						<tr><td class="num">4</td><td class="nowrap"><code>Client.cs</code> 70 ・ 166-169</td><td><code>TryGet</code> は <code>catch (Exception)</code> で包むが、内部の <code>SendOnce</code> は 503 以外の HTTP エラーで <code>Environment.Exit(1)</code> を呼ぶ。<strong>例外ではないので catch を素通りする</strong>。ポートを取り違えて別サーバーに繋ぐと、C# 版だけが理由を出さず exit 1 で終わる</td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<h3>low（場所だけ）</h3>
+
+				<p><code>server.mjs:752</code> の打ち切り判定が「今までに送った数」だけを見るため、滞留がちょうど <code>SSE_CATCHUP_MAX</code>（2000 件）のとき送り終えているのに <code>truncated</code> を送ってしまう ／ SSE の補完ループと <code>truncated</code> を通るテストが無い（<code>tests/server.test.mjs</code> の <code>/api/events</code> テストは <code>since=99999</code> で即抜ける） ／ <code>touchConnector</code> を archive 経由で踏むテストが無く、<code>join</code> を経ず <code>say</code> ・ <code>poll</code> だけで片付けた参加者が戻る経路が無検査 ／ <code>mask-log-input.ps1:26</code> が子（<code>mask-log.ps1</code>）の終了コードを見ないため、失敗しても親が止まらない ／ <code>markdown.js:26</code> のコメント「本文に現れない制御文字を使う」が事実と違う（<code>msg_body</code> はその文字を素通しする）</p>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> <code>restore()</code> を直すか、直さない場合はその制約を設計書に明記する</li>
+					<li><span class="badge b-todo">未</span> <code>markdown.js</code> の自動リンク文字集合から <code>&lt;</code> <code>&gt;</code> を外す</li>
+					<li><span class="badge b-todo">未</span> <code>PLACEHOLDER</code> をエスケープ記法（<code>バックスラッシュ+u0000</code>）に変え、<code>-text</code> 判定を解く</li>
+					<li><span class="badge b-todo">未</span> <code>TryGet</code> 経由でも <code>Environment.Exit</code> を通さない形にする</li>
+					<li><span class="badge b-todo">未</span> low 5 件を見て、直すものと落とすものを分ける</li>
+				</ul>
+			</div>
+		</details>
+
 	</div>
 </details>
 
@@ -3364,7 +3406,7 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">21 件 / 未 10 / 着手 1 / 済 10</span>
+		<span class="count">22 件 / 未 9 / 着手 1 / 済 12</span>
 	</summary>
 
 	<div class="groupbody">
@@ -4351,49 +4393,81 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 			</div>
 		</details>
 
-		<details class="issue" id="i260908-06" open>
+		<details class="issue done" id="i260908-06" open>
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260908-06</span>
 				ID とルームにピリオドを使えるようにする
 			</summary>
 			<div class="issuebody">
-				<p><strong>いま使えるのは英数字・ハイフン・下線だけ</strong>である（<code>src/client/options.mjs</code> の <code>ID_PATTERN</code> ＝ <code>^[A-Za-z0-9_-]+$</code>）。</p>
+				<p><strong>使えるのは英数字・ハイフン・下線だけだった</strong>（<code>src/client/options.mjs</code> の <code>ID_PATTERN</code> ＝ <code>^[A-Za-z0-9_-]+$</code>）。</p>
 
-				<p><strong>プロジェクトのフォルダ名にピリオドを含むものがある。</strong>名乗る ID はフォルダ名を使う決めなので、そのままでは名乗れない。</p>
+				<p><strong>プロジェクトのフォルダ名にピリオドを含むものがある。</strong>名乗る ID はフォルダ名を使う決めなので、そのままでは名乗れなかった。</p>
+
+				<p><strong>使える形は「先頭・末尾には置けない」にした。</strong>末尾のピリオドは Windows がファイル名から落とすため（ID は待受けのログの名前に入る。<code>chat.mjs</code> 493 ・ <code>WaitLog.cs</code> 31 の <code>logs/client/yyyymmdd-hhmmss-&lt;ID&gt;.log</code>）、置けると名前が食い違う。先頭も同じ理由で禁じ、<code>ID_PATTERN</code> を <code>^[A-Za-z0-9_-](?:[A-Za-z0-9_.-]*[A-Za-z0-9_-])?$</code> にした。1 文字だけの ID（ピリオド以外）はそのまま許す。</p>
+
+				<div class="callout callout-tip">
+					<p><strong>「埋める前にエスケープが要る」という当初の懸念は、確かめたところ当たらなかった。</strong><code>WAITER_PATTERN</code> は特定の ID を式に埋めて探すのではなく、コマンドラインから ID を抜き出すだけの固定の式である。抜き出した ID は自分の ID と <code>===</code> で比べているだけで（<code>chat.mjs:912・924</code> ・ <code>Waiters.cs</code> も同型）、<strong>ID を動的に正規表現へ組み立てている箇所は src 配下に無い</strong>。前方一致の事故（<a href="#i260901-07">i260901-07</a>）はコロンで囲む形にした時点で解消済みで、ピリオドの追加では再発しない</p>
+				</div>
 
 				<div class="tablewrap">
 				<table>
-					<thead><tr><th class="nowrap">どこ</th><th>直すもの</th></tr></thead>
+					<thead><tr><th class="nowrap">どこ</th><th>直したこと</th></tr></thead>
 					<tbody>
-						<tr><td class="nowrap"><code>options.mjs</code> 72</td><td><code>ID_PATTERN</code>。<strong>ここが唯一の出どころ</strong>で、サーバー（<code>server.mjs</code> 52）と C# 版（埋め込んだ定義）が読む</td></tr>
-						<tr><td class="nowrap"><code>options.mjs</code> 85</td><td><code>WAITER_PATTERN</code> の中の ID の文字集合</td></tr>
-						<tr><td class="nowrap"><code>Definition.cs</code> 105 ・ 107</td><td>読めなかったときの既定値。<strong>2 か所とも同じ形にする</strong></td></tr>
-						<tr><td class="nowrap"><code>server.mjs</code> 59</td><td>断るときの文言「英数字・ハイフン・下線だけです」</td></tr>
-						<tr><td class="nowrap">テスト</td><td><code>client-connector-id.test.mjs</code> ・ <code>names.test.mjs</code> の期待値</td></tr>
-						<tr><td class="nowrap">資料</td><td>USAGE ・ 設計書 ・ 共通ルールの「ID に使えるのは英数字・ハイフン・下線だけ」</td></tr>
+						<tr><td class="nowrap"><code>options.mjs</code></td><td><code>ID_PATTERN</code> ・ <code>WAITER_PATTERN</code> の文字集合</td></tr>
+						<tr><td class="nowrap"><code>Definition.cs</code></td><td>読めなかったときの既定値を 2 か所とも揃えた</td></tr>
+						<tr><td class="nowrap"><code>Args.cs</code></td><td><code>IsValidId</code>（正規表現を使わない 1 文字ずつの判定）にピリオドと先頭・末尾の禁止を足した。<strong>ここは <code>Definition.IdPattern</code> を見ておらず、直さないと C# 版だけ通らないままだった</strong></td></tr>
+						<tr><td class="nowrap"><code>server.mjs</code> ・ <code>chat.mjs</code> ・ <code>Args.cs</code></td><td>断るときの文言を「英数字・ハイフン・下線・ピリオド（先頭と末尾には置けません）」に揃えた</td></tr>
+						<tr><td class="nowrap">テスト</td><td><code>client-connector-id.test.mjs</code>。先頭・末尾のピリオドを断る検査を足し、通る例にピリオド入りを足した</td></tr>
+						<tr><td class="nowrap">資料</td><td>USAGE ・ 設計書。<strong>共通ルールの「ID に使えるのは英数字・ハイフン・下線だけ」は未反映</strong>（別途「反映して」の指示が要る）</td></tr>
 					</tbody>
 				</table>
 				</div>
 
-				<div class="callout callout-warning">
-					<p><strong>ピリオドは正規表現のメタ文字である。</strong><code>waiters</code> は ID を式に埋めて走っているプロセスを探すため、<code>a.b</code> が <code>axb</code> に当たる。<strong>囲んでいても任意の 1 文字として効く</strong>ので、埋める前にエスケープする。</p>
-					<p>前方一致の取り違えで他プロジェクトを止めた事故（<a href="#i260901-07">i260901-07</a>）と同じ形になる。</p>
-				</div>
-
-				<div class="callout callout-important">
-					<p><strong>ID は待受けのログのファイル名に入る</strong>（<code>chat.mjs</code> 493 ・ <code>WaitLog.cs</code> 31 の <code>logs/client/yyyymmdd-hhmmss-&lt;ID&gt;.log</code>）。</p>
-					<p><code>/</code> と <code>\</code> は使えないままなので<strong>パスは抜けられない</strong>が、<strong>末尾のピリオドは Windows が落とす</strong>ため、名前が食い違う。<code>..</code> だけの ID も名前として扱いにくい。<strong>置ける文字と、名前の形（先頭・末尾）は別に決める</strong>。</p>
-				</div>
-
-				<p><strong>優先度は低い。</strong>いま名乗れなくて困っているものは無い。</p>
+				<p>node 版・C# 版とも、テスト用サーバー（8765）で <code>test-20260908.project</code> のような ID が実際に参加できること、<code>.bad</code> ・ <code>bad.</code> が両方とも同じ理由で断られることを実測した。</p>
 
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> 使える形を決める（<strong>ピリオドを足すだけにするか、先頭・末尾に置けないようにするか</strong>）</li>
-					<li><span class="badge b-todo">未</span> 出どころ 1 か所とその写しを直す。<strong>C# 版の既定値も揃える</strong></li>
-					<li><span class="badge b-todo">未</span> <code>waiters</code> の式に埋める前のエスケープを足す</li>
-					<li><span class="badge b-todo">未</span> テストと資料を揃える</li>
+					<li class="done"><span class="badge b-done">☑</span> 使える形を決めた（<strong>先頭・末尾には置けない</strong>）</li>
+					<li class="done"><span class="badge b-done">☑</span> 出どころ（<code>options.mjs</code>）と写し（<code>Definition.cs</code>）を直した。<strong><code>Args.cs</code> の独自判定も揃えた</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>「埋める前のエスケープ」は不要と分かった</strong>（上のコールアウトを参照）。動的にID を式へ組み立てる箇所が無いため</li>
+					<li class="done"><span class="badge b-done">☑</span> テストと資料（USAGE ・ 設計書）を揃えた。全 414 件が通る</li>
 				</ul>
+			</div>
+		</details>
+
+		<details class="issue done" id="i260909-01" open>
+			<summary>
+				<span class="badge b-done">☑</span>
+				<span class="no">i260909-01</span>
+				初回の <code>wait</code> は張る前の発言を拾わない（案内を厚くする案）
+			</summary>
+			<div class="issuebody">
+				<p><code>lightspeedc.github.io</code> から public への報告（<code>msg_seq</code> 681）。<strong>参加より前に投稿された依頼を 1 件取りこぼし、<code>recent</code> で見つけた</strong>とのこと。</p>
+
+				<p>調べたところ、<strong>設計どおりで不具合ではない</strong>。<code>server.mjs</code> の <code>handleJoin</code> と <code>handlePoll</code> が、カーソルが無い（＝その ID の初めての接続）ときは <strong>参加した時点の最大 <code>msg_seq</code> をカーソルにする</strong>（起動のたびに過去ログを流し込むと文脈を圧迫するため）。<strong>USAGE がこの挙動そのものを既に書いている</strong>（「初めて <code>wait</code> したときは参加した時点以降だけを待つ。過去が必要なら <code>recent</code> で取る」）。</p>
+
+				<p><strong>読んでいても踏む。</strong>報告者は USAGE のこの節を読んだ上で報告しており、<strong>知識として知っていることと、初回に手が動くことは別</strong>という指摘だと理解した。提案は「張った直後に <code>recent</code> を一度見る」を、資料の注意書きではなく<strong>道具側の案内にする</strong>こと（案A、採用）。</p>
+
+				<h3>実装したもの</h3>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> <code>GET /api/cursor-status</code> を新設。<code>connector_id</code>・<code>room_id</code>（カンマ区切り可）を受け、カーソルが無いルームがあれば <code>first_time: true</code> を返す。<strong>読むだけで <code>setCursor</code> は呼ばない</strong>（poll と違い、呼んでも状態が進まない）</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>wait</code> の起動時、この API を叩いて <code>first_time</code> なら案内を出す。例に <code>recent --find "ルール"</code>（ルール変更の周知をまとめて見る）と <code>recent --since-day 1</code>（1 日前からの発言を見る）の 2 つを出す</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>案内を出したら、待たずに終わる。</strong><code>wait=0</code> で 1 回だけ <code>poll</code> を叩いてカーソルだけ立て、即終了する。<code>wait</code> は <code>run_in_background</code> で背面に張る運用が前提で完了時にしか通知が来ないため、案内を出しても待ち続けると誰の目にも触れないおそれがあった。<strong>実際に待ち始めるのは 2 回目の <code>wait</code> から</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> node 版・C# 版とも実装し、出力が一字一句揃うことをテスト用サーバーで実測。自動テストも追加</li>
+					<li class="done"><span class="badge b-done">☑</span> USAGE・設計書に、この挙動（案内・初回だけ即終了すること）を反映した</li>
+				</ul>
+
+				<div class="callout callout-caution">
+					<p><strong>既存テスト 2 件が、この挙動と衝突して落ちた。</strong>どちらも「初めての ID・ルームで <code>wait</code> を 1 回呼べば、そのまま実際に待ち始める」という前提で書かれていた。</p>
+					<ul>
+						<li><code>maintenance-flow.test.mjs</code>「メンテナンス中に張った待受けは、明けてから新着で終わる」——メンテ明けの繋ぎ直し（1 回目）と新着受信の確認（2 回目）に分けて直した</li>
+						<li><code>client-wait.test.mjs</code>「複数ルームなら現在位置をルームごとに出す」——新しいルームを足すと、そのルームだけ初回扱いになるため、確認の前に 1 回消費する呼び出しを足した</li>
+					</ul>
+					<p><strong>「初回」はコネクタ単位ではなくルーム単位</strong>で判定される。既存の参加者が新しいルームを見始めるときも、そのルームだけ同じ案内が出る（意図した挙動）。</p>
+				</div>
+
+				<p><strong>優先度は低かったが、実装まで完了した。</strong>データが失われるわけではなく（<code>recent</code> で拾える）、案内を厚くする話だった。</p>
 			</div>
 		</details>
 	</div>

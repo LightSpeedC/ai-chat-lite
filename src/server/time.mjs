@@ -40,3 +40,28 @@ export function nowJst() {
 export function jstBefore(ms) {
 	return format(new Date(Date.now() + JST_OFFSET_MS - ms));
 }
+
+/**
+ * JST の年月日時分秒から、nowJst と同じ書式の文字列を組み立てる。
+ *
+ * recent --since / --before の絶対日時指定で使う。年月日時分秒はすでに
+ * JST のつもりで渡ってくる値なので、Date.UTC に渡して OS のタイムゾーン
+ * 設定を経由させない（本来の UTC ではなく、JST を UTC の位置に "偽装" して
+ * 積む。nowJst() が Date.now() に 9 時間足しているのと同じ考え方）。
+ */
+export function jstFromParts(year, month, day, hour, minute, second) {
+	return format(new Date(Date.UTC(year, month - 1, day, hour, minute, second, 0)));
+}
+
+/**
+ * nowJst と同じ書式の文字列を、指定ミリ秒だけずらして返す。
+ *
+ * recent --since / --before で「今日のその時刻がいまより未来なら 1 日前」
+ * のような繰り下げに使う。文字列を一度 Date に戻して計算するが、
+ * jstFromParts と同じ "偽装 UTC" の文字列どうしの往復なので、
+ * 実時間とはずれない（両側が同じ規約で一貫しているため）。
+ */
+export function shiftJst(str, deltaMs) {
+	const ms = Date.parse(str.replace(' ', 'T').replaceAll('/', '-') + 'Z') + deltaMs;
+	return format(new Date(ms));
+}

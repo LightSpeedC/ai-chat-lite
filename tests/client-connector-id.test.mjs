@@ -128,7 +128,7 @@ describe('囲みの検査', () => {
 	});
 
 	test('使えない文字は断る', async () => {
-		for (const bad of [':te st:', ':te.st:', ':te@st:', ':te/st:']) {
+		for (const bad of [':te st:', ':te@st:', ':te/st:']) {
 			const { code, stderr } = await failing(['join', bad]);
 
 			assert.equal(code, 2, `${bad} が断られていない`);
@@ -136,8 +136,18 @@ describe('囲みの検査', () => {
 		}
 	});
 
-	test('英数字・ハイフン・下線は通る', async () => {
-		for (const ok of ['abc', 'ABC', 'a1', 'a-b', 'a_b', '20260824-ai-pc']) {
+	test('ピリオドは先頭・末尾に置けない', async () => {
+		// Windows がファイル名の末尾のピリオドを落とすため（待受けのログが ID を含む名前で残る）
+		for (const bad of [':.te:', ':te.:', ':.:', ':..:']) {
+			const { code, stderr } = await failing(['join', bad]);
+
+			assert.equal(code, 2, `${bad} が断られていない`);
+			assert.match(stderr, /ID に使えない文字が入っています/);
+		}
+	});
+
+	test('英数字・ハイフン・下線・ピリオドは通る', async () => {
+		for (const ok of ['abc', 'ABC', 'a1', 'a-b', 'a_b', '20260824-ai-pc', 'te.st', '20260824.project']) {
 			const { stdout } = await raw(['join', wrapId(ok)]);
 
 			assert.match(stdout, new RegExp(`^${ok} として`), `${ok} が通らない`);
@@ -231,7 +241,7 @@ describe('サーバー側でも文字を検査する', () => {
 
 		assert.equal(res.status, 400);
 		const body = await res.json();
-		assert.match(body.error, /英数字・ハイフン・下線だけです/);
+		assert.match(body.error, /英数字・ハイフン・下線・ピリオド/);
 	});
 
 	test('ルーム ID にも同じ規則を効かせる', async () => {
@@ -262,7 +272,7 @@ describe('規則の置き場', () => {
 	test('囲みと文字の規則は options.mjs 1 か所から来る', () => {
 		// CLI 2 本とサーバーが同じ値を見る。写すと必ずずれる
 		assert.equal(ID_WRAP, ':');
-		assert.equal(ID_PATTERN, '^[A-Za-z0-9_-]+$');
+		assert.equal(ID_PATTERN, '^[A-Za-z0-9_-](?:[A-Za-z0-9_.-]*[A-Za-z0-9_-])?$');
 	});
 
 	test('規則は下線を許すので、囲みに下線は使えない', () => {

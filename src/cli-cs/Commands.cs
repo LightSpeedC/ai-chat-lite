@@ -112,6 +112,34 @@ namespace AiChat
 			string excludeParam = withJoins ? "" : "&exclude=join,leave";
 
 			/*
+			 * 初めての接続なら案内を出す（i260909-01）。
+			 *
+			 * 「参加より前の発言は待たない」（USAGE「どこまで読んだかは覚えている」）は
+			 * 資料に書いてあるが、読んでいても初回は踏むという報告があった。過去ログを
+			 * 自動で流し込むのではなく、recent で自分から取りに行く形を案内するだけにする。
+			 */
+			Dictionary<string, object> cursorStatus = client.Get(
+				"/api/cursor-status?" + Query("connector_id", connectorId) + "&" + Query("room_id", room));
+			if (Json.Bool(cursorStatus, "first_time"))
+			{
+				string port = args.Option("port");
+				string where = port != null ? "-p " + port : "-u " + args.Option("url");
+				Console.WriteLine("初めての接続です。参加より前の発言は待ちません。過去が必要なら recent で取ってください（例）:");
+				Console.WriteLine("    aichat recent --find \"ルール\" " + where + "   # ルール変更の周知をまとめて見る");
+				Console.WriteLine("    aichat recent --since-day 1 " + where + "     # 1 日前からの発言を見る");
+				Console.WriteLine("");
+
+				/*
+				 * 案内を出したら、待たずに終わる。理由は node 版と同じ
+				 * （wait は完了時にしか通知が来ないため、案内を出しても待ち続けると
+				 * 誰の目にも触れない）。wait=0 で 1 回だけ poll を叩き、カーソルだけ立てる。
+				 */
+				client.Get("/api/poll?" + Query("connector_id", connectorId) + "&" + Query("room_id", room) + "&wait=0");
+				Console.WriteLine("カーソルを立てました。改めて wait を実行してください。");
+				return 0;
+			}
+
+			/*
 			 * 出すのは 2 行だけ。12 時間を 240 秒ごとに知らせると 180 行になる。
 			 *
 			 * 「待受け中」と進行形にしてあるのは、この 1 行だけを見た相手に
@@ -203,20 +231,116 @@ namespace AiChat
 
 		// --- 読むだけ ---
 
+		/// <summary>
+		/// --since / --since-day / --since-hour から 1 つを解決する。
+		///
+		/// 3 つは排他。2 つ以上渡されたらエラー（exit 2）。どれも無ければ null。
+		/// </summary>
+		private static string ResolveSinceTs()
+		{
+			var given = new List<KeyValuePair<string, string>>();
+			string since = args.Option("since");
+			string sinceDay = args.Option("since-day");
+			string sinceHour = args.Option("since-hour");
+			if (since != null) given.Add(new KeyValuePair<string, string>("since", since));
+			if (sinceDay != null) given.Add(new KeyValuePair<string, string>("since-day", sinceDay));
+			if (sinceHour != null) given.Add(new KeyValuePair<string, string>("since-hour", sinceHour));
+
+			if (given.Count > 1)
+			{
+				string names = string.Join(" と ", given.Select(u => "--" + u.Key).ToArray());
+				Console.Error.WriteLine("期間の起点は 1 つだけ指定してください: " + names + " が両方あります。");
+				Environment.Exit(2);
+			}
+			if (given.Count == 0) return null;
+
+			string longName = given[0].Key;
+			string raw = given[0].Value;
+			if (longName == "since") return ParseSinceOrBeforeArg(raw, null);
+
+			int n;
+			if (!int.TryParse(raw, out n) || n < 0)
+			{
+				Console.Error.WriteLine("--" + longName + " には 0 以上の数だけを渡してください: " + raw);
+				Environment.Exit(2);
+			}
+			long unitMs = longName == "since-day" ? 24L * 60 * 60 * 1000 : 60L * 60 * 1000;
+			return JstTime.Before(n * unitMs);
+		}
+
+		/// <summary>
+		/// --before を解決する。--since とは別に、単独でも渡せる（範囲検索は両方渡す）。
+		///
+		/// sinceTs（--since 系がすでに解決した値）を渡すと、年・日付を省いた分は
+		/// それを引き継ぐ（「いま」とは比べない）。
+		/// </summary>
+		private static string ResolveBeforeTs(string sinceTs)
+		{
+			string raw = args.Option("before");
+			return raw == null ? null : ParseSinceOrBeforeArg(raw, sinceTs);
+		}
+
+		private static string ParseSinceOrBeforeArg(string raw, string anchorTs)
+		{
+			try
+			{
+				return SinceParse.ResolveDateTimeArg(raw, anchorTs);
+			}
+			catch (FormatException e)
+			{
+				Console.Error.WriteLine(e.Message);
+				Environment.Exit(2);
+				return null;
+			}
+		}
+
+		/// <summary>見出し行に出す、絞り込みの説明。分単位まで（秒・ミリ秒は削る）</summary>
+		private static string DescribeFilter(string sinceTs, string beforeTs, string find, string from)
+		{
+			var parts = new List<string>();
+			if (sinceTs != null) parts.Add(sinceTs.Substring(0, 16) + " 以降");
+			if (beforeTs != null) parts.Add(beforeTs.Substring(0, 16) + " より前");
+			if (find != null) parts.Add("「" + find + "」を含む");
+			if (from != null) parts.Add(from + " からの");
+			return parts.Count == 0 ? "直近 " : " " + string.Join("・", parts) + " ";
+		}
+
 		private static int CmdRecent()
 		{
-			int limit;
-			if (!int.TryParse(args.Option("n", "20"), out limit) || limit <= 0) limit = 20;
+			string sinceTs = ResolveSinceTs();
+			string beforeTs = ResolveBeforeTs(sinceTs);
+			string find = args.Option("find");
+			string from = args.OptionalFlexibleId("from");
+			bool hasFilter = sinceTs != null || beforeTs != null || find != null || from != null;
 
-			Dictionary<string, object> result = client.Get("/api/history?" + Query("room_id", room) + "&limit=" + limit);
+			// 絞り込みのどれかを指定したときは既定の件数上限を 500 にする。
+			// -n を明示すればそちらが勝つ。node 版と同じ規則
+			string nRaw = args.Option("n");
+			int limit;
+			if (nRaw != null)
+			{
+				if (!int.TryParse(nRaw, out limit) || limit <= 0) limit = 20;
+			}
+			else
+			{
+				limit = hasFilter ? 500 : 20;
+			}
+
+			string query = "/api/history?" + Query("room_id", room) + "&limit=" + limit;
+			if (sinceTs != null) query += "&" + Query("since_ts", sinceTs);
+			if (beforeTs != null) query += "&" + Query("before_ts", beforeTs);
+			if (find != null) query += "&" + Query("find", find);
+			if (from != null) query += "&" + Query("from_connector_id", from);
+
+			Dictionary<string, object> result = client.Get(query);
 			List<object> messages = Json.Arr(result, "messages");
 
 			if (messages.Count == 0)
 			{
-				Console.WriteLine(room + " にはまだ何もありません");
+				Console.WriteLine(room + (hasFilter ? " には該当する発言がありません" : " にはまだ何もありません"));
 				return 0;
 			}
-			Console.WriteLine(room + " の直近 " + messages.Count + " 件:");
+			Console.WriteLine(room + " の" + DescribeFilter(sinceTs, beforeTs, find, from) + messages.Count + " 件:");
 			PrintMessages(messages);
 			return 0;
 		}

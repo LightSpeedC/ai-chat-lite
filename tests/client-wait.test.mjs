@@ -252,6 +252,10 @@ describe('複数のルームを 1 本で待つ', () => {
 	});
 
 	test('複数ルームなら現在位置をルームごとに出す', async () => {
+		// sandbox-multi は初めて見るルームなので、まず案内を出して終わる 1 回を消費する
+		// （i260909-01）。位置の形を見たいのはその次の呼び出し
+		await chat(['wait', '-r', 'public,sandbox-multi', '--wait-sec', '1']);
+
 		// 1 つの数で出すと、どのルームの位置か分からない
 		const { stdout } = await chat(['wait', '-r', 'public,sandbox-multi', '--wait-sec', '1']);
 

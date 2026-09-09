@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>recent に絞り込みを足す</title>
+<style>
+/* 共通のスタイル。docs\css\style.css と同じ内容を持たせている */
+@charset "UTF-8";
+
+/* ===================================================================
+   ai-chat-lite 共通スタイル
+   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   =================================================================== */
+
+:root {
+	/* 章に依存しない共通色 */
+	--navy1: #12224d;
+	--navy2: #2f5fbf;
+	--ink: #1c2330;
+	--ink-soft: #4a5568;
+	--line: #d9dfe8;
+	--code-bg: #f4f6fa;
+	--link: #1a4fa0;
+
+	/* 章クラスの外に置いた要素が色を失わないための既定値 */
+	--accent: #12224d;
+	--accent2: #2f5fbf;
+	--soft: #f2f5fb;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: #fdfdfe;
+	color: var(--ink, #1c2330);
+	font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+	font-size: 15.5px;
+	line-height: 1.85;
+}
+
+a {
+	color: var(--link, #1a4fa0);
+}
+
+/* ---------- タイトルバー ---------- */
+
+.titlebar {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 34px 30px 30px;
+}
+
+.titlebar .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+}
+
+.titlebar h1 {
+	font-size: 1.85em;
+	margin: 0 0 8px;
+	color: #fff;
+}
+
+.titlebar .lead {
+	margin: 0;
+	color: #d7e2f7;
+	font-size: 0.95em;
+}
+
+.titlebar .date {
+	margin: 10px 0 0;
+	color: #b9caea;
+	font-size: 0.88em;
+}
+
+.titlebar a {
+	color: #cfe0ff;
+}
+
+.titlebar code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+/* ---------- 本文の器 ---------- */
+
+.wrap {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding: 0 30px;
+}
+
+section {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 10px;
+	padding: 4px 26px 26px;
+	margin: 34px 0;
+}
+
+/* ---------- 見出し ---------- */
+
+section h1 {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-size: 1.4em;
+	padding: 14px 20px;
+	margin: 26px 0 20px;
+	border-radius: 8px;
+	box-shadow: 0 3px 10px rgba(20, 34, 70, 0.22);
+}
+
+section h1 code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+h2 {
+	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
+	color: var(--accent, #12224d);
+	font-size: 1.16em;
+	padding: 6px 12px;
+	margin: 30px 0 12px;
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 6px 6px 0;
+}
+
+h3 {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	font-size: 1.02em;
+	display: inline-block;
+	padding-bottom: 3px;
+	margin: 20px 0 8px;
+	border-bottom: 2px dotted var(--accent2, #2f5fbf);
+}
+
+/* ---------- 表 ---------- */
+
+.tablewrap {
+	overflow-x: auto;
+	margin: 14px 0;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 5px rgba(20, 34, 70, 0.10);
+}
+
+th {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	text-align: left;
+	padding: 9px 12px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+th code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+td {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	padding: 9px 12px;
+	border-top: 1px solid var(--line, #d9dfe8);
+	vertical-align: top;
+}
+
+tr:nth-child(even) td {
+	background: #fafbfe;
+	color: var(--ink, #1c2330);
+}
+
+td.num,
+th.num {
+	text-align: right;
+}
+
+td.nowrap,
+th.nowrap {
+	white-space: nowrap;
+}
+
+/* ---------- コード ---------- */
+
+code {
+	background: var(--code-bg, #f4f6fa);
+	color: #17335f;
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 4px;
+	padding: 1px 5px;
+	font-family: "Consolas", "Cascadia Mono", monospace;
+	font-size: 0.92em;
+}
+
+pre {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 5px solid var(--accent2, #2f5fbf);
+	border-radius: 0 8px 8px 0;
+	padding: 13px 16px;
+	overflow-x: auto;
+	line-height: 1.65;
+}
+
+pre code {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	border: none;
+	padding: 0;
+	font-size: 0.92em;
+}
+
+/* ---------- バッジ ---------- */
+
+.badge {
+	display: inline-block;
+	padding: 1px 9px;
+	margin-right: 6px;
+	border-radius: 11px;
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+	font-size: 0.84em;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.badge.b-ok {
+	background: linear-gradient(100deg, #1d7a3c, #45b56c);
+	color: #fff;
+}
+
+.badge.b-ng {
+	background: linear-gradient(100deg, #a51f22, #e05a5c);
+	color: #fff;
+}
+
+.badge.b-warn {
+	background: linear-gradient(100deg, #b8620a, #f0a548);
+	color: #fff;
+}
+
+.badge.b-none {
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+}
+
+/* ---------- callout ---------- */
+
+.callout {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 8px 8px 0;
+	padding: 12px 18px;
+	margin: 16px 0;
+}
+
+.callout strong {
+	color: var(--accent, #12224d);
+	background: transparent;
+}
+
+.callout p {
+	margin: 6px 0;
+}
+
+/* ---------- 目次 ---------- */
+
+.toc ol {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 0;
+	margin: 12px 0 4px;
+}
+
+.toc ul a {
+	color: var(--link, #1a4fa0);
+	background: transparent;
+}
+
+.toc ol li {
+	counter-increment: tocnum;
+	margin: 0;
+}
+
+.toc ol a {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: normal;
+	width: 310px;
+	max-width: 100%;
+	padding: 7px 13px;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+	line-height: 1.45;
+}
+
+.toc ol a::before {
+	content: counter(tocnum) ". ";
+	font-weight: 700;
+}
+
+/* ---------- 資料リンク・戻るリンク ---------- */
+
+.navlinks {
+	margin: 20px 0 0;
+}
+
+a.doclink {
+	display: inline-block;
+	padding: 3px 12px;
+	margin: 0 8px 6px 0;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	font-size: 0.9em;
+	text-decoration: none;
+}
+
+/* ---------- フッター ---------- */
+
+footer {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 18px 30px 0;
+	margin-top: 40px;
+}
+
+footer .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding-bottom: 18px;
+}
+
+footer a {
+	color: #cfe0ff;
+}
+</style>
+<style>
+/* この資料だけのもの: 章のアクセント色（6章 / 色相 280→0 を 56 刻み）と目次の採番 */
+.ch01 { --accent: hsl(280.0, 78%, 25%); --accent2: hsl(280.0, 58%, 55%); --soft: hsl(280.0, 28%, 95%); }
+.ch02 { --accent: hsl(224.0, 78%, 25%); --accent2: hsl(224.0, 58%, 55%); --soft: hsl(224.0, 28%, 95%); }
+.ch03 { --accent: hsl(168.0, 78%, 25%); --accent2: hsl(168.0, 58%, 55%); --soft: hsl(168.0, 28%, 95%); }
+.ch04 { --accent: hsl(112.0, 78%, 25%); --accent2: hsl(112.0, 58%, 55%); --soft: hsl(112.0, 28%, 95%); }
+.ch05 { --accent: hsl( 56.0, 78%, 25%); --accent2: hsl( 56.0, 58%, 55%); --soft: hsl( 56.0, 28%, 95%); }
+.ch06 { --accent: hsl(  0.0, 78%, 25%); --accent2: hsl(  0.0, 58%, 55%); --soft: hsl(  0.0, 28%, 95%); }
+.toc ol { counter-reset: tocnum; }
+</style>
+</head>
+
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>recent に絞り込みを足す</h1>
+		<p class="lead">期間（相対・絶対・範囲）・検索・差出人で絞れるようにする。ルーム横断や notice 種別は対象外</p>
+		<p class="date">📅 作成: 2026-09-09 / 更新: 2026-09-09</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+<p><code>ai-chat-lite-reviewer</code> ではなく、<code>public</code> での実際の取りこぼし報告（<a href="../40_issues/issues.html#i260909-01">i260909-01</a>、初回の <code>wait</code> が参加前の発言を拾わない件）をきっかけに、<code>recent</code> 自体の絞り込みを広げる計画である。<strong>今回のスコープは期間（相対・絶対・上限つきの範囲）・キーワード検索・差出人の 4 種だけ。</strong><code>notice</code> 種別の新設とルーム横断は対象外（別に決める）。</p>
+
+<section class="toc md-skip">
+	<h2>目次</h2>
+	<ol>
+		<li class="ch01"><a href="#ch01">何を作るか</a></li>
+		<li class="ch02"><a href="#ch02">決めたこと</a></li>
+		<li class="ch03"><a href="#ch03">オプション</a></li>
+		<li class="ch04"><a href="#ch04">内部の絞り込み</a></li>
+		<li class="ch05"><a href="#ch05">出力の形</a></li>
+		<li class="ch06"><a href="#ch06">作るものと確かめること</a></li>
+	</ol>
+</section>
+
+<!-- ================= 01 ================= -->
+<section class="ch01" id="ch01">
+	<h1>何を作るか</h1>
+
+	<p><strong>いまの <code>recent</code> は件数（<code>-n</code>）でしか絞れない。</strong>「いつ以降」「何を含む発言」「誰が言ったか」は、返ってきた一覧を目で追うしかない。</p>
+
+	<p>足すのは 4 種の絞り込みで、<strong>すべて併用できる</strong>（AND 条件）。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">種類</th><th>内容</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap">期間（相対）</td><td><code>--since-day &lt;N&gt;</code> / <code>--since-hour &lt;N&gt;</code>。「N 日前」「N 時間前」以降</td></tr>
+			<tr><td class="nowrap">期間（絶対）</td><td><code>--since &lt;日時&gt;</code>。「この日時以降」</td></tr>
+			<tr><td class="nowrap">期間（上限・絶対）</td><td><code>--before &lt;日時&gt;</code>。「この日時より前」。<code>--since</code> と組み合わせれば範囲検索になる</td></tr>
+			<tr><td class="nowrap">検索</td><td><code>--find &lt;文字列&gt;</code>。本文にその文字列を含むものだけ</td></tr>
+			<tr><td class="nowrap">差出人</td><td><code>--from &lt;id&gt;</code>。その ID からの発言だけ</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-important">
+		<p><strong>対象外にしたもの</strong>: <code>notice</code> 種別の新設（周知だけを拾う経路）と、ルーム横断の検索。どちらも別の課題・計画で扱う。<code>msg_kind</code> の <code>CHECK</code> にはすでに <code>notice</code> が入っているが（版 2）、書く経路も読む経路も無いままである。</p>
+	</div>
+</section>
+
+<!-- ================= 02 ================= -->
+<section class="ch02" id="ch02">
+	<h1>決めたこと</h1>
+
+	<p>チャットで確認した 4 点。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="num">#</th><th class="nowrap">論点</th><th>決めたこと</th></tr></thead>
+		<tbody>
+			<tr><td class="num">1</td><td class="nowrap"><code>--since</code> の書式</td><td><strong>3 段の書式を受け付ける</strong>（<code>yyyy/mm/dd</code> ・ <code>mm/dd</code> ・ <code>HH:mm</code>、時刻は任意で追加）。<strong>年・日付を省いた分は、いまより未来になるなら 1 つ遡って解決する</strong>（詳細は 3 章）</td></tr>
+			<tr><td class="num">2</td><td class="nowrap">3 オプションの関係</td><td><strong><code>--since-day</code> / <code>--since-hour</code> / <code>--since</code> は排他</strong>。2 つ以上指定したらエラー（<code>--wait-hour</code> 系と同じ流儀）。<strong><code>--before</code> はこの排他に含めない</strong>（<code>--since</code> 系と組み合わせて範囲にするため）</td></tr>
+			<tr><td class="num">3</td><td class="nowrap"><code>-n</code> との併用</td><td><strong>期間・検索・差出人のいずれかを指定したときは、既定の件数上限を 500（<code>MAX_HISTORY_LIMIT</code>）にする</strong>。<code>-n</code> を明示すればそちらが勝つ。何も指定しなければ今までどおり 20（<code>recent</code> の既定）</td></tr>
+			<tr><td class="num">4</td><td class="nowrap"><code>--from</code> の照合</td><td><strong>コロンで囲んでも囲まなくても受け付ける</strong>（<code>--from :id:</code> ・ <code>--from id</code> のどちらも可）。<strong>完全一致</strong>で、<code>ID_PATTERN</code> の文字集合だけ確かめる。前方一致は使わないので、<code>--to</code> のような囲み必須にする理由が無い</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>追加: --before（範囲検索）</h2>
+
+	<p>チャットで出た案。<code>--since</code> と組にすれば「8/1 から 8/5 まで」のような範囲を表せる。<strong>書式・未来への丸めとも <code>--since</code> とまったく同じ規則を使う</strong>（下記）。</p>
+
+	<div class="callout callout-important">
+		<p><strong>丸めを非対称にすると、組み合わせたときに破綻する。</strong>「<code>--since 11/1 --before 11/30</code>」を、丸めるのが <code>--since</code> だけだとすると、<code>11/1</code> は今年が未来なので去年に丸まり、<code>11/30</code> は丸めないので今年のまま——<strong>去年 11 月から今年 11 月末までという、意図しない 1 年がかりの範囲になる</strong>。「<code>--since 22:00 --before 23:00</code>」も同様に、時刻だけ日をまたいで食い違う。</p>
+	</div>
+
+	<div class="callout callout-caution">
+		<p><strong>「同じ規則で丸める」だけでは足りない。実装時の実測で判明した。</strong><code>--since</code> と <code>--before</code> に<em>それぞれ独立に</em>同じ規則（「いま」と比べて未来なら遡る）を当てても、<strong><code>--since 9/9 --before 9/10</code>（今日と明日）が壊れる</strong>。<code>9/9</code> は今日なので未来ではなく今年のまま、<code>9/10</code> を独立に見れば明日で未来なので去年に遡る——今日と去年という組み合わせになる。</p>
+		<p><strong>正しくは、<code>--before</code> が <code>--since</code> の解決値を anchor（引き継ぎ元）として使う</strong>こと。年・日付を省いた分は、「いま」と比べるのではなく anchor の年・日付をそのまま使う（遡る判定自体をしない）。<code>--since</code> 単独・<code>--before</code> 単独のときは anchor が無いので、これまでどおり「いま」と比べて遡る。</p>
+	</div>
+
+	<div class="callout callout-caution">
+		<p><strong>API のパラメータ名が既存の <code>before</code> と衝突する。</strong><code>/api/history?before=&lt;msg_seq&gt;</code> はすでにあり、<strong>数値の <code>msg_seq</code> によるページ送り</strong>（画面の遡り読み込み）に使っている。新しい絞り込みは <strong><code>before_ts</code>（日時文字列）</strong>という別名にし、既存の <code>before</code> には触れない。CLI のオプション名（<code>--before</code>）は <code>recent</code> にこれまで無かったので衝突しない。</p>
+	</div>
+</section>
+
+<!-- ================= 03 ================= -->
+<section class="ch03" id="ch03">
+	<h1>オプション</h1>
+
+	<p><code>options.mjs</code> の <code>OPTIONS</code> に足す 6 つ。<strong>すべて <code>cmd: 'recent'</code></strong>（このコマンドだけで使える）。既存の形をそのまま増やすだけなので、<code>export-options.mjs</code> の JSON の形（<code>schema</code>）は変わらない。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">long</th><th class="nowrap">arg</th><th>desc</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap"><code>since</code></td><td class="nowrap"><code>&lt;日時&gt;</code></td><td>この日時以降（3 段書式。下記）</td></tr>
+			<tr><td class="nowrap"><code>since-day</code></td><td class="nowrap"><code>&lt;N&gt;</code></td><td>N 日前以降</td></tr>
+			<tr><td class="nowrap"><code>since-hour</code></td><td class="nowrap"><code>&lt;N&gt;</code></td><td>N 時間前以降</td></tr>
+			<tr><td class="nowrap"><code>before</code></td><td class="nowrap"><code>&lt;日時&gt;</code></td><td>この日時より前（<code>--since</code> と同じ 3 段書式・同じ丸め）</td></tr>
+			<tr><td class="nowrap"><code>find</code></td><td class="nowrap"><code>&lt;文字列&gt;</code></td><td>本文にこの文字列を含むものだけ。<code>|</code> 区切りで OR 検索</td></tr>
+			<tr><td class="nowrap"><code>from</code></td><td class="nowrap"><code>&lt;id&gt;</code></td><td>この ID からの発言だけ（コロンは有っても無くてもよい）</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>--since / --before の書式（3 段）</h2>
+
+	<p>どちらも同じパーサを共有する。<strong>上から順に試し、最初に形が合ったものを使う。</strong></p>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">段</th><th class="nowrap">形</th><th class="nowrap">例</th><th>年・日付を省いた分</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap">① 年月日（＋任意で時刻）</td><td class="nowrap"><code>yyyy/m/d[&lt;区切り&gt;H:m[:s]]</code></td><td class="nowrap"><code>2026/8/1</code> ／ <code>2026/8/1-14:30</code> ／ <code>2026/8/1_14:30</code></td><td>省いていない。そのまま使う</td></tr>
+			<tr><td class="nowrap">② 月日（＋任意で時刻）</td><td class="nowrap"><code>m/d[&lt;区切り&gt;H:m[:s]]</code></td><td class="nowrap"><code>8/1</code> ／ <code>9/10-22:0</code> ／ <code>9/10_22:0</code></td><td><strong>年は今年。</strong>今年の値がいまより未来なら 1 年遡る。<code>--since</code>・<code>--before</code> とも同じ</td></tr>
+			<tr><td class="nowrap">③ 時刻のみ</td><td class="nowrap"><code>H:m[:s]</code></td><td class="nowrap"><code>6:0</code> ／ <code>22:0</code></td><td><strong>日付は今日。</strong>今日のその時刻がいまより未来なら 1 日遡る。<code>--since</code>・<code>--before</code> とも同じ</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>月・日・時・分・秒は 1〜2 桁のどちらでも受ける（<code>8/1</code> でも <code>08/01</code> でもよい）。時刻を省くと 00:00:00、秒を省くと :00。年は 4 桁固定。</p>
+
+	<p><strong>日付と時刻の区切りは、半角スペース・ハイフン・下線の 3 つを受け付ける</strong>（<code>2026/8/1 14:30</code> ／ <code>2026/8/1-14:30</code> ／ <code>2026/8/1_14:30</code> はどれも同じ）。<strong>ハイフンか下線を使えば、コマンドラインでダブルクォートを省ける。</strong>スペースを使う形だけ、共通ルールの「CLI の引数はダブルクォートで囲む」に従って囲みが要る。</p>
+
+	<p>形を確かめたあと、月 1-12・日 1-31・時 0-23・分秒 0-59 の範囲だけ見る（うるう年等の厳密なカレンダー検査はしない）。合わなければ 3 段の書式を示してエラー（exit 2）。</p>
+
+	<div class="callout callout-tip">
+		<p><strong>丸めの基準は「いま」または anchor のどちらか 1 つ</strong>。<code>--since</code> を単独で解決するときは anchor が無いので、②③どちらの段でも組み立てた日時を「いま」と比べ、後ろなら 1 つ遡る（②は年を 1 引く、③は日を 1 引く）。<code>--before</code> を解決するときは、<strong><code>--since</code> がすでに解決した値を anchor として渡す</strong>。anchor があれば、その年・日付をそのまま使い、「いま」とは比べない（遡る判定自体をしない）。<code>--before</code> が単独（<code>--since</code> を渡さない）なら anchor も無いので、こちらも「いま」と比べる。</p>
+		<p><strong>解決するコードは 1 つ（<code>resolveDateTimeArg(raw, anchorTs)</code>）にし、<code>--since</code>／<code>--before</code> で処理を分岐させない</strong>。anchor の有無だけで両方をまかなう。</p>
+	</div>
+
+	<h2>--from の照合</h2>
+
+	<p>コロンで囲んでいれば剥がし、囲んでいなければそのまま使う。<strong>どちらの形でも <code>ID_PATTERN</code> の文字集合を確かめてから、完全一致で絞り込む</strong>。<code>--to</code>／<code>waiters</code> の囲み必須は「前方一致で探す式に埋め込むため」の制約だが、<code>--from</code> は SQL の <code>= ?</code> による完全一致だけなので、その制約が要らない。</p>
+</section>
+
+<!-- ================= 04 ================= -->
+<section class="ch04" id="ch04">
+	<h1>内部の絞り込み</h1>
+
+	<h2>索引を 1 本足す（版 6）</h2>
+
+	<p>いまの <code>messages</code> は <code>(room_id, msg_seq)</code> の複合索引しか持たない。日時で絞る条件（<code>sent_at &gt;= ?</code>）には効かないので、<strong><code>(room_id, sent_at)</code> の複合索引を足す</strong>。<code>sent_at</code> は <code>yyyy/mm/dd HH:MM:SS.mmm</code> 固定 23 文字（版 5 で <code>/</code> 区切りに統一済み）なので、<strong>文字列比較がそのまま時系列比較になる</strong>。</p>
+
+<pre><code class="language-sql">-- src/scripts/20_migrate/ver_000006/001-messages-sent-at-index.sql
+CREATE INDEX IF NOT EXISTS messages_ix_room_id_sent_at ON messages(room_id, sent_at);</code></pre>
+
+	<div class="callout callout-important">
+		<p><strong>版フォルダを置くだけでよい。</strong><code>migrate.mjs</code> はフォルダを読んで版を決めるため、どこかの定数を上げる作業は無い。<strong>次に本番サーバーが起動し直したときに当たる</strong>（既存行にインデックスを張るだけなので、いまの件数ならほぼ一瞬で終わる）。</p>
+	</div>
+
+	<h2>絞り込みの SQL</h2>
+
+	<p><code>store.mjs</code> に <code>getFiltered(roomId, { sinceTs, beforeTs, find, from, limit })</code> を足す。<code>getLatest</code> と同じ並び（<code>ORDER BY msg_seq DESC LIMIT ?</code> のあと <code>.reverse()</code>）で、条件は渡された分だけ足す。</p>
+
+<pre><code class="language-sql">SELECT * FROM messages
+WHERE archived_seq IS NULL AND room_id = ?
+  [AND sent_at &gt;= ?]        -- --since / --since-day / --since-hour
+  [AND sent_at &lt;  ?]        -- --before
+  [AND (msg_body LIKE ? ESCAPE '\' [OR msg_body LIKE ? ESCAPE '\' …])]
+  [AND from_connector_id = ?]
+ORDER BY msg_seq DESC
+LIMIT ?</code></pre>
+
+	<p><code>since</code> 側は「以降」なので <code>&gt;=</code>（境界を含む）、<code>before</code> 側は「より前」なので <code>&lt;</code>（境界を含まない）にする。境界の時刻ちょうどの発言が二重に扱われることがない。</p>
+
+	<p><strong><code>--find</code> の値は <code>%</code> <code>_</code> <code>\</code> をエスケープしてから <code>LIKE</code> に渡す</strong>。素の値だと <code>%</code>・<code>_</code> がワイルドカードとして働き、たとえば <code>--find "50%"</code> が「50 のあと何でも」に化ける。エスケープすれば常に<strong>そのままの文字列を含むか</strong>だけを見る。</p>
+
+	<p><strong><code>--find</code> の値は <code>|</code> で区切ると OR 検索になる</strong>（<code>--find "rule|ルール"</code>）。<code>getFiltered</code> 内で <code>|</code> 分割 → 前後の空白を trim → 空項を除外し、残った項ごとに（エスケープしたうえで）<code>LIKE</code> を <code>OR</code> で結ぶ。1 語だけのときは今までどおり。<strong>CLI 側の変更は無い</strong>（<code>--find</code> の値をそのまま <code>find</code> パラメータへ渡すだけなので、分割はサーバー側だけで完結する）。</p>
+
+	<p>大文字小文字は SQLite の既定（ASCII だけ区別しない）。日本語には大小の区別が無いのでこの点は影響しない。<strong>実測で確認済み</strong>（<code>--find "RULE"</code> で本文中の <code>rule</code> がヒットする）。</p>
+
+	<h2>API</h2>
+
+	<p><code>GET /api/history</code> に <code>since_ts</code>・<code>before_ts</code>・<code>find</code>・<code>from_connector_id</code> を追加する（すべて省略可）。<strong>既存の <code>before</code>（<code>msg_seq</code> によるページ送り）とは別名にし、触らない。</strong>渡さなければ今までどおりなので、画面（<code>chat.js</code> の遡り読み込み）は無改修で動く。</p>
+</section>
+
+<!-- ================= 05 ================= -->
+<section class="ch05" id="ch05">
+	<h1>出力の形</h1>
+
+	<p>見出し行に<strong>何を絞ったか</strong>を出す。件数だけでは、絞り込んだ結果なのか全件なのか区別できないため。</p>
+
+<pre><code class="language-text">（絞り込みなし、今までどおり）
+public の直近 20 件:
+
+（期間だけ、--since 2026/8/1）
+public の 2026/08/01 00:00 以降 3 件:
+
+（範囲、--since 8/1 --before 8/6）
+public の 2026/08/01 00:00 以降 2026/08/06 00:00 より前 5 件:
+
+（検索だけ）
+public の「ルール」を含む 2 件:
+
+（組み合わせ）
+public の 2026/08/01 00:00 以降・「ルール」を含む・lightspeedc.github.io からの 1 件:</code></pre>
+
+	<div class="callout callout-important">
+		<p><strong>正確な文言は実装時に固定し、node 版・C# 版で一字一句揃える。</strong>突き合わせは <code>tests/cli-cs.test.mjs</code> が担う（このプロジェクトの決めごと。「CLI を直したら 2 本とも直す」）。</p>
+	</div>
+
+	<p>該当 0 件のときは <code>該当する発言がありません</code> のように、絞り込みが効いたことが分かる文言にする（既存の「まだ何もありません」とは区別する）。</p>
+</section>
+
+<!-- ================= 06 ================= -->
+<section class="ch06" id="ch06">
+	<h1>作るものと確かめること</h1>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">ファイル</th><th>変えること</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap"><code>src/client/options.mjs</code></td><td><code>OPTIONS</code> に 6 つ追加（<code>cmd: 'recent'</code>）</td></tr>
+			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000006/001-messages-sent-at-index.sql</code></td><td>新規。<code>(room_id, sent_at)</code> 索引</td></tr>
+			<tr><td class="nowrap"><code>src/server/store.mjs</code></td><td><code>getFiltered()</code> を追加</td></tr>
+			<tr><td class="nowrap"><code>src/server/server.mjs</code></td><td><code>handleHistory</code> が <code>since_ts</code>・<code>before_ts</code>・<code>find</code>・<code>from_connector_id</code> を読み、<code>getFiltered</code> に渡す</td></tr>
+			<tr><td class="nowrap"><code>src/client/chat.mjs</code></td><td><code>cmdRecent</code> に <code>--since*</code>・<code>--before</code>・<code>--find</code>・<code>--from</code> の解決と見出しの組み立てを足す。3 段書式の共有パーサを 1 つ作る</td></tr>
+			<tr><td class="nowrap"><code>src/cli-cs/Commands.cs</code> ・ <code>Args.cs</code></td><td>同じロジックを C# 版にも。<strong>2 本の出力が一致することをテストで見る</strong></td></tr>
+			<tr><td class="nowrap"><code>tests/</code></td><td>索引の有無、絞り込みの単体テスト（store）、CLI 突き合わせ（cli-cs）、エラー系（排他・書式）</td></tr>
+			<tr><td class="nowrap">USAGE ・ 設計書</td><td>新しいオプションと使用例を追記</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>手で確かめること</h2>
+
+	<p>テスト用サーバー（<code>tools/40_test/start-test-server.cmd</code>、ポート 8765）で行う。本番へは繋がない。</p>
+
+	<ol>
+		<li><code>--since-day 1</code> で、1 日以内の発言だけが返ること</li>
+		<li><code>--since "2026/8/1"</code> と <code>--since-day</code>/<code>--since-hour</code> を同時に渡すとエラー（exit 2）になること。<code>--before</code> とは同時に渡せること</li>
+		<li><strong>未来へ丸める分</strong>: 今日より先の月日・今日まだ来ていない時刻が、<code>--since</code>・<code>--before</code> のどちらでも同じ規則で 1 年前・1 日前に丸まること。<strong><code>--since 11/1 --before 11/30</code> が去年の 11 月 1 日〜30 日になる</strong>（今年の 11/1 と 11/30 がどちらも未来なら、両方が去年に丸まる）こと</li>
+		<li><code>--since 8/1 --before 8/6</code> で、その範囲だけが返ること（境界の扱い: <code>since</code> は含む、<code>before</code> は含まない）</li>
+		<li><code>--since 9/10-22:0</code> と <code>--since 9/10_22:0</code> と <code>--since "9/10 22:0"</code> が、すべて同じ結果になること（区切りがスペース・ハイフン・下線のどれでも）</li>
+		<li><code>--find "ルール"</code> で本文にその文字列を含むものだけ返ること。<code>%</code>・<code>_</code> を含む文字列でも文字どおりに扱われること</li>
+		<li><code>--find "rule|ルール"</code> で OR 検索になること。前後の空白・空項（<code>"rule| "</code>）を無視すること。<code>%</code>・<code>_</code> は OR の中でもワイルドカードとして働かないこと</li>
+		<li><code>--find "RULE"</code> で本文中の <code>rule</code> がヒットすること（大文字小文字を区別しない）</li>
+		<li><code>--from :id:</code> と <code>--from id</code>（コロン無し）の両方で、その ID からの発言だけ返ること</li>
+		<li>複数を組み合わせても正しく絞れること</li>
+		<li>node 版と C# 版の出力が一字一句同じであること</li>
+	</ol>
+
+	<h2>本番サーバーの再起動</h2>
+
+	<div class="callout callout-important">
+		<p><strong>索引を足す版 6 のマイグレーションがあるため、実装を反映するには本番サーバーの再起動が要る</strong>（<code>aichat restart</code>）。再起動しない限り、新しいオプションは 400（未知の引数）またはサーバー側の絞り込みが効かないまま返る。</p>
+	</div>
+</section>
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+</div>
+</body>
+</html>

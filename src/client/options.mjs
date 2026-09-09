@@ -61,15 +61,20 @@ export const DEFAULT_WAIT_SEC = 12 * 3600;
 export const ID_WRAP = ':';
 
 /**
- * ID に使える文字。英数字・ハイフン・下線だけ。
+ * ID に使える文字。英数字・ハイフン・下線・ピリオドだけ。
  *
  * 正規表現ではなく文字列で持つのは、この定義を JSON に書き出して C# 版に
  * 埋め込むため。2 本の CLI とサーバーが同じ規則を見るようにする。
  *
  * 記号と空白を断るのは、囲みの記号と紛れないようにするためと、
  * コマンドラインで語が割れないようにするため。
+ *
+ * ピリオドは先頭・末尾に置けない。Windows はファイル名の末尾のピリオドを
+ * 落とすため（待受けのログが logs/client/yyyymmdd-hhmmss-<ID>.log に入る）、
+ * 末尾に許すと名前が食い違う。先頭も禁じ、"." "-" のような 1 文字だけの
+ * ID と見分けやすくする。1 文字だけの ID（ピリオド以外）はそのまま許す。
  */
-export const ID_PATTERN = '^[A-Za-z0-9_-]+$';
+export const ID_PATTERN = '^[A-Za-z0-9_-](?:[A-Za-z0-9_.-]*[A-Za-z0-9_-])?$';
 
 /**
  * コマンドラインから待受けを見つける式。1 つめか 2 つめの括弧に ID が入る。
@@ -82,7 +87,7 @@ export const ID_PATTERN = '^[A-Za-z0-9_-]+$';
  *
  * 2 本の CLI が同じ式を使う。JavaScript と .NET でこの書き方は同じ意味になる。
  */
-export const WAITER_PATTERN = '(?:^|\\s)wait\\s+(?::([A-Za-z0-9_-]+):|(?:-c|--connector-id)\\s+([^\\s"]+))';
+export const WAITER_PATTERN = '(?:^|\\s)wait\\s+(?::([A-Za-z0-9_.-]+):|(?:-c|--connector-id)\\s+([^\\s"]+))';
 
 /**
  * 【決めごと】接続先（--url / --port）は既定値を持たない。
@@ -129,6 +134,12 @@ export const OPTIONS = [
 	{ long: 'to', short: null, arg: ':<id>:', cmd: 'say', desc: '名指しの相手。ID はコロンで囲む' },
 	{ long: 'reply-to', short: null, arg: '<msg_seq>', cmd: 'say', desc: 'どの発言への返答か。番号は出力の # を見る' },
 	{ long: 'n', short: 'n', arg: '<件数>', cmd: 'recent', desc: '直近の履歴を何件出すか' },
+	{ long: 'since', short: null, arg: '<日時>', cmd: 'recent', desc: 'この日時以降。書式は --help を参照' },
+	{ long: 'since-day', short: null, arg: '<N>', cmd: 'recent', desc: 'N 日前以降（--since / --since-hour とは併用不可）' },
+	{ long: 'since-hour', short: null, arg: '<N>', cmd: 'recent', desc: 'N 時間前以降（--since / --since-day とは併用不可）' },
+	{ long: 'before', short: null, arg: '<日時>', cmd: 'recent', desc: 'この日時より前。--since と同じ書式・同じ丸め' },
+	{ long: 'find', short: null, arg: '<文字列>', cmd: 'recent', desc: '本文にこの文字列を含むものだけ' },
+	{ long: 'from', short: null, arg: '<id>', cmd: 'recent', desc: 'この ID からの発言だけ（コロンは有っても無くてもよい）' },
 	{ long: 'out', short: null, arg: '<path>', cmd: 'dump', desc: 'JSONL の書き出し先' },
 ];
 

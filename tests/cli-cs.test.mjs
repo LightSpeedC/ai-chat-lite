@@ -138,6 +138,43 @@ describe('C# 版と node 版で同じものが出る', () => {
 		assert.match(stdout, /C# 版からの発言/, 'node 版から読めない');
 	});
 
+	test('recent の絞り込み（--find・--from・--since-day）の出力が node 版と一字一句揃う', async (t) => {
+		if (!built) return t.skip('aichat.exe が無い');
+
+		const ROOM = 'sandbox-cli-cs-filter';
+		await viaExe(['say', 'ルールを更新しました', '--room', ROOM], 'test-cli-filter-a');
+		await viaExe(['say', '雑談です', '--room', ROOM], 'test-cli-filter-b');
+
+		const cases = [
+			['recent', '--room', ROOM, '--find', 'ルール'],
+			['recent', '--room', ROOM, '--find', 'ルール|雑談'],
+			['recent', '--room', ROOM, '--from', 'test-cli-filter-a'],
+			['recent', '--room', ROOM, '--since-day', '1'],
+		];
+		for (const args of cases) {
+			const { stdout: fromNode } = await viaNode(args);
+			const { stdout: fromExe } = await viaExe(args);
+			assert.equal(shape(fromExe), shape(fromNode), `${args.join(' ')} の出力が違う`);
+		}
+	});
+
+	test('recent の排他・書式エラーが node 版と同じ文言・終了コードになる', async (t) => {
+		if (!built) return t.skip('aichat.exe が無い');
+
+		const cases = [
+			['recent', '--since', '1/1', '--since-day', '1'],
+			['recent', '--since', '13/1'],
+			['recent', '--since', 'foo'],
+			['recent', '--from', 'bad id'],
+		];
+		for (const args of cases) {
+			const node = await run(process.execPath, [NODE_CLI, ...withId(args, 'test-cli-cs'), '--url', base, '--access-token', TEST_ACCESS_TOKEN]).catch((e) => e);
+			const exe = await run(EXE, [...withId(args, 'test-cli-cs'), '--url', base, '--access-token', TEST_ACCESS_TOKEN]).catch((e) => e);
+			assert.equal(exe.code, node.code, `${args.join(' ')} の終了コードが違う`);
+			assert.equal(shape(exe.stderr ?? ''), shape(node.stderr ?? ''), `${args.join(' ')} のエラー文言が違う`);
+		}
+	});
+
 	test('who の出力が揃う', async (t) => {
 		if (!built) return t.skip('aichat.exe が無い');
 
@@ -149,10 +186,26 @@ describe('C# 版と node 版で同じものが出る', () => {
 		assert.equal(shape(fromExe).split('\n').length, shape(fromNode).split('\n').length);
 	});
 
+	test('初めての wait は案内を出してすぐ終わる（i260909-01）', async (t) => {
+		if (!built) return t.skip('aichat.exe が無い');
+
+		const { stdout: fromNode } = await viaNode(['wait'], 'test-cli-first-node');
+		const { stdout: fromExe } = await viaExe(['wait'], 'test-cli-first-exe');
+
+		for (const stdout of [fromNode, fromExe]) {
+			assert.match(stdout, /初めての接続です/);
+			assert.match(stdout, /recent --find "ルール"/);
+			assert.match(stdout, /recent --since-day 1/);
+			assert.match(stdout, /カーソルを立てました。改めて wait を実行してください。/);
+			assert.doesNotMatch(stdout, /pid \d+ で待受け中/, '即終わらず、通常の待受けに入ってしまっている');
+		}
+	});
+
 	test('wait が新着なしで正常に終わる', async (t) => {
 		if (!built) return t.skip('aichat.exe が無い');
 
-		// 参加の記録を読み終えた状態にしてから、1 秒だけ待つ
+		// 1 回目は初めての接続なので、案内を出してカーソルだけ立てて即終わる
+		// （i260909-01）。2 回目でようやく普通に待つので、そちらを見る
 		await viaExe(['wait', '--wait-sec', '1']);
 		const { stdout } = await viaExe(['wait', '--wait-sec', '1']);
 
