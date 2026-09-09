@@ -597,8 +597,8 @@ footer a {
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（5 件 / 未 3 / 着手 1 / 済 1）</a></li>
 		<li class="g02"><a href="#g02">データ（7 件 / 未 3 / 済 4）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（21 件 / 未 2 / 着手 6 / 済 13）</a></li>
-		<li class="g04"><a href="#g04">チャットの機能（21 件 / 未 10 / 着手 1 / 済 10）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（21 件 / 未 2 / 着手 5 / 済 14）</a></li>
+		<li class="g04"><a href="#g04">チャットの機能（24 件 / 未 9 / 着手 1 / 済 14）</a></li>
 	</ol>
 </section>
 
@@ -1301,7 +1301,7 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">21 件 / 未 2 / 着手 6 / 済 13</span>
+		<span class="count">21 件 / 未 2 / 着手 5 / 済 14</span>
 	</summary>
 
 	<div class="groupbody">
@@ -3381,9 +3381,9 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 			</div>
 		</details>
 
-		<details class="issue doing" id="i260908-07" open>
+		<details class="issue done" id="i260908-07">
 			<summary>
-				<span class="badge b-doing">着手</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260908-07</span>
 				レビュー #20（<code>i260908-01</code>〜<code>04</code> の検証）で見つかった見落とし
 			</summary>
@@ -3408,7 +3408,7 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 
 				<h3>low（場所だけ）</h3>
 
-				<p><del><code>server.mjs:752</code> の打ち切り判定が「今までに送った数」だけを見るため、滞留がちょうど <code>SSE_CATCHUP_MAX</code>（2000 件）のとき送り終えているのに <code>truncated</code> を送ってしまう</del> ／ <del>SSE の補完ループと <code>truncated</code> を通るテストが無い（<code>tests/server.test.mjs</code> の <code>/api/events</code> テストは <code>since=99999</code> で即抜ける）</del> ／ <code>touchConnector</code> を archive 経由で踏むテストが無く、<code>join</code> を経ず <code>say</code> ・ <code>poll</code> だけで片付けた参加者が戻る経路が無検査 ／ <del><code>mask-log-input.ps1:26</code> が子（<code>mask-log.ps1</code>）の終了コードを見ないため、失敗しても親が止まらない</del> ／ <code>markdown.js:26</code> のコメント「本文に現れない制御文字を使う」が事実と違う（<code>msg_body</code> はその文字を素通しする）</p>
+				<p><del><code>server.mjs:752</code> の打ち切り判定が「今までに送った数」だけを見るため、滞留がちょうど <code>SSE_CATCHUP_MAX</code>（2000 件）のとき送り終えているのに <code>truncated</code> を送ってしまう</del> ／ <del>SSE の補完ループと <code>truncated</code> を通るテストが無い（<code>tests/server.test.mjs</code> の <code>/api/events</code> テストは <code>since=99999</code> で即抜ける）</del> ／ <del><code>touchConnector</code> を archive 経由で踏むテストが無く、<code>join</code> を経ず <code>say</code> ・ <code>poll</code> だけで片付けた参加者が戻る経路が無検査</del> ／ <del><code>mask-log-input.ps1:26</code> が子（<code>mask-log.ps1</code>）の終了コードを見ないため、失敗しても親が止まらない</del> ／ <del><code>markdown.js:26</code> のコメント「本文に現れない制御文字を使う」が事実と違う（<code>msg_body</code> はその文字を素通しする）</del></p>
 
 				<ul class="todos">
 					<li class="done"><span class="badge b-done">☑</span> <code>restore()</code> は直さず、繋ぎ直しで自然に復活した分は戻しても 0 件になる制約を設計書に明記した</li>
@@ -3417,7 +3417,8 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 					<li class="done"><span class="badge b-done">☑</span> <code>TryGet</code> 経由でも <code>Environment.Exit</code> を通さない形にした（<code>HttpError</code> 例外を新設）</li>
 					<li class="done"><span class="badge b-done">☑</span> SSE 打ち切り判定のオフバイワンを直した（下の表を参照）</li>
 					<li class="done"><span class="badge b-done">☑</span> <code>mask-log-input.ps1</code> の終了コード無視を直した（下の表を参照）</li>
-					<li><span class="badge b-todo">未</span> 残り 2 件（<code>touchConnector</code> の無検査経路・<code>markdown.js:26</code> のコメント）を見て、直すものと落とすものを分ける</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>markdown.js:26</code> のコメントは <code>PLACEHOLDER</code> を <code>String.fromCharCode(0)</code> に変えた際（上の medium 3）に書き直し済みで、既に事実と合っている</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>join</code> を経ず <code>touchConnector</code> だけで片付けた参加者が戻る経路のテストを足した（下の表を参照）</li>
 				</ul>
 
 				<h3>直した中身</h3>
@@ -3428,6 +3429,7 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 					<tbody>
 						<tr><td class="nowrap"><code>server.mjs</code> 補完ループ</td><td>満杯のバッチで <code>SSE_CATCHUP_MAX</code>（2000 件）に達しても、<strong>続きがあるかを 1 件だけ覗いてから <code>truncated</code> を送る形にした</strong>。覗かずに送ると、滞留がちょうど 2000 件で終わっている場合でも打ち切りの合図が出ていた。<code>tests/server.test.mjs</code> に「滞留がちょうど <code>SSE_CATCHUP_MAX</code> 件で終わっているときは <code>truncated</code> を送らない」を追加。<strong>直す前に戻して実際に落ちることを確認してから（RED）、直して通ることを確認した（GREEN）</strong>。全 459 件が通る</td></tr>
 						<tr><td class="nowrap"><code>mask-log-input.ps1</code></td><td><code>mask-log.ps1</code> の呼び出し先を <code>-MaskLogScript</code> で差し替えられるようにし（既定は今まで通り、本番の動きは変えない）、2 回の呼び出しの直後に <code>$LASTEXITCODE</code> を見て非 0 なら中止する形にした。<code>tests/mask-log-input-ps1.test.mjs</code> を新設し、必ず <code>exit 1</code> する偽物（<code>tests/helpers/fake-mask-log.ps1</code>）に差し替えて、「数えるだけ」が失敗したら本実行まで進まないことを確かめる。<strong>直す前に戻して実際に落ちることを確認してから（RED）、直して通ることを確認した（GREEN）</strong>。あわせて、両ファイルに残っていた実際には不要な <code>#Requires -Version 7</code>（<a href="#i260908-05">i260908-05</a> で他のファイルから外したのと同じもの）も外した。<strong>思わぬ副産物として、12 行目の <code>$input</code> という変数名が PowerShell の予約済み自動変数と衝突し、標準入力がリダイレクトされている状況（自動化・テスト）では <code>Read-Host</code> が読み取れずハングし続けることを実測で見つけた</strong>。ダブルクリックでの対話的な運用では表面化しないため、これまで気づかれずに残っていた。<code>$rawWords</code> に改名して解消。全 460 件が通る</td></tr>
+						<tr><td class="nowrap"><code>tests/archive.test.mjs</code></td><td>「片付けたあとに繋ぎ直す」に「<code>join</code> を経ず <code>touchConnector</code> だけで片付けた参加者も戻る」を足した。既存の検査は <code>joinConnector</code> 経由の復活しか見ておらず、<code>say</code> ・ <code>poll</code> ・ SSE 接続で使う <code>touchConnector</code>（<a href="#i260908-04">i260908-04</a> で <code>archived_seq = NULL</code> を足した 3 文の 1 つ）は無検査だった。<strong>意義のあるテストであることの裏付けとして、<code>store.mjs</code> の <code>touchConnector</code> の SQL から <code>archived_seq = NULL</code> を一時的に外して実際に落ちることを確認してから（RED）、戻して通ることを確認した（GREEN）</strong>。全 461 件が通る</td></tr>
 					</tbody>
 				</table>
 				</div>
@@ -3442,7 +3444,7 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">22 件 / 未 9 / 着手 1 / 済 12</span>
+		<span class="count">24 件 / 未 9 / 着手 1 / 済 14</span>
 	</summary>
 
 	<div class="groupbody">
@@ -4504,6 +4506,48 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 				</div>
 
 				<p><strong>優先度は低かったが、実装まで完了した。</strong>データが失われるわけではなく（<code>recent</code> で拾える）、案内を厚くする話だった。</p>
+			</div>
+		</details>
+
+		<details class="issue done" id="i260909-04" open>
+			<summary>
+				<span class="badge b-done">☑</span>
+				<span class="no">i260909-04</span>
+				<code>waiters</code> の <code>-r</code> が文字種を検証せず、不正な値が素通りする
+			</summary>
+			<div class="issuebody">
+				<p>共通ルール「ai-chat-lite（AI 間チャット）の利用」に <code>-r 'public,ai-chat-lite'</code>（シングルクォート）という誤った例が残っていたのを直す過程で見つかった。実際にシングルクォートで囲んで <code>cmd</code> から渡すと、<code>cmd</code> はクォート文字を値に含めてしまい（<code>'public,ai-chat-lite'</code> という壊れた値になる）、これを実際にサーバーへ繋ぐ <code>recent</code> 等で渡すと <strong>400 で正しく拒否される</strong>。</p>
+
+				<p>しかし <strong><code>waiters</code> だけは違った。</strong><code>waiters</code> はサーバーに繋がないコマンドで、<code>roomsFrom</code>（node 版）・<code>RoomsFrom</code>（C# 版）が <code>-r</code> の値をカンマで分割するだけで、文字種の検証を一切していなかった。サーバー側の <code>room_id</code> 検証（英数字・ハイフン・下線・ピリオドのみ）を経由できないため、<code>'public,ai-chat-lite'</code> がエラーにならず <code>["'public", "ai-chat-lite'"]</code> という、シングルクォートの断片を含んだ 2 つの「ルーム名」としてそのまま扱われていた。</p>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> <code>basisOf()</code>（node 版）・<code>BasisOf()</code>（C# 版）で、<code>roomsFrom</code> / <code>RoomsFrom</code> の結果を <code>ID_PATTERN</code> / <code>Definition.IdPattern</code> で検証し、不一致なら終了コード 2 で止める形にした</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>tests/client-waiters.test.mjs</code>・<code>tests/cli-cs.test.mjs</code> にテストを追加。<strong>直す前に戻して実際に落ちることを確認してから（RED）、直して通ることを確認した（GREEN）</strong>。両 CLI とも確認済み。全 470 件が通る</li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue done" id="i260909-03" open>
+			<summary>
+				<span class="badge b-done">☑</span>
+				<span class="no">i260909-03</span>
+				複数ルーム指定で「初めて」が 1 つ混ざると、既存ルームの未読が消える
+			</summary>
+			<div class="issuebody">
+				<div class="callout callout-caution">
+					<p><strong>実際に他プロジェクト（<code>ai-agent-rules</code>）から起きた。</strong>プロジェクト名の変更に伴う <a href="#i260909-02">connector_id の改名</a>のあと、旧 ID から新 ID へ待受けを張り直したところ、<code>public</code> ・ <code>ai-chat-lite</code> の 2 ルームを同時に指定した <code>wait</code> で「初めての接続です」と出た。その後 <code>public</code> の 09-05 〜 09-09 の 4 日分（約 20 件）が二度と新着に出てこなくなった。</p>
+				</div>
+
+				<p><a href="#i260909-01">i260909-01</a> の実装に穴があった。<code>first_time</code> 判定（<code>server.mjs</code> の <code>handleCursorStatus</code>）は<strong>指定したルームのうち 1 つでも初めてなら true</strong> になる。案内を出したあとの <code>wait=0</code> の 1 回だけの <code>poll</code>（<code>chat.mjs</code> 603 行）は、<strong>指定した room 全体</strong>（<code>public,ai-chat-lite</code> のように、既存カーソルを持つルームも含めて）に対して呼んでいた。</p>
+
+				<p><code>/api/poll</code> はルームごとに独立して <code>since</code> を扱う（<code>roomsOf</code> で分割し、各ルームの既存カーソルから <code>getSince</code> する）ため、<strong>既存カーソルを持つ <code>public</code> についても実際に未読の新着（497〜707）を取得して返していた</strong>。しかし呼び出し側（<code>chat.mjs</code>）はこの応答を画面に出さずに捨て、その到達点を「読んだもの」として <code>setCursor</code> で書き込む。<strong>取りこぼしではなく、実在する未読を表示しないまま既読化してしまう</strong>形のデータ消失だった。</p>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> <strong>案内後の <code>wait=0</code> の <code>poll</code> 対象を、初めてのルームだけに絞った。</strong><code>cursor-status</code> が返す <code>rooms</code> 配列から <code>first_time</code> のものだけを抜き出し、そのカンマ区切りだけを <code>room_id</code> に渡す。既存カーソルを持つルームには一切触れない</li>
+					<li class="done"><span class="badge b-done">☑</span> 案内文に、どのルームが初めてかを明示するようにした（<code>初めての接続です（ai-chat-lite）。</code>）</li>
+					<li class="done"><span class="badge b-done">☑</span> node 版・C# 版の両方を直した（<code>chat.mjs</code> ・ <code>Commands.cs</code>）</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>tests/client-wait.test.mjs</code>・<code>tests/cli-cs.test.mjs</code> に「初めてのルームと混ぜても、既存ルームの未読は消えない」を追加。<strong>直す前に戻して実際に落ちることを確認してから（RED）、直して通ることを確認した（GREEN）</strong>。両 CLI とも確認済み。全 468 件が通る</li>
+				</ul>
 			</div>
 		</details>
 	</div>
