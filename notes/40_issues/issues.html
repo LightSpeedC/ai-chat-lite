@@ -596,8 +596,8 @@ footer a {
 <section class="toc md-skip">
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（5 件 / 未 3 / 着手 1 / 済 1）</a></li>
-		<li class="g02"><a href="#g02">データ（6 件 / 未 2 / 済 4）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（20 件 / 未 3 / 着手 4 / 済 13）</a></li>
+		<li class="g02"><a href="#g02">データ（7 件 / 未 3 / 済 4）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（21 件 / 未 2 / 着手 6 / 済 13）</a></li>
 		<li class="g04"><a href="#g04">チャットの機能（21 件 / 未 10 / 着手 1 / 済 10）</a></li>
 	</ol>
 </section>
@@ -607,7 +607,7 @@ footer a {
 	<summary>
 		<span class="badge b-todo">未</span>
 		サービスの運用
-		<span class="count">5 件 / 未 3 / 着手 1 / 済 1</span>
+		<span class="count">5 件 / 未 3 / 着手 0 / 済 2</span>
 	</summary>
 
 	<div class="groupbody">
@@ -875,34 +875,26 @@ const servers = await startServers();           // 待ち受けを開始</code><
 			</div>
 		</details>
 
-		<details class="issue doing" id="i260908-04" open>
+		<details class="issue done" id="i260908-04" open>
 			<summary>
-				<span class="badge b-doing">着手</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260908-04</span>
 				復旧が途中で失敗しても印を消すため、空の DB が本番として起動する
 			</summary>
 			<div class="issuebody">
-				<p><code>tools/80_ops/restore.ps1</code> の <code>finally</code>（233-239 行）が、<strong>どこで落ちても無条件に <code>_data/MAINTENANCE</code> を消す</strong>。コメントも「途中で失敗しても必ず消す」と書いてある。</p>
+				<p><code>tools/80_ops/restore.ps1</code> の <code>finally</code> が、<strong>どこで落ちても無条件に <code>_data/MAINTENANCE</code> を消していた</strong>。コメントも「途中で失敗しても必ず消す」と書いてあった。</p>
 
 				<div class="callout callout-caution">
-					<p><strong>危ないのは 215 行と 220 行の間である。</strong>212-218 行で <code>chat.db</code> ・ <code>-wal</code> ・ <code>-shm</code> を <code>prev-*</code> へ移し、220 行で控えを <code>chat.db</code> の位置へ移す。<strong>その間で落ちると、DB が無い状態で印が外れる。</strong></p>
-					<p><code>migrate.mjs</code> の <code>DatabaseSync</code> は無ければ作り、起動路に DB の実在を見る門が無い。<strong>空の DB に版 1〜5 が当たって本番として立ち上がる。</strong>唯一の現物は <code>prev-*</code> に残ったままで、参加者には「取りこぼしなし」が流れる。</p>
+					<p><strong>危ないのは、控えへ移したあと・入れ替えるまでの間だった。</strong>その間に落ちると、DB が無い状態で印が外れる。<code>migrate.mjs</code> の <code>DatabaseSync</code> は無ければ作り、起動路に DB の実在を見る門が無いため、<strong>空の DB に版が当たって本番として立ち上がる</strong>おそれがあった。唯一の現物は <code>prev-*</code> に残ったままで、参加者には「取りこぼしなし」が流れる。</p>
 				</div>
 
-				<p>印を消してよいのは、入れ替えが終わったときだけである。<strong>失敗した経路では印を残し、何が起きたかを出して人を待つ</strong>のが筋になる。</p>
-
-				<p>指摘は <code>ai-chat-lite-reviewer</code> のレビュー #19（<code>msg_seq</code> 648）。<strong>実物で確かめた。</strong></p>
+				<p>指摘は <code>ai-chat-lite-reviewer</code> のレビュー #19（<code>msg_seq</code> 648）・レビュー #20（<code>msg_seq</code> 666）。実物で確かめた。</p>
 
 				<ul class="todos">
-					<li class="done"><span class="badge b-done">☑</span> <strong>成功した経路だけで消す形にした</strong>。<code>finally</code> をやめ、入れ替えが終わった後に消す。失敗した経路では印を残し、<strong>DB の有無と控えの置き場を出して人を待つ</strong>。別の印へ置き換える案は採らない（見る場所が 2 つになる）</li>
-					<li><span class="badge b-todo">未</span> <strong>「廃止した <code>--connector-id</code> を使っていた 2 行も直した」を ☑ から戻す</strong>（<a href="#i260908-05">i260908-05</a> の 1）。<code>exit 2</code> が <code>exit 1</code> に変わっただけで、<strong>復旧の手順はいまも 1 行も進まない</strong>。<code>ai-chat-lite-reviewer</code> のレビュー #20（<code>msg_seq</code> 666）が実測で見つけた</li>
-					<li><span class="badge b-todo">未</span> <code>tests/</code> に <code>restore.ps1</code> を通すものを足す</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>成功した経路だけで消す形にした</strong>。<code>finally</code> をやめ、入れ替えが終わった後に消す。失敗した経路では印を残し、<strong>DB の有無と控えの置き場を出して人を待つ</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>復旧手順が最初から動かない実バグを直した</strong>。<code>say</code>（[0/5]）・<code>restart</code>（[2/5]）の 2 か所とも、<code>$ErrorActionPreference = 'Stop'</code> のもとで <code>2&gt;&amp;1</code> を受けていた。node 側の <code>announceEnv</code> は繋ぐコマンドすべてで環境名を必ず標準エラーに書くため、<strong>Windows PowerShell 5.1 では毎回 <code>NativeCommandError</code> になっていた</strong>（レビュー #20 が実測で発見。<code>--connector-id</code> の直しだけでは exit 2 → exit 1 に変わっただけで症状は同じだった）。<code>backup.ps1</code> と同じ形（その 1 行だけ <code>$ErrorActionPreference</code> を <code>Continue</code> に緩める）で両方とも直した</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong><code>tests/restore-ps1.test.mjs</code> を新設。</strong><code>restore.ps1</code> に <code>-DataRoot</code>・<code>-AccessToken</code> を足し（本番の挙動は変えない、テスト用の差し替え口）、実際に Windows PowerShell 5.1 でスクリプトを最後まで走らせ、目印つきのデータが正しく入れ替わることを確かめる。<strong>直す前に戻して実際に落ちることを確認してから（RED）、直して通ることを確認した（GREEN）</strong>。全 455 件が通る</li>
 				</ul>
-
-				<div class="callout callout-important">
-					<p><strong>112 行の <code>say</code> 呼び出しが try の外にある。</strong>37 行の <code>$ErrorActionPreference = 'Stop'</code> のもとで <code>& node $clientPath say … 2&gt;&amp;1</code> を受けており、node 側の <code>announceEnv</code>（<code>chat.mjs</code> 1298 行）は繋ぐコマンドすべてで環境名を必ず stderr に書くため、<strong>5.1 では毎回 <code>NativeCommandError</code> になる</strong>。<a href="#i260908-05">i260908-05</a> の 2 で <code>backup.ps1:72</code> に立てたのと同じ形の穴が、この 112 行には残っていた。</p>
-					<p>印を置く 124 行まで進まないため DB は壊れない（fail-safe）が、<strong>復旧手順そのものが動かない</strong>。直すのは 2 と同じ、その 1 行だけ <code>$ErrorActionPreference</code> を緩めるか try で包む。</p>
-				</div>
 			</div>
 		</details>
 
@@ -914,7 +906,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-todo">未</span>
 		データ
-		<span class="count">6 件 / 未 2 / 済 4</span>
+		<span class="count">7 件 / 未 3 / 済 4</span>
 	</summary>
 
 	<div class="groupbody">
@@ -1273,6 +1265,34 @@ const servers = await startServers();           // 待ち受けを開始</code><
 			</div>
 		</details>
 
+		<details class="issue" id="i260909-02" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260909-02</span>
+				connector_id を改名する手段が無い
+			</summary>
+			<div class="issuebody">
+				<p>プロジェクト名の変更などで、参加済みの <code>connector_id</code> を改名したくなることが<strong>たびたび起きる</strong>。しかし CLI・API のどちらにも改名のコマンドが無い。</p>
+
+				<p>改名するには <code>connectors</code> ・ <code>cursors</code> ・ <code>messages</code>（<code>from_connector_id</code> ・ <code>to_connector_id</code>）・ <code>archives</code>（<code>archived_connector_id</code>、<code>archive_kind='connector'</code> のときは <code>archive_id</code> も）を横断して書き換える必要があり、そのたびに手作業で SQL を組み立てて DB を直接触っている。</p>
+
+				<div class="callout callout-warning">
+					<p><strong>直接 SQL を書く前提が続くと、対象の絞り込み漏れに気づけない。</strong>今回（<code>agent-rules</code> → <code>ai-agent-rules</code>）は <code>to_connector_id</code> ・ <code>archives</code> のどちらも対象が 0 件だったため実害は無かったが、次に改名するときも同じ確認を毎回手で行うことになる。</p>
+				</div>
+
+				<p>2026-09-09、<code>agent-rules</code> を <code>ai-agent-rules</code> に改名した際の実施内容（<code>tools/80_ops/snapshot.mjs</code> で控えを取ってから、3 文を 1 トランザクションで実行）：</p>
+
+				<pre><code class="language-sql">UPDATE connectors SET connector_id = 'ai-agent-rules' WHERE connector_id = 'agent-rules';  -- 1 件
+UPDATE cursors     SET connector_id = 'ai-agent-rules' WHERE connector_id = 'agent-rules';  -- 1 件
+UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector_id = 'agent-rules';  -- 10 件</code></pre>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> <code>rename connector :&lt;旧&gt;: :&lt;新&gt;:</code> のような CLI コマンドを設計する。対象 4 テーブルを漏らさず、新しい ID が既に使われていないかも確かめる</li>
+					<li><span class="badge b-todo">未</span> node 版 ・ C# 版の両方に実装する（<a href="../90_rules/local-rule.html">ローカルルール</a>「CLI を直したら 2 本とも直す」に従う）</li>
+				</ul>
+			</div>
+		</details>
+
 	</div>
 </details>
 
@@ -1281,7 +1301,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">21 件 / 未 4 / 着手 4 / 済 13</span>
+		<span class="count">21 件 / 未 2 / 着手 6 / 済 13</span>
 	</summary>
 
 	<div class="groupbody">
@@ -3130,9 +3150,9 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 			</div>
 		</details>
 
-		<details class="issue" id="i260906-02" open>
+		<details class="issue doing" id="i260906-02" open>
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-doing">着手</span>
 				<span class="no">i260906-02</span>
 				後始末の道具が、既定では本番を見ない
 			</summary>
@@ -3147,7 +3167,7 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 
 				<ul class="todos">
 					<li><span class="badge b-todo">未</span> 既定を本番にするか、付け忘れを断る形にするかを決める</li>
-					<li><span class="badge b-todo">未</span> 本番に残っている <code>test-me</code> ・ <code>test-otherroom</code> を片付ける</li>
+					<li class="done"><span class="badge b-done">☑</span> 本番に残っていた <code>test-me</code> ・ <code>test-otherroom</code> を <code>--with-messages</code> で片付けた（<code>archived_seq</code> 4・5）</li>
 				</ul>
 			</div>
 		</details>
@@ -3336,7 +3356,7 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 				</div>
 
 				<ul class="todos">
-					<li class="done"><span class="badge b-done">☑</span> <strong>運用の手順（1 ・ 2 ・ 3）を直した。</strong>1 は <code>say :ai-chat-lite:</code> ・ <code>restart :restore:</code> の形に（<code>--room public</code> も明示）。2 は <code>$ErrorActionPreference</code> をその 1 行だけ <code>Continue</code> にした。3 は <strong><code>#Requires -Version 7</code> が実際には不要だった</strong>ので外し、<code>powershell.exe</code> → <code>powershell</code> に直した。<strong>5.1 で完走することを実測</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>運用の手順（1 ・ 2 ・ 3）を直した。</strong>1 は <code>say :ai-chat-lite:</code> ・ <code>restart :restore:</code> の形に（<code>--room public</code> も明示）。<strong>この時点では書き方だけの直しで、<code>$ErrorActionPreference</code> の穴（<a href="#i260908-04">i260908-04</a>）は残っていた</strong>。2 は <code>$ErrorActionPreference</code> をその 1 行だけ <code>Continue</code> にした。3 は <strong><code>#Requires -Version 7</code> が実際には不要だった</strong>ので外し、<code>powershell.exe</code> → <code>powershell</code> に直した。<strong>5.1 で完走することを実測</strong></li>
 					<li class="done"><span class="badge b-done">☑</span> <strong>読み手が判断を誤るもの（4〜11）を直した。</strong>下の表を参照</li>
 					<li><span class="badge b-todo">未</span> low を見て、直すものと落とすものを分ける（<strong>19 件は場所だけの指摘で、直し方も未検討</strong>）</li>
 				</ul>
@@ -3361,9 +3381,9 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 			</div>
 		</details>
 
-		<details class="issue" id="i260908-07" open>
+		<details class="issue doing" id="i260908-07" open>
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-doing">着手</span>
 				<span class="no">i260908-07</span>
 				レビュー #20（<code>i260908-01</code>〜<code>04</code> の検証）で見つかった見落とし
 			</summary>
@@ -3376,25 +3396,41 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 				<table>
 					<thead><tr><th class="num">#</th><th class="nowrap">どこ</th><th>中身</th></tr></thead>
 					<tbody>
-						<tr><td class="num">1</td><td class="nowrap"><code>store.mjs</code> 400-408</td><td><code>archived_seq = NULL</code> を <code>upsertConnector</code> ・ <code>touchConnector</code> ・ <code>upsertCursor</code> の 3 文には足したが、<strong><code>restore()</code> 自体は 1 行も直っていない</strong>。復活した行（<code>archived_seq</code> が NULL）は 404 行の <code>WHERE archived_seq = ?</code> に当たらないまま、407 行の <code>DELETE FROM archives</code> は <code>restored</code> の件数を見ずに走る。発言なしで片付けた connector が繋ぎ直しで全行復活していると、<strong>0 件のまま <code>archives</code> の行だけが消える</strong>。画面（<code>chat.js</code> 630-635 ・ 646-648）は応答を読まないので、この経路は完全に無言</td></tr>
-						<tr><td class="num">2</td><td class="nowrap"><code>markdown.js</code> 51</td><td>自動リンクの文字集合 <code>[^\s&amp;"']+</code> に <code>&lt;</code> <code>&gt;</code> が残っている。42-43 行が先に生成した <code>&lt;code&gt;</code> <code>&lt;strong&gt;</code> や、57-59 行が戻すコードブロックのタグを URL に飲み込む。属性からの抜け出しにはならないが、<strong>URL がタグ文字列を含む相対 URL に化ける</strong></td></tr>
-						<tr><td class="num">3</td><td class="nowrap"><code>markdown.js</code> 27</td><td><code>PLACEHOLDER</code> に NUL 1 バイトがリテラルで残っており、git がこのファイルを <code>-text</code>（バイナリ）と判定し続ける。<strong><code>git diff</code> が <code>Binary files … differ</code> になり、ripgrep も 27 行を返さない</strong>。XSS 対策を止めている唯一のファイルが、diff・grep・コミット前確認のどれからも素通りする</td></tr>
-						<tr><td class="num">4</td><td class="nowrap"><code>Client.cs</code> 70 ・ 166-169</td><td><code>TryGet</code> は <code>catch (Exception)</code> で包むが、内部の <code>SendOnce</code> は 503 以外の HTTP エラーで <code>Environment.Exit(1)</code> を呼ぶ。<strong>例外ではないので catch を素通りする</strong>。ポートを取り違えて別サーバーに繋ぐと、C# 版だけが理由を出さず exit 1 で終わる</td></tr>
+						<tr><td class="num">1</td><td class="nowrap"><code>store.mjs</code> 400-408</td><td><code>archived_seq = NULL</code> を <code>upsertConnector</code> ・ <code>touchConnector</code> ・ <code>upsertCursor</code> の 3 文には足したが、<strong><code>restore()</code> 自体は 1 行も直っていない</strong>。復活した行（<code>archived_seq</code> が NULL）は 404 行の <code>WHERE archived_seq = ?</code> に当たらないまま、407 行の <code>DELETE FROM archives</code> は <code>restored</code> の件数を見ずに走る。発言なしで片付けた connector が繋ぎ直しで全行復活していると、<strong>0 件のまま <code>archives</code> の行だけが消える</strong>。画面（<code>chat.js</code> 630-635 ・ 646-648）は応答を読まないので、この経路は完全に無言。<strong>コードは変えない。</strong>既定ルームへ「0 件」の知らせが流れログにも残るため経緯は追えることと、生きているものを重ねて戻しても実害が無いことから受け入れる。<a href="../10_plan/p260830-02-アーカイブ機能.html">設計書</a>に明記した</td></tr>
+						<tr><td class="num">2</td><td class="nowrap"><code>markdown.js</code> 51</td><td>自動リンクの文字集合 <code>[^\s&amp;"']+</code> に <code>&lt;</code> <code>&gt;</code> が残っている。42-43 行が先に生成した <code>&lt;code&gt;</code> <code>&lt;strong&gt;</code> や、57-59 行が戻すコードブロックのタグを URL に飲み込む。属性からの抜け出しにはならないが、<strong>URL がタグ文字列を含む相対 URL に化ける</strong>。<strong>直した</strong>。文字集合から <code>&lt;</code> <code>&gt;</code> を外した</td></tr>
+						<tr><td class="num">3</td><td class="nowrap"><code>markdown.js</code> 27</td><td><code>PLACEHOLDER</code> に NUL 1 バイトがリテラルで残っており、git がこのファイルを <code>-text</code>（バイナリ）と判定し続ける。<strong><code>git diff</code> が <code>Binary files … differ</code> になり、ripgrep も 27 行を返さない</strong>。XSS 対策を止めている唯一のファイルが、diff・grep・コミット前確認のどれからも素通りする。<strong>直した</strong>。<code>String.fromCharCode(0)</code> で組み立てる形にし、ソースから NUL バイトを 1 つも無くした</td></tr>
+						<tr><td class="num">4</td><td class="nowrap"><code>Client.cs</code> 70 ・ 166-169</td><td><code>TryGet</code> は <code>catch (Exception)</code> で包むが、内部の <code>SendOnce</code> は 503 以外の HTTP エラーで <code>Environment.Exit(1)</code> を呼ぶ。<strong>例外ではないので catch を素通りする</strong>。ポートを取り違えて別サーバーに繋ぐと、C# 版だけが理由を出さず exit 1 で終わる。<strong>直した</strong>。<code>HttpError</code> 例外を新設し、<code>SendOnce</code> は投げるだけにして、<code>Exit</code> は <code>Send()</code> 側だけが呼ぶ形にした</td></tr>
 					</tbody>
 				</table>
 				</div>
 
+				<p>2 ・ 3 ・ 4 は<strong>先にテストを追加し、直す前に失敗することを確かめてから（RED）、直して通ることを確かめた（GREEN）</strong>。<code>tests/markdown.test.mjs</code> に 2 件、<code>tests/cli-cs.test.mjs</code> に 1 件を足し、全テスト 458 件が通る。1 は複数の対処案を提示し、<strong>「設計書に明記するだけ、コードは変えない」を選んだ</strong>。<a href="../10_plan/p260830-02-アーカイブ機能.html">設計書</a>に追記済み</p>
+
 				<h3>low（場所だけ）</h3>
 
-				<p><code>server.mjs:752</code> の打ち切り判定が「今までに送った数」だけを見るため、滞留がちょうど <code>SSE_CATCHUP_MAX</code>（2000 件）のとき送り終えているのに <code>truncated</code> を送ってしまう ／ SSE の補完ループと <code>truncated</code> を通るテストが無い（<code>tests/server.test.mjs</code> の <code>/api/events</code> テストは <code>since=99999</code> で即抜ける） ／ <code>touchConnector</code> を archive 経由で踏むテストが無く、<code>join</code> を経ず <code>say</code> ・ <code>poll</code> だけで片付けた参加者が戻る経路が無検査 ／ <code>mask-log-input.ps1:26</code> が子（<code>mask-log.ps1</code>）の終了コードを見ないため、失敗しても親が止まらない ／ <code>markdown.js:26</code> のコメント「本文に現れない制御文字を使う」が事実と違う（<code>msg_body</code> はその文字を素通しする）</p>
+				<p><del><code>server.mjs:752</code> の打ち切り判定が「今までに送った数」だけを見るため、滞留がちょうど <code>SSE_CATCHUP_MAX</code>（2000 件）のとき送り終えているのに <code>truncated</code> を送ってしまう</del> ／ <del>SSE の補完ループと <code>truncated</code> を通るテストが無い（<code>tests/server.test.mjs</code> の <code>/api/events</code> テストは <code>since=99999</code> で即抜ける）</del> ／ <code>touchConnector</code> を archive 経由で踏むテストが無く、<code>join</code> を経ず <code>say</code> ・ <code>poll</code> だけで片付けた参加者が戻る経路が無検査 ／ <del><code>mask-log-input.ps1:26</code> が子（<code>mask-log.ps1</code>）の終了コードを見ないため、失敗しても親が止まらない</del> ／ <code>markdown.js:26</code> のコメント「本文に現れない制御文字を使う」が事実と違う（<code>msg_body</code> はその文字を素通しする）</p>
 
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> <code>restore()</code> を直すか、直さない場合はその制約を設計書に明記する</li>
-					<li><span class="badge b-todo">未</span> <code>markdown.js</code> の自動リンク文字集合から <code>&lt;</code> <code>&gt;</code> を外す</li>
-					<li><span class="badge b-todo">未</span> <code>PLACEHOLDER</code> をエスケープ記法（<code>バックスラッシュ+u0000</code>）に変え、<code>-text</code> 判定を解く</li>
-					<li><span class="badge b-todo">未</span> <code>TryGet</code> 経由でも <code>Environment.Exit</code> を通さない形にする</li>
-					<li><span class="badge b-todo">未</span> low 5 件を見て、直すものと落とすものを分ける</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>restore()</code> は直さず、繋ぎ直しで自然に復活した分は戻しても 0 件になる制約を設計書に明記した</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>markdown.js</code> の自動リンク文字集合から <code>&lt;</code> <code>&gt;</code> を外した</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>PLACEHOLDER</code> を <code>String.fromCharCode(0)</code> で組み立てる形に変え、<code>-text</code> 判定を解いた</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>TryGet</code> 経由でも <code>Environment.Exit</code> を通さない形にした（<code>HttpError</code> 例外を新設）</li>
+					<li class="done"><span class="badge b-done">☑</span> SSE 打ち切り判定のオフバイワンを直した（下の表を参照）</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>mask-log-input.ps1</code> の終了コード無視を直した（下の表を参照）</li>
+					<li><span class="badge b-todo">未</span> 残り 2 件（<code>touchConnector</code> の無検査経路・<code>markdown.js:26</code> のコメント）を見て、直すものと落とすものを分ける</li>
 				</ul>
+
+				<h3>直した中身</h3>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="nowrap">どこ</th><th>直したこと</th></tr></thead>
+					<tbody>
+						<tr><td class="nowrap"><code>server.mjs</code> 補完ループ</td><td>満杯のバッチで <code>SSE_CATCHUP_MAX</code>（2000 件）に達しても、<strong>続きがあるかを 1 件だけ覗いてから <code>truncated</code> を送る形にした</strong>。覗かずに送ると、滞留がちょうど 2000 件で終わっている場合でも打ち切りの合図が出ていた。<code>tests/server.test.mjs</code> に「滞留がちょうど <code>SSE_CATCHUP_MAX</code> 件で終わっているときは <code>truncated</code> を送らない」を追加。<strong>直す前に戻して実際に落ちることを確認してから（RED）、直して通ることを確認した（GREEN）</strong>。全 459 件が通る</td></tr>
+						<tr><td class="nowrap"><code>mask-log-input.ps1</code></td><td><code>mask-log.ps1</code> の呼び出し先を <code>-MaskLogScript</code> で差し替えられるようにし（既定は今まで通り、本番の動きは変えない）、2 回の呼び出しの直後に <code>$LASTEXITCODE</code> を見て非 0 なら中止する形にした。<code>tests/mask-log-input-ps1.test.mjs</code> を新設し、必ず <code>exit 1</code> する偽物（<code>tests/helpers/fake-mask-log.ps1</code>）に差し替えて、「数えるだけ」が失敗したら本実行まで進まないことを確かめる。<strong>直す前に戻して実際に落ちることを確認してから（RED）、直して通ることを確認した（GREEN）</strong>。あわせて、両ファイルに残っていた実際には不要な <code>#Requires -Version 7</code>（<a href="#i260908-05">i260908-05</a> で他のファイルから外したのと同じもの）も外した。<strong>思わぬ副産物として、12 行目の <code>$input</code> という変数名が PowerShell の予約済み自動変数と衝突し、標準入力がリダイレクトされている状況（自動化・テスト）では <code>Read-Host</code> が読み取れずハングし続けることを実測で見つけた</strong>。ダブルクリックでの対話的な運用では表面化しないため、これまで気づかれずに残っていた。<code>$rawWords</code> に改名して解消。全 460 件が通る</td></tr>
+					</tbody>
+				</table>
+				</div>
 			</div>
 		</details>
 

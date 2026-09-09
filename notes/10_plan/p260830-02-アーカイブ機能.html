@@ -240,7 +240,7 @@ footer a { color: #cfe0ff; }
 	<div class="inner">
 		<h1>ai-chat-lite アーカイブ機能の設計</h1>
 		<p class="lead">参加者・ルーム・発言を、戻せる形で片付けられるようにする</p>
-		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-04</p>
+		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-09</p>
 	</div>
 </div>
 
@@ -565,6 +565,15 @@ CREATE TABLE archives (
 
 	<div class="callout">
 		<p><strong>戻したことの知らせには番号を持たせない。</strong>そこから戻す操作は無いためである。</p>
+	</div>
+
+	<h4>繋ぎ直しで自然に復活した分は、戻しても 0 件になる</h4>
+
+	<p><strong>参加者は繋ぎ直すと <code>archived_seq</code> が自動で <code>NULL</code> に戻る</strong>（<code>upsertConnector</code>・<code>touchConnector</code>・<code>upsertCursor</code>）。片付けは ID を使えなくすることではなく、過去のものを一覧から隠すためのものであるため。</p>
+
+	<div class="callout callout-important">
+		<p><strong>この状態で古い <code>archived_seq</code> を <code>restore</code> すると、3 テーブルのどこにも対象行が無い。</strong><code>--with-messages</code> を付けずに片付けた場合は発言も最初から対象外なので、<code>restore</code> は 3 テーブルとも 0 件のまま、<code>archives</code> の記録だけを消す。</p>
+		<p><strong>これは受け入れる。コードは変えない。</strong><code>restore</code> は既定ルームへ「0 件」の知らせを投稿し、サーバーのログにも残るため、経緯は追える。すでに生きているものを重ねて戻しても実害は無く、<code>restore</code> の役目（片付けた記録を片付ける）は果たしている。</p>
 	</div>
 
 	<h2>既にあるデータの扱い</h2>

@@ -478,7 +478,7 @@ footer a {
 			<tr>
 				<td class="num">9</td><td class="nowrap">バックアップと復旧</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td>4 区分で取得・復旧・世代整理まで動いている。タスク登録済み。<a class="doclink" href="../10_plan/p260830-01-バックアップ.html">計画</a>・<a class="doclink" href="../90_rules/backup.html">手引き</a></td>
+				<td>4 区分で取得・復旧・世代整理まで動いている。タスク登録済み。<strong><code>restore.ps1</code> は <code>say</code>・<code>restart</code> の呼び出しが Windows PowerShell 5.1 で毎回 <code>NativeCommandError</code> になり、復旧手順が最初から動かない実バグがあった（レビュー #20 が発見）。<code>$ErrorActionPreference</code> をその 1 行だけ緩める形に直し、<code>tests/restore-ps1.test.mjs</code> で実際に 5.1 で最後まで走ることを確かめている</strong>。<a class="doclink" href="../10_plan/p260830-01-バックアップ.html">計画</a>・<a class="doclink" href="../90_rules/backup.html">手引き</a>・<a class="doclink" href="../40_issues/issues.html#i260908-04">i260908-04</a></td>
 			</tr>
 			<tr>
 				<td class="num">10</td><td class="nowrap">離脱の判定</td>
