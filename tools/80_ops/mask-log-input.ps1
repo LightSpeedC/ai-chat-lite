@@ -1,21 +1,32 @@
-﻿#Requires -Version 7
-<#
+﻿<#
 	mask-log.ps1 を対話で呼ぶ。ダブルクリックで使う入口。
 
 	伏せたい語を尋ねてから渡すので、コマンドの履歴にも、このファイルにも語が残らない。
 #>
+param(
+	# 呼び出す先の差し替え口。テストが偽物（必ず失敗する）に差し替えるためのもの。
+	# 本番はここを渡さず、既定の mask-log.ps1 を使う
+	[string] $MaskLogScript = (Join-Path $PSScriptRoot 'mask-log.ps1')
+)
+
 $ErrorActionPreference = 'Stop'
 
 Write-Host '会話ログから語を伏せます。'
 Write-Host '  カンマ区切りで複数指定できます。何も入れずに Enter で中止します。'
 Write-Host ''
 
-$input = Read-Host '伏せたい語'
-if ([string]::IsNullOrWhiteSpace($input)) {
+<#
+	$input という名前は使わない。PowerShell の予約済み自動変数（パイプライン入力の
+	列挙子）と衝突する。標準入力がリダイレクトされている状況（自動化・テスト）だと、
+	Read-Host がここで読み取れずに固まったまま戻ってこない。対話的なコンソール起動
+	（ダブルクリック運用）では表面化しないため、これまで気づかれずに残っていた
+#>
+$rawWords = Read-Host '伏せたい語'
+if ([string]::IsNullOrWhiteSpace($rawWords)) {
 	Write-Host '中止しました。'
 	return
 }
-$words = $input.Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' }
+$words = $rawWords.Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' }
 
 $mask = Read-Host '置き換え後の文字列（既定: 〈伏せ字〉）'
 if ([string]::IsNullOrWhiteSpace($mask)) { $mask = '〈伏せ字〉' }
@@ -23,7 +34,12 @@ if ([string]::IsNullOrWhiteSpace($mask)) { $mask = '〈伏せ字〉' }
 # まず数えるだけ
 Write-Host ''
 Write-Host '--- 見つかった件数 ---'
-& (Join-Path $PSScriptRoot 'mask-log.ps1') -Word $words -Replacement $mask -WhatIfOnly
+& $MaskLogScript -Word $words -Replacement $mask -WhatIfOnly
+if ($LASTEXITCODE -ne 0) {
+	Write-Host ''
+	Write-Host '数えるだけの実行が失敗しました。中止します。' -ForegroundColor Red
+	return
+}
 
 Write-Host ''
 $ok = Read-Host 'この内容で伏せますか（yes と入力すると実行します）'
@@ -33,4 +49,9 @@ if ($ok -cne 'yes') {
 }
 
 Write-Host ''
-& (Join-Path $PSScriptRoot 'mask-log.ps1') -Word $words -Replacement $mask
+& $MaskLogScript -Word $words -Replacement $mask
+if ($LASTEXITCODE -ne 0) {
+	Write-Host ''
+	Write-Host '伏せる処理が失敗しました。' -ForegroundColor Red
+	return
+}
