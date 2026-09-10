@@ -596,8 +596,8 @@ footer a {
 <section class="toc md-skip">
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（5 件 / 未 3 / 着手 1 / 済 1）</a></li>
-		<li class="g02"><a href="#g02">データ（7 件 / 未 3 / 済 4）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（22 件 / 未 2 / 着手 4 / 済 16）</a></li>
+		<li class="g02"><a href="#g02">データ（7 件 / 未 2 / 済 5）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（22 件 / 未 2 / 着手 3 / 済 17）</a></li>
 		<li class="g04"><a href="#g04">チャットの機能（24 件 / 未 9 / 着手 1 / 済 14）</a></li>
 	</ol>
 </section>
@@ -906,7 +906,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-todo">未</span>
 		データ
-		<span class="count">7 件 / 未 3 / 済 4</span>
+		<span class="count">7 件 / 未 2 / 済 5</span>
 	</summary>
 
 	<div class="groupbody">
@@ -1265,9 +1265,9 @@ const servers = await startServers();           // 待ち受けを開始</code><
 			</div>
 		</details>
 
-		<details class="issue" id="i260909-02" open>
+		<details class="issue done" id="i260909-02" open>
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260909-02</span>
 				connector_id を改名する手段が無い
 			</summary>
@@ -1286,10 +1286,42 @@ const servers = await startServers();           // 待ち受けを開始</code><
 UPDATE cursors     SET connector_id = 'ai-agent-rules' WHERE connector_id = 'agent-rules';  -- 1 件
 UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector_id = 'agent-rules';  -- 10 件</code></pre>
 
+				<h3>作ったもの</h3>
+
+				<p><code>rename :&lt;自分のID&gt;: connector :&lt;旧&gt;: :&lt;新&gt;:</code> を新設した。<code>archive</code> と同じ形で、<strong>先に件数を出し、旧 ID の入力を求めてから実行する</strong>。</p>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="nowrap">どこ</th><th>直す列</th></tr></thead>
+					<tbody>
+						<tr><td class="nowrap"><code>connectors</code></td><td><code>connector_id</code>（主キー）。漏らすと<strong>発言は見えるのに参加者一覧にいない</strong></td></tr>
+						<tr><td class="nowrap"><code>cursors</code></td><td><code>connector_id</code>（複合主キーの一部）。漏らすと<strong>読んだ位置を失い、次の待受けが「今から」になる</strong></td></tr>
+						<tr><td class="nowrap"><code>messages</code></td><td><code>from_connector_id</code> ・ <code>to_connector_id</code> ・ <strong><code>msg_body</code> の <code>@旧ID</code></strong>。本文へ自分で <code>@相手</code> と書く形も普通に使うため、列だけ直すと過去のやり取りが古い名前で残り、検索も当たらない</td></tr>
+						<tr><td class="nowrap"><code>archives</code></td><td><code>archived_connector_id</code>（実行者）と、<code>archive_kind='connector'</code> のときの <code>archive_id</code>（対象）。漏らすと<strong>片付けの一覧に古い名前が残り、戻す判断ができない</strong></td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-important">
+					<p><strong>本文の <code>@旧ID</code> は前方一致で置き換えない。</strong>SQL の <code>REPLACE()</code> は境界を見ないので、<code>@project-a</code> を直すつもりで <code>@project-aa</code> まで壊す。ID に使える文字（<code>[A-Za-z0-9_.-]</code>）が続くときは別物として残す。<strong>実測で確かめた</strong>（<code>@test-rename-demo</code> は置き換わり、<code>@test-rename-demo2</code> は残る）。</p>
+				</div>
+
+				<div class="callout callout-caution">
+					<p><strong>待受け（接続）が走っている間は断る。</strong>付け替えても、その待受けは古い ID で <code>poll</code> し続け、新しい ID のカーソルを見ない。サーバーは古い ID の位置を進めないので、<strong>届いているつもりで届かない</strong>状態になる。先に止めてもらう。</p>
+					<p><strong>新しい ID が既に使われていれば断る。</strong>片付け済みの参加者も <code>connectors</code> に行が残り、主キーの枠を占め続ける（読み出しには出ないので空いて見える）。そこへ付け替えると主キーが衝突する。</p>
+				</div>
+
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> <code>rename connector :&lt;旧&gt;: :&lt;新&gt;:</code> のような CLI コマンドを設計する。対象 4 テーブルを漏らさず、新しい ID が既に使われていないかも確かめる</li>
-					<li><span class="badge b-todo">未</span> node 版 ・ C# 版の両方に実装する（<a href="../90_rules/local-rule.html">ローカルルール</a>「CLI を直したら 2 本とも直す」に従う）</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>store.mjs</code> に <code>previewRename</code> ・ <code>renameConnector</code> を足した。<strong>5 テーブル 7 か所を 1 つのトランザクションで直す</strong>（途中で失敗したら何も変わらない）</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>GET /api/admin/rename-preview</code> ・ <code>POST /api/admin/rename</code> を足した。<code>confirm</code> に旧 ID を求め、既定のルームへ知らせを積む</li>
+					<li class="done"><span class="badge b-done">☑</span> node 版 ・ C# 版の両方に実装した（<a href="../90_rules/local-rule.html">ローカルルール</a>「CLI を直したら 2 本とも直す」に従う）。<code>tests/cli-cs.test.mjs</code> で下見の出力と中止の終了コードを突き合わせている</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>tests/rename.test.mjs</code>（11 件）と <code>server.test.mjs</code>（5 件）を新設。<strong>いずれも直す前に落ちることを確認してから（RED）、直して通ることを確認した（GREEN）</strong>。全 494 件が通る</li>
+					<li class="done"><span class="badge b-done">☑</span> テスト用サーバー（<code>:8765</code>・<code>tmp/_data</code>）で通しの動作も確かめた。<strong>本番には触れていない</strong></li>
 				</ul>
+
+				<div class="callout">
+					<p><strong>テストの置き方で 1 つ踏んだ。</strong><code>cli-cs.test.mjs</code> はサーバーを同じ Node のプロセスで動かしているため、<strong>同期の <code>execFileSync</code> を使うとイベントループが止まり、子プロセスの下見のリクエストに応答できない</strong>（30 秒待って出力が空になった）。確認の入力を渡すときは <code>spawn</code> で標準入力に書く。</p>
+				</div>
 			</div>
 		</details>
 
@@ -1301,7 +1333,7 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">22 件 / 未 2 / 着手 4 / 済 16</span>
+		<span class="count">22 件 / 未 2 / 着手 3 / 済 17</span>
 	</summary>
 
 	<div class="groupbody">
@@ -3150,25 +3182,44 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 			</div>
 		</details>
 
-		<details class="issue doing" id="i260906-02" open>
+		<details class="issue done" id="i260906-02">
 			<summary>
-				<span class="badge b-doing">着手</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260906-02</span>
 				後始末の道具が、既定では本番を見ない
 			</summary>
 			<div class="issuebody">
-				<p><code>tools/40_test/purge-test-data.mjs</code> は <code>--production</code> を渡したときだけ本番の置き場を開く。付けなければ <code>tmp/_data</code> を見る。</p>
+				<p><code>tools/40_test/purge-test-data.mjs</code> は <code>--production</code> を渡したときだけ本番の置き場を開く。付けなければ <code>tmp/_data</code> を見ていた。</p>
 
 				<div class="callout callout-warning">
 					<p><strong>案内していた 3 つのコマンドに <code>--production</code> が付いていなかった。</strong>手順どおりに実行しても本番のテストデータは 1 件も消えず、<strong>読み手は消えたと思い込む</strong>。</p>
 				</div>
 
-				<p>案内そのものは <a href="#i260906-01">i260906-01</a> で消したが、<strong>道具の側の判断は残っている</strong>。本番に <code>test-</code> の参加者が 2 つ残ったままである。</p>
+				<p>案内そのものは <a href="#i260906-01">i260906-01</a> で消したが、<strong>道具の側の判断が残っていた</strong>。</p>
+
+				<h3>付け忘れを断つ形にした</h3>
+
+				<p><strong>置き場を明示しなければ、数えるだけでも断る</strong>（終了コード 2）。<code>--test</code> を新設し、<code>--production</code> とどちらか一方を必ず渡す形にした。既定を本番にするのは論外なので、明示を求める側を採った。</p>
+
+				<pre><code class="language-powershell">purge-test-data.mjs --test         # tmp/_data
+purge-test-data.mjs --production   # 本番
+purge-test-data.mjs                # 断る（どちらの置き場かが指定されていません）</code></pre>
+
+				<div class="callout">
+					<p><strong><code>AICHAT_DATA</code> が立っていれば、それも「明示された」とみなす。</strong>立てた側が置き場を決めているためで、<code>run-ui-tests</code> 経由の後始末（Playwright の <code>test-data.ts</code>）は今までどおり動く。</p>
+					<p><strong><code>--dry-run</code> でも断る。</strong>数えるだけでも置き場を間違えれば、「0 件だった」を相手側の状態として読み違える。</p>
+				</div>
 
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> 既定を本番にするか、付け忘れを断る形にするかを決める</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>付け忘れを断る形にした</strong>（<code>--test</code> を新設し、<code>--production</code> とどちらか必須。同時指定も断る）</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>tests/purge-test-data.test.mjs</code> を新設（5 件）。<strong>この道具にはテストが 1 件も無かった</strong>。直す前に落ちることを確認してから（RED）、直して通ることを確認した（GREEN）。全 475 件が通る</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>purge-test-data.cmd</code> の案内と <code>--help</code> の表示も直した。ダブルクリック（引数なし）では断られる</li>
 					<li class="done"><span class="badge b-done">☑</span> 本番に残っていた <code>test-me</code> ・ <code>test-otherroom</code> を <code>--with-messages</code> で片付けた（<code>archived_seq</code> 4・5）</li>
 				</ul>
+
+				<div class="callout callout-important">
+					<p><strong>本番にはまだ物理削除の対象が残っている。</strong><code>--production --dry-run</code> で数えると messages 5 / cursors 3 / connectors 3。片付け（archive）は論理削除なので、<code>archived_seq</code> を入れた行はそのまま残る。<strong>消すかどうかは別の判断</strong>（履歴としての価値と、テストデータが混ざっていることのどちらを取るか）。</p>
+				</div>
 			</div>
 		</details>
 

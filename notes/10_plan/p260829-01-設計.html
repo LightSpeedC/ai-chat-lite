@@ -406,7 +406,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 設計</h1>
 		<p class="lead">ローカルPC内で AI セッションと人間が同席する簡易チャットの設計</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-09</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-10</p>
 	</div>
 </div>
 
@@ -1361,6 +1361,16 @@ if (mode.journal_mode !== 'wal') {
 				<td>渡したルームのどれかで初めての接続なら <code>first_time: true</code>。<strong>読むだけで <code>setCursor</code> を呼ばない</strong>（poll と違い進めない）。<code>wait</code> の起動時の案内（<a href="../40_issues/issues.html#i260909-01">i260909-01</a>）に使う</td>
 			</tr>
 			<tr>
+				<td class="nowrap">GET</td><td class="nowrap"><code>/api/admin/rename-preview</code></td>
+				<td class="nowrap"><code>from</code></td>
+				<td><strong>付け替えの下見。</strong>何が書き換わるかを 5 テーブル 7 か所で数える（<code>connectors</code> ・ <code>cursors</code> ・ <code>messages</code> の発言者 ・ 宛先 ・ 本文の <code>@旧ID</code> ・ <code>archives</code> の実行者 ・ 対象）。<strong>記録が 0 件なら 400</strong>（名前を打たせてから断るのを避ける）</td>
+			</tr>
+			<tr>
+				<td class="nowrap">POST</td><td class="nowrap"><code>/api/admin/rename</code></td>
+				<td class="nowrap"><code>from</code> / <code>to</code><br><code>connector_id</code> / <code>confirm</code></td>
+				<td><strong>参加者の ID を付け替える。</strong>上の 7 か所を 1 つのトランザクションで直す。<code>confirm</code> に旧 ID を求める。<strong>待受け（接続）が走っている間は断る</strong>——付け替えても、その待受けは古い ID で poll し続けて新しいカーソルを見ないため。新しい ID が既に使われていれば断る（<strong>片付け済みの行も主キーの枠を占めるので「使われている」とみなす</strong>）。既定のルームへ知らせを積む（<a href="../40_issues/issues.html#i260909-02">i260909-02</a>）</td>
+			</tr>
+			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/connectors</code></td><td class="nowrap">—</td>
 				<td>参加者一覧とオンライン状態</td>
 			</tr>
@@ -1814,6 +1824,7 @@ LIMIT ?;</code></pre>
 			<tr><td class="nowrap"><code>archive</code></td><td>発言・参加者・ルームを片付ける。先に件数を出し、対象名の入力を求める（<a class="doclink" href="p260830-02-アーカイブ機能.html">アーカイブ機能の設計</a>）</td></tr>
 			<tr><td class="nowrap"><code>archives</code></td><td>片付けたものの一覧を出す</td></tr>
 			<tr><td class="nowrap"><code>restore</code></td><td>片付けたものをまとめて戻す</td></tr>
+			<tr><td class="nowrap"><code>rename</code></td><td>参加者の ID を付け替える。<code>connectors</code> ・ <code>cursors</code> ・ <code>messages</code>（発言者 ・ 宛先 ・ 本文の <code>@旧ID</code>）・ <code>archives</code> を横断して直す。先に件数を出し、旧 ID の入力を求める。<strong>待受けが走っている間は断る</strong>（<a href="../40_issues/issues.html#i260909-02">i260909-02</a>）</td></tr>
 		</tbody>
 	</table>
 	</div>

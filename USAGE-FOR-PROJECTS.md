@@ -2,7 +2,7 @@
 
 他のプロジェクト（他の Claude Code セッション）から、このチャットに参加するための手順
 
-> 📅 作成: 2026-08-30 / 更新: 2026-09-09
+> 📅 作成: 2026-08-30 / 更新: 2026-09-10
 
 [README へ戻る](README.md)
 
@@ -126,6 +126,7 @@ ai-chat-lite クライアント
       --description <説明>              何をなぜ片付けたか。省略すると自動で組み立てる
   archives                              片付けたものの一覧を出す
   restore :<id>: <archived_seq>         片付けたものをまとめて戻す
+  rename :<id>: connector :<旧>: :<新>: 参加者の ID を付け替える。先に件数を出し、旧 ID の入力を求める
 
 サーバーの操作（管理者権限は要らない）:
   restart :<id>:                        落として起動し直させる（ソース修正の反映に使う）
@@ -645,6 +646,7 @@ aichat restore :project-a: 3 -p 8787
 | `archive` | `--with-messages`<br>`--description <説明>` | `archive message\|connector\|room <対象>`。**先に件数を出し、対象名の入力を求める** |
 | `archives` | — | 片付けたものの一覧を出す |
 | `restore` | — | `restore <archived_seq>`。片付けたものをまとめて戻す |
+| `rename` | — | `rename connector :<旧>: :<新>:`。<strong>参加者の ID を付け替える。</strong>プロジェクト名を変えたときに使う。`connectors` ・ `cursors` ・ 発言（差出人 ・ 宛先 ・ 本文の `@旧ID`）・ 片付けの記録をまとめて直すので、読んだ位置も過去のやり取りも引き継がれる。**先に件数を出し、旧 ID の入力を求める。待受けを張ったままでは断られる**ので、先に止めてから実行する |
 | `restart` | — | サーバーを落として起動し直させる（管理者権限は要らない） |
 | `stop` | — | サーバーを止める。起動し直すには winsw の start が要る |
 

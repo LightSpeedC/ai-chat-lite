@@ -401,7 +401,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 開発状況</h1>
 		<p class="lead">実装の進み具合と、次にやること</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-09</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-10</p>
 	</div>
 </div>
 
@@ -565,6 +565,11 @@ footer a {
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
 				<td><strong>渡したルームのどれかで初めての接続なら、wait が案内を出して終わる。</strong><code>GET /api/cursor-status</code> を新設し、<code>recent --find "ルール"</code>・<code>recent --since-day 1</code> の 2 例を出す。案内後は <code>wait=0</code> で 1 回だけ <code>poll</code> を叩いてカーソルを立て、<strong>待たずに終わる</strong>（<code>run_in_background</code> は完了時にしか通知が来ないため、待ち続けると案内が誰の目にも触れない）。実際に待ち始めるのは 2 回目の <code>wait</code> から。「初回」はコネクタ単位ではなく<strong>ルーム単位</strong>で判定する。node 版・C# 版の出力一致を実測。<strong>この案内後の <code>poll</code> 対象は初めてのルームだけに絞る。</strong>複数ルーム指定時に一部だけ初めてだと、既存カーソルを持つルームの未読まで表示せず既読化する事故が実際に起きたため直した。<a class="doclink" href="../40_issues/issues.html#i260909-01">i260909-01</a>・<a class="doclink" href="../40_issues/issues.html#i260909-03">i260909-03</a></td>
 			</tr>
+			<tr>
+				<td class="num">27</td><td class="nowrap">参加者の ID を付け替える</td>
+				<td class="nowrap"><span class="badge b-ok">完了</span></td>
+				<td><strong><code>rename :&lt;自分のID&gt;: connector :&lt;旧&gt;: :&lt;新&gt;:</code> を新設。</strong>プロジェクト名を変えたときに使う。<code>connectors</code> ・ <code>cursors</code> ・ <code>messages</code>（差出人 ・ 宛先 ・ <strong>本文の <code>@旧ID</code></strong>）・ <code>archives</code>（実行者 ・ 対象）の <strong>5 テーブル 7 か所を 1 トランザクションで</strong>直すので、読んだ位置も過去のやり取りも引き継がれる。本文の <code>@</code> は<strong>前方一致では置き換えない</strong>（<code>@project-a</code> を直しても <code>@project-aa</code> は残る）。<code>archive</code> と同じく先に件数を出し、旧 ID の入力を求める。<strong>待受けが走っている間と、新しい ID が既に使われているとき（片付け済みの枠も含む）は断る。</strong><code>GET /api/admin/rename-preview</code> ・ <code>POST /api/admin/rename</code>。node 版・C# 版とも実装し、下見の出力一致を実測。<a class="doclink" href="../40_issues/issues.html#i260909-02">i260909-02</a></td>
+			</tr>
 		</tbody>
 	</table>
 	</div>
@@ -611,6 +616,10 @@ footer a {
 			<tr><td class="nowrap"><code>cli-cs.test.mjs</code></td><td>C# 版と node 版の出力・終了コード・埋め込んだ定義の一致（<code>aichat.exe</code> が無ければスキップ）</td></tr>
 			<tr><td class="nowrap"><code>names.test.mjs</code></td><td>本番で <code>test-</code> の ID と <code>sandbox-</code> のルームを断ること・大小を区別しないこと・頭一致だけであること</td></tr>
 			<tr><td class="nowrap"><code>multi-room.test.mjs</code></td><td>1 本の待受けが複数のルームで起きること・位置がルームごとに進むこと・複数のとき <code>since</code> を断ること・発言ごとの区切りとルームの表示</td></tr>
+			<tr><td class="nowrap"><code>rename.test.mjs</code></td><td>参加者の ID の付け替え。下見の件数・5 テーブル 7 か所すべてが変わること・読んだ位置を引き継ぐこと・<strong>本文の <code>@旧ID</code> を前方一致では置き換えないこと</strong>・断る 3 条件（使用中の ID ・ 片付け済みの枠 ・ 同じ ID）</td></tr>
+			<tr><td class="nowrap"><code>purge-test-data.test.mjs</code></td><td>後始末の道具。<strong>置き場を明示しなければ断ること</strong>（<code>--test</code> / <code>--production</code> のどちらか必須、同時指定も断る、<code>--dry-run</code> でも断る）・知らない引数で消さずに止まること</td></tr>
+			<tr><td class="nowrap"><code>mask-log-input-ps1.test.mjs</code></td><td>会話ログを伏せる入口。子（<code>mask-log.ps1</code>）が失敗したら本実行まで進まないこと（偽物に差し替えて確かめる）</td></tr>
+			<tr><td class="nowrap"><code>restore-ps1.test.mjs</code></td><td>復旧を Windows PowerShell 5.1 で通しで走らせ、目印つきのデータが入れ替わること</td></tr>
 		</tbody>
 	</table>
 	</div>
