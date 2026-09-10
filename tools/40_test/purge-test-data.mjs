@@ -10,18 +10,26 @@
  * public のように残したいルームへ投稿したものも、発言者が test- なら消える。
  *
  * 使い方（--help でも出る）:
- *   node tools/40_test/purge-test-data.mjs                消す（接頭辞に当たる全部）
- *   node tools/40_test/purge-test-data.mjs --dry-run      数えるだけ
- *   node tools/40_test/purge-test-data.mjs --names a,b,c  その名前だけ消す
+ *   node tools/40_test/purge-test-data.mjs --test         tmp/_data を相手にする
  *   node tools/40_test/purge-test-data.mjs --production   本番を相手にする
+ *   node tools/40_test/purge-test-data.mjs --test --dry-run     数えるだけ
+ *   node tools/40_test/purge-test-data.mjs --test --names a,b,c その名前だけ消す
  *
  * --names は、テストが自分で作った分だけを消すためにある。接頭辞で全部消すと、
  * 同時に走っている別のテストのデータまで巻き込む。名前は connector_id と room_id の
  * どちらとしても照合する。
  *
- * 【既定はテスト側】
- *   何も指定しなければ tmp/_data を相手にする。忘れて本番を消す事故を防ぐため、
- *   本番のパスをこのファイルに書かない。本番を触るには --production が要る。
+ * 【置き場は必ず明示する】
+ *   --test か --production のどちらかが要る。付け忘れは断る（i260906-02）。
+ *
+ *   以前は何も指定しなければ tmp/_data を相手にしていた。そのため本番を掃除する
+ *   手順で --production が抜けていたとき、手順どおり実行しても本番の test- は
+ *   1 件も消えず、しかも「消しました」と出た。読み手は消えたと思い込む。
+ *   既定を本番にするのは論外なので、明示を求める形にした。
+ *
+ *   AICHAT_DATA が立っていればそれを使う（run-ui-tests から渡される）。
+ *   立てた側が置き場を決めているので、これも「明示された」とみなす。
+ *   本番のパスはこのファイルに書かない。--production から組み立てる。
  */
 import { DatabaseSync } from 'node:sqlite';
 import { dirname, join, resolve } from 'node:path';
@@ -35,9 +43,10 @@ export const ROOM_PREFIX = 'sandbox-';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 const OPTIONS = [
+	['--test', 'tmp/_data を相手にする（AICHAT_DATA が立っていればそちら）'],
+	['--production', '本番を相手にする'],
 	['--dry-run', '数えるだけ。消さない'],
 	['--names a,b,c', 'その名前だけ消す。connector_id と room_id のどちらとしても照合する'],
-	['--production', '本番を相手にする。付けなければ tmp/_data'],
 	['--help', 'この使い方を出す（短い形 -h）'],
 ];
 
@@ -56,11 +65,12 @@ function usage(exitCode) {
 	for (const [name, desc] of OPTIONS) console.log(`  ${name.padEnd(width)}  ${desc}`);
 	console.log('');
 	console.log(`  目印: connector_id が ${CONNECTOR_PREFIX} で始まるもの / room_id が ${ROOM_PREFIX} で始まるもの`);
-	console.log('  オプションを何も付けないと、目印に当たるものを全部消す。');
+	console.log('  --names を付けなければ、目印に当たるものを全部消す。');
+	console.log('  置き場は --test か --production で必ず明示する。');
 	process.exit(exitCode);
 }
 
-const KNOWN = new Set(['--dry-run', '--names', '--production', '--help', '-h']);
+const KNOWN = new Set(['--test', '--dry-run', '--names', '--production', '--help', '-h']);
 const args = process.argv.slice(2);
 
 if (args.includes('--help') || args.includes('-h')) usage(0);
@@ -82,12 +92,39 @@ if (unknown.length > 0) {
 
 const dryRun = args.includes('--dry-run');
 const toProduction = args.includes('--production');
+const toTest = args.includes('--test');
+
+/*
+ * 置き場を明示しなければ断る（i260906-02）。
+ *
+ * 以前は付け忘れると黙って tmp/_data を見た。本番を掃除する手順で
+ * --production が抜けていたとき、手順どおり実行しても本番の test- は 1 件も
+ * 消えず、しかも「消しました」と出た。数えるだけ（--dry-run）でも同じで、
+ * 「0 件だった」を本番の状態として読み違える。
+ *
+ * AICHAT_DATA が立っているときは、立てた側が置き場を決めているので明示と
+ * みなす（run-ui-tests から渡される）。
+ */
+if (toProduction && toTest) {
+	console.error('--test と --production は、どちらか一方だけを渡してください。');
+	process.exit(2);
+}
+if (!toProduction && !toTest && !process.env.AICHAT_DATA) {
+	console.error('どちらの置き場を相手にするかが指定されていません。');
+	console.error('');
+	console.error('  テスト: node tools/40_test/purge-test-data.mjs --test');
+	console.error('  本番:   node tools/40_test/purge-test-data.mjs --production');
+	console.error('');
+	console.error('  既定値は持ちません。付け忘れたまま「消しました」と出ると、');
+	console.error('  消えていない側を消えたものとして読み違えます。');
+	process.exit(2);
+}
 
 /*
  * 相手にする置き場。
  *
- * 既定はテスト。--production を渡したときだけ本番になる。
- * AICHAT_DATA が立っていればそちらを使う（run-ui-tests から渡される）。
+ * --production なら本番。それ以外は AICHAT_DATA があればそちら、
+ * 無ければ tmp/_data（--test を渡した場合だけここに来る）。
  */
 const dataDir = toProduction
 	? join(root, '_data')
