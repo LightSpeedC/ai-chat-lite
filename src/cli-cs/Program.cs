@@ -144,6 +144,7 @@ namespace AiChat
 				case "archive": return CmdArchive();
 				case "archives": return CmdArchives();
 				case "restore": return CmdRestore();
+				case "rename": return CmdRename();
 				case "restart": return CmdExit(1);
 				case "stop": return CmdExit(0);
 				default:

@@ -56,6 +56,7 @@ const MINIMUM = {
 	archive: [wrapId(ME), 'room', 'test-room'],
 	archives: [],
 	restore: [wrapId(ME), '1'],
+	rename: [wrapId(ME), 'connector', wrapId('test-from'), wrapId('test-to')],
 	restart: [wrapId(ME)],
 	stop: [wrapId(ME)],
 };

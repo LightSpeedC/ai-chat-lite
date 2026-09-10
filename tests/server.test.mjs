@@ -221,6 +221,107 @@ test('既定のルームは archive で断る', async () => {
 	assert.match(json.error, /public は片付けられません/);
 });
 
+describe('参加者の ID を付け替える（i260909-02）', () => {
+	/*
+	 * 【なぜ必要か】
+	 * ID は connectors ・ cursors ・ messages ・ archives に散っており、手で
+	 * SQL を書くと洗い出しから毎回やり直しになる。API にすれば漏れようがない。
+	 *
+	 * 待受けが走っている間は断る。走らせたまま付け替えると、その待受けは古い ID
+	 * で poll し続け、新しい ID のカーソルを見ない。届いているつもりで届かない。
+	 */
+	test('下見は 4 テーブルの件数を返す', async () => {
+		await post('/api/join', { connector_id: 'test-rn-preview', connector_role: 'ai' });
+		await post('/api/say', { from_connector_id: 'test-rn-preview', msg_body: '下見の対象' });
+
+		const { status, json } = await get('/api/admin/rename-preview?from=test-rn-preview');
+
+		assert.equal(status, 200);
+		assert.equal(json.connectors, 1);
+		assert.ok(json.messages_from >= 1);
+	});
+
+	test('居ない ID の下見は 400', async () => {
+		const { status, json } = await get('/api/admin/rename-preview?from=test-rn-nobody');
+
+		assert.equal(status, 400);
+		assert.match(json.error, /居ません|ありません/);
+	});
+
+	test('付け替えると新しい ID で見え、読んだ位置も引き継ぐ', async () => {
+		await post('/api/join', { connector_id: 'test-rn-a', connector_role: 'ai' });
+		const said = await post('/api/say', { from_connector_id: 'test-rn-a', msg_body: '付け替え前' });
+		await get(`/api/poll?connector_id=test-rn-a&room_id=public&since=${said.json.msg_seq - 1}&wait=0`);
+		const before = store.getCursor('test-rn-a', 'public');
+		assert.ok(before > 0, '前提: 読んだ位置がある');
+
+		const { status, json } = await post('/api/admin/rename', {
+			from: 'test-rn-a',
+			to: 'test-rn-renamed',
+			connector_id: 'test-connector1',
+			confirm: 'test-rn-a',
+		});
+
+		assert.equal(status, 200);
+		assert.equal(json.from, 'test-rn-a');
+		assert.equal(json.to, 'test-rn-renamed');
+		assert.ok(store.getConnector('test-rn-renamed'), '新しい ID で見えない');
+		assert.equal(store.getCursor('test-rn-renamed', 'public'), before, '読んだ位置が引き継がれていない');
+	});
+
+	test('confirm が旧 ID と違えば断る', async () => {
+		await post('/api/join', { connector_id: 'test-rn-confirm', connector_role: 'ai' });
+
+		const { status, json } = await post('/api/admin/rename', {
+			from: 'test-rn-confirm',
+			to: 'test-rn-confirm2',
+			connector_id: 'test-connector1',
+			confirm: 'まちがい',
+		});
+
+		assert.equal(status, 400);
+		assert.match(json.error, /confirm/);
+	});
+
+	test('新しい ID が既に使われていれば断る', async () => {
+		await post('/api/join', { connector_id: 'test-rn-b', connector_role: 'ai' });
+		await post('/api/join', { connector_id: 'test-rn-taken', connector_role: 'ai' });
+
+		const { status, json } = await post('/api/admin/rename', {
+			from: 'test-rn-b',
+			to: 'test-rn-taken',
+			connector_id: 'test-connector1',
+			confirm: 'test-rn-b',
+		});
+
+		assert.equal(status, 400);
+		assert.match(json.error, /既に使われています/);
+	});
+
+	test('待受けが走っている間は断る', async () => {
+		await post('/api/join', { connector_id: 'test-rn-busy', connector_role: 'ai' });
+		await post('/api/say', { from_connector_id: 'test-rn-busy', msg_body: '待受け中に付け替える' });
+
+		// 待受けを張ったまま付け替えようとする
+		const polling = get('/api/poll?connector_id=test-rn-busy&room_id=public&since=99999&wait=3');
+		await new Promise((r) => setTimeout(r, 300));
+
+		const { status, json } = await post('/api/admin/rename', {
+			from: 'test-rn-busy',
+			to: 'test-rn-busy2',
+			connector_id: 'test-connector1',
+			confirm: 'test-rn-busy',
+		});
+
+		assert.equal(status, 400);
+		assert.match(json.error, /待受け|接続/);
+
+		// 待ちっぱなしにしない
+		await post('/api/say', { from_connector_id: 'test-connector1', msg_body: '起こす' });
+		await polling;
+	});
+});
+
 describe('片付けたものの見え方', () => {
 	/*
 	 * history と dump で見え方が違うことを確かめる。

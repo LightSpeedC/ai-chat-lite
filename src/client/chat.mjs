@@ -1350,6 +1350,60 @@ async function cmdArchive() {
 	console.log(`戻すには: restore ${ID_WRAP}${CONNECTOR_ID}${ID_WRAP} ${result.archived_seq}`);
 }
 
+/**
+ * 参加者の ID を付け替える（i260909-02）。
+ *
+ * archive と同じ形にする。先に件数を出し、旧 ID の入力を求めてから実行する。
+ * ID は connectors ・ cursors ・ messages（発言者 ・ 宛先 ・ 本文の @旧ID）・
+ * archives に散っており、手で SQL を書くと洗い出しから毎回やり直しになる。
+ */
+async function cmdRename() {
+	const [kind, rawFrom, rawTo] = TAIL;
+	if (kind !== 'connector' || !rawFrom || !rawTo) {
+		console.error(
+			`対象を指定してください: rename ${ID_WRAP}<自分のID>${ID_WRAP} connector ${ID_WRAP}<旧>${ID_WRAP} ${ID_WRAP}<新>${ID_WRAP}`
+		);
+		process.exit(2);
+	}
+
+	const from = unwrapId(rawFrom, 'rename の旧 ID');
+	const to = unwrapId(rawTo, 'rename の新しい ID');
+	if (from === to) {
+		console.error(`同じ ID には付け替えられません: ${from}`);
+		process.exit(2);
+	}
+
+	const counts = await call(`/api/admin/rename-preview?from=${encodeURIComponent(from)}`);
+
+	console.log(`参加者 ${from} を ${to} に付け替えます。`);
+	console.log(`  参加者        ${String(counts.connectors).padStart(4)} 件`);
+	console.log(`  読んだ位置    ${String(counts.cursors).padStart(4)} 件`);
+	console.log(`  発言（差出人）${String(counts.messages_from).padStart(4)} 件`);
+	console.log(`  発言（宛先）  ${String(counts.messages_to).padStart(4)} 件`);
+	console.log(`  発言（本文の @${from}）${String(counts.messages_body).padStart(4)} 件`);
+	console.log(`  片付けの記録  ${String(counts.archives + counts.archive_targets).padStart(4)} 件`);
+	console.log('走っている待受けがあると断られます。先に止めてください。');
+
+	const answer = await readLine(`本当に付け替える場合は「${from}」と入力してください: `);
+	if (answer !== from) {
+		console.log('中止しました。');
+		process.exit(1);
+	}
+
+	const result = await postJson('/api/admin/rename', {
+		from,
+		to,
+		connector_id: requireConnectorId(),
+		confirm: from,
+	});
+
+	const total =
+		result.connectors + result.cursors + result.messages_from + result.messages_to +
+		result.messages_body + result.archives + result.archive_targets;
+	console.log(`付け替えました（${result.from} → ${result.to} / ${total} 件）`);
+	console.log('  待受けを張り直すときは、新しい ID で張ってください。');
+}
+
 async function cmdArchives() {
 	const { archives } = await call('/api/admin/archives');
 	if (archives.length === 0) {
@@ -1442,6 +1496,7 @@ const commands = {
 	archive: cmdArchive,
 	archives: cmdArchives,
 	restore: cmdRestore,
+	rename: cmdRename,
 	restart: () => cmdExit(1),
 	stop: () => cmdExit(0),
 };

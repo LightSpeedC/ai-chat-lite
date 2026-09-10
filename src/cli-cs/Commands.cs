@@ -522,6 +522,70 @@ namespace AiChat
 			return 0;
 		}
 
+		/// <summary>
+		/// 参加者の ID を付け替える（i260909-02）。
+		///
+		/// archive と同じ形にする。先に件数を出し、旧 ID の入力を求めてから実行する。
+		/// ID は connectors ・ cursors ・ messages（発言者 ・ 宛先 ・ 本文の @旧ID）・
+		/// archives に散っており、手で SQL を書くと洗い出しから毎回やり直しになる。
+		/// </summary>
+		private static int CmdRename()
+		{
+			List<string> found = args.Tail();
+			string w = Definition.IdWrap;
+			if (found.Count < 3 || found[0] != "connector")
+			{
+				Console.Error.WriteLine("対象を指定してください: rename " + w + "<自分のID>" + w +
+					" connector " + w + "<旧>" + w + " " + w + "<新>" + w);
+				return 2;
+			}
+
+			string from = Args.UnwrapId(found[1], "rename の旧 ID");
+			string to = Args.UnwrapId(found[2], "rename の新しい ID");
+			if (from == to)
+			{
+				Console.Error.WriteLine("同じ ID には付け替えられません: " + from);
+				return 2;
+			}
+
+			Dictionary<string, object> counts = client.Get("/api/admin/rename-preview?" + Query("from", from));
+
+			Console.WriteLine("参加者 " + from + " を " + to + " に付け替えます。");
+			Console.WriteLine("  参加者        " + Json.Int(counts, "connectors").ToString().PadLeft(4) + " 件");
+			Console.WriteLine("  読んだ位置    " + Json.Int(counts, "cursors").ToString().PadLeft(4) + " 件");
+			Console.WriteLine("  発言（差出人）" + Json.Int(counts, "messages_from").ToString().PadLeft(4) + " 件");
+			Console.WriteLine("  発言（宛先）  " + Json.Int(counts, "messages_to").ToString().PadLeft(4) + " 件");
+			Console.WriteLine("  発言（本文の @" + from + "）" + Json.Int(counts, "messages_body").ToString().PadLeft(4) + " 件");
+			Console.WriteLine("  片付けの記録  " +
+				(Json.Int(counts, "archives") + Json.Int(counts, "archive_targets")).ToString().PadLeft(4) + " 件");
+			Console.WriteLine("走っている待受けがあると断られます。先に止めてください。");
+
+			Console.Write("本当に付け替える場合は「" + from + "」と入力してください: ");
+			string answer = (Console.ReadLine() ?? "").Trim();
+			if (answer != from)
+			{
+				Console.WriteLine("中止しました。");
+				return 1;
+			}
+
+			string body = "{" +
+				"\"from\":" + Json.Quote(from) + "," +
+				"\"to\":" + Json.Quote(to) + "," +
+				"\"connector_id\":" + Json.Quote(connectorId) + "," +
+				"\"confirm\":" + Json.Quote(from) + "}";
+
+			Dictionary<string, object> result = client.Post("/api/admin/rename", body);
+
+			int total = Json.Int(result, "connectors") + Json.Int(result, "cursors") +
+				Json.Int(result, "messages_from") + Json.Int(result, "messages_to") +
+				Json.Int(result, "messages_body") + Json.Int(result, "archives") +
+				Json.Int(result, "archive_targets");
+			Console.WriteLine("付け替えました（" + Json.Str(result, "from", from) + " → " +
+				Json.Str(result, "to", to) + " / " + total + " 件）");
+			Console.WriteLine("  待受けを張り直すときは、新しい ID で張ってください。");
+			return 0;
+		}
+
 		/// <summary>何件片付くかを出す。0 件のものは出さない</summary>
 		private static void PrintPreview(string kind, string id, Dictionary<string, object> counts)
 		{

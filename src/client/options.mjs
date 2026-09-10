@@ -161,6 +161,7 @@ export const COMMANDS = [
 	{ name: 'archive', arg: ':<id>: <種別> <対象>', desc: '片付ける。種別は message / connector / room。先に件数を出し、対象名の入力を求める' },
 	{ name: 'archives', arg: '', desc: '片付けたものの一覧を出す' },
 	{ name: 'restore', arg: ':<id>: <archived_seq>', desc: '片付けたものをまとめて戻す' },
+	{ name: 'rename', arg: ':<id>: connector :<旧>: :<新>:', desc: '参加者の ID を付け替える。先に件数を出し、旧 ID の入力を求める' },
 ];
 
 /**

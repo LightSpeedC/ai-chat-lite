@@ -13,6 +13,7 @@ import {
 	joinConnector, touchConnector, addConnection, removeConnection, listRooms,
 	getCursor, setCursor, closeDb, getConnector,
 	previewArchive, archive, restore, listArchives, getAllMessages,
+	previewRename, renameConnector,
 } from './store.mjs';
 import { listPresence, getPresence, STATUS } from './presence.mjs';
 import { ID_PATTERN } from '../client/options.mjs';
@@ -712,6 +713,91 @@ async function handleArchivePreview(req, res, url) {
 	sendJson(res, 200, { kind, id, ...previewArchive(kind, id, withMessages) });
 }
 
+/**
+ * 付け替える前に、何が書き換わるかを数える。
+ *
+ * 居ない ID は 400 で断る。0 件のまま名前を打たせても、打ち終えてから
+ * 「対象がありません」と言われるだけになる。
+ */
+function handleRenamePreview(res, url) {
+	const from = requireId(url.searchParams.get('from'), 'from');
+	const counts = previewRename(from);
+	const total =
+		counts.connectors + counts.cursors + counts.messages_from + counts.messages_to +
+		counts.archives + counts.archive_targets;
+	if (total === 0) throw new BadRequest(`その ID の記録がありません: ${from}`);
+
+	sendJson(res, 200, { from, ...counts });
+}
+
+/**
+ * 参加者の ID を付け替える（i260909-02）。
+ *
+ * ID は 4 つのテーブルに散っている。手で SQL を書くと洗い出しから毎回やり直しに
+ * なり、漏らすと「発言は見えるのに一覧にいない」「読んだ位置を失う」形で表に出る。
+ */
+async function handleRename(req, res) {
+	const input = await readJsonBody(req);
+	const from = requireId(input.from, 'from');
+	const to = requireId(input.to, 'to');
+	const byConnectorId = requireId(input.connector_id, 'connector_id');
+
+	// 本番でテスト用の名前を名乗らせない。付け替えも新規参加と同じ扱いにする
+	rejectTestNames(to, DEFAULT_ROOM);
+
+	if (from === to) throw new BadRequest(`同じ ID には付け替えられません: ${from}`);
+
+	/*
+	 * confirm に旧 ID を求める。スクリプトからの誤爆を防ぐため（archive と同じ）。
+	 */
+	if (String(input.confirm ?? '') !== from) {
+		throw new BadRequest(`confirm に "${from}" を入れてください（誤って付け替えるのを防ぐため）`);
+	}
+
+	/*
+	 * 待受けが走っている間は断る。
+	 *
+	 * 走らせたまま付け替えると、その待受けは古い ID で poll し続け、新しい ID の
+	 * カーソルを見ない。サーバーは古い ID の位置を進めないので、届いているつもりで
+	 * 届かない状態になる。先に止めてもらう。
+	 */
+	const connector = getConnector(from);
+	if (connector && Number(connector.active_connection_count) > 0) {
+		throw new BadRequest(
+			`${from} は待受け（または接続）が ${connector.active_connection_count} 本走っています。止めてから付け替えてください`
+		);
+	}
+
+	/*
+	 * store が投げるのは入力の誤り（新しい ID が使われている・同じ ID）なので、
+	 * 500 ではなく 400 で返す。500 だと呼ぶ側が「サーバーの不具合」と読む。
+	 */
+	let result;
+	try {
+		result = renameConnector(from, to);
+	} catch (err) {
+		throw new BadRequest(err.message);
+	}
+	if (!result) throw new BadRequest(`その ID の記録がありません: ${from}`);
+
+	// 後から「名前が変わっている」と気づいたときに経緯を追えるようにする
+	log.warn(`付け替えました（${from} → ${to}）`);
+
+	/*
+	 * 黙って変わると、他の参加者は同じ相手だと分からない。
+	 * 片付け（archive）と同じく、既定のルームに知らせを積む。
+	 */
+	postSystemMessage(
+		DEFAULT_ROOM,
+		byConnectorId,
+		'archive',
+		`${nowJst().slice(0, 16)} に ${byConnectorId} が 参加者 ${from} を ${to} に付け替えた`
+	);
+	broadcastPresence();
+
+	sendJson(res, 200, { from, to, ...result });
+}
+
 async function handleExit(req, res, url) {
 	// GET でも受ける。ブラウザのアドレスバーから直接叩けるようにするため。
 	// 副作用のある GET は本来避けるところだが、localhost 限定で認証も無い前提なので
@@ -864,6 +950,8 @@ export async function handleRequest(req, res) {
 			// 片付けと戻しは GET では受けない。先読みや履歴からの再実行で起きては困る
 			if (path === '/api/admin/archive') return await handleArchive(req, res);
 			if (path === '/api/admin/restore') return await handleRestore(req, res);
+			// 付け替えも同じ理由で GET では受けない
+			if (path === '/api/admin/rename') return await handleRename(req, res);
 		}
 		if (req.method === 'GET') {
 			if (path === '/api/poll') return await handlePoll(req, res, url);
@@ -876,6 +964,7 @@ export async function handleRequest(req, res) {
 			// 一覧と下見は読むだけなので GET でよい
 			if (path === '/api/admin/archives') return handleArchives(res);
 			if (path === '/api/admin/archive-preview') return await handleArchivePreview(req, res, url);
+			if (path === '/api/admin/rename-preview') return handleRenamePreview(res, url);
 			if (path === '/api/events') return handleEvents(req, res, url);
 			// ブラウザのアドレスバーから叩けるよう GET も受ける
 			if (path === '/api/admin/exit') return await handleExit(req, res, url);

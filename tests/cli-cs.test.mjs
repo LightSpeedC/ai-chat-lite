@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import { existsSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { execFile } from 'node:child_process';
+import { execFile, execFileSync, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import { createServer } from 'node:http';
 
@@ -218,6 +218,55 @@ describe('C# 版と node 版で同じものが出る', () => {
 		} finally {
 			if (existsSync(outPath)) rmSync(outPath);
 		}
+	});
+
+	/*
+	 * 【なぜ必要か】
+	 * rename は 5 テーブル 7 か所を書き換える。2 本で下見の出し方や確認の求め方が
+	 * 食い違うと、片方だけが「何が書き換わるか」を出さないまま実行することになる
+	 * （i260909-02）。実行はせず、下見と確認までを突き合わせる。
+	 */
+	test('rename の下見と確認の求め方が node 版と揃う', async (t) => {
+		if (!built) return t.skip('aichat.exe が無い');
+
+		const target = 'test-cli-rename';
+		await viaNode(['say', '付け替えの下見'], target);
+		await viaNode(['say', `@${target} 本文でも名指しする`], 'test-cli-rename-writer');
+
+		const args = ['rename', 'connector', `:${target}:`, ':test-cli-renamed:'];
+		/*
+		 * 確認に空行を渡して中止させる。実行はしない（下見と確認の形だけを見る）。
+		 *
+		 * 同期の execFileSync は使えない。このテストはサーバーを同じ Node の
+		 * プロセスで動かしているため、同期呼び出しがイベントループを止めて
+		 * しまい、子プロセスの下見のリクエストに応答できずタイムアウトする
+		 * （実測。30 秒待って stdout が空になった）。
+		 *
+		 * execFile（非同期）は input オプションを持たないので、spawn で
+		 * 標準入力に書く。
+		 */
+		const withInput = (cmd, cmdArgs) =>
+			new Promise((resolve) => {
+				const child = spawn(cmd, cmdArgs);
+				let stdout = '';
+				child.stdout.setEncoding('utf8');
+				child.stdout.on('data', (c) => { stdout += c; });
+				child.stdin.write('\n');
+				child.stdin.end();
+				child.once('exit', (code) => resolve({ stdout, code }));
+			});
+
+		const fromNode = await withInput(process.execPath, [
+			NODE_CLI, ...withId(args, 'test-cli-cs'), '--url', base, '--access-token', TEST_ACCESS_TOKEN,
+		]);
+		const fromExe = await withInput(EXE, [
+			...withId(args, 'test-cli-cs'), '--url', base, '--access-token', TEST_ACCESS_TOKEN,
+		]);
+
+		assert.equal(shape(fromExe.stdout), shape(fromNode.stdout), '下見の出力が違う');
+		assert.equal(fromExe.code, fromNode.code, '中止したときの終了コードが違う');
+		assert.match(fromNode.stdout, /本文の @test-cli-rename/, '本文の件数が出ていない');
+		assert.match(fromNode.stdout, /中止しました/, '中止していない');
 	});
 
 	test('who の出力が揃う', async (t) => {

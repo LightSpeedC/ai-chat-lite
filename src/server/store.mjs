@@ -468,6 +468,139 @@ export function restore(archivedSeq) {
 	}
 }
 
+/**
+ * 参加者の ID を付け替える前に、何が書き換わるかを数える。
+ *
+ * 居ない ID でも 0 件で返す。例外にしない（呼ぶ側が「0 件なので断る」と
+ * 決められるようにするため）。
+ *
+ * @returns {{connectors: number, cursors: number, messages_from: number,
+ *            messages_to: number, archives: number, archive_targets: number}}
+ */
+export function previewRename(fromId) {
+	const count = (sql) => Number(db.prepare(sql).get(fromId).n);
+	return {
+		connectors: count('SELECT COUNT(*) AS n FROM connectors WHERE connector_id = ?'),
+		cursors: count('SELECT COUNT(*) AS n FROM cursors WHERE connector_id = ?'),
+		messages_from: count('SELECT COUNT(*) AS n FROM messages WHERE from_connector_id = ?'),
+		messages_to: count('SELECT COUNT(*) AS n FROM messages WHERE to_connector_id = ?'),
+		// 本文の @旧ID。前方一致を落とすため、数えるのも実際の置き換えと同じ判定で行う
+		messages_body: countBodyMentions(fromId),
+		archives: count('SELECT COUNT(*) AS n FROM archives WHERE archived_connector_id = ?'),
+		archive_targets: count(
+			"SELECT COUNT(*) AS n FROM archives WHERE archive_kind = 'connector' AND archive_id = ?"
+		),
+	};
+}
+
+/** 本文に @旧ID を含む発言の数。前方一致（@id-2 など）は数えない */
+function countBodyMentions(fromId) {
+	const like = `%@${fromId.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+	const rows = db
+		.prepare("SELECT msg_body FROM messages WHERE msg_body LIKE ? ESCAPE '\\'")
+		.all(like);
+	const pattern = new RegExp(`@${escapeRegExp(fromId)}(?![A-Za-z0-9_.-])`);
+	return rows.filter((r) => pattern.test(r.msg_body)).length;
+}
+
+/**
+ * 参加者の ID を付け替える。
+ *
+ * ID は 4 つのテーブルに散っている。1 つでも漏らすと、
+ *
+ *   connectors を漏らす … 発言は見えるのに参加者一覧にいない
+ *   cursors を漏らす   … 読んだ位置を失い、次の待受けが「今から」になる
+ *   messages を漏らす  … 過去の発言だけ古い名前で残る（宛先も同じ）
+ *   archives を漏らす  … 片付けた記録の中だけ古い名前で残り、戻す判断ができない
+ *
+ * のいずれかが起きる。手で SQL を書いていたときは、この洗い出しを毎回
+ * やり直していた（i260909-02）。
+ *
+ * すべて 1 つのトランザクションで行う。途中で失敗したら何も変わらない。
+ *
+ * 【片付け済みの ID も「使われている」とみなす】
+ * 片付けた参加者は connectors に行が残り、主キーの枠を占め続ける
+ * （archived_seq が入るだけ）。読み出しには出ないので空いて見えるが、
+ * そこへ付け替えると主キーが衝突する。
+ *
+ * @returns {object | null} 旧 ID がどこにも無ければ null
+ * @throws 新しい ID が既に使われているとき、旧と新が同じとき
+ */
+export function renameConnector(fromId, toId) {
+	if (fromId === toId) throw new Error(`同じ ID には付け替えられません: ${fromId}`);
+
+	const counts = previewRename(fromId);
+	const total =
+		counts.connectors + counts.cursors + counts.messages_from + counts.messages_to +
+		counts.archives + counts.archive_targets;
+	if (total === 0) return null;
+
+	// 片付け済みも含めて見る。archived_seq IS NULL では枠を見落とす
+	const taken = db.prepare('SELECT COUNT(*) AS n FROM connectors WHERE connector_id = ?').get(toId);
+	if (Number(taken.n) > 0) throw new Error(`その ID は既に使われています: ${toId}`);
+
+	db.exec('BEGIN IMMEDIATE');
+	try {
+		const run = (sql) => Number(db.prepare(sql).run(toId, fromId).changes);
+		const result = {
+			connectors: run('UPDATE connectors SET connector_id = ? WHERE connector_id = ?'),
+			cursors: run('UPDATE cursors SET connector_id = ? WHERE connector_id = ?'),
+			messages_from: run('UPDATE messages SET from_connector_id = ? WHERE from_connector_id = ?'),
+			messages_to: run('UPDATE messages SET to_connector_id = ? WHERE to_connector_id = ?'),
+			messages_body: renameInBodies(fromId, toId),
+			archives: run('UPDATE archives SET archived_connector_id = ? WHERE archived_connector_id = ?'),
+			archive_targets: run(
+				"UPDATE archives SET archive_id = ? WHERE archive_kind = 'connector' AND archive_id = ?"
+			),
+		};
+		db.exec('COMMIT');
+		return result;
+	} catch (err) {
+		db.exec('ROLLBACK');
+		throw err;
+	}
+}
+
+/**
+ * 本文に書かれた @旧ID を新しい ID にする。
+ *
+ * 名指しは to_connector_id に入るが、本文へ自分で @相手 と書く形も普通に使う。
+ * 列だけ直すと、過去のやり取りだけ古い名前で残り、検索も当たらなくなる。
+ *
+ * 【前方一致では置き換えない】
+ * SQL の REPLACE() は境界を見ないので、@project-a を直すつもりで @project-aa
+ * まで壊す。共通ルールも「前方一致では探さない」と明記している（待受けの
+ * 検索式で実際に事故になった）。ID に使える文字が続くときは別物として残す。
+ *
+ * @returns {number} 書き換えた発言の数
+ */
+function renameInBodies(fromId, toId) {
+	// % _ \ は ID に使えないが、書き方は getFiltered の find と揃えておく
+	const like = `%@${fromId.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+	const rows = db
+		.prepare("SELECT msg_seq, msg_body FROM messages WHERE msg_body LIKE ? ESCAPE '\\'")
+		.all(like);
+	if (rows.length === 0) return 0;
+
+	// ID に使える文字（options.mjs の ID_PATTERN と同じ集合）が続くなら別物
+	const pattern = new RegExp(`@${escapeRegExp(fromId)}(?![A-Za-z0-9_.-])`, 'g');
+	const update = db.prepare('UPDATE messages SET msg_body = ? WHERE msg_seq = ?');
+
+	let changed = 0;
+	for (const row of rows) {
+		const next = row.msg_body.replace(pattern, `@${toId}`);
+		if (next === row.msg_body) continue;
+		update.run(next, row.msg_seq);
+		changed++;
+	}
+	return changed;
+}
+
+/** 正規表現の特別な意味を落とす */
+function escapeRegExp(value) {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 /** 片付けたものの一覧。新しい順。件数も添える */
 export function listArchives() {
 	return db
