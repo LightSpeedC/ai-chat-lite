@@ -124,3 +124,15 @@ if ($WhatIfOnly) {
 	Write-Host ("{0} ファイル・{1} 件を伏せました。" -f $totalFile, $totalHit)
 	Write-Host '次にセッションを開くと、伏せた後のログがコピーされます。'
 }
+
+<#
+	成功でも明示的に終了コードを返す。
+
+	PowerShell では .ps1 が exit を通らずに終わると $LASTEXITCODE が更新されない。
+	powershell.exe -File は毎回まっさらなセッションなので、呼び出し側から見ると
+	最初の呼び出しでは未定義（$null）のままになる。$null -ne 0 は真なので、
+	終了コードを見る側は成功を失敗と読む（レビュー #22 high 1。実測で再現した）。
+
+	上の exit 1 と対にしておけば、呼ぶ側は $LASTEXITCODE だけで成否を判別できる。
+#>
+exit 0

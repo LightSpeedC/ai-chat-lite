@@ -31,9 +31,21 @@ $words = $rawWords.Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_
 $mask = Read-Host '置き換え後の文字列（既定: 〈伏せ字〉）'
 if ([string]::IsNullOrWhiteSpace($mask)) { $mask = '〈伏せ字〉' }
 
+<#
+	呼ぶ前に 0 へ置く。
+
+	.ps1 が exit を通らずに終わると $LASTEXITCODE は更新されない。
+	powershell.exe -File は毎回まっさらなセッションなので、置かないと最初の
+	呼び出しでは未定義（$null）のままで、$null -ne 0 が真になる。
+	成功を失敗と読んで中止していた（レビュー #22 high 1。実測で再現した）。
+
+	子（mask-log.ps1）は成功でも exit 0 を返すようにしたが、差し替えた側が
+	そうでないこともあるので、こちら側でも前の値を持ち越さないようにする。
+#>
 # まず数えるだけ
 Write-Host ''
 Write-Host '--- 見つかった件数 ---'
+$global:LASTEXITCODE = 0
 & $MaskLogScript -Word $words -Replacement $mask -WhatIfOnly
 if ($LASTEXITCODE -ne 0) {
 	Write-Host ''
@@ -49,6 +61,7 @@ if ($ok -cne 'yes') {
 }
 
 Write-Host ''
+$global:LASTEXITCODE = 0
 & $MaskLogScript -Word $words -Replacement $mask
 if ($LASTEXITCODE -ne 0) {
 	Write-Host ''

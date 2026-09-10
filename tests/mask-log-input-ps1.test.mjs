@@ -9,6 +9,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(here, '..');
 const INPUT = join(ROOT, 'tools', '80_ops', 'mask-log-input.ps1');
 const FAKE = join(here, 'helpers', 'fake-mask-log.ps1');
+/** 成功する偽物。本物の正常系と同じく exit を通らずに終わる */
+const FAKE_OK = join(here, 'helpers', 'fake-mask-log-ok.ps1');
 const CALL_LOG = join(ROOT, 'tmp', 'mask-log-input-ps1-calls.txt');
 
 /*
@@ -69,4 +71,41 @@ test('mask-log.ps1 が「数えるだけ」で失敗したら、本実行まで�
 
 	const calls = readFileSync(CALL_LOG, 'utf8').trim().split('\n').filter(Boolean);
 	assert.equal(calls.length, 1, `本実行まで進んでいる（呼ばれた回数 ${calls.length}）\n--- 出力 ---\n${stdout}`);
+});
+
+/*
+ * 【なぜ必要か】
+ * 上の検査は「必ず exit 1 する偽物」しか使っておらず、成功経路を 1 件も
+ * 通していなかった。そのため次の穴が見えなかった（レビュー #22 high 1）。
+ *
+ * 本物の mask-log.ps1 は成功時に exit を通らない（return か末尾まで走る）。
+ * PowerShell では .ps1 が exit を通らずに終わると $LASTEXITCODE が更新されず、
+ * powershell.exe -File は毎回まっさらなセッションなので最初の呼び出しでは
+ * 未定義（$null）。$null -ne 0 は真になるため、呼び出し側がそれを「失敗」と
+ * 読んで中止していた。実測で再現を確認してから直した。
+ */
+test('mask-log.ps1 が成功したら、本実行まで進む', (t) => {
+	if (!has51) return t.skip('powershell.exe が無い');
+	if (existsSync(CALL_LOG)) rmSync(CALL_LOG);
+	writeFileSync(CALL_LOG, '');
+
+	let stdout = '';
+	try {
+		stdout = execFileSync('powershell.exe', [
+			'-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', INPUT, '-MaskLogScript', FAKE_OK,
+		], {
+			env: { ...process.env, MASK_LOG_TEST_CALL_LOG: CALL_LOG },
+			// 1: 伏せたい語 / 2: 置き換え後の文字列（既定を使う） / 3: 確認に yes
+			input: 'テスト語\n\nyes\n',
+			encoding: 'utf8',
+			timeout: 15000,
+		});
+	} catch (err) {
+		stdout = String(err.stdout ?? '') + String(err.stderr ?? '');
+	}
+
+	assert.doesNotMatch(stdout, /数えるだけの実行が失敗しました/, '成功したのに失敗と読んでいる');
+
+	const calls = readFileSync(CALL_LOG, 'utf8').trim().split('\n').filter(Boolean);
+	assert.equal(calls.length, 2, `本実行まで進んでいない（呼ばれた回数 ${calls.length}）\n--- 出力 ---\n${stdout}`);
 });
