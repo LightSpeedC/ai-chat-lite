@@ -597,7 +597,7 @@ footer a {
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（5 件 / 未 3 / 着手 0 / 済 2）</a></li>
 		<li class="g02"><a href="#g02">データ（7 件 / 未 1 / 着手 0 / 済 6）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（24 件 / 未 2 / 着手 5 / 済 17）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（25 件 / 未 3 / 着手 5 / 済 17）</a></li>
 		<li class="g04"><a href="#g04">チャットの機能（24 件 / 未 8 / 着手 1 / 済 15）</a></li>
 	</ol>
 </section>
@@ -1334,7 +1334,7 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">24 件 / 未 2 / 着手 5 / 済 17</span>
+		<span class="count">25 件 / 未 3 / 着手 5 / 済 17</span>
 	</summary>
 
 	<div class="groupbody">
@@ -2574,7 +2574,7 @@ Review the subagent's actions carefully before acting on its output.</code></pre
 
 				<div class="callout callout-important">
 					<p><strong>2 つが揃ったときに出る。</strong>片方だけでは出ていない。</p>
-					<p>1. <code>~/.claude/CLAUDE.md</code> か <code>settings.json</code> への言及<br>
+					<p>1. 共通ルールや <code>settings.json</code> といった<strong>設定ファイルへの言及</strong><br>
 					2. <strong>「〜してください」「〜を入れました」という指示形の文言</strong></p>
 				</div>
 
@@ -3667,6 +3667,86 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 			</div>
 		</details>
 
+		<details class="issue" id="i260911-01" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260911-01</span>
+				レビュー #23 の 19 件。<strong>前回 30 件のうち 22 件は解消を確認</strong>
+			</summary>
+			<div class="issuebody">
+				<p><code>ai-chat-lite-reviewer</code> のレビュー #23（<code>msg_seq</code> 741）。<a href="#i260910-02">#21</a> ・ <a href="#i260910-03">#22</a> の 30 件は <strong>22 件が解消 ・ 3 件が一部解消 ・ 5 件が未解消</strong>と判定された。未解消の 5 件は「方針を決めてから直す」と書いてあるため再送されていない。</p>
+
+				<div class="callout callout-important">
+					<p><strong>指摘の 1 件ごとに反証役を当てた結果である。</strong>ただし<strong>上限で落とした指摘が 18 件ある</strong>（探索役 1 人あたり 4 件までとしたため 5 番目以降を切った）。<strong>「これで全部」ではない。</strong></p>
+					<p>先方はテスト・node・ps1・exe・サーバー起動・書き込みを一切していない（叩いたのは <code>aichat -h</code> と <code>aichat recent</code> だけ）。<strong>実行して分かることの判断はこちら側の仕事である。</strong></p>
+				</div>
+
+				<h3>一部解消 3 件</h3>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="nowrap">元</th><th>残っているところ</th></tr></thead>
+					<tbody>
+						<tr><td class="nowrap">#21 medium 8</td><td>日付の決め打ちは <code>8c4a0fb</code> で解消。<strong>同じファイルの別の 1 件が残る</strong>（下の medium 11）</td></tr>
+						<tr><td class="nowrap">#21 medium 9</td><td><code>readArg</code> ・ <code>roomsFrom</code> は移した。<strong><code>targetOf</code> と <code>pickWaiters</code> は写しのまま</strong>で、テスト自身が書いている「写しを検査すると本体を壊しても通る」がこの 2 つに当たり続ける</td></tr>
+						<tr><td class="nowrap">#22 medium 2</td><td><code>--retry-count</code> と ID の文字集合は解消。<code>status.html:571</code> の「5 テーブル」だけ残っている</td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<h3>high</h3>
+
+				<div class="callout callout-caution">
+					<p><strong>伏せ字の道具に 3 つ目の出口があり、<a href="#i260910-03">#22 high 1</a> の直しがそれを「成功」に変えた。</strong><code>mask-log.ps1:52-57</code> は <code>claude</code> が走っていると警告 2 行を出して <code>return</code> する。<strong>トップレベルの <code>return</code> は <code>exit</code> を通らないので終了コードを更新しない</strong>。呼ぶ側は先に <code>$global:LASTEXITCODE = 0</code> を立てるようになったため、<strong>この経路は確実に成功と読まれる</strong>。</p>
+					<p><strong>下見はこの <code>return</code> を通らずに件数を出す</strong>ので、利用者は「N 件見つかった → yes」まで進み、<strong>本実行は 1 語も書き換えずに終わる</strong>。「伏せる処理が失敗しました。」も「N 件を伏せました。」も出ない（警告 2 行は画面に出るので、見ていれば気づける）。</p>
+				</div>
+
+				<h3>medium 17 件</h3>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="num">#</th><th class="nowrap">どこ</th><th>中身</th></tr></thead>
+					<tbody>
+						<tr><td class="num">1</td><td class="nowrap">USAGE <code>794</code> ⇔ <code>981</code> ・ <code>1014</code> ・ <code>1015</code></td><td><code>[killed]</code> の原因が<strong>同じ資料の中で正反対</strong>（「時間で打ち切られることはない」⇔「60 分で必ず起きる」）。09-08 の直しから 2 か所が取り残された。<strong>対象のずれも残る</strong>——60 分の規則は「サブエージェントが持つコマンド」に対するものだが、USAGE は「サブエージェントを挟まない」を指示しており、<strong>指示どおり張った待受けに当たるのかが資料の中で決まらない</strong></td></tr>
+						<tr><td class="num">2</td><td class="nowrap"><code>status:521</code> ・ 設計 <code>2116-2119</code></td><td>「CLI が読む環境変数は 0」と書いているが、<strong>両実装とも <code>AICHAT_DATA</code> を読む</strong>（node は <code>config.mjs</code> 経由で <code>IS_TEST</code> を決め、待受けの記録を書くかを分けている。C# 版は直読み）</td></tr>
+						<tr><td class="num">3</td><td class="nowrap">設計 <code>1875-1876</code></td><td>「<code>--wait-sec</code> は <code>--help</code> に出さない」と書いたが、<strong>隠す仕組みは無く両実装の <code>-h</code> に出る</strong>。USAGE は 3 か所で通常のオプションとして案内しており、<strong>外れているのは設計書の 1 行だけ</strong>（<code>5904a81</code> が新規に書いた行）</td></tr>
+						<tr><td class="num">4</td><td class="nowrap"><code>Commands.cs:699-718</code></td><td>C# 版の <code>restart</code> / <code>stop</code> が<strong>サーバーの応答（<code>note</code> ・ <code>will_restart</code>）を読まず固定文を出す</strong>。サービス経由でないサーバー（テスト用の :8765 など）に対して <strong>2 本の CLI が逆のことを言う</strong></td></tr>
+						<tr><td class="num">5</td><td class="nowrap"><code>main.mjs:82-88</code></td><td><strong>SIGINT / SIGTERM の経路だけ <code>closeDb()</code> を呼ばない</strong>。<code>/api/admin/exit</code> の経路は呼んでおり、そのコメントが「閉じなければ 4 KB の本体と 2.2 MB の <code>-wal</code> が残った」と実測を書いている。設計書の「正常終了後は <code>-wal</code> が消えている」と食い違う</td></tr>
+						<tr><td class="num">6</td><td class="nowrap"><code>since-parse.mjs:136</code> ⇔ <code>SinceParse.cs:151</code></td><td><code>--since 4/31</code> のような<strong>存在しない日で 2 本の終わり方が分かれる</strong>。node 版は 5/1 へ繰り上がって <code>exit 0</code>（<strong>打った日付とは別の範囲を静かに返す</strong>）、C# 版は .NET の英語例外で <code>exit 1</code>。日の検査を 1〜31 までにしたのは仕様だが、<strong>その先が決まっていない</strong></td></tr>
+						<tr><td class="num">7</td><td class="nowrap">設計 <code>1669</code></td><td>long-poll 240 秒の<strong>根拠に挙げた 2 つの前提を、同じ設計書が否定している</strong>（600 秒で打ち切られる／待受けはサブエージェント）。値の是非ではなく根拠の話</td></tr>
+						<tr><td class="num">8</td><td class="nowrap">設計 <code>2046</code> ・ <code>2057-2081</code></td><td>フォルダ構成が実体に追いついていない（<code>tests/</code> 25 行に対し実体 30 本 ・ <code>src/client</code> が 1 行のまま実体 4 本 ・ <code>cli-cs</code> 8 本に対し実体 10 本）。<strong><code>5904a81</code> の「テスト一覧に足した」は status 側にだけ当たった</strong></td></tr>
+						<tr><td class="num">9</td><td class="nowrap"><code>chat.mjs:844-847</code> ほか</td><td><code>cd621b2</code> の 3 つの直しのうち <strong><code>roomsArg</code> / <code>RoomsArg</code> だけ回帰テストが無い</strong>。<code>cli-cs.test.mjs</code> の基準は 1 ルームなので <code>rooms.length &gt; 1</code> の分岐を通らない</td></tr>
+						<tr><td class="num">10</td><td class="nowrap"><code>client-wait.test.mjs:319-326</code></td><td>初回案内の <code>-r</code> のテストが<strong>空ループでも通る</strong>（拾った行数を確かめていない）。見本行が消えると緑のまま。<strong>C# 側は <code>-r</code> を条件に入れていない</strong></td></tr>
+						<tr><td class="num">11</td><td class="nowrap"><code>since-parse.test.mjs:82-84</code></td><td><code>8c4a0fb</code> が直したのは 1 件で、<strong><code>11/1</code> ・ <code>11/30</code> の決め打ちが残る</strong>。<strong>11/1 〜 11/30 の 29 日間は落ちる</strong>（since が今年 ・ before が去年になる）。同じファイルの他の 3 件は <code>if</code> で避けているのに、この 1 件だけ避けていない</td></tr>
+						<tr><td class="num">12</td><td class="nowrap"><code>fake-mask-log-ok.ps1:4-5</code></td><td>成功経路の偽物が「本物の正常系と同じ形」と書いているが、<strong>本物には <code>exit 0</code> が入ったので形が違う</strong>。<strong>本物を走らせるテストは 0 件で、子が <code>exit 0</code> を返す形も 1 度も通っていない</strong>（<code>exit 0</code> を落としても 2 件は緑）</td></tr>
+						<tr><td class="num">13</td><td class="nowrap"><code>chat.js:412-419</code> ・ <code>738-744</code></td><td>画面で<strong>名乗る ID だけ検証せずに <code>localStorage</code> へ書く</strong>。同じファイルのコメントが「検証せずに書くと誤入力した名前が固定され、リロードのたびに 400 を繰り返す」と警告しており、<strong>ルーム名の側では <code>ROOM_ID_RE</code> を通している</strong>。入力欄にも <code>pattern</code> が無い</td></tr>
+						<tr><td class="num">14</td><td class="nowrap">USAGE <code>630</code></td><td>シングルクォートの説明が<strong><a href="#i260909-04">i260909-04</a>（済）で検証を入れる前の挙動のまま</strong>。「<code>waiters</code> は落ちない」と現在形で書いているが、いまはルーム名を検証して <code>exit 2</code> で止まる</td></tr>
+						<tr><td class="num">15</td><td class="nowrap"><code>20260903-01-変わったこと.html</code></td><td><strong>2026-09-02 で止まっている</strong>。利用側から見える変更が少なくとも 3 件入っていない（<code>:id:</code> への名乗り方 ・ <code>waiters</code> ・ <code>rename</code>）。最新の言及が<strong>既に廃止した <code>-c</code></strong> になっている</td></tr>
+						<tr><td class="num">16</td><td class="nowrap"><code>markdown.js:67</code></td><td>自動リンクの文字集合が <code>&amp;</code> を除いているため、<strong>クエリ付き URL が最初の <code>&amp;amp;</code> の手前で切れ、続きが <code>amp;…</code> として本文に残る</strong>。href も投稿された URL と別になる。コメントは <code>&amp;</code> について「エスケープ済み」と述べるだけで、<strong>そこで切れることに触れていない</strong></td></tr>
+						<tr><td class="num">17</td><td class="nowrap"><code>backup.ps1:69-71</code> ⇔ <code>116-129</code></td><td>「印が消えず取らずに終えた」を失敗として扱うかが<strong>同じファイルの中で逆</strong>。「エラーにしない／履歴を赤くしても仕方がない」と書いた 47 行あとで <code>Write-BackupLog -Level E</code> ＋ <code>exit 1</code>。09-10 に <code>.DESCRIPTION</code> だけ新しい方針へ書き換わった</td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<h3>low 1 件</h3>
+
+				<p>USAGE が共通オプションを 2 か所で定義しており、<strong>手書きの表だけ <code>--room &lt;id&gt;</code> のまま</strong>（貼り付け側は <code>&lt;id[,id]&gt;</code>）。カンマ区切りを受けることが引数表記からも説明からも読み取れない。<code>5904a81</code> は貼り付け側だけを取り直した。</p>
+
+				<h3>先方が「食い違いが無かった」とした主なところ</h3>
+
+				<p>定義の出どころ（<code>options.mjs</code> → <code>export-options.mjs</code> → <code>aichat -h</code> の実出力）は一致し、USAGE の貼り付けも <code>rename</code> ・ <code>--with-joins</code> ・ <code>recent</code> の絞り込み 6 つまで含めて実物と一致 ／ <code>rename</code> の実装 ／ <strong>課題の連番に重複・欠番とも 0。目次と 4 グループの見出しが数え直した結果と一致</strong> ／ DB マイグレーション全 7 本と手引き ／ 画面への挿入（XSS）の経路 ／ <strong>コードを触った 5 本のコミットはいずれも回帰テスト付き</strong>（欠けは medium 9 の 1 つだけ）／ WinSW</p>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> <strong>high 1（伏せ字の 3 つ目の出口）を最初に見る。</strong><code>claude</code> が走っているときにどう終わるかを決める必要がある（終了コードを分ける／下見の時点で止める）。<strong>本物を走らせるテストが 0 件</strong>という指摘（medium 12）も同じ道具の話なので一緒に見る</li>
+					<li><span class="badge b-todo">未</span> medium 5（<code>closeDb</code>）を見る。<strong>SQLite の大原則に触れる</strong>ので、資料の食い違いより先に置く</li>
+					<li><span class="badge b-todo">未</span> medium 9 ・ 10 ・ 11 ・ 12 はテストの穴。<strong>直したはずのものが守られていない</strong>形なので、資料より先に直す</li>
+					<li><span class="badge b-todo">未</span> medium 4 ・ 6 ・ 13 ・ 16 は実装の食い違い。<strong>2 本の CLI で終わり方が分かれるもの（4 ・ 6）は仕様を決めてから</strong></li>
+					<li><span class="badge b-todo">未</span> medium 1 ・ 2 ・ 3 ・ 7 ・ 8 ・ 14 ・ 15 ・ 17 と low 1 は資料の追随。<strong>1 と 17 は「どちらが正か」を決める必要がある</strong>（残りは実装に合わせるだけ）</li>
+					<li><span class="badge b-todo">未</span> 一部解消の 3 件（<code>targetOf</code> ・ <code>pickWaiters</code> の写し、<code>status</code> の「5 テーブル」）も片付ける</li>
+				</ul>
+			</div>
+		</details>
+
 	</div>
 </details>
 
@@ -3902,7 +3982,7 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 					<li class="done"><span class="badge b-done">☑</span> <code>AICHAT_URL</code> を廃止するか決める</li>
 					<li class="done"><span class="badge b-done">☑</span> <code>option()</code> を別名の表で解決する形に変える</li>
 					<li class="done"><span class="badge b-done">☑</span> <code>chat.mjs</code> の <code>usage()</code> を直す（<strong>実物。ここが正</strong>）</li>
-					<li class="done"><span class="badge b-done">☑</span> <code>USAGE-FOR-PROJECTS</code> の表と <code>~/.claude/CLAUDE.md</code> を直す</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>USAGE-FOR-PROJECTS</code> の表と共通ルールを直す</li>
 				</ul>
 			</div>
 		</details>
@@ -4008,7 +4088,7 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 					<li class="done"><span class="badge b-done">☑</span> <a href="#i260831-02">i260831-02</a> との順序を決める</li>
 					<li class="done"><span class="badge b-done">☑</span> 実装し、<code>client-wait.test.mjs</code> を書き換える</li>
 					<li class="done"><span class="badge b-done">☑</span> <code>chat.mjs</code> の <code>usage()</code> を直す（<strong>実物。ここが正</strong>）</li>
-					<li class="done"><span class="badge b-done">☑</span> <code>USAGE-FOR-PROJECTS</code> と <code>~/.claude/CLAUDE.md</code> の待受けの例を直す</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>USAGE-FOR-PROJECTS</code> と共通ルールの待受けの例を直す</li>
 				</ul>
 			</div>
 		</details>
@@ -4294,7 +4374,7 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 					<li class="done"><span class="badge b-done">☑</span> <a href="#i260901-01">i260901-01</a> と <a href="#i260901-02">i260901-02</a> との順序を決める（同じ行を書き換える）</li>
 					<li class="done"><span class="badge b-done">☑</span> <code>--connector-id</code> を足し、<code>AICHAT_ID</code> を廃止する</li>
 					<li class="done"><span class="badge b-done">☑</span> <code>chat.mjs</code> の <code>usage()</code> を直す（<strong>実物。ここが正</strong>）</li>
-					<li class="done"><span class="badge b-done">☑</span> <code>USAGE-FOR-PROJECTS</code> の表と <code>~/.claude/CLAUDE.md</code> を直す</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>USAGE-FOR-PROJECTS</code> の表と共通ルールを直す</li>
 					<li class="done"><span class="badge b-done">☑</span> 他プロジェクトへ周知する</li>
 				</ul>
 			</div>
@@ -4352,7 +4432,7 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 				<h3>やること</h3>
 
 				<ul class="todos">
-					<li class="done"><span class="badge b-done">☑</span> 番号を 36 進数 2 桁にする（<code>~/.claude/CLAUDE.md</code> と課題一覧のテスト）</li>
+					<li class="done"><span class="badge b-done">☑</span> 番号を 36 進数 2 桁にする（共通ルールと課題一覧のテスト）</li>
 					<li><span class="badge b-todo">未</span> 採番の仕組みを決める（案 A / B / C）</li>
 					<li><span class="badge b-todo">未</span> どのプロジェクトの課題かを示す方法を決める</li>
 					<li><span class="badge b-todo">未</span> ai-chat 側のデータ設計（テーブル・API）を決める</li>
