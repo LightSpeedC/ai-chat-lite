@@ -93,12 +93,29 @@ describe('--before は anchor（--since が解決した値）の年・日付を�
 	 * 未来なので去年に遡る——今日と去年の組み合わせという意図しない範囲になる。
 	 * anchor を渡せば、9/10 は「いま」ではなく since の年をそのまま引き継ぐ。
 	 */
+	/*
+	 * 【日付を決め打ちにしない】
+	 * ここは以前 9/9 と 9/10 をそのまま書いていた。書いた当日は「昨日と今日」で
+	 * 通るが、年をまたぐと「今年の 9/9」は未来になり ② の規則で去年へ丸まるため、
+	 * 今年を期待している assert が落ちる（レビュー #21 medium 7）。
+	 * 実行日から今日と明日を作れば、いつ流しても同じことを確かめられる。
+	 */
 	test('今日と明日の組み合わせが、両方とも今年のままになる', () => {
-		const since = resolveDateTimeArg('9/9');
-		const before = resolveDateTimeArg('9/10', since);
-		const thisYear = Number(nowJst().slice(0, 4));
-		assert.equal(since, `${thisYear}/09/09 00:00:00.000`);
-		assert.equal(before, `${thisYear}/09/10 00:00:00.000`);
+		const now = nowJst();
+		const thisYear = Number(now.slice(0, 4));
+		const [y, m, d] = now.slice(0, 10).split('/').map(Number);
+		// UTC で持って日付だけ進める。時差の影響を受けずに「翌日」が出る
+		const today = new Date(Date.UTC(y, m - 1, d));
+		const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+		// 大晦日に流すと明日が翌年になり、この組み合わせの前提から外れる
+		if (tomorrow.getUTCFullYear() !== thisYear) return;
+		const md = (t) => `${t.getUTCMonth() + 1}/${t.getUTCDate()}`;
+		const stamp = (t) => `${t.getUTCFullYear()}/${String(t.getUTCMonth() + 1).padStart(2, '0')}/${String(t.getUTCDate()).padStart(2, '0')} 00:00:00.000`;
+
+		const since = resolveDateTimeArg(md(today));
+		const before = resolveDateTimeArg(md(tomorrow), since);
+		assert.equal(since, stamp(today));
+		assert.equal(before, stamp(tomorrow));
 	});
 
 	test('確実に未来の範囲（11/1〜11/30）でも、anchor を渡せば同じ年になる', () => {
