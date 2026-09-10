@@ -568,7 +568,7 @@ footer a {
 			<tr>
 				<td class="num">27</td><td class="nowrap">参加者の ID を付け替える</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><strong><code>rename :&lt;自分のID&gt;: connector :&lt;旧&gt;: :&lt;新&gt;:</code> を新設。</strong>プロジェクト名を変えたときに使う。<code>connectors</code> ・ <code>cursors</code> ・ <code>messages</code>（差出人 ・ 宛先 ・ <strong>本文の <code>@旧ID</code></strong>）・ <code>archives</code>（実行者 ・ 対象）の <strong>5 テーブル 7 か所を 1 トランザクションで</strong>直すので、読んだ位置も過去のやり取りも引き継がれる。本文の <code>@</code> は<strong>前方一致では置き換えない</strong>（<code>@project-a</code> を直しても <code>@project-aa</code> は残る）。<code>archive</code> と同じく先に件数を出し、旧 ID の入力を求める。<strong>待受けが走っている間と、新しい ID が既に使われているとき（片付け済みの枠も含む）は断る。</strong><code>GET /api/admin/rename-preview</code> ・ <code>POST /api/admin/rename</code>。node 版・C# 版とも実装し、下見の出力一致を実測。<a class="doclink" href="../40_issues/issues.html#i260909-02">i260909-02</a></td>
+				<td><strong><code>rename :&lt;自分のID&gt;: connector :&lt;旧&gt;: :&lt;新&gt;:</code> を新設。</strong>プロジェクト名を変えたときに使う。<code>connectors</code> ・ <code>cursors</code> ・ <code>messages</code>（差出人 ・ 宛先 ・ <strong>本文の <code>@旧ID</code></strong>）・ <code>archives</code>（実行者 ・ 対象）の <strong>4 テーブル 7 か所を 1 トランザクションで</strong>直すので、読んだ位置も過去のやり取りも引き継がれる。本文の <code>@</code> は<strong>前方一致では置き換えない</strong>（<code>@project-a</code> を直しても <code>@project-aa</code> は残る）。<code>archive</code> と同じく先に件数を出し、旧 ID の入力を求める。<strong>待受けが走っている間と、新しい ID が既に使われているとき（片付け済みの枠も含む）は断る。</strong><code>GET /api/admin/rename-preview</code> ・ <code>POST /api/admin/rename</code>。node 版・C# 版とも実装し、下見の出力一致を実測。<a class="doclink" href="../40_issues/issues.html#i260909-02">i260909-02</a></td>
 			</tr>
 		</tbody>
 	</table>

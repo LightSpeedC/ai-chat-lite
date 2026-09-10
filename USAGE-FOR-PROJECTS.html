@@ -627,7 +627,10 @@ project-b がオフラインになりました
 
 	<div class="callout callout-caution">
 		<p><strong>囲むのはダブルクォートにする。</strong>PowerShell で <code>-r public,ai-chat-lite</code> と裸で書くと、<strong>2 つの引数に割れて 1 ルームだけを待つ</strong>ことになる。エラーは出ず、届かないことにも気づけない。</p>
-		<p><strong>シングルクォートは cmd で値に入る。</strong>cmd は <code>'</code> を引用符として扱わないので、ルーム名が <code>'public</code> と <code>ai-chat-lite'</code> になる。<code>wait</code> は 400 で落ちるが、<strong><code>waiters</code> はサーバーに繋がないので落ちない</strong>。クォート込みの基準で数え、<strong>正しい待受けがあるのに「待受けがありません」と出す</strong>。</p>
+		<p><strong>シングルクォートは cmd で値に入る。</strong>cmd は <code>'</code> を引用符として扱わないので、ルーム名が <code>'public</code> と <code>ai-chat-lite'</code> になる。<code>wait</code> は 400 で落ち、<code>waiters</code> は<strong>サーバーに繋がずに終了コード 2 で止まる</strong>。</p>
+<pre><code class="language-text">ルーム名に使えない文字が入っています: 'public
+  使えるのは英数字・ハイフン・下線・ピリオドだけです。ピリオドは先頭と末尾には置けません。</code></pre>
+		<p>以前は <code>waiters</code> だけ素通りし、クォート込みの基準で数えて<strong>正しい待受けがあるのに「待受けがありません」と出していた</strong>。いまは両方が止まる。</p>
 	</div>
 
 	<p><strong>読んだ位置はルームごとに進む。</strong>片方に届いても、もう片方は動かない。複数のときは「現在位置」もルームごとに出る。</p>
@@ -1208,8 +1211,8 @@ aichat restore :project-a: 3 -p 8787</code></pre>
 				<td>ホストごと変えたいとき。<code>--port</code> とは併用できない</td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>--room &lt;id&gt;</code></td><td class="nowrap"><code>-r</code></td>
-				<td>ルームを変える。省略すると <code>public</code></td>
+				<td class="nowrap"><code>--room &lt;id[,id]&gt;</code></td><td class="nowrap"><code>-r</code></td>
+				<td>ルームを変える。省略すると <code>public</code>。<strong>カンマ区切りで複数渡せるのは <code>wait</code> と <code>waiters</code> だけ</strong>（囲み方は「複数のルームを 1 本で待つ」を参照）</td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>--access-token &lt;値&gt;</code></td><td class="nowrap"><code>-a</code></td>

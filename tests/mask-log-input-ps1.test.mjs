@@ -9,7 +9,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(here, '..');
 const INPUT = join(ROOT, 'tools', '80_ops', 'mask-log-input.ps1');
 const FAKE = join(here, 'helpers', 'fake-mask-log.ps1');
-/** 成功する偽物。本物の正常系と同じく exit を通らずに終わる */
+/** 成功する偽物。exit を通らずに終わる子を再現する（本物の正常系は exit 0 を返す） */
 const FAKE_OK = join(here, 'helpers', 'fake-mask-log-ok.ps1');
 const CALL_LOG = join(ROOT, 'tmp', 'mask-log-input-ps1-calls.txt');
 
