@@ -298,6 +298,50 @@ describe('参加者の ID を付け替える（i260909-02）', () => {
 		assert.match(json.error, /既に使われています/);
 	});
 
+	/*
+	 * 【なぜ必要か】
+	 * 書式は rename :<自分のID>: connector :<旧>: :<新>: で、自分の ID を自分で
+	 * 付け替えるのが主用途。ところが知らせを積むときに使う byConnectorId は
+	 * 呼び出し側が名乗った ID（自己改名なら旧 ID）で、postSystemMessage は
+	 * connectors の存在を見ずに messages へ素通しする。
+	 *
+	 * そのため付け替えた直後に、旧 ID を差出人とする発言が 1 件だけ新たに積まれ、
+	 * store.mjs のコメントが挙げる失敗形「発言は見えるのに参加者一覧にいない」を
+	 * rename 自身の手で作っていた。さらに previewRename(旧 ID) が 1 件返すので、
+	 * 実体の無い旧 ID をもう一度 rename できてしまう（レビュー #22 medium 5）。
+	 *
+	 * 既存の rename テストは 6 件とも connector_id を別人にしていたため、この
+	 * 経路を 1 件も通していなかった。
+	 */
+	test('自己改名でも、知らせの差出人が旧 ID で残らない', async () => {
+		const from = 'test-rn-self';
+		const to = 'test-rn-self-new';
+		await post('/api/join', { connector_id: from, connector_role: 'ai' });
+		await post('/api/say', { from_connector_id: from, msg_body: '自己改名の前' });
+
+		// 名乗る ID も付け替える対象と同じにする（これが主用途）
+		const { status } = await post('/api/admin/rename', {
+			from,
+			to,
+			connector_id: from,
+			confirm: from,
+		});
+		assert.equal(status, 200);
+
+		// 旧 ID の記録が 1 件も残っていないこと
+		const counts = store.previewRename(from);
+		const total =
+			counts.connectors + counts.cursors + counts.messages_from + counts.messages_to +
+			counts.archives + counts.archive_targets;
+		assert.equal(total, 0, `旧 ID の記録が残っている: ${JSON.stringify(counts)}`);
+
+		// 知らせは新しい ID から出ていること
+		const { json } = await get('/api/history?limit=5');
+		const notice = json.messages.find((m) => m.msg_body.includes(`${from} を ${to} に付け替えた`));
+		assert.ok(notice, '付け替えの知らせが積まれていない');
+		assert.equal(notice.from_connector_id, to, '知らせの差出人が旧 ID のまま');
+	});
+
 	test('待受けが走っている間は断る', async () => {
 		await post('/api/join', { connector_id: 'test-rn-busy', connector_role: 'ai' });
 		await post('/api/say', { from_connector_id: 'test-rn-busy', msg_body: '待受け中に付け替える' });

@@ -786,12 +786,23 @@ async function handleRename(req, res) {
 	/*
 	 * 黙って変わると、他の参加者は同じ相手だと分からない。
 	 * 片付け（archive）と同じく、既定のルームに知らせを積む。
+	 *
+	 * 【自己改名では、知らせも新しい ID から出す】
+	 * 書式は rename :<自分のID>: connector :<旧>: :<新>: で、自分の ID を自分で
+	 * 付け替えるのが主用途である。名乗った ID をそのまま差出人にすると、
+	 * 付け替えた直後に旧 ID の発言を 1 件だけ新たに積むことになる。
+	 * postSystemMessage は connectors を見ずに messages へ素通しするので、
+	 * store.mjs が挙げる失敗形「発言は見えるのに参加者一覧にいない」を
+	 * rename 自身の手で作ってしまう。previewRename(旧 ID) も 1 件返すため、
+	 * 実体の無い旧 ID をもう一度 rename できる状態になる
+	 * （レビュー #22 medium 5。実測で再現した）。
 	 */
+	const noticeFrom = byConnectorId === from ? to : byConnectorId;
 	postSystemMessage(
 		DEFAULT_ROOM,
-		byConnectorId,
+		noticeFrom,
 		'archive',
-		`${nowJst().slice(0, 16)} に ${byConnectorId} が 参加者 ${from} を ${to} に付け替えた`
+		`${nowJst().slice(0, 16)} に ${noticeFrom} が 参加者 ${from} を ${to} に付け替えた`
 	);
 	broadcastPresence();
 
