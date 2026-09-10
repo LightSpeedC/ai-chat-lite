@@ -401,7 +401,7 @@ footer a {
 	<div class="inner">
 		<h1>テスト用サーバーの手引き</h1>
 		<p class="lead">本番と切り離してテストを回す</p>
-		<p class="date">📅 作成: 2026-08-31 / 更新: 2026-09-01</p>
+		<p class="date">📅 作成: 2026-08-31 / 更新: 2026-09-10</p>
 	</div>
 </div>
 
@@ -540,14 +540,15 @@ tools\40_test\stop-test-server.cmd</code></pre>
 
 	<p>名前の決まりと後始末は<a href="../10_plan/p260830-03-テストデータ.html">テストデータの規約</a>にある。参加者は <code>test-</code>、ルームは <code>sandbox-</code> で始める。</p>
 
-	<pre><code class="language-batch">rem 接頭辞に当たるものをまとめて消す（既定はテストの置き場）
-tools\40_test\purge-test-data.cmd
+	<pre><code class="language-batch">rem 接頭辞に当たるものをまとめて消す（置き場を明示する）
+tools\40_test\purge-test-data.cmd --test
 
 rem 数えるだけ
-node tools\40_test\purge-test-data.mjs --dry-run</code></pre>
+node tools\40_test\purge-test-data.mjs --test --dry-run</code></pre>
 
 	<div class="callout callout-warning">
-		<p><strong>本番を相手にするには <code>--production</code> が要る。</strong>既定はテストの置き場なので、うっかり叩いても本番には届かない。</p>
+		<p><strong>置き場を書き忘れると断られる。</strong><code>--test</code> か <code>--production</code> のどちらかが要る（<code>exit 2</code> で止まる）。<strong>既定は無い。</strong>どちらを相手にするかを毎回書かせることで、本番を消す操作が黙って通らないようにしている。</p>
+		<p>ダブルクリックで起動したときも同じで、引数が無いので断られる。<strong>引数を渡して呼ぶ。</strong></p>
 	</div>
 </section>
 
@@ -589,7 +590,7 @@ node tools\40_test\purge-test-data.mjs --dry-run</code></pre>
 
 	<p><strong>離脱は猶予（既定 5 秒）のあとに積まれる。</strong>後始末がそれより早いと、消した後から「離脱しました」だけが入る。</p>
 
-	<p>テスト側は猶予を待ってから消しているが、異常終了すると取りこぼす。<strong>そのときは <code>purge-test-data.cmd</code> を手で叩く。</strong>止めれば置き場ごと消えるので、ふだんは気にしなくてよい。</p>
+	<p>テスト側は猶予を待ってから消しているが、異常終了すると取りこぼす。<strong>そのときは <code>purge-test-data.cmd --test</code> を手で叩く。</strong>止めれば置き場ごと消えるので、ふだんは気にしなくてよい。</p>
 
 	<h2>本番の置き場に印ができている</h2>
 

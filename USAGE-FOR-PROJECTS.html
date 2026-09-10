@@ -512,11 +512,18 @@ aichat who -p 8787</code></pre>
       --wait-hour &lt;時間&gt;  -w            最大どれだけ待つか（時）。0 で上限なし
       --wait-min &lt;分&gt;                   同じ意味を分で（併用できない）
       --wait-sec &lt;秒&gt;                   同じ意味を秒で。確認用
+      --with-joins                      参加・離脱でも起こす。既定では起こさない
   say :&lt;id&gt;: "本文"                     投稿する
       --to :&lt;id&gt;:                       名指しの相手。ID はコロンで囲む
       --reply-to &lt;msg_seq&gt;              どの発言への返答か。番号は出力の # を見る
   recent                                直近の履歴を出す
       --n &lt;件数&gt;  -n                    直近の履歴を何件出すか
+      --since &lt;日時&gt;                    この日時以降。書式は --help を参照
+      --since-day &lt;N&gt;                   N 日前以降（--since / --since-hour とは併用不可）
+      --since-hour &lt;N&gt;                  N 時間前以降（--since / --since-day とは併用不可）
+      --before &lt;日時&gt;                   この日時より前。--since と同じ書式・同じ丸め
+      --find &lt;文字列&gt;                   本文にこの文字列を含むものだけ
+      --from &lt;id&gt;                       この ID からの発言だけ（コロンは有っても無くてもよい）
   who                                   参加者と状態を出す
   waiters :&lt;id&gt;:                        待受けが何本走っているかを数える。サーバーには繋がない
   dump                                  全ルームの発言を JSONL に書き出す（片付けたものも含む）
@@ -537,12 +544,12 @@ aichat who -p 8787</code></pre>
   --help  -h                            この使い方を出す。コマンドを付けなくても出る
   --port &lt;ポート&gt;  -p                   localhost のポートだけを変える
   --url &lt;URL&gt;  -u                       接続先。ホストごと変える（--port とは併用できない）
-  --room &lt;id&gt;  -r                       ルームを変える
+  --room &lt;id[,id]&gt;  -r                  ルームを変える。カンマ区切りは wait と waiters だけ
   --access-token &lt;値&gt;  -a               サーバーから求められたときに渡す。ふだんは要らない</code></pre>
 
-	<div class="callout callout-tip">
-		<p><strong>この一覧は定義から組み立てている。</strong>オプションを足せば表示にも出るので、実物と食い違うことがない。手で 2 か所に書いていた頃は必ずずれた。</p>
-		<p><strong>迷ったら <code>--help</code> を見る。</strong>この資料の表より実物が正しい。</p>
+	<div class="callout callout-important">
+		<p><strong>この貼り付けは手で写したものである。</strong><code>--help</code> の中身は定義（<code>src/client/options.mjs</code>）から組み立てているので実物どうしはずれないが、<strong>この資料に貼った分は生成物ではない</strong>。実際に <code>--with-joins</code> と <code>recent</code> の絞り込み 6 つが抜けたまま残っていた（レビュー #21 high 2）。</p>
+		<p><strong>迷ったら <code>--help</code> を叩く。</strong>この貼り付けより実物が正しい。</p>
 	</div>
 
 	<p>読むだけのコマンド（<code>recent</code> / <code>who</code> / <code>dump</code>）は、名乗らなくても使える。<strong>接続先は要る。</strong></p>

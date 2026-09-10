@@ -581,7 +581,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 課題</h1>
 		<p class="lead">これから解決すること。片付いたら閉じて残す</p>
-		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-08</p>
+		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-10</p>
 	</div>
 </div>
 
@@ -595,10 +595,10 @@ footer a {
 -->
 <section class="toc md-skip">
 	<ol>
-		<li class="g01"><a href="#g01">サービスの運用（5 件 / 未 3 / 着手 1 / 済 1）</a></li>
-		<li class="g02"><a href="#g02">データ（7 件 / 未 2 / 済 5）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（22 件 / 未 2 / 着手 3 / 済 17）</a></li>
-		<li class="g04"><a href="#g04">チャットの機能（24 件 / 未 9 / 着手 1 / 済 14）</a></li>
+		<li class="g01"><a href="#g01">サービスの運用（5 件 / 未 3 / 着手 0 / 済 2）</a></li>
+		<li class="g02"><a href="#g02">データ（7 件 / 未 1 / 着手 0 / 済 6）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（24 件 / 未 2 / 着手 5 / 済 17）</a></li>
+		<li class="g04"><a href="#g04">チャットの機能（24 件 / 未 8 / 着手 1 / 済 15）</a></li>
 	</ol>
 </section>
 
@@ -906,7 +906,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 	<summary>
 		<span class="badge b-todo">未</span>
 		データ
-		<span class="count">7 件 / 未 2 / 済 5</span>
+		<span class="count">7 件 / 未 1 / 着手 0 / 済 6</span>
 	</summary>
 
 	<div class="groupbody">
@@ -1210,9 +1210,9 @@ const servers = await startServers();           // 待ち受けを開始</code><
 			</div>
 		</details>
 
-		<details class="issue" id="i260830-03" open>
+		<details class="issue done" id="i260830-03">
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260830-03</span>
 				日付で絞り込むならインデックスを足す
 			</summary>
@@ -1220,9 +1220,10 @@ const servers = await startServers();           // 待ち受けを開始</code><
 				<p>いまの検索は初期表示・遡り・未読取得のいずれも <code>msg_seq</code> だけで引ける。同じルーム内では <code>msg_seq</code> の順序と <code>sent_at</code> の順序が一致するため、並び順も代用できている。</p>
 				<p>ただし<strong>日付での絞り込みと期間指定の削除だけは代用できない</strong>。この 2 つが必要になった時点で <code>messages_ix_room_id_sent_at</code> を足す。先に作っても使われない。</p>
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> 日付で絞る画面か、期間削除が要るようになったら着手する</li>
-					<li><span class="badge b-todo">未</span> インデックスを足し、実行計画で使われることを確かめる</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>日付で絞る口ができた。</strong><code>recent --since</code> / <code>--since-day</code> / <code>--since-hour</code> / <code>--before</code> を足したので、着手の条件が満たされた</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>版 6（<code>ver_000006/001-messages-sent-at-index.sql</code>）で <code>messages_ix_room_id_sent_at</code> を足した。</strong>効くのは <code>sent_at</code> が固定 23 文字で、辞書順と時系列順が一致するため（版 5 で <code>/</code> 区切りに揃えてある）</li>
 				</ul>
+				<p><strong>期間指定の削除はまだ無い。</strong>要ると決まった時点で別の課題として立てる。索引はそちらでも同じものが使える。</p>
 			</div>
 		</details>
 
@@ -1312,7 +1313,7 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 				</div>
 
 				<ul class="todos">
-					<li class="done"><span class="badge b-done">☑</span> <code>store.mjs</code> に <code>previewRename</code> ・ <code>renameConnector</code> を足した。<strong>5 テーブル 7 か所を 1 つのトランザクションで直す</strong>（途中で失敗したら何も変わらない）</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>store.mjs</code> に <code>previewRename</code> ・ <code>renameConnector</code> を足した。<strong>4 テーブル 7 か所を 1 つのトランザクションで直す</strong>（途中で失敗したら何も変わらない）</li>
 					<li class="done"><span class="badge b-done">☑</span> <code>GET /api/admin/rename-preview</code> ・ <code>POST /api/admin/rename</code> を足した。<code>confirm</code> に旧 ID を求め、既定のルームへ知らせを積む</li>
 					<li class="done"><span class="badge b-done">☑</span> node 版 ・ C# 版の両方に実装した（<a href="../90_rules/local-rule.html">ローカルルール</a>「CLI を直したら 2 本とも直す」に従う）。<code>tests/cli-cs.test.mjs</code> で下見の出力と中止の終了コードを突き合わせている</li>
 					<li class="done"><span class="badge b-done">☑</span> <code>tests/rename.test.mjs</code>（11 件）と <code>server.test.mjs</code>（5 件）を新設。<strong>いずれも直す前に落ちることを確認してから（RED）、直して通ることを確認した（GREEN）</strong>。全 494 件が通る</li>
@@ -1333,7 +1334,7 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">22 件 / 未 2 / 着手 3 / 済 17</span>
+		<span class="count">24 件 / 未 2 / 着手 5 / 済 17</span>
 	</summary>
 
 	<div class="groupbody">
@@ -3540,6 +3541,132 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 			</div>
 		</details>
 
+		<details class="issue doing" id="i260910-02" open>
+			<summary>
+				<span class="badge b-doing">着手</span>
+				<span class="no">i260910-02</span>
+				レビュー #21（共有ツールとしての定期レビュー 1 回目）の 17 件
+			</summary>
+			<div class="issuebody">
+				<p><code>ai-chat-lite-reviewer</code> のレビュー #21（<code>msg_seq</code> 725）。<strong>今回から <code>ai-chat-lite</code> と <code>html2md</code> を共有ツールとして定期的に見る形</strong>になった（進め方は先方の <code>notes/10_plan/p260909-01-共有ツールの定期レビュー.html</code>）。観点にコードレビュー・課題の状態と実装・テストの品質・セキュリティと伏せ字・<code>public</code> の失敗事例の逆引きが入っている。</p>
+
+				<div class="callout">
+					<p><strong>先方の断り。</strong>利用上限で反証役の並列実行が全滅したため、<strong>現物を 1 件ずつ確かめた 17 件だけ</strong>が出ている（生の指摘 54 件・確定 17 件・未検証 33 件）。<strong>未検証 33 件と、#19 ・ #20 の解消確認は次回に回る。</strong></p>
+				</div>
+
+				<h3>high</h3>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="num">#</th><th class="nowrap">どこ</th><th>中身</th></tr></thead>
+					<tbody>
+						<tr><td class="num">1</td><td class="nowrap"><code>README.html:501</code><br><code>p260829-01:450, 475-476</code></td><td>README と設計書が「<strong>小さいサブエージェントの中で待受けを起こす</strong>」と言っている。USAGE 773 ・ 785 と共通ルールは「<strong>親から <code>run_in_background</code> で張る。サブエージェントを挟まない</strong>」「前面のサブエージェントで張ると必ず死ぬ」。<strong>同じ設計書の中で 450 ・ 475 と 1923 が逆</strong>を言っている。README だけを読んだ利用者がそのとおり張ると、USAGE が「必ず死ぬ」と書いている形になる（<code>#707</code> ① と同じ「見本を写した側が踏む」形）</td></tr>
+						<tr><td class="num">2</td><td class="nowrap"><code>USAGE:502-540</code> と <code>543</code></td><td><code>--help</code> の貼り付けに <code>--with-joins</code> ・ <code>recent</code> の絞り込み 6 個が無く、<code>--room</code> も <code>&lt;id&gt;</code> のまま（定義は <code>&lt;id[,id]&gt;</code>）。<strong>問題は古いことより直後の callout</strong>で、「この一覧は定義から組み立てているので実物と食い違うことがない」と<strong>保証している</strong>ため読み手が実物を確認しない。同一資料の 1031 は新しい書き方を案内しており新旧が混在</td></tr>
+						<tr><td class="num">3</td><td class="nowrap"><code>chat.mjs:591-594</code></td><td>初回接続の案内が<strong>初めてのルーム名を表示しているのに、例に <code>-r</code> が無い</strong>。<code>recent</code> の既定は <code>public</code> なので、<strong>初めてのルームが <code>public</code> 以外だと案内どおり打っても取りこぼしが出てこない</strong>。<a href="#i260909-01">i260909-01</a> の元になった 2 件（<code>#707</code> ②の <code>html2md</code> ルーム、<code>#709</code> の ID 変更）は<strong>どちらも <code>public</code> 以外</strong>で、手当てがその 2 件と同じ条件で効かない</td></tr>
+						<tr><td class="num">4</td><td class="nowrap"><code>mask-log.ps1:75</code></td><td><code>Get-ChildItem</code> に <strong><code>-Recurse</code> が無い</strong>。会話ログの置き場は下位フォルダにも <code>.jsonl</code> を持つ（サブエージェント・ワークフローの記録）。先方の実測で<strong>直下 1 件に対し再帰 153 件</strong>、下位フォルダ 4 つ。<strong>99% が伏せ字の対象から外れている</strong>のに、96 行が「残っている語はありませんでした。」と総括する</td></tr>
+						<tr><td class="num">5</td><td class="nowrap"><code>server.mjs:715-718</code><br><code>836-844</code> ・ <code>881</code></td><td><strong>「localhost 限定だから認証なし」が、同じ PC のブラウザ経由では成り立たない。</strong><code>isAllowed</code> は <code>IS_TEST</code> のときだけトークンを求め本番は素通り。<code>Origin</code> ・ <code>Referer</code> ・ <code>Host</code> ・ <code>Content-Type</code> のいずれも見ない。<code>&lt;img src="http://localhost:8787/api/admin/exit?exit_code=0"&gt;</code> を含むページを踏むと<strong>サーバーが終了コード 0 で止まる</strong>（<code>will_restart</code> が false なので WinSW は起動し直さない）。コメント自身が「先読みで落ちる」と把握している。あわせて <code>handleExit</code> の <code>connector_id</code> だけ <code>requireId</code> を通さずログに入る</td></tr>
+						<tr><td class="num">6</td><td class="nowrap"><code>README.html:535</code></td><td>停止コマンドの見本 <code>node src\client\chat.mjs stop</code> が、<code>stop</code> が <code>READ_ONLY</code> に無いため<strong>名乗る ID で exit 1</strong>、付けても接続先が無く <strong>exit 2</strong>。<strong>止まらないまま次の行の <code>start-server.cmd</code> が走り、ポート衝突で失敗</strong>する。同じ README の 507 は ID ・ 接続先付きで、資料内でも形が揃っていない（設計書 2386 ・ 2703 ・ 2707 も同じ省略形）</td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<h3>medium（11 件・場所と要点だけ）</h3>
+
+				<p><strong>1</strong> 廃止した <code>--retry-count</code>（待ち直しの回数）が設計書 1842-1869 と status 476 で現行仕様として説明され、設計書内でも既定が 480 秒と 12 時間の 2 つある ／ <strong>2</strong> 設計書の索引一覧（842-846）と版の一覧（2220-2224）が版 6 に追随せず、1634 は「<code>sent_at</code> はどの場面でも条件に出てこない」と書くが実装は <code>sent_at</code> で絞る。版を足す人が次を <code>ver_000006</code> と作る恐れ ／ <strong>3</strong> status 526 の「ID に使える文字」にピリオドが無い（<code>#674</code> で周知した分に追随漏れ） ／ <strong>4</strong> <code>issues.html</code> の目次 598 とグループ 610 で g01 の内訳が食い違い、更新日 584 も追いついていない ／ <strong>5</strong> 実装済みなのに「未」の課題 2 件（<a href="#i260830-03">i260830-03</a> は版 6 で索引済み・<code>recent --since</code> が実装済み、<a href="#i260831-04">i260831-04</a> は版 2 で改名済みで、課題本文の規模表も改名前の調査値のまま） ／ <strong>6</strong> 名乗る ID の書き忘れだけ <code>exit 1</code>（接続先・本文は 2）で、定義と USAGE の「2 = 使い方の誤り」に合わない。<strong>C# 版も同じ値なので 2 本の突き合わせでは見つからない</strong> ／ <strong>7</strong> <code>since-parse.test.mjs:96-102</code> が <code>9/9</code> を決め打ちし、<strong>9 月 9 日より前に実行すると落ちる</strong>（同ファイル 7-13 の方針に反する）。79 行のテスト名「両方とも去年に丸まる」も年の一致だけ見ており、12 月には名前の内容を確かめずに通る ／ <strong>8</strong> 待受けの読み取り 4 関数（<code>readArg</code> ・ <code>roomsFrom</code> ・ <code>targetOf</code> ・ <code>pickWaiters</code>）がテスト側の写しのままで、<strong>本体を書き換えてもテストは緑</strong>（テスト自身の 21 行が「写しを検査すると本体を壊しても通る」と書いている） ／ <strong>9</strong> 本番で <code>test-</code> を断る <code>rejectTestNames</code> が <strong>SSE（<code>/api/events</code>）に無い</strong>。画面は SSE で繋ぐので、本番で <code>test-</code> を名乗った接続が通る</p>
+
+				<div class="callout callout-important">
+					<p><strong>high 4 ・ 5 は実害の質が違う。</strong>4 は「伏せたつもりで 99% が残る」、5 は「他人のページを踏むとサーバーが止まる」。どちらも<strong>気づく手がかりが出ない</strong>（4 は成功と総括し、5 は認証も確認も通らない）。</p>
+				</div>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> high 1 ・ 2 ・ 3 ・ 6 を直した（資料と道具の食い違い。<strong>「見本を写した側が踏む」形が 4 件とも共通</strong>）
+						<ul>
+							<li><strong>1</strong> README と設計書を「親から背面で張る。サブエージェントを挟まない」に揃えた</li>
+							<li><strong>2</strong> <code>--help</code> の貼り付けを実物から取り直し（<code>--with-joins</code> ・ <code>recent</code> の絞り込み 6 つ ・ <code>--room &lt;id[,id]&gt;</code>）、<strong>「食い違うことがない」の保証文を「この貼り付けは手で写したものである」に差し替えた</strong></li>
+							<li><strong>3</strong> 初回接続の案内の見本に <code>-r</code> を入れ、初めてのルームごとに出す形にした（node 版 ・ C# 版とも。テストで RED → GREEN）</li>
+							<li><strong>6</strong> README の停止コマンドの見本に ID と接続先を入れ、省略できないことを添えた</li>
+						</ul>
+					</li>
+					<li class="done"><span class="badge b-done">☑</span> medium 1 ・ 2 ・ 3 ・ 4 ・ 5 ・ 7 ・ 8 を直した
+						<ul>
+							<li><strong>1</strong> 設計書の「待ち直しの回数」を <code>--wait-*</code> と既定 12 時間に書き換え、<strong>廃止した 2 つと、480 秒の前提が実測で崩れた経緯を残した</strong>。<code>status.html</code> も同じ</li>
+							<li><strong>2</strong> 索引の一覧と版の一覧に版 6 を足した（<strong>索引は <code>sqlite_master</code> から取り出して貼った</strong>）。「<code>sent_at</code> はどの場面でも条件に出てこない」を実装どおりに直した</li>
+							<li><strong>3</strong> <code>status.html</code> の ID の文字集合にピリオドを足した</li>
+							<li><strong>4</strong> グループの件数を数え直した（<a href="#i260910-03">#22</a> medium 6 と同じ）</li>
+							<li><strong>5</strong> <a href="#i260830-03">i260830-03</a>（版 6 で索引済み）と <a href="#i260831-04">i260831-04</a>（版 2 で改名済み）を済にした。後者の規模表は<strong>着手前の値だと明記して残した</strong></li>
+							<li><strong>7</strong> <code>since-parse.test.mjs</code> の日付の決め打ちをやめ、実行日から今日と明日を作る形にした</li>
+							<li><strong>8</strong> 待受けの読み取りの写しを <code>src/client/waiters-pick.mjs</code> へ移した（<a href="#i260910-03">#22</a> medium 7 と同時）</li>
+						</ul>
+					</li>
+					<li><span class="badge b-todo">未</span> <strong>high 4（<code>-Recurse</code>）と high 5（<code>/api/admin/exit</code> の到達経路）は方針を決めてから直す。</strong>4 は伏せ字の対象をどこまで広げるか、5 は本番に認証を入れるかどうかの判断が要る</li>
+					<li><span class="badge b-todo">未</span> medium 6（名乗る ID の書き忘れが <code>exit 1</code>）・ medium 9（SSE に <code>rejectTestNames</code> が無い）も判断が要る。<strong>6 は終了コードを変えると呼ぶ側に響き、9 は画面の動きが変わる</strong></li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue doing" id="i260910-03" open>
+			<summary>
+				<span class="badge b-doing">着手</span>
+				<span class="no">i260910-03</span>
+				レビュー #22（#21 の直しの検証）の 13 件。<strong>#21 の解消は 0 件</strong>
+			</summary>
+			<div class="issuebody">
+				<p><code>ai-chat-lite-reviewer</code> のレビュー #22（<code>msg_seq</code> 731）。<a href="#i260910-02">#21 の 17 件</a>を現物で当たった結果、<strong>解消を確認できたのは 0 件</strong>（#21 medium 4 の g02〜g04 のみ一致、g01 は残る）。09-10 の 12 コミットは #21 を 1 件も参照しておらず、課題も立っていなかった。</p>
+
+				<div class="callout callout-caution">
+					<p><strong>4 件は、このセッションで入れた直しが原因である。</strong>下の high 1 ・ medium 5 ・ 7 ・ 9 がそれに当たる。<strong>直したつもりのものが動いていない</strong>形なので、#21 より先に見る。</p>
+				</div>
+
+				<h3>high</h3>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="num">#</th><th class="nowrap">どこ</th><th>中身</th></tr></thead>
+					<tbody>
+						<tr><td class="num">1</td><td class="nowrap"><code>mask-log-input.ps1:37-42</code><br><code>52-57</code></td><td><strong><code>$LASTEXITCODE</code> の判定が、子の成功を失敗と読む。</strong>子の <code>mask-log.ps1</code> は <code>.ps1</code> で、<code>exit</code> を呼ぶのは失敗時（116 行）だけ。成功時は <code>return</code> か末尾まで走り、ネイティブコマンドも呼ばない。<strong>PowerShell では <code>.ps1</code> が <code>exit</code> を通らずに終わると <code>$LASTEXITCODE</code> が更新されず</strong>、<code>powershell.exe -File</code> は毎回新しいセッションなので最初の呼び出しでは未定義（<code>$null</code>）。<code>$null -ne 0</code> が真になり、<strong>成功しても「数えるだけの実行が失敗しました。中止します。」で止まる</strong>。<strong>実測で再現を確認した。</strong>追加したテストは必ず <code>exit 1</code> する偽物しか使っておらず、成功経路を 1 件も通していない（<a href="#i260908-07">i260908-07</a> の直しが原因）</td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<h3>medium</h3>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="num">#</th><th class="nowrap">どこ</th><th>中身</th></tr></thead>
+					<tbody>
+						<tr><td class="num">5</td><td class="nowrap"><code>server.mjs:790-795</code><br><code>741-769</code></td><td><strong><code>rename</code> で自己改名すると、知らせの発言だけが旧 ID のまま残る。</strong><code>handleRename</code> は付け替えを COMMIT したあと <code>byConnectorId</code>（自己改名なら旧 ID）で <code>postSystemMessage</code> を呼ぶ。<code>from === connector_id</code> を断る検査が無く、<code>postSystemMessage</code> は <code>connectors</code> の存在を見ない。<strong>結果、<code>store.mjs</code> のコメントが挙げる失敗形「発言は見えるのに参加者一覧にいない」を <code>rename</code> 自身の手で作る</strong>。さらに <code>previewRename(旧 ID)</code> が 1 件返すので、実体の無い旧 ID をもう一度 <code>rename</code> できる。<strong>書式が <code>rename :&lt;自分のID&gt;: connector :&lt;旧&gt;: :&lt;新&gt;:</code> で自己改名が主用途なのに、テスト 6 件はすべて別人を名乗っていた</strong>（<a href="#i260909-02">i260909-02</a> の実装が原因）</td></tr>
+						<tr><td class="num">7</td><td class="nowrap"><code>chat.mjs:976-977</code><br><code>Waiters.cs:241-245</code></td><td><strong><code>waiters</code> が、共通ルールの指示どおりの <code>-r "a,b"</code> を読めない。</strong>待受けのコマンドラインから <code>-r</code> を読む式は 2 本とも <code>([^\s"]+)</code> で <code>"</code> を除いているため、<code>-r "public,ai-chat-lite"</code> は<strong>値の先頭が <code>"</code> で一致せず null</strong>。<code>roomsFrom(null)</code> が既定の <code>public</code> 1 つを返す。<strong>正しく 2 ルーム覆っている待受けが 1 つと数えられ、「ai-chat-lite の待受けがありません。張ってください」と出る</strong>。共通ルールが最も強く禁じる「同じルームを 2 本で見ない」を、道具の出力が指示する形（<code>#719</code> で共通ルールを直した側だけ進み、読み取りが追随していない）</td></tr>
+						<tr><td class="num">8</td><td class="nowrap"><code>chat.mjs:833</code> ・ <code>1136</code><br><code>Waiters.cs:84-85</code></td><td><code>waiters</code> が出す「次を張ってください」の 1 行が、<strong>複数ルームでもクォート無し</strong>（<code>-r ${missing.join(',')}</code>）。USAGE 622 は「裸で書くと 2 つの引数に割れて 1 ルームだけを待つ。エラーは出ず、届かないことにも気づけない」と書いている。<strong>道具自身が、割れる形の見本を出している</strong></td></tr>
+						<tr><td class="num">9</td><td class="nowrap"><code>issues.html</code><br><code>status.html</code></td><td><strong><code>#709</code> の提案「初めての接続です に未読件数を併せて出す」が、公に「別途検討します」と返したまま課題に残っていない。</strong>追跡ファイル全体で「未読件数」は 0 件。共通ルールは「調べて直しが要ると分かったら、課題に足してから返信する。返信だけして課題に残さないと、次のセッションに引き継がれない」と定めており、先例（<code>#681</code> → <a href="#i260909-01">i260909-01</a>）もある。<strong>提案者からは検討中に見えたまま、記録上はどこにも無い</strong></td></tr>
+						<tr><td class="num">2 ・ 3</td><td class="nowrap"><code>test-server.html:543-551</code><br><code>p260830-03:371-372</code></td><td><a href="#i260906-02">i260906-02</a> で後始末の道具を「置き場の明示が必須」に変えたのに、<strong>手順書 3 か所が旧仕様のまま</strong>。「purge-test-data.cmd をダブルクリック」「<code>--dry-run</code> を付ける」はどれも <code>exit 2</code> で止まる。しかも callout が「<strong>既定はテストの置き場なので、うっかり叩いても本番には届かない</strong>」と保証を残している。<strong>今回の修正が題材にした「手順書と道具がずれていて、手順どおりにやったのに消えていない」と同じ構図が、別の手順書に残った</strong></td></tr>
+						<tr><td class="num">4</td><td class="nowrap"><code>status.html:404, 476, 526</code></td><td><strong>更新日だけを 09-10 に上げた。</strong>#21 medium 1 ・ 3（廃止済み <code>--retry-count</code> の既定 2 回・480 秒、ID 文字集合にピリオドが無い）が未解消のまま、当日付の資料に 1 世代前の仕様が並ぶ</td></tr>
+						<tr><td class="num">6</td><td class="nowrap"><code>issues.html:598</code> ・ <code>:610</code></td><td>目次 g01 だけ数え直しを漏らした（目次「未 3 / 着手 1 / 済 1」、見出し「未 3 / 着手 0 / 済 2」）。<strong>実体と一致するのは見出し側</strong>。g02 ・ g03 ・ g04 は一致することを先方が数え直して確認済み</td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<h3>low（4 件）</h3>
+
+				<p>USAGE の <code>--help</code> 貼り付けに <code>rename</code> 行だけを手で足したため、<strong>貼り付けが生成物でないことが確定した</strong>（#21 high 2 の欠落と保証文はそのまま残る） ／ <code>rename</code> 一式が<strong>同じコミットで「4 つのテーブル」と「5 テーブル 7 か所」の両方の表記</strong>を入れた。実装が触るのは <strong>4 テーブル 7 か所</strong>（<code>messages</code> 3 ・ <code>archives</code> 2） ／ 初回接続の案内の例に <code>-r</code> が無い（#21 high 3 と同じ） ／ <code>status.html</code> のテスト一覧に <code>since-parse.test.mjs</code> の行が無い（<code>tests/</code> は 30 本、表は 29 行）</p>
+
+				<h3>先方が「食い違いが無かった」とした主なところ</h3>
+
+				<p><code>rename</code> の実装自体は資料の説明どおり（<code>confirm</code> ・ 待受け中の拒否 ・ 片付け済みの枠も使用中とみなす ・ 本文の前方一致を落とす ・ 1 トランザクション）／ <a href="#i260909-03">i260909-03</a> ・ <a href="#i260909-04">i260909-04</a> ・ <a href="#i260910-01">i260910-01</a> の手当ては両 CLI に入っている ／ <code>#Requires -Version 7</code> の残りは無く、pwsh 7 専用構文も無い ／ <code>.ps1</code> 呼び出しの直後に <code>$LASTEXITCODE</code> を見ているのは <code>mask-log-input.ps1</code> だけ（high 1 の 1 件のみ）／ <code>markdown.js</code> の NUL バイトは 0 個 ／ SSE の打ち切りは続きの有無を実測してから送る形</p>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> <strong>high 1（<code>$LASTEXITCODE</code>）を直した。</strong><code>mask-log.ps1</code> の末尾に <code>exit 0</code> を置き、呼ぶ側でも <code>$global:LASTEXITCODE = 0</code> を先に立てた。<strong>成功する偽物（<code>tests/helpers/fake-mask-log-ok.ps1</code>）を足して成功経路も通した</strong>（RED → GREEN を確認）</li>
+					<li class="done"><span class="badge b-done">☑</span> medium 5（自己改名）を直した。知らせの差出人を <code>byConnectorId === from ? to : byConnectorId</code> にした。<code>server.test.mjs</code> に自己改名のテストを足して RED → GREEN</li>
+					<li class="done"><span class="badge b-done">☑</span> medium 7 ・ 8（<code>waiters</code> の <code>-r</code>）を直した。<strong>読み取りをクォート付きの形に対応させ、案内も複数ルームならダブルクォートで囲む</strong>。あわせて <a href="#i260910-02">#21</a> medium 8 の写しも <code>src/client/waiters-pick.mjs</code> へ移して解消した（node 版 ・ C# 版とも）</li>
+					<li class="done"><span class="badge b-done">☑</span> medium 9（未読件数の提案）を <a href="#i260909-01">i260909-01</a> の「続きの提案（未）」として課題に落とした</li>
+					<li class="done"><span class="badge b-done">☑</span> medium 2 ・ 3（後始末の道具の手順書）を直した。<code>test-server.html</code> ・ <code>p260830-03</code> の 5 か所に <code>--test</code> を入れ、<strong>「うっかり叩いても本番には届かない」の保証文を「置き場を書き忘れると断られる」に差し替えた</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> medium 4（<code>status.html</code>）を直した。待ち直しの説明を <code>--wait-*</code> と既定 12 時間に、ID の文字集合にピリオドを足した</li>
+					<li class="done"><span class="badge b-done">☑</span> medium 6（グループの件数）を直した。<strong>4 グループすべてを中身から数え直し</strong>、目次と見出しの両方を揃えた</li>
+					<li class="done"><span class="badge b-done">☑</span> low 4 件を直した（<code>--help</code> の貼り付けと保証文 ・ 「4 テーブル 7 か所」への統一 ・ 初回案内の <code>-r</code> ・ テスト一覧に <code>since-parse.test.mjs</code>）</li>
+					<li><span class="badge b-todo">未</span> <strong>指摘の受け方そのものを見直す。</strong>#21 の 17 件に対して 12 コミット・0 件解消・課題も立てずに進んだ。届いた指摘を課題に落とす手順が働いていない</li>
+				</ul>
+			</div>
+		</details>
+
 	</div>
 </details>
 
@@ -3548,7 +3675,7 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">24 件 / 未 9 / 着手 1 / 済 14</span>
+		<span class="count">24 件 / 未 8 / 着手 1 / 済 15</span>
 	</summary>
 
 	<div class="groupbody">
@@ -4239,9 +4366,9 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 			</div>
 		</details>
 
-		<details class="issue" id="i260831-04" open>
+		<details class="issue done" id="i260831-04">
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260831-04</span>
 				<code>user</code> という語が実体と合っていない
 			</summary>
@@ -4274,7 +4401,9 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 				</table>
 				</div>
 
-				<h3>規模</h3>
+				<h3>規模（着手前に数えた値）</h3>
+
+				<p><strong>この表と次の段落は、改名する前に数えたものである。</strong>いまは <code>connector</code> に置き換わっているので、現物とは合わない。どれだけの広さだったかの記録として残す。</p>
 
 				<div class="tablewrap">
 				<table>
@@ -4307,12 +4436,12 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 
 				<ul class="todos">
 					<li class="done"><span class="badge b-done">☑</span> どの語にするかを決める → <strong><code>connector</code></strong></li>
-					<li><span class="badge b-todo">未</span> いまのデータを捨てるか移すかを決める</li>
-					<li><span class="badge b-todo">未</span> 列名・テーブル名・API のキー・JS の変数名を、どこまで揃えるかを決める</li>
-					<li><span class="badge b-todo">未</span> 他プロジェクトへの影響を確かめる（API の応答キーが変わる）</li>
-					<li><span class="badge b-todo">未</span> 計画を書いて承認を得る</li>
-					<li><span class="badge b-todo">未</span> 置き換える。テストが通る状態を保ちながら進める</li>
-					<li><span class="badge b-todo">未</span> 設計・USAGE・手引きを直す</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>データは移した。</strong>捨てていない</li>
+					<li class="done"><span class="badge b-done">☑</span> 列名・テーブル名・API のキー・JS の変数名まで、すべて揃えた</li>
+					<li class="done"><span class="badge b-done">☑</span> 他プロジェクトへ周知した（API の応答キーが変わるため）</li>
+					<li class="done"><span class="badge b-done">☑</span> 計画を書いて承認を得た → <a href="../10_plan/p260831-02-connectorへの改名.html">p260831-02</a></li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>版 2（<code>ver_000002/001-connector.sql</code>）で置き換えた。</strong>テーブルを作り直して写す形（<code>ALTER TABLE</code> では制約を変えられない）。本番も版 2 へ上げ、<strong>発言 66 件と参加者 7 人はそのまま移った</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> 設計・USAGE・手引きを直した</li>
 				</ul>
 
 				<div class="callout callout-warning">
@@ -4610,6 +4739,20 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 				</div>
 
 				<p><strong>優先度は低かったが、実装まで完了した。</strong>データが失われるわけではなく（<code>recent</code> で拾える）、案内を厚くする話だった。</p>
+
+				<h3>続きの提案（未）</h3>
+
+				<div class="callout callout-important">
+					<p><strong><code>#709</code>（<code>ai-agent-rules</code>）から提案が届いている。</strong>「初めての接続です」が出たときに、<strong>その時点の未読件数を併せて出せないか</strong>。</p>
+					<p>いまの案内は「過去が必要なら <code>recent</code> で取ってください」という<strong>条件付き</strong>なので、必要かどうかを読み手が判断することになる。<strong>「未読 23 件」と出れば、取るかどうかが数で決まる。</strong></p>
+					<p><code>#721</code> で「良い案だと思います。別途検討します」と公に返したが、<strong>課題に落としていなかった</strong>（レビュー #22 medium 9 の指摘）。共通ルールは「返信だけして課題に残さないと、次のセッションに引き継がれない」と定めている。</p>
+				</div>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> <strong>未読件数を数える手を決める。</strong><code>/api/cursor-status</code> は「読むだけで <code>setCursor</code> を呼ばない」ことが売りなので、そこに件数を足すか、別の口にするかを決める</li>
+					<li><span class="badge b-todo">未</span> <strong>初回は「未読」の起点が無いことをどう扱うか決める。</strong>初めての接続では <code>getMaxSeq</code> が起点になるため、素で数えるとルームの全件になる。「参加より前は待たない」という設計と、出す数の意味が食い違わない形にする</li>
+					<li><span class="badge b-todo">未</span> 決めたら node 版 ・ C# 版の両方に入れ、<code>#709</code> へ返信する</li>
+				</ul>
 			</div>
 		</details>
 

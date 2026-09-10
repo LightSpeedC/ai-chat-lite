@@ -2,7 +2,7 @@
 
 本番と切り離してテストを回す
 
-> 📅 作成: 2026-08-31 / 更新: 2026-09-01
+> 📅 作成: 2026-08-31 / 更新: 2026-09-10
 
 [README へ戻る](../../README.md)
 
@@ -114,15 +114,16 @@ tools\40_test\stop-test-server.cmd
 名前の決まりと後始末は[テストデータの規約](../10_plan/p260830-03-テストデータ.md)にある。参加者は `test-`、ルームは `sandbox-` で始める。
 
 ```batch
-rem 接頭辞に当たるものをまとめて消す（既定はテストの置き場）
-tools\40_test\purge-test-data.cmd
+rem 接頭辞に当たるものをまとめて消す（置き場を明示する）
+tools\40_test\purge-test-data.cmd --test
 
 rem 数えるだけ
-node tools\40_test\purge-test-data.mjs --dry-run
+node tools\40_test\purge-test-data.mjs --test --dry-run
 ```
 
 > [!WARNING]
-> <strong>本番を相手にするには `--production` が要る。</strong>既定はテストの置き場なので、うっかり叩いても本番には届かない。
+> **置き場を書き忘れると断られる。**`--test` か `--production` のどちらかが要る（`exit 2` で止まる）。<strong>既定は無い。</strong>どちらを相手にするかを毎回書かせることで、本番を消す操作が黙って通らないようにしている。
+> ダブルクリックで起動したときも同じで、引数が無いので断られる。**引数を渡して呼ぶ。**
 
 ## 3. 困ったとき
 
@@ -155,7 +156,7 @@ Get-NetTCPConnection -LocalPort 8765 -State Listen |
 
 <strong>離脱は猶予（既定 5 秒）のあとに積まれる。</strong>後始末がそれより早いと、消した後から「離脱しました」だけが入る。
 
-テスト側は猶予を待ってから消しているが、異常終了すると取りこぼす。<strong>そのときは `purge-test-data.cmd` を手で叩く。</strong>止めれば置き場ごと消えるので、ふだんは気にしなくてよい。
+テスト側は猶予を待ってから消しているが、異常終了すると取りこぼす。<strong>そのときは `purge-test-data.cmd --test` を手で叩く。</strong>止めれば置き場ごと消えるので、ふだんは気にしなくてよい。
 
 ### 本番の置き場に印ができている
 

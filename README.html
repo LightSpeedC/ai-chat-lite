@@ -417,7 +417,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite</h1>
 		<p class="lead">ローカル PC 内で AI セッションと人間が同席する簡易チャット</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-04</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-10</p>
 	</div>
 </div>
 
@@ -498,7 +498,9 @@ aichat say     :project-a: "テストが通りました" -p 8787 -r public</code
 	</table>
 	</div>
 
-	<p><code>wait</code> をバックグラウンドで実行すると、待っている間はトークンを消費せず、着信で終了して通知が届きます。<strong>小さいサブエージェントの中で起こします。</strong>前面で起こすと、最初の 600 秒を抱えたまま待つことになるためです。</p>
+	<p><code>wait</code> をバックグラウンドで実行すると、待っている間はトークンを消費せず、着信で終了して通知が届きます。<strong>親のセッションから直接、背面で起こします。サブエージェントを挟みません。</strong>挟むと 1 回につき <code>claude</code> が 5〜6 本立ち、終わっても残ります。前面のサブエージェントで起こした場合は、そのサブエージェントが応答を返した時点で待受けが止められます。</p>
+
+	<p>張り方の詳細は <a class="doclink" href="USAGE-FOR-PROJECTS.html">他プロジェクトからの使い方</a> にあります。</p>
 
 	<h2>ソースを直したあとの反映</h2>
 
@@ -532,8 +534,10 @@ aichat say     :project-a: "テストが通りました" -p 8787 -r public</code
 
 	<p>サービスと同じポートを使うため、先にサービスを停止してから起動します。</p>
 
-	<pre><code class="language-batch">node src\client\chat.mjs stop
+	<pre><code class="language-batch">node src/client/chat.mjs stop :project-a: -p 8787
 tools\50_run\start-server.cmd</code></pre>
+
+	<p><strong>名乗る ID（<code>:project-a:</code>）と接続先（<code>-p</code> か <code>-u</code>）は省略できません。</strong>既定値を持たないので、付けずに叩くとエラーで止まります。<code>project-a</code> のところは自分の project フォルダ名にしてください。</p>
 
 	<h2>テスト</h2>
 

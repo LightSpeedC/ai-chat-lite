@@ -447,7 +447,7 @@ footer a {
 			<tr><td class="nowrap">ID</td><td>自己申告。<strong>コマンドの直後に <code>:id:</code> の形で明示する</strong>。project フォルダ名を使うことを想定している。使えるのは英数字・ハイフン・下線・ピリオド（ピリオドは先頭と末尾には置けない）</td></tr>
 			<tr><td class="nowrap">アクセス制御</td><td>初期仕様では設けない。誰でも参加でき、誰の発言も全員が読める</td></tr>
 			<tr><td class="nowrap">在席表示</td><td>誰がいまオンラインかが分かる</td></tr>
-			<tr><td class="nowrap">AI の待受け</td><td>サブエージェントを常駐させ、着信に反応する</td></tr>
+			<tr><td class="nowrap">AI の待受け</td><td><strong>親のセッションが背面（<code>run_in_background</code>）で常駐させ、着信に反応する。</strong>当初はサブエージェントを想定していたが、挟むこと自体が資源を食うと実測で分かり改めた（<a href="../40_issues/issues.html#i260905-04">i260905-04</a>）</td></tr>
 		</tbody>
 	</table>
 	</div>
@@ -472,8 +472,8 @@ footer a {
 			</tr>
 			<tr>
 				<td class="nowrap">AI の受信</td>
-				<td class="nowrap">サブエージェントの long-poll</td>
-				<td>待っている間トークンを消費しない。着信でサブエージェントが終了し、親セッションに通知が届く</td>
+				<td class="nowrap">背面のコマンドでの long-poll</td>
+				<td>待っている間トークンを消費しない。着信でコマンドが終わり、親セッションに通知が届く。<strong>サブエージェントは挟まない</strong>（下の「待受け常駐の流れ」を参照）</td>
 			</tr>
 			<tr>
 				<td class="nowrap">人間 UI</td>
@@ -841,6 +841,7 @@ CREATE TABLE versions (
 );
 
 CREATE INDEX messages_ix_room_id_msg_seq ON messages(room_id, msg_seq);
+CREATE INDEX messages_ix_room_id_sent_at ON messages(room_id, sent_at);
 CREATE INDEX messages_ix_archived_seq    ON messages(archived_seq);
 CREATE INDEX cursors_ix_archived_seq     ON cursors(archived_seq);
 CREATE INDEX connectors_ix_archived_seq  ON connectors(archived_seq);</code></pre>
@@ -1125,7 +1126,7 @@ CREATE INDEX connectors_ix_archived_seq  ON connectors(archived_seq);</code></pr
 		<p><strong>時刻はサーバーで採番する。</strong>クライアントに時刻を生成させて送らせると、PC の時計のずれや送信の遅れで <code>msg_seq</code> と <code>sent_at</code> の順序が逆転し、上の前提が崩れる。</p>
 	</div>
 
-	<p>日付で絞り込む画面や期間を指定した一括削除が必要になった時点で <code>(room_id, sent_at)</code> を追加する。<code>msg_seq</code> では代用できないのはこの 2 つだけで、それまでは持っていても使われない。</p>
+	<p><strong>足す条件だと決めていたのは「日付で絞り込む口」と「期間を指定した一括削除」の 2 つ</strong>で、<code>msg_seq</code> で代用できないのがこの 2 つだけだった。<code>recent</code> の絞り込みで前者が実現したので、版 6 で足した。<strong>期間指定の一括削除はまだ無い。</strong></p>
 
 	<h2>日時は JST の固定長文字列で持つ</h2>
 
@@ -1363,7 +1364,7 @@ if (mode.journal_mode !== 'wal') {
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/admin/rename-preview</code></td>
 				<td class="nowrap"><code>from</code></td>
-				<td><strong>付け替えの下見。</strong>何が書き換わるかを 5 テーブル 7 か所で数える（<code>connectors</code> ・ <code>cursors</code> ・ <code>messages</code> の発言者 ・ 宛先 ・ 本文の <code>@旧ID</code> ・ <code>archives</code> の実行者 ・ 対象）。<strong>記録が 0 件なら 400</strong>（名前を打たせてから断るのを避ける）</td>
+				<td><strong>付け替えの下見。</strong>何が書き換わるかを 4 テーブル 7 か所で数える（<code>connectors</code> ・ <code>cursors</code> ・ <code>messages</code> の発言者 ・ 宛先 ・ 本文の <code>@旧ID</code> ・ <code>archives</code> の実行者 ・ 対象）。<strong>記録が 0 件なら 400</strong>（名前を打たせてから断るのを避ける）</td>
 			</tr>
 			<tr>
 				<td class="nowrap">POST</td><td class="nowrap"><code>/api/admin/rename</code></td>
@@ -1642,7 +1643,7 @@ LIMIT ?;</code></pre>
 	</table>
 	</div>
 
-	<p><code>sent_at</code> はどの場面でも条件に出てこない。すべて <code>(room_id, msg_seq)</code> のインデックス 1 本で引ける。</p>
+	<p>画面が使う場面（初期表示 ・ 遡り ・ 未読取得）は、すべて <code>(room_id, msg_seq)</code> のインデックス 1 本で引ける。<strong><code>sent_at</code> が条件に出るのは <code>recent</code> の絞り込みだけ</strong>で、そこは版 6 の <code>(room_id, sent_at)</code> が受ける（上の「<code>sent_at</code> のインデックス（版 6）」を参照）。</p>
 
 	<h2>JSON のキー名は DB の列名に揃える</h2>
 
@@ -1850,34 +1851,44 @@ while (unlimited || waited &lt; limitSec) {
 
 	<p><strong>除いた分もカーソルは進む。</strong>止めると、張り直した先で同じ <code>join</code> を読み、また除いて待つ。1 回で済むはずの走査が毎回積み上がる。詳しくは<a class="doclink" href="p260905-01-待受けの種別しぼり.html">待受けの種別しぼり</a>を参照。</p>
 
-	<h3>待ち直しの回数</h3>
+	<h3>待ち直しの長さ</h3>
 
 	<p>1 回の long-poll は 240 秒で必ず返る。それ以上サーバー側で引き延ばすと、途中で切れた接続を握り続けることになるため。代わりにクライアントが黙って待ち直す。呼ぶ側から見ると 1 回の実行で長く待てる。</p>
+
+	<p><strong>呼ぶ側が渡すのは回数ではなく、全体をどれだけ待つかである。</strong>何回に割るかは内部で決める。</p>
 
 	<div class="tablewrap">
 	<table>
 		<thead>
-			<tr><th class="nowrap">値</th><th class="nowrap">合計</th><th>意味</th></tr>
+			<tr><th class="nowrap">オプション</th><th class="nowrap">単位</th><th>意味</th></tr>
 		</thead>
 		<tbody>
 			<tr>
-				<td class="nowrap">2（既定）</td><td class="nowrap">480 秒</td>
-				<td>ツール実行が打ち切られる 600 秒の内側に収まる。3 回にすると 720 秒になり、待ち切る前に呼び出し側が切られる</td>
+				<td class="nowrap"><code>--wait-hour</code> ・ <code>-w</code></td><td class="nowrap">時</td>
+				<td><strong>既定は 12 時間</strong>（渡さないときの値）。<code>0</code> で上限なし</td>
 			</tr>
 			<tr>
-				<td class="nowrap">15</td><td class="nowrap">3600 秒</td>
-				<td>1 時間。バックグラウンド実行が要る</td>
+				<td class="nowrap"><code>--wait-min</code></td><td class="nowrap">分</td>
+				<td>同じ意味を分で。<code>--wait-hour</code> との併用は断る</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>--wait-sec</code></td><td class="nowrap">秒</td>
+				<td>テストが数秒で終われるように残してある。<code>--help</code> には出さない</td>
 			</tr>
 		</tbody>
 	</table>
 	</div>
 
 	<div class="callout callout-important">
-		<p><strong>バックグラウンド実行かどうかは、走っている側からは判別できない。</strong>通常実行とバックグラウンド実行で環境変数 68 個の名前と値がすべて一致し、標準出力の <code>isTTY</code> もどちらも <code>false</code> になることを実測で確かめた。<code>ppid</code> は異なるが、これは実行のたびに変わる値なので判定には使えない。</p>
-		<p>そのため合計が 600 秒を超える設定では<strong>警告を出すだけで、実行は止めない</strong>。止める判断ができない以上、呼び出し側の意図を尊重する。</p>
+		<p><strong><code>--timeout</code> と <code>--retry-count</code> は廃止した。</strong>渡すと <code>--wait-*</code> への言い換えを添えてエラーで止まる。黙って無視すると、他プロジェクトの手順に残った <code>--retry-count 15</code> が効かないまま動いてしまう（<a class="doclink" href="p260901-01-CLIのオプションを整える.html">CLI のオプションを整える</a>）。</p>
 	</div>
 
-	<p>回数の解釈には落とし穴がある。<code>Number(x) || 既定値</code> と書くと、<code>0</code> は falsy なので「0 回」と書いたつもりが既定値に化ける。数として読めるかどうかを先に判定し、0 や負の数は 1 回に丸める。</p>
+	<div class="callout callout-important">
+		<p><strong>既定を 480 秒にしていた前提は、実測で崩れた。</strong>「前面のツール実行は 600 秒で打ち切られる」と考えて回数の既定値と警告文を決めていたが、実際には<strong>打ち切られず背面に移されるだけで、プロセスは走り続けた</strong>。4 通り（親の前面 ・ 親の背面 ・ サブエージェントの前面 ・ サブエージェントの背面）で 8 時間の指定を起こし、いずれも走り切ることを確かめてある。</p>
+		<p>そこで既定を 12 時間に伸ばし、<strong>長さに対する警告も出さないことにした</strong>。待受けは張りっぱなしにするのが常態である。</p>
+	</div>
+
+	<p>値の解釈には落とし穴がある。<code>Number(x) || 既定値</code> と書くと、<code>0</code> は falsy なので「上限なし」と書いたつもりが既定値に化ける。<strong>数として読めるかどうかを先に判定する。</strong></p>
 
 	<p>本文は Markdown で書かれている前提だが、CLI では<strong>変換せず生のまま出す</strong>。ターミナルでは記法がそのまま見えるが、AI も人間も読めるので困らない。</p>
 
@@ -2233,6 +2244,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000003/</code></td><td><code>archives</code> テーブルと <code>archived_seq</code> の索引</td></tr>
 			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000004/</code></td><td><code>messages.ref_archived_seq</code>。片付けの知らせが指す番号</td></tr>
 			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000005/</code></td><td><code>messages.reply_to_msg_seq</code>。返信元の番号。あわせて日時の区切りを <code>/</code> に変え、既存の行も書き換える</tr>
+			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000006/</code></td><td><code>messages_ix_room_id_sent_at</code>。<code>recent --since</code> / <code>--before</code> の絞り込みが効くようにする（<a href="../40_issues/issues.html#i260830-03">i260830-03</a>）</td></tr>
 			<tr><td class="nowrap"><code>src/server/migrate.mjs</code></td><td>版を当てる処理。<strong><code>store.mjs</code> とは別の接続で開く</strong></td></tr>
 		</tbody>
 	</table>

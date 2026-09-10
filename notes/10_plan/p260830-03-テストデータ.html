@@ -345,7 +345,7 @@ const testBody = (body: string) =&gt; `${NOTICE}\n\n${body}\n\n${NOTICE}`;</code
 <h2>置き場</h2>
 
 <pre><code class="language-text">tools/40_test/purge-test-data.mjs   本体
-tools/40_test/purge-test-data.cmd   ダブルクリック用</code></pre>
+tools/40_test/purge-test-data.cmd   cmd から呼ぶ用（引数を素通しする）</code></pre>
 
 <p>API は作らない。<strong>DB を直接開いて消す。</strong>後始末のためにサーバーへ口を増やす必要はない。</p>
 
@@ -368,8 +368,8 @@ DELETE FROM connectors    WHERE connector_id LIKE 'test-%';</code></pre>
 </thead>
 <tbody>
 <tr><td class="nowrap">テストの終わり</td><td>Playwright の <code>afterAll</code> から呼ぶ。失敗してもテスト結果は変えない</td></tr>
-<tr><td class="nowrap">手で消したいとき</td><td><code>purge-test-data.cmd</code> をダブルクリック</td></tr>
-<tr><td class="nowrap">数えるだけ</td><td><code>--dry-run</code> を付ける</td></tr>
+<tr><td class="nowrap">手で消したいとき</td><td><code>purge-test-data.cmd --test</code>（置き場の明示が必須。ダブルクリックは引数が無いので断られる）</td></tr>
+<tr><td class="nowrap">数えるだけ</td><td><code>--dry-run</code> を付ける（置き場の明示は同じく要る）</td></tr>
 </tbody>
 </table>
 </div>
@@ -522,7 +522,7 @@ expect(connectors).toBeGreaterThan(0);         // 参加者がいる前提</code
 
 <h3>登録もれ</h3>
 
-<p>後始末は「自分が登録した名前」しか消さない。<strong><code>freshNames()</code> も <code>register()</code> も通さずに名前を作ると、消えずに残る。</strong>回収するには <code>purge-test-data.cmd</code> を手で叩く。</p>
+<p>後始末は「自分が登録した名前」しか消さない。<strong><code>freshNames()</code> も <code>register()</code> も通さずに名前を作ると、消えずに残る。</strong>回収するには <code>purge-test-data.cmd --test</code> を手で叩く。</p>
 
 <h3>ドキュメント側のテストが古い（解消）</h3>
 
