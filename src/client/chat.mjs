@@ -20,7 +20,7 @@ import {
 	EXIT_UNREACHABLE,
 	FLAGS,
 } from './options.mjs';
-import { splitRedundant } from './waiters-pick.mjs';
+import { splitRedundant, readArg, roomsFrom as roomsFromShared } from './waiters-pick.mjs';
 
 /**
  * ai-chat-lite の CLI クライアント。
@@ -589,8 +589,17 @@ async function cmdWait() {
 		 */
 		const firstRooms = cursorStatus.rooms.filter((r) => r.first_time).map((r) => r.room_id);
 		console.log(`初めての接続です（${firstRooms.join(', ')}）。参加より前の発言は待ちません。過去が必要なら recent で取ってください（例）:`);
-		console.log(`    aichat recent --find "ルール" ${where}   # ルール変更の周知をまとめて見る`);
-		console.log(`    aichat recent --since-day 1 ${where}     # 1 日前からの発言を見る`);
+		/*
+		 * 見本には -r を必ず付ける（レビュー #21 high 3）。
+		 *
+		 * recent の既定は public なので、付けずに写されると「初めてだと言った
+		 * ルーム」ではなく public を見ることになり、取れると言われた過去が
+		 * 出てこない。recent は 1 ルームずつなので、ルームごとに見本を出す。
+		 */
+		for (const room of firstRooms) {
+			console.log(`    aichat recent --find "ルール" ${where} -r ${room}   # ${room} のルール変更の周知をまとめて見る`);
+			console.log(`    aichat recent --since-day 1 ${where} -r ${room}     # ${room} の 1 日前からの発言を見る`);
+		}
 		console.log('');
 
 		/*
@@ -821,6 +830,22 @@ async function cmdWho() {
  * 「aichat wait :id:」がそのまま入っており、放っておくと 1 本が 2 本になる。
  * aichat-node なら cmd.exe → node.exe と 2 段になる。親をたどって落とす。
  */
+/**
+ * 張り方の 1 行に載せる -r の値。
+ *
+ * 複数のルームはダブルクォートで囲む。囲まないと PowerShell がカンマを配列の
+ * 区切りと読み、2 つの引数に割れて 1 ルームだけを待つ（USAGE 622「エラーは
+ * 出ず、届かないことにも気づけない」）。共通ルールは「やることは集計より
+ * 後ろの行に出るので、それに従う」と、この行に従う運用を定めているので、
+ * 道具が割れる形の見本を出してはいけない（レビュー #22 medium 8）。
+ *
+ * 1 つだけのときは囲まない（共通ルールも「単一のルームなら囲まなくてよい」）。
+ */
+function roomsArg(rooms) {
+	const joined = rooms.join(',');
+	return rooms.length > 1 ? `"${joined}"` : joined;
+}
+
 async function cmdWaiters() {
 	const all = listWaiters();
 	const basis = basisOf();
@@ -830,7 +855,7 @@ async function cmdWaiters() {
 		console.log(`  ${basis.rooms.join(', ')} の待受けがありません。次を張ってください:`);
 		const port = option('port');
 		const where = port !== null ? `-p ${port}` : `-u ${option('url')}`;
-		console.log(`    aichat wait ${ID_WRAP}${CONNECTOR_ID}${ID_WRAP} ${where} -r ${basis.rooms.join(',')}`);
+		console.log(`    aichat wait ${ID_WRAP}${CONNECTOR_ID}${ID_WRAP} ${where} -r ${roomsArg(basis.rooms)}`);
 		return;
 	}
 
@@ -972,11 +997,7 @@ function pickWaiters(rows, excludePids) {
 	return leaves.sort((a, b) => (a.at === b.at ? a.pid - b.pid : a.at < b.at ? -1 : 1));
 }
 
-/** コマンドラインから「--name 値」を読む。短い形も同じ値として受ける */
-function readArg(cmd, long, short) {
-	const m = new RegExp(`(?:^|\\s)(?:--${long}|-${short})\\s+([^\\s"]+)`).exec(cmd);
-	return m ? m[1] : null;
-}
+// readArg は waiters-pick.mjs から使う（写しにするとテストが本体を守れない）
 
 /**
  * その待受けが「どこを待っているか」を読む。
@@ -1015,16 +1036,15 @@ function targetOf(cmd) {
 	return { target, rooms, port: portNum };
 }
 
-/** -r の値をルームの配列にする。省略なら既定のルーム 1 つ。重複は落とす */
+/**
+ * -r の値をルームの配列にする。省略なら既定のルーム 1 つ。重複は落とす。
+ *
+ * 実体は waiters-pick.mjs に置いてテストと共有する。ここに書いてテストへ
+ * 写していたときは、本体を壊してもテストが緑のままだった（レビュー #21
+ * medium 8）。実際に readArg の穴（#22 medium 7）はその間ずっと見えなかった。
+ */
 function roomsFrom(value) {
-	const raw = (value ?? '').trim();
-	if (!raw) return [DEFAULT_ROOM];
-	const seen = [];
-	for (const part of raw.split(',')) {
-		const room = part.trim();
-		if (room && !seen.includes(room)) seen.push(room);
-	}
-	return seen.length > 0 ? seen : [DEFAULT_ROOM];
+	return roomsFromShared(value, DEFAULT_ROOM);
 }
 
 /** 張り方の名前。出力に出るのは aichat / aichat-node / node の 3 つ */
@@ -1133,7 +1153,7 @@ function printWaiters(all, basis, me) {
 		const port = option('port');
 		const where = port !== null ? `-p ${port}` : `-u ${option('url')}`;
 		console.log(`  ${missing.join(', ')} の待受けがありません。次を張ってください:`);
-		console.log(`    aichat wait ${ID_WRAP}${me}${ID_WRAP} ${where} -r ${missing.join(',')}`);
+		console.log(`    aichat wait ${ID_WRAP}${me}${ID_WRAP} ${where} -r ${roomsArg(missing)}`);
 	}
 
 	if (stop.length > 0) {

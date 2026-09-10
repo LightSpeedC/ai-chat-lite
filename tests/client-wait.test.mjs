@@ -308,4 +308,20 @@ describe('複数のルームを 1 本で待つ', () => {
 		const { stdout } = await chat(['wait', '-r', 'public,sandbox-firstmix', '--wait-sec', '3'], me);
 		assert.match(stdout, /これは読めるはず/, '既存ルームの未読が消えている');
 	});
+
+	/*
+	 * 【なぜ必要か】
+	 * 案内の recent の見本に -r が無いと、既定の public を見ることになる。
+	 * 初めてなのが public 以外のルームだったとき、見本をそのまま写した側は
+	 * 「取れると言われた過去」が出てこない（レビュー #21 high 3）。
+	 * 見本は、いま初めてだと言ったルームを指していなければ意味がない。
+	 */
+	test('初回の案内の recent の見本が、初めてのルームを -r で指している', async () => {
+		const me = 'test-first-hint-room';
+		const { stdout } = await chat(['wait', '-r', 'sandbox-hintroom', '--wait-sec', '1'], me);
+		assert.match(stdout, /初めての接続です（sandbox-hintroom）/);
+		for (const line of stdout.split('\n').filter((l) => l.includes('aichat recent'))) {
+			assert.match(line, /-r sandbox-hintroom/, `見本に -r が無い、または別のルームを指している: ${line.trim()}`);
+		}
+	});
 });

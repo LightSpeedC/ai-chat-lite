@@ -82,7 +82,24 @@ namespace AiChat
 			string port = args.Option("port", null);
 			string where = port != null ? "-p " + port : "-u " + args.Option("url", "");
 			return "aichat wait " + Definition.IdWrap + me + Definition.IdWrap +
-				" " + where + " -r " + string.Join(",", rooms.ToArray());
+				" " + where + " -r " + RoomsArg(rooms);
+		}
+
+		/// <summary>
+		/// 張り方の 1 行に載せる -r の値。
+		///
+		/// 複数のルームはダブルクォートで囲む。囲まないと PowerShell がカンマを配列の
+		/// 区切りと読み、2 つの引数に割れて 1 ルームだけを待つ（USAGE「エラーは出ず、
+		/// 届かないことにも気づけない」）。共通ルールは「やることは集計より後ろの行に
+		/// 出るので、それに従う」と定めているので、道具が割れる形の見本を出しては
+		/// いけない（レビュー #22 medium 8。node 版の roomsArg と同じ直し）。
+		///
+		/// 1 つだけのときは囲まない（共通ルールも「単一のルームなら囲まなくてよい」）。
+		/// </summary>
+		private static string RoomsArg(List<string> rooms)
+		{
+			string joined = string.Join(",", rooms.ToArray());
+			return rooms.Count > 1 ? "\"" + joined + "\"" : joined;
 		}
 
 		/// <summary>
@@ -238,10 +255,29 @@ namespace AiChat
 		}
 
 		/// <summary>コマンドラインから「--name 値」を読む。短い形も同じ値として受ける</summary>
+		/// <summary>
+		/// コマンドラインから「--name 値」を読む。短い形も同じ値として受ける。
+		///
+		/// 【クォートを剥がす】
+		/// 共通ルールと USAGE は、カンマ区切りで複数のルームを渡すときに
+		/// -r "public,ai-chat-lite" とダブルクォートで囲むよう定めている。cmd 経由の
+		/// ランチャーは引数を素通しするので、囲みは子プロセスのコマンドラインに残る。
+		///
+		/// 以前の式は値から " を除いていたため、囲んで渡した待受けでは値の先頭が "
+		/// で一致せず null になり、RoomsFrom(null) が既定の public 1 つを返していた。
+		/// 正しく 2 ルーム覆っている待受けが 1 つと数えられ、「ai-chat-lite の待受けが
+		/// ありません。張ってください」と出て、共通ルールが最も強く禁じる
+		/// 「同じルームを 2 本で見ない」を道具の出力が指示する形になる
+		/// （レビュー #22 medium 7。node 版の waiters-pick.mjs と同じ直し）。
+		/// </summary>
 		private static string ReadArg(string cmd, string longName, string shortName)
 		{
-			Match m = Regex.Match(cmd, "(?:^|\\s)(?:--" + longName + "|-" + shortName + ")\\s+([^\\s\"]+)");
-			return m.Success ? m.Groups[1].Value : null;
+			string head = "(?:^|\\s)(?:--" + longName + "|-" + shortName + ")\\s+";
+			// 先に「"…" で囲まれた形」を試す。囲みの中に空白やカンマが入っていてもよい
+			Match quoted = Regex.Match(cmd, head + "\"([^\"]*)\"");
+			if (quoted.Success) return quoted.Groups[1].Value;
+			Match bare = Regex.Match(cmd, head + "([^\\s\"]+)");
+			return bare.Success ? bare.Groups[1].Value : null;
 		}
 
 		/// <summary>

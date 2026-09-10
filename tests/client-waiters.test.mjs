@@ -21,7 +21,15 @@ import { WAITER_PATTERN, ID_WRAP } from '../src/client/options.mjs';
  * 選び方は本体と同じものを使う。写しを検査すると、本体を壊しても通ってしまう。
  * ここで実物を落とせるのは、chat.mjs から純粋な関数として出したためである。
  */
-import { splitRedundant } from '../src/client/waiters-pick.mjs';
+/*
+ * 読み取りも本体から取る。
+ *
+ * 以前は readArg / roomsFrom をこのファイルに写していたため、chat.mjs 側を
+ * 壊してもテストは緑のままだった（レビュー #21 medium 8）。実際に readArg が
+ * ダブルクォート付きの -r を読めない穴（#22 medium 7）は、写しを検査していた
+ * 間ずっと見えていなかった。
+ */
+import { splitRedundant, readArg, roomsFrom as roomsFromRaw } from '../src/client/waiters-pick.mjs';
 import { DEFAULT_ROOM, PORT } from '../src/server/config.mjs';
 
 /** 一覧の 1 行を作る */
@@ -29,25 +37,9 @@ function proc(pid, ppid, name, cmd, at = '2026-09-03 07:00:00') {
 	return { pid, ppid, name, cmd, at };
 }
 
-/*
- * chat.mjs の readArg / targetOf と同じ読み方をここに置く。
- * 「どこを待っているか」の判定は事故の核なので検査は外せない。
- */
-function readArg(cmd, long, short) {
-	const m = new RegExp(`(?:^|\\s)(?:--${long}|-${short})\\s+([^\\s"]+)`).exec(cmd);
-	return m ? m[1] : null;
-}
-
-/** -r の値をルームの配列にする。1 本で複数を見られる。重複は落とす */
+/** 既定のルームを埋めた形で使う（本体の chat.mjs も同じ渡し方をする） */
 function roomsFrom(value) {
-	const raw = (value ?? '').trim();
-	if (!raw) return [DEFAULT_ROOM];
-	const seen = [];
-	for (const part of raw.split(',')) {
-		const room = part.trim();
-		if (room && !seen.includes(room)) seen.push(room);
-	}
-	return seen.length > 0 ? seen : [DEFAULT_ROOM];
+	return roomsFromRaw(value, DEFAULT_ROOM);
 }
 
 function targetOf(cmd) {
@@ -601,6 +593,53 @@ describe('接続先は省略できない', () => {
 			assert.match(err.stderr, /どこを見ている待受けを数えるかが指定されていません/);
 			assert.match(err.stderr, /既定値は持ちません/);
 		}
+	});
+});
+
+describe('コマンドラインの読み取り', () => {
+	/*
+	 * 【なぜ必要か】
+	 * 共通ルールと USAGE は、カンマ区切りで複数のルームを渡すときに
+	 * -r "public,ai-chat-lite" とダブルクォートで囲むよう定めている。cmd 経由の
+	 * ランチャーは引数を素通しするので、囲みは待受けのコマンドラインに残る。
+	 *
+	 * 以前の式は値から " を除いていたため、囲んで渡した待受けでは値の先頭が "
+	 * で一致せず null になり、既定の public 1 つとして数えていた。**正しく
+	 * 2 ルーム覆っている待受けが 1 つと数えられ**、「ai-chat-lite の待受けが
+	 * ありません。張ってください」と出て、共通ルールが最も強く禁じる
+	 * 「同じルームを 2 本で見ない」を道具の出力が指示する形になっていた
+	 * （レビュー #22 medium 7）。
+	 */
+	test('ダブルクォートで囲んだ -r を読める', () => {
+		const cmd = 'aichat wait :project-a: -p 8787 -r "public,ai-chat-lite"';
+
+		assert.equal(readArg(cmd, 'room', 'r'), 'public,ai-chat-lite');
+		assert.deepEqual(roomsFrom(readArg(cmd, 'room', 'r')), ['public', 'ai-chat-lite']);
+	});
+
+	test('囲まずに渡した -r も今までどおり読める', () => {
+		const cmd = 'aichat wait :project-a: -p 8787 -r public';
+
+		assert.equal(readArg(cmd, 'room', 'r'), 'public');
+		assert.deepEqual(roomsFrom(readArg(cmd, 'room', 'r')), ['public']);
+	});
+
+	test('囲みの中に空白が入っていても 1 つの値として読む', () => {
+		// PowerShell 側で "a, b" のように空けて書かれることがある
+		const cmd = 'aichat wait :project-a: -p 8787 -r "public, ai-chat-lite" --wait-hour 12';
+
+		assert.equal(readArg(cmd, 'room', 'r'), 'public, ai-chat-lite');
+		assert.deepEqual(roomsFrom(readArg(cmd, 'room', 'r')), ['public', 'ai-chat-lite']);
+	});
+
+	test('長い形（--room）でも同じ', () => {
+		const cmd = 'aichat wait :project-a: -p 8787 --room "public,dev"';
+
+		assert.deepEqual(roomsFrom(readArg(cmd, 'room', 'r')), ['public', 'dev']);
+	});
+
+	test('-r が無ければ既定のルーム 1 つ', () => {
+		assert.deepEqual(roomsFrom(readArg('aichat wait :project-a: -p 8787', 'room', 'r')), [DEFAULT_ROOM]);
 	});
 });
 

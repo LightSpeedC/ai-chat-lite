@@ -138,8 +138,16 @@ namespace AiChat
 				string firstRoomsJoined = string.Join(", ", firstRooms.ToArray());
 
 				Console.WriteLine("初めての接続です（" + firstRoomsJoined + "）。参加より前の発言は待ちません。過去が必要なら recent で取ってください（例）:");
-				Console.WriteLine("    aichat recent --find \"ルール\" " + where + "   # ルール変更の周知をまとめて見る");
-				Console.WriteLine("    aichat recent --since-day 1 " + where + "     # 1 日前からの発言を見る");
+				/*
+				 * 見本には -r を必ず付ける（レビュー #21 high 3）。理由は node 版と同じ
+				 * （recent の既定は public なので、付けずに写されると初めてだと言った
+				 * ルームではなく public を見ることになる）。recent は 1 ルームずつ。
+				 */
+				foreach (string first in firstRooms)
+				{
+					Console.WriteLine("    aichat recent --find \"ルール\" " + where + " -r " + first + "   # " + first + " のルール変更の周知をまとめて見る");
+					Console.WriteLine("    aichat recent --since-day 1 " + where + " -r " + first + "     # " + first + " の 1 日前からの発言を見る");
+				}
 				Console.WriteLine("");
 
 				/*
