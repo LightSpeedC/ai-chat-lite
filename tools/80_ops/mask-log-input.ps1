@@ -47,6 +47,12 @@ Write-Host ''
 Write-Host '--- 見つかった件数 ---'
 $global:LASTEXITCODE = 0
 & $MaskLogScript -Word $words -Replacement $mask -WhatIfOnly
+if ($LASTEXITCODE -eq 4) {
+	# claude が走っている。閉じれば済む話なので、失敗とは書き分ける
+	Write-Host ''
+	Write-Host 'セッションが開いているので中止します。閉じてから実行してください。' -ForegroundColor Yellow
+	return
+}
 if ($LASTEXITCODE -ne 0) {
 	Write-Host ''
 	Write-Host '数えるだけの実行が失敗しました。中止します。' -ForegroundColor Red

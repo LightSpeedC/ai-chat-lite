@@ -48,12 +48,38 @@ $targets = @(
 	Join-Path $root 'etc\history\jsonl'
 )
 
-# --- 実行中のセッションが無いか確かめる ---
+<#
+	--- 実行中のセッションが無いか確かめる ---
+
+	【下見でも止める】
+	以前は -WhatIfOnly のときだけ先へ進めていた。ところがトップレベルの
+	return は exit を通らないので $LASTEXITCODE を更新せず、呼ぶ側が
+	先に 0 を立ててから呼ぶ形（mask-log-input.ps1）と噛み合って
+	「成功」と読まれていた。
+
+	そのため利用者から見た流れがこうなっていた。
+	  下見は通って「N 件見つかりました」→ yes → 本実行はここで return
+	  → 1 語も書き換えずに、失敗とも成功とも言わずに終わる
+
+	下見の時点で断てば、yes を押させてから何もしない形がなくなる。
+	そもそも伏せ字は「セッションを閉じてから実行する」道具なので、
+	走っている間に数えても、その値で判断はできない。
+	（レビュー #23 high 1）
+
+	【終了コードを分ける】
+	4 は「claude が走っているので、いまはできない」。1（会話ログが
+	見つからない）と混ぜると、呼ぶ側が同じ文面しか出せない。前者は
+	セッションを閉じる話、後者は場所を直す話で、やることが違う。
+
+	CLI 側は 1 = 一般のエラー / 2 = 使い方の誤り / 3 = 繋がらない、と
+	決めてある（options.mjs）。3 までは意味が埋まっているので 4 を使う。
+#>
 $running = Get-Process -Name 'claude' -ErrorAction SilentlyContinue
 if ($running) {
 	Write-Host '★ claude が動いています。セッションを閉じてから実行してください。' -ForegroundColor Yellow
 	Write-Host ('  pid: ' + ($running.Id -join ', '))
-	if (-not $WhatIfOnly) { return }
+	Write-Host '  数えるだけの実行（-WhatIfOnly）も、ここで止めます'
+	exit 4
 }
 
 $totalHit = 0
@@ -72,7 +98,19 @@ foreach ($dir in $targets) {
 	}
 	Write-Host ("=== {0} ===" -f (Format-Path $dir))
 
-	foreach ($f in Get-ChildItem $dir -Filter '*.jsonl' -File) {
+	<#
+		下位フォルダまで見る。
+
+		会話ログの置き場は直下に親の記録を 1 本だけ持ち、サブエージェントの
+		記録は <セッションID>\subagents\ に入る。実測では直下 1 件に対して
+		再帰 153 件で、そのうち 152 件が subagents だった。
+		-Recurse が無いと 99% が対象から外れたまま「残っている語は
+		ありませんでした。」と総括する（レビュー #21 high 4）。
+
+		サブエージェントの記録には、親から渡した指示文と返した報告が丸ごと
+		入る。伏せたい語が親の会話に出たなら、そちらにも同じ語が残る。
+	#>
+	foreach ($f in Get-ChildItem $dir -Filter '*.jsonl' -File -Recurse) {
 		$text = [IO.File]::ReadAllText($f.FullName)
 		$hit = 0
 		foreach ($w in $Word) {

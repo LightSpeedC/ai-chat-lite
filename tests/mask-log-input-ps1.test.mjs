@@ -11,6 +11,8 @@ const INPUT = join(ROOT, 'tools', '80_ops', 'mask-log-input.ps1');
 const FAKE = join(here, 'helpers', 'fake-mask-log.ps1');
 /** 成功する偽物。exit を通らずに終わる子を再現する（本物の正常系は exit 0 を返す） */
 const FAKE_OK = join(here, 'helpers', 'fake-mask-log-ok.ps1');
+/** claude が走っているときの偽物。exit 4 で止まる */
+const FAKE_BUSY = join(here, 'helpers', 'fake-mask-log-busy.ps1');
 const CALL_LOG = join(ROOT, 'tmp', 'mask-log-input-ps1-calls.txt');
 
 /*
@@ -108,4 +110,44 @@ test('mask-log.ps1 が成功したら、本実行まで進む', (t) => {
 
 	const calls = readFileSync(CALL_LOG, 'utf8').trim().split('\n').filter(Boolean);
 	assert.equal(calls.length, 2, `本実行まで進んでいない（呼ばれた回数 ${calls.length}）\n--- 出力 ---\n${stdout}`);
+});
+
+/*
+ * 【なぜ必要か】
+ * mask-log.ps1 には 3 つ目の出口がある。claude が走っていると警告を出して
+ * 止まるが、以前は -WhatIfOnly のときだけ素通りしていた。しかも return は
+ * exit を通らないので終了コードを更新せず、呼ぶ側が 0 を立ててから呼ぶ形と
+ * 噛み合って「成功」と読まれていた（レビュー #23 high 1）。
+ *
+ * 結果、下見は件数を出して通り、利用者が yes を押し、本実行は 1 語も
+ * 書き換えずに終わる。成功とも失敗とも言わずに終わるので気づけない。
+ *
+ * いまは下見の時点で exit 4 で止まる。4 を 1（会話ログが見つからない）と
+ * 混ぜると呼ぶ側が同じ文面しか出せないので、書き分けまで見る。
+ */
+test('claude が走っていたら、下見の時点で止まり、原因が分かる文面が出る', (t) => {
+	if (!has51) return t.skip('powershell.exe が無い');
+	if (existsSync(CALL_LOG)) rmSync(CALL_LOG);
+	writeFileSync(CALL_LOG, '');
+
+	let stdout = '';
+	try {
+		stdout = execFileSync('powershell.exe', [
+			'-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', INPUT, '-MaskLogScript', FAKE_BUSY,
+		], {
+			env: { ...process.env, MASK_LOG_TEST_CALL_LOG: CALL_LOG },
+			// 確認まで進んでしまったときに備えて yes も渡す。進めば呼ばれた回数で分かる
+			input: 'テスト語\n\nyes\n',
+			encoding: 'utf8',
+			timeout: 15000,
+		});
+	} catch (err) {
+		stdout = String(err.stdout ?? '') + String(err.stderr ?? '');
+	}
+
+	assert.match(stdout, /セッションが開いているので中止します/, '原因が分かる文面が出ていない');
+	assert.doesNotMatch(stdout, /数えるだけの実行が失敗しました/, '失敗として扱っている（閉じれば済む話）');
+
+	const calls = readFileSync(CALL_LOG, 'utf8').trim().split('\n').filter(Boolean);
+	assert.equal(calls.length, 1, `本実行まで進んでいる（呼ばれた回数 ${calls.length}）\n--- 出力 ---\n${stdout}`);
 });
