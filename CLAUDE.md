@@ -1,1 +1,1 @@
-@notes/90_rules/local-rule.md
+@notes/90_rules/local-rules.md

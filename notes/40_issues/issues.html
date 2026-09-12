@@ -1315,7 +1315,7 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 				<ul class="todos">
 					<li class="done"><span class="badge b-done">☑</span> <code>store.mjs</code> に <code>previewRename</code> ・ <code>renameConnector</code> を足した。<strong>4 テーブル 7 か所を 1 つのトランザクションで直す</strong>（途中で失敗したら何も変わらない）</li>
 					<li class="done"><span class="badge b-done">☑</span> <code>GET /api/admin/rename-preview</code> ・ <code>POST /api/admin/rename</code> を足した。<code>confirm</code> に旧 ID を求め、既定のルームへ知らせを積む</li>
-					<li class="done"><span class="badge b-done">☑</span> node 版 ・ C# 版の両方に実装した（<a href="../90_rules/local-rule.html">ローカルルール</a>「CLI を直したら 2 本とも直す」に従う）。<code>tests/cli-cs.test.mjs</code> で下見の出力と中止の終了コードを突き合わせている</li>
+					<li class="done"><span class="badge b-done">☑</span> node 版 ・ C# 版の両方に実装した（<a href="../90_rules/local-rules.html">ローカルルール</a>「CLI を直したら 2 本とも直す」に従う）。<code>tests/cli-cs.test.mjs</code> で下見の出力と中止の終了コードを突き合わせている</li>
 					<li class="done"><span class="badge b-done">☑</span> <code>tests/rename.test.mjs</code>（11 件）と <code>server.test.mjs</code>（5 件）を新設。<strong>いずれも直す前に落ちることを確認してから（RED）、直して通ることを確認した（GREEN）</strong>。全 494 件が通る</li>
 					<li class="done"><span class="badge b-done">☑</span> テスト用サーバー（<code>tmp/_data</code>）で通しの動作も確かめた。<strong>本番には触れていない</strong></li>
 				</ul>
@@ -3496,7 +3496,7 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 
 				<h3>low（場所だけ）</h3>
 
-				<p><code>store.mjs</code> 354-358（archive の投稿自体が対象外になっていない）／ USAGE の <code>wait</code> の出力例が既定の <code>exclude</code> では起こり得ない ／ backup のログの「取得 N 件」が控えではなく稼働中の元 DB の値 ／ <code>backup.ps1</code> のヘルプが「諦めたら 0」（実装と全文書は非 0）／ <code>msg_kind=notice</code> を書く経路が 1 つも無い ／ ルーム名を検証せずに localStorage へ書く ／ <code>dump --out</code> に階層なしの名前で C# 版が落ちる ／ 定義の形が違うときの案内が出ない ／ <code>status.html</code> が <code>archive.test.mjs</code> に帰した「既定のルームは断る」検査が無い ／ 「web の外は参照できない」がパストラバーサルを送っていない ／ テスト名と本文が反対（<code>AICHAT_URL</code> は定義そのものが無い）／ <code>local-rule.html</code> が共通ルールと同じ文を持つ ／ <code>measure-cli-startup.ps1</code> ほか 2 本の ps1 の BOM ・ CRLF が崩れている ／ <code>WaitLog.cs</code> 65-70 だけ日付が <code>-</code> 区切り ／ <code>--reply-to</code> の受け方が 2 本で違う ／ <a href="../10_plan/p260830-03-テストデータ.html">p260830-03</a> の「決めていないこと」が未のまま ／ <a href="../10_plan/p260904-01-返信.html">p260904-01</a> 540 行の版 5 の SQL のファイル名が実物と違う ／ 資料の CLI 呼び出しが ID の位置引数化に追随していない ／ USAGE 内で「600 秒で打ち切られる」と「打ち切られない」が併存</p>
+				<p><code>store.mjs</code> 354-358（archive の投稿自体が対象外になっていない）／ USAGE の <code>wait</code> の出力例が既定の <code>exclude</code> では起こり得ない ／ backup のログの「取得 N 件」が控えではなく稼働中の元 DB の値 ／ <code>backup.ps1</code> のヘルプが「諦めたら 0」（実装と全文書は非 0）／ <code>msg_kind=notice</code> を書く経路が 1 つも無い ／ ルーム名を検証せずに localStorage へ書く ／ <code>dump --out</code> に階層なしの名前で C# 版が落ちる ／ 定義の形が違うときの案内が出ない ／ <code>status.html</code> が <code>archive.test.mjs</code> に帰した「既定のルームは断る」検査が無い ／ 「web の外は参照できない」がパストラバーサルを送っていない ／ テスト名と本文が反対（<code>AICHAT_URL</code> は定義そのものが無い）／ <code>local-rules.html</code> が共通ルールと同じ文を持つ ／ <code>measure-cli-startup.ps1</code> ほか 2 本の ps1 の BOM ・ CRLF が崩れている ／ <code>WaitLog.cs</code> 65-70 だけ日付が <code>-</code> 区切り ／ <code>--reply-to</code> の受け方が 2 本で違う ／ <a href="../10_plan/p260830-03-テストデータ.html">p260830-03</a> の「決めていないこと」が未のまま ／ <a href="../10_plan/p260904-01-返信.html">p260904-01</a> 540 行の版 5 の SQL のファイル名が実物と違う ／ 資料の CLI 呼び出しが ID の位置引数化に追随していない ／ USAGE 内で「600 秒で打ち切られる」と「打ち切られない」が併存</p>
 
 				<div class="callout callout-important">
 					<p><strong>ここに集めたのは、直し方に選択肢があるか、まとめて直すほうが早いものである。</strong>1 件ずつ課題を立てると、同じ資料を何度も開くことになる。</p>
@@ -3518,7 +3518,7 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 						<tr>
 							<td class="nowrap"><span class="badge b-done">直した</span></td>
 							<td class="num">15</td>
-							<td><code>backup.mjs</code>（件数を控え側から数える）／ <code>backup.ps1</code> のヘルプ ／ <code>chat.js</code> のルーム名検証 ／ <code>dump --out</code> の階層なし名（C# 版）／ 定義の形が違うときの案内（<code>TypeInitializationException</code> に包まれて出ていなかった）／ <code>status.html</code> の検査の帰属（<code>server.test.mjs</code> に「既定のルームは断る」を新設）／ パストラバーサルのテスト（<code>fetch</code> が <code>..</code> を送っていなかったので <code>serveStatic</code> を直接叩く形に）／ テスト名と検査内容の不一致 ／ <code>local-rule.html</code> の重複文 ／ ps1 の BOM ・ CRLF 2 本 ／ <code>WaitLog.cs</code> の日付書式 ／ <code>--reply-to</code> の受け方（C# 版を node 版に寄せた）／ <code>p260904-01</code> のファイル名 ／ 資料の CLI 呼び出し（<code>backup.html</code>）／ USAGE の「600 秒」の書き分け</td>
+							<td><code>backup.mjs</code>（件数を控え側から数える）／ <code>backup.ps1</code> のヘルプ ／ <code>chat.js</code> のルーム名検証 ／ <code>dump --out</code> の階層なし名（C# 版）／ 定義の形が違うときの案内（<code>TypeInitializationException</code> に包まれて出ていなかった）／ <code>status.html</code> の検査の帰属（<code>server.test.mjs</code> に「既定のルームは断る」を新設）／ パストラバーサルのテスト（<code>fetch</code> が <code>..</code> を送っていなかったので <code>serveStatic</code> を直接叩く形に）／ テスト名と検査内容の不一致 ／ <code>local-rules.html</code> の重複文 ／ ps1 の BOM ・ CRLF 2 本 ／ <code>WaitLog.cs</code> の日付書式 ／ <code>--reply-to</code> の受け方（C# 版を node 版に寄せた）／ <code>p260904-01</code> のファイル名 ／ 資料の CLI 呼び出し（<code>backup.html</code>）／ USAGE の「600 秒」の書き分け</td>
 						</tr>
 						<tr>
 							<td class="nowrap"><span class="badge b-none">様子見</span></td>
