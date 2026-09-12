@@ -433,7 +433,7 @@ footer a {
 	<h1>分かったこと</h1>
 
 	<div class="callout callout-important">
-		<p><strong>差が出たのはメモリと起動だけで、そこは bun が勝つ。</strong>待受けが 10 本ぶら下がった状態で node 56.51 MB ・ bun 37.47 MB。<br>
+		<p><strong>メモリは、どちらを見るかで勝者が入れ替わる。</strong>待受け 10 本で、実メモリは node 56.9 MB ・ bun 37.8 MB（bun が 19 MB 軽い）。ところが<strong>確保量は node 31.1 MB ・ bun 135.1 MB で、bun が 4.3 倍を抱える。</strong><br>
 		<strong><code>say</code> ・ <code>recent</code> ・ 配信の遅れには差が無い。</strong>どれも SQLite と配信の仕組みが決めていて、処理系を替えても動かない。</p>
 	</div>
 
@@ -443,9 +443,11 @@ footer a {
 				<tr><th>項目</th><th>node</th><th>bun</th><th>読み方</th></tr>
 			</thead>
 			<tbody>
-				<tr><td class="nowrap">起動（待ち受け開始まで）</td><td class="num">181.3 ms</td><td class="num">113.8 ms</td><td>bun が 68 ms 速い。常駐するので効かない</td></tr>
-				<tr><td class="nowrap">メモリ 待受け 0 本</td><td class="num">54.43 MB</td><td class="num">31.54 MB</td><td><strong>bun が 22.9 MB 軽い</strong></td></tr>
-				<tr><td class="nowrap">メモリ 待受け 10 本</td><td class="num">56.51 MB</td><td class="num">37.47 MB</td><td>bun が 19.0 MB 軽い</td></tr>
+				<tr><td class="nowrap">起動（待ち受け開始まで）</td><td class="num">152.4 ms</td><td class="num">151.0 ms</td><td>測るたびに動く。常駐するので効かない</td></tr>
+				<tr><td class="nowrap">実メモリ 待受け 0 本</td><td class="num">54.5 MB</td><td class="num">32.0 MB</td><td><strong>bun が 22.5 MB 軽い</strong></td></tr>
+				<tr><td class="nowrap">実メモリ 待受け 10 本</td><td class="num">56.9 MB</td><td class="num">37.8 MB</td><td>bun が 19.1 MB 軽い</td></tr>
+				<tr><td class="nowrap">確保量 待受け 0 本</td><td class="num">29.0 MB</td><td class="num">129.5 MB</td><td><strong>node が 100.5 MB 軽い</strong></td></tr>
+				<tr><td class="nowrap">確保量 待受け 10 本</td><td class="num">31.1 MB</td><td class="num">135.1 MB</td><td>node が 104.0 MB 軽い</td></tr>
 				<tr><td class="nowrap">say</td><td class="num">3.18 ms</td><td class="num">3.13 ms</td><td>差なし</td></tr>
 				<tr><td class="nowrap">recent 50 件</td><td class="num">0.33 ms</td><td class="num">0.34 ms</td><td>差なし</td></tr>
 				<tr><td class="nowrap">recent 500 件</td><td class="num">1.31 ms</td><td class="num">0.98 ms</td><td>わずかに bun</td></tr>
@@ -481,9 +483,29 @@ footer a {
 
 	<p><code>say</code> の 3.1 ms は<strong>読み取りの 10 倍</strong>かかっている。WAL に同期で書いているためで、ここを速くしたいなら処理系ではなく書き方を変えることになる。<strong>ただし人が待つ時間としては十分短い。</strong></p>
 
+	<h2>どちらのメモリを見るか</h2>
+
+	<p>実メモリだけを見て「bun のほうが軽い」と決めると読み違える。<strong>確保量では逆に 4.3 倍を抱えている。</strong></p>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>指標</th><th>node</th><th>bun</th><th>勝つのは</th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap">実メモリ（待受け 10 本）</td><td class="num">56.9 MB</td><td class="num">37.8 MB</td><td>bun（19.1 MB 差）</td></tr>
+				<tr><td class="nowrap">確保量（待受け 10 本）</td><td class="num">31.1 MB</td><td class="num">135.1 MB</td><td>node（104.0 MB 差）</td></tr>
+			</tbody>
+		</table>
+	</div>
+
 	<div class="callout callout-caution">
-		<p><strong>測ったのは実メモリ（RSS）だけである。</strong>確保量（Private Bytes）は測っていない。OS ごとに測り方が分かれるため、<code>process.memoryUsage()</code> で揃えた結果として落ちた。<br>
-		CLI を測ったときは <strong>bun の確保量が 5 実装のうち最大（108 MB）</strong>だった。サーバーでも同じ傾向なら、この資料の数字だけで決めるのは早い。</p>
+		<p><strong>空きメモリが減ったときに効くのは確保量のほうである。</strong>実メモリはページアウトされて減るが、確保量は減らない。<br>
+		Claude Code が背面のコマンドを刈るのは空きが減ったときで、<strong>待受けが <code>[killed]</code> で落ちる原因になっている</strong>（<a class="doclink" href="../40_issues/issues.html#i260901-07">i260901-07</a>）。<strong>この観点では node のほうが安全である。</strong></p>
+	</div>
+
+	<p>CLI を測ったときも同じ傾向だった。<strong>bun は実メモリ 25.59 MB で C# と並びながら、確保量は 108.43 MB で 5 実装のうち最大</strong>だった。<strong>処理系の癖であり、サーバーでも CLI でも変わらない。</strong></p>
+
+	<div class="callout callout-note">
+		<p><strong>確保量は Windows でしか測っていない。</strong>聞き方が OS ごとに違う（Windows は <code>Get-Process</code>、Linux は <code>/proc/&lt;pid&gt;/status</code>、Mac は <code>ps</code> や <code>vmmap</code>）。<strong>実メモリのほうは <code>process.memoryUsage()</code> で揃えているので、どの OS でも同じ形で測れる。</strong></p>
 	</div>
 </section>
 
@@ -512,35 +534,75 @@ footer a {
 			</g>
 			<text x="390" y="314" font-size="12" fill="#4a5568" text-anchor="middle">ぶら下がっている待受けの本数</text>
 
-			<polyline points="90,70.4 150,69.2 390,66.9 690,62.8" fill="none" stroke="hsl(210,78%,25%)" stroke-width="3"/>
+			<polyline points="90,70.1 150,68.7 390,66.5 690,61.3" fill="none" stroke="hsl(210,78%,25%)" stroke-width="3"/>
 			<g fill="hsl(210,78%,25%)">
-				<circle cx="90" cy="70.4" r="5"/><circle cx="150" cy="69.2" r="5"/><circle cx="390" cy="66.9" r="5"/><circle cx="690" cy="62.8" r="5"/>
+				<circle cx="90" cy="70.1" r="5"/><circle cx="150" cy="68.7" r="5"/><circle cx="390" cy="66.5" r="5"/><circle cx="690" cy="61.3" r="5"/>
 			</g>
-			<text x="100" y="58" font-size="13" font-weight="700" fill="hsl(210,78%,25%)">node（青）</text>
+			<text x="100" y="58" font-size="13" font-weight="700" fill="hsl(210,78%,25%)">node 実メモリ（青）</text>
 
-			<polyline points="90,154.4 150,143.1 390,137.5 690,132.6" fill="none" stroke="hsl(140,78%,25%)" stroke-width="3"/>
+			<polyline points="90,152.7 150,141.3 390,136.4 690,131.4" fill="none" stroke="hsl(140,78%,25%)" stroke-width="3"/>
 			<g fill="hsl(140,78%,25%)">
-				<circle cx="90" cy="154.4" r="5"/><circle cx="150" cy="143.1" r="5"/><circle cx="390" cy="137.5" r="5"/><circle cx="690" cy="132.6" r="5"/>
+				<circle cx="90" cy="152.7" r="5"/><circle cx="150" cy="141.3" r="5"/><circle cx="390" cy="136.4" r="5"/><circle cx="690" cy="131.4" r="5"/>
 			</g>
-			<text x="100" y="176" font-size="13" font-weight="700" fill="hsl(140,78%,25%)">bun（緑）</text>
+			<text x="100" y="174" font-size="13" font-weight="700" fill="hsl(140,78%,25%)">bun 実メモリ（緑）</text>
 
 			<g font-size="12" fill="#1c2330" text-anchor="middle">
-				<text x="90" y="86">54.4</text><text x="690" y="54">56.5</text>
-				<text x="90" y="170">31.5</text><text x="690" y="124">37.5</text>
+				<text x="90" y="86">54.5</text><text x="690" y="52">56.9</text>
+				<text x="90" y="168">32.0</text><text x="690" y="123">37.8</text>
 			</g>
 		</svg>
 		<figcaption>図 1: 待受けを増やしてもほとんど伸びない。差は出発点に付いている</figcaption>
 	</figure>
 
+	<h2>確保量では逆になる</h2>
+
+	<figure class="fig">
+		<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="実メモリと確保量の比較">
+			<defs>
+				<linearGradient id="g-02-1b-nd" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(210,78%,25%)"/><stop offset="1" stop-color="hsl(210,58%,55%)"/></linearGradient>
+				<linearGradient id="g-02-1b-bn" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(140,78%,25%)"/><stop offset="1" stop-color="hsl(140,58%,55%)"/></linearGradient>
+			</defs>
+			<rect width="100%" height="100%" fill="#ffffff"/>
+			<text x="10" y="22" font-size="14" font-weight="700" fill="#1c2330">待受け 10 本のとき（MB・小さいほど良い）</text>
+			<g stroke="#d9dfe8" stroke-width="1">
+				<line x1="190" y1="36" x2="190" y2="228"/>
+				<line x1="310" y1="36" x2="310" y2="228"/>
+				<line x1="430" y1="36" x2="430" y2="228"/>
+				<line x1="550" y1="36" x2="550" y2="228"/>
+				<line x1="670" y1="36" x2="670" y2="228"/>
+			</g>
+			<g font-size="12" fill="#4a5568" text-anchor="middle">
+				<text x="190" y="248">0</text><text x="310" y="248">40</text><text x="430" y="248">80</text><text x="550" y="248">120</text><text x="670" y="248">160</text>
+			</g>
+			<g font-size="13" fill="#1c2330" text-anchor="end" font-weight="700">
+				<text x="182" y="62">node 実メモリ</text>
+				<text x="182" y="106">bun 実メモリ</text>
+				<text x="182" y="150">node 確保量</text>
+				<text x="182" y="194">bun 確保量</text>
+			</g>
+			<rect x="190" y="44" width="170.7" height="24" rx="3" fill="url(#g-02-1b-nd)"/>
+			<rect x="190" y="88" width="113.4" height="24" rx="3" fill="url(#g-02-1b-bn)"/>
+			<rect x="190" y="132" width="93.4" height="24" rx="3" fill="url(#g-02-1b-nd)"/>
+			<rect x="190" y="176" width="405.4" height="24" rx="3" fill="url(#g-02-1b-bn)"/>
+			<g font-size="13" fill="#1c2330" font-weight="700">
+				<text x="368.7" y="62">56.9</text>
+				<text x="311.4" y="106">37.8</text>
+				<text x="291.4" y="150">31.1</text>
+				<text x="603.4" y="194">135.1</text>
+			</g>
+		</svg>
+		<figcaption>図 2: 実メモリでは bun が小さいが、確保量では node が 4.3 分の 1 で済む</figcaption>
+	</figure>
+
 	<div class="tablewrap">
 		<table>
-			<thead><tr><th>待受け</th><th>node</th><th>bun</th><th>差</th></tr></thead>
+			<thead><tr><th>待受け</th><th>node 実</th><th>bun 実</th><th>node 確保</th><th>bun 確保</th></tr></thead>
 			<tbody>
-				<tr><td class="nowrap">0 本</td><td class="num">54.43 MB</td><td class="num">31.54 MB</td><td class="num">22.89 MB</td></tr>
-				<tr><td class="nowrap">1 本</td><td class="num">54.75 MB</td><td class="num">34.62 MB</td><td class="num">20.13 MB</td></tr>
-				<tr><td class="nowrap">5 本</td><td class="num">55.39 MB</td><td class="num">36.14 MB</td><td class="num">19.25 MB</td></tr>
-				<tr><td class="nowrap">10 本</td><td class="num">56.51 MB</td><td class="num">37.47 MB</td><td class="num">19.04 MB</td></tr>
-				<tr><td class="nowrap"><strong>1 本あたりの伸び</strong></td><td class="num">0.21 MB</td><td class="num">0.59 MB</td><td class="num">—</td></tr>
+				<tr><td class="nowrap">0 本</td><td class="num">54.52 MB</td><td class="num">31.99 MB</td><td class="num">29.00 MB</td><td class="num">129.49 MB</td></tr>
+				<tr><td class="nowrap">1 本</td><td class="num">54.89 MB</td><td class="num">35.11 MB</td><td class="num">29.27 MB</td><td class="num">131.77 MB</td></tr>
+				<tr><td class="nowrap">5 本</td><td class="num">55.50 MB</td><td class="num">36.43 MB</td><td class="num">29.79 MB</td><td class="num">133.21 MB</td></tr>
+				<tr><td class="nowrap">10 本</td><td class="num">56.91 MB</td><td class="num">37.79 MB</td><td class="num">31.13 MB</td><td class="num">135.12 MB</td></tr>
+				<tr><td class="nowrap"><strong>1 本あたりの伸び</strong></td><td class="num">0.24 MB</td><td class="num">0.58 MB</td><td class="num">0.21 MB</td><td class="num">0.56 MB</td></tr>
 			</tbody>
 		</table>
 	</div>
@@ -549,17 +611,21 @@ footer a {
 
 	<p>待受けは <code>/api/poll</code> にぶら下がったまま何もしない。サーバー側が抱えるのは <strong>TCP の接続 1 本と、いつ起こすかを覚えておく分だけ</strong>である。発言が来るまで処理は動かない。</p>
 
-	<p>1 本あたり node 0.21 MB ・ bun 0.59 MB。<strong>bun のほうが 1 本を重く持つ</strong>が、出発点の差が大きいので順位は変わらない。</p>
+	<p>1 本あたり node 0.24 MB ・ bun 0.58 MB。<strong>bun のほうが 1 本を重く持つ</strong>が、実メモリでは出発点の差が大きいので順位は変わらない。</p>
 
 	<h2>どこで追いつかれるか</h2>
 
-	<p>この伸び方がそのまま続くとして解くと、<strong>59 本</strong>で交差する。</p>
+	<p>実メモリの伸び方がそのまま続くとして解くと、<strong>66 本</strong>で交差する。</p>
 
-	<pre><code class="language-text">node   54.43 + 0.21 × n
-bun    31.54 + 0.59 × n
-                       → n ≒ 59</code></pre>
+	<pre><code class="language-text">node   54.52 + 0.24 × n
+bun    31.99 + 0.58 × n
+                       → n ≒ 66</code></pre>
 
-	<p>待受けは 1 プロジェクトにつき 1 本と決めている。<strong>59 本が並ぶことは無い。</strong></p>
+	<p>待受けは 1 プロジェクトにつき 1 本と決めている。<strong>66 本が並ぶことは無い。</strong></p>
+
+	<div class="callout callout-important">
+		<p><strong>確保量のほうには交差点が無い。</strong>出発点で node が 100.5 MB 少なく、伸び方もほぼ同じ（node 0.21 MB ・ bun 0.56 MB）。<strong>何本ぶら下げても node のほうが少ないままである。</strong></p>
+	</div>
 </section>
 
 <!-- ================= 03 ================= -->
@@ -609,7 +675,7 @@ bun    31.54 + 0.59 × n
 				<text x="300.5" y="230">0.98</text>
 			</g>
 		</svg>
-		<figcaption>図 2: node（青）と bun（緑）で差が出ていない。決めているのは DB のほう</figcaption>
+		<figcaption>図 3: node（青）と bun（緑）で差が出ていない。決めているのは DB のほう</figcaption>
 	</figure>
 
 	<div class="tablewrap">
@@ -690,7 +756,7 @@ bun    31.54 + 0.59 × n
 				<text x="90" y="250">5.6</text><text x="390" y="192">16.1</text><text x="690" y="96">28.0</text>
 			</g>
 		</svg>
-		<figcaption>図 3: 本数にきれいに比例する。node と bun はほぼ重なる</figcaption>
+		<figcaption>図 4: 本数にきれいに比例する。node と bun はほぼ重なる</figcaption>
 	</figure>
 
 	<div class="tablewrap">
@@ -786,7 +852,8 @@ setInterval(() =&gt; {
 			<thead><tr><th>何を</th><th>どう測ったか</th></tr></thead>
 			<tbody>
 				<tr><td class="nowrap">起動</td><td>プロセスを作ってから <code>__READY__</code> が出るまで</td></tr>
-				<tr><td class="nowrap">メモリ</td><td>本数ごとに 2 秒落ち着かせ、3 秒ぶん（250 ms 間隔）を平均</td></tr>
+				<tr><td class="nowrap">実メモリ</td><td>本数ごとに 2 秒落ち着かせ、3 秒ぶん（250 ms 間隔）を平均</td></tr>
+				<tr><td class="nowrap">確保量</td><td>そのあと <code>Get-Process</code> に 5 回聞いて平均。<strong>PowerShell は 1 回だけ起こす</strong>（250 ms ごとに起こすと、起動 185 ms のほうが間隔より長くなる）</td></tr>
 				<tr><td class="nowrap"><code>say</code> ・ <code>recent</code></td><td>捨てる 20 回のあと 200 回。<code>recent</code> は先に 600 件積んでから</td></tr>
 				<tr><td class="nowrap">配信</td><td>張り直しては 1 回打つ、を 10 回</td></tr>
 			</tbody>
@@ -796,7 +863,7 @@ setInterval(() =&gt; {
 	<h2>この測定の限界</h2>
 
 	<ul>
-		<li><strong>実メモリ（RSS）しか測っていない。</strong>確保量は OS ごとに測り方が分かれるため落とした</li>
+		<li><strong>確保量は Windows でしか測れない。</strong>実メモリは <code>process.memoryUsage()</code> でどの OS でも測れるが、確保量は <code>Get-Process</code> に聞いている。Mac ・ Linux では別の聞き方が要る</li>
 		<li><strong>1 台の Windows で測った。</strong>Mac ・ Linux では変わりうる</li>
 		<li><strong>DB は空から 600 件まで。</strong>本番の量では <code>recent</code> の数字が変わる</li>
 		<li><strong>待受けは同じマシンから張った。</strong>すべてループバックで、実際の経路とは違う</li>
@@ -864,7 +931,7 @@ setInterval(() =&gt; {
 				<text x="211" y="150">0.09</text>
 			</g>
 		</svg>
-		<figcaption>図 4: 遅いのは node の fetch だけ。同じ node でも http.request は 85 倍速い</figcaption>
+		<figcaption>図 5: 遅いのは node の fetch だけ。同じ node でも http.request は 85 倍速い</figcaption>
 	</figure>
 
 	<p><strong>node の <code>fetch</code> だけが遅かった。</strong>最小は 0.36 ms まで下がるので、返せないのではなく待たされている。<strong>Windows の既定のタイマー解像度 15.6 ms と一致する。</strong></p>

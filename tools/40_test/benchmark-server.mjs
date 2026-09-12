@@ -17,7 +17,7 @@
  *
  * 結果は tmp/benchmark-server.json に書く。
  */
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:net';
 import { request as httpRequest, Agent } from 'node:http';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -176,6 +176,45 @@ async function stopServer(srv) {
 	}
 }
 
+/**
+ * 確保量（Private Bytes）を測る。Windows でだけ動く。
+ *
+ * 【なぜ probe 側で測らないか】
+ * process.memoryUsage() は実メモリ（rss）までしか返さない。確保量は OS に
+ * 聞くしかなく、聞き方が OS ごとに違う（Windows は Get-Process、Linux は
+ * /proc/<pid>/status、Mac は ps や vmmap）。
+ *
+ * 実メモリだけを見ると読み違える。CLI を測ったとき、bun は実メモリが小さいのに
+ * 確保量は 5 実装のうち最大だった。だから取れる環境では取っておく。
+ *
+ * PowerShell は 1 回だけ起こす。250 ms ごとに起こすと、起動（185 ms）のほうが
+ * 測る間隔より長くなる。まとめて何回ぶんか取らせて、結果だけ受け取る。
+ *
+ * @returns {{n: number, avg: number, median: number, p95: number, min: number, max: number} | null}
+ */
+function samplePrivateBytes(pid, samples, intervalMs) {
+	if (process.platform !== 'win32') return null;
+
+	// 引数は配列で渡す。シェルを通さないので、入れ子のクォートが要らない
+	const script =
+		`1..${samples} | ForEach-Object { ` +
+		`try { (Get-Process -Id ${pid} -ErrorAction Stop).PrivateMemorySize64 } catch { 0 }; ` +
+		`Start-Sleep -Milliseconds ${intervalMs} }`;
+
+	const run = spawnSync('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script], {
+		encoding: 'utf8',
+	});
+	if (run.status !== 0) return null;
+
+	const mb = (run.stdout ?? '')
+		.split(/\r?\n/)
+		.map((line) => Number(line.trim()))
+		.filter((n) => Number.isFinite(n) && n > 0)
+		.map((b) => b / 1024 / 1024);
+
+	return mb.length > 0 ? summarize(mb) : null;
+}
+
 /** 指定した長さのあいだメモリを貯めて、まとめを返す（MB） */
 async function sampleMemory(srv, ms) {
 	srv.state.samples = [];
@@ -284,8 +323,13 @@ async function run(runtime) {
 			const waiters = n > 0 ? await openWaiters(srv, n) : null;
 			await sleep(SETTLE_MS);
 			const mem = await sampleMemory(srv, MEM_WINDOW_MS);
-			result.memory.push({ waiters: n, ...mem });
-			process.stdout.write(`  メモリ 待受け ${String(n).padStart(2)} 本  ${mem.avg.toFixed(2)} MB（${mem.min.toFixed(2)} 〜 ${mem.max.toFixed(2)}）\n`);
+			// 確保量は OS に聞く。取れない環境（Windows 以外）では null が返る
+			const priv = samplePrivateBytes(srv.child.pid, 5, 250);
+			result.memory.push({ waiters: n, ...mem, private: priv });
+			const privText = priv ? ` / 確保 ${priv.avg.toFixed(2)} MB` : '';
+			process.stdout.write(
+				`  メモリ 待受け ${String(n).padStart(2)} 本  実 ${mem.avg.toFixed(2)} MB（${mem.min.toFixed(2)} 〜 ${mem.max.toFixed(2)}）${privText}\n`
+			);
 			if (waiters) await waiters.stop();
 		}
 

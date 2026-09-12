@@ -17,20 +17,20 @@
 			</g>
 			<text x="390" y="314" font-size="12" fill="#4a5568" text-anchor="middle">ぶら下がっている待受けの本数</text>
 
-			<polyline points="90,70.4 150,69.2 390,66.9 690,62.8" fill="none" stroke="hsl(210,78%,25%)" stroke-width="3"/>
+			<polyline points="90,70.1 150,68.7 390,66.5 690,61.3" fill="none" stroke="hsl(210,78%,25%)" stroke-width="3"/>
 			<g fill="hsl(210,78%,25%)">
-				<circle cx="90" cy="70.4" r="5"/><circle cx="150" cy="69.2" r="5"/><circle cx="390" cy="66.9" r="5"/><circle cx="690" cy="62.8" r="5"/>
+				<circle cx="90" cy="70.1" r="5"/><circle cx="150" cy="68.7" r="5"/><circle cx="390" cy="66.5" r="5"/><circle cx="690" cy="61.3" r="5"/>
 			</g>
-			<text x="100" y="58" font-size="13" font-weight="700" fill="hsl(210,78%,25%)">node（青）</text>
+			<text x="100" y="58" font-size="13" font-weight="700" fill="hsl(210,78%,25%)">node 実メモリ（青）</text>
 
-			<polyline points="90,154.4 150,143.1 390,137.5 690,132.6" fill="none" stroke="hsl(140,78%,25%)" stroke-width="3"/>
+			<polyline points="90,152.7 150,141.3 390,136.4 690,131.4" fill="none" stroke="hsl(140,78%,25%)" stroke-width="3"/>
 			<g fill="hsl(140,78%,25%)">
-				<circle cx="90" cy="154.4" r="5"/><circle cx="150" cy="143.1" r="5"/><circle cx="390" cy="137.5" r="5"/><circle cx="690" cy="132.6" r="5"/>
+				<circle cx="90" cy="152.7" r="5"/><circle cx="150" cy="141.3" r="5"/><circle cx="390" cy="136.4" r="5"/><circle cx="690" cy="131.4" r="5"/>
 			</g>
-			<text x="100" y="176" font-size="13" font-weight="700" fill="hsl(140,78%,25%)">bun（緑）</text>
+			<text x="100" y="174" font-size="13" font-weight="700" fill="hsl(140,78%,25%)">bun 実メモリ（緑）</text>
 
 			<g font-size="12" fill="#1c2330" text-anchor="middle">
-				<text x="90" y="86">54.4</text><text x="690" y="54">56.5</text>
-				<text x="90" y="170">31.5</text><text x="690" y="124">37.5</text>
+				<text x="90" y="86">54.5</text><text x="690" y="52">56.9</text>
+				<text x="90" y="168">32.0</text><text x="690" y="123">37.8</text>
 			</g>
 		</svg>

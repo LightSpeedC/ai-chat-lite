@@ -445,7 +445,8 @@ footer a {
 	</div>
 
 	<div class="callout callout-note">
-		<p><strong>Mac ・ Linux へ展開すると決めたので、残る選択肢は TypeScript（node ・ bun）と Rust になる。</strong>その 2 系統で読むと、待受け中の実メモリは <strong>bun 25.59 MB 対 Rust 4.89 MB</strong>。<strong>差は 20.7 MB/本</strong>である。</p>
+		<p><strong>Mac ・ Linux へ展開すると決めたので、残る選択肢は TypeScript（node ・ bun）と Rust になる。</strong>その 2 系統で読むと、待受け中の実メモリは <strong>bun 25.59 MB 対 Rust 4.89 MB</strong>。<strong>差は 20.7 MB/本</strong>である。<br>
+		ただし<strong>確保量では bun 108.43 MB 対 node 62.44 MB で、bun のほうが大きい。</strong>同じ傾向はサーバーでも出た（<a class="doclink" href="r260912-02-サーバーのベンチマーク.html">サーバーのベンチマーク</a>）。<strong>処理系の癖であり、どちらのメモリを見るかで結論が変わる。</strong></p>
 	</div>
 
 	<h2>5 実装を 1 枚に</h2>
