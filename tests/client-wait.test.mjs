@@ -320,7 +320,18 @@ describe('複数のルームを 1 本で待つ', () => {
 		const me = 'test-first-hint-room';
 		const { stdout } = await chat(['wait', '-r', 'sandbox-hintroom', '--wait-sec', '1'], me);
 		assert.match(stdout, /初めての接続です（sandbox-hintroom）/);
-		for (const line of stdout.split('\n').filter((l) => l.includes('aichat recent'))) {
+
+		const samples = stdout.split('\n').filter((l) => l.includes('aichat recent'));
+		/*
+		 * 拾えた行数を先に確かめる。
+		 *
+		 * ループの中だけで assert していると、フィルタが 0 行を返したときに
+		 * 空回りして緑になる。見本の行が消えても気づけない（レビュー #23
+		 * medium 10）。いま出しているのはルームごとに 2 行である。
+		 */
+		assert.equal(samples.length, 2, `見本の行が拾えていない\n--- 出力 ---\n${stdout}`);
+
+		for (const line of samples) {
 			assert.match(line, /-r sandbox-hintroom/, `見本に -r が無い、または別のルームを指している: ${line.trim()}`);
 		}
 	});

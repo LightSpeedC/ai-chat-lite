@@ -51,6 +51,28 @@ export function roomsFrom(value, defaultRoom) {
 }
 
 /**
+ * 案内に出すルームの並び。複数ならダブルクォートで囲む。
+ *
+ * 囲まないと PowerShell がカンマを配列の区切りと読み、2 つの引数に割れて
+ * 1 ルームだけを待つ。USAGE は「エラーは出ず、届かないことにも気づけない」と
+ * 書いており、共通ルールは「やることは集計より後ろの行に出るので、それに
+ * 従う」と定めている。**道具が割れる形の見本を出してはいけない**
+ * （レビュー #22 medium 8）。
+ *
+ * 1 つだけのときは囲まない（共通ルールも「単一のルームなら囲まなくてよい」）。
+ *
+ * ここに置くのは chat.mjs の中だと呼べず、回帰テストが書けなかったため
+ * （レビュー #23 medium 9）。C# 版（Waiters.cs の RoomsArg）は言語が違うので
+ * 写しが残る。そちらは tests/cli-cs.test.mjs が出力の書式で守る。
+ *
+ * @param {string[]} rooms
+ */
+export function roomsArg(rooms) {
+	const joined = rooms.join(',');
+	return rooms.length > 1 ? `"${joined}"` : joined;
+}
+
+/**
  * 残すものと止めてよいものに分ける。
  *
  * 止めてよいのは、覆っている全ルームが他の待受けでも覆われているものだけ。

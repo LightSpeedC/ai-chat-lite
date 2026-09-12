@@ -76,12 +76,33 @@ describe('--since と --before の丸めは対称', () => {
 		assert.equal(resolveDateTimeArg('11/1'), resolveDateTimeArg('11/1'));
 	});
 
+	/*
+	 * 【日付を決め打ちにしない】
+	 * ここは 11/1 と 11/30 を書いていた。ところが 11/1 〜 11/30 の 29 日間は
+	 * 11/1 が過去（今年）・11/30 が未来（去年）になり、年が食い違って落ちる。
+	 * 同じファイルの他の検査は前提が崩れる日を if で避けているのに、
+	 * ここだけ無条件だった（レビュー #23 medium 11）。
+	 *
+	 * 実行日から「確実に両方とも未来」の 2 日を作れば、いつ流しても同じことを
+	 * 確かめられる。片方だけ丸まる実装なら、去年〜今年という 1 年がかりの
+	 * 範囲になってしまう。
+	 */
 	test('anchor を渡さずに単独で丸めても、両方とも去年に丸まる', () => {
-		// 11/1 と 11/30 は、今年のその日がいまより未来なら両方とも去年に丸まる。
-		// 片方だけ丸まる実装だと、去年〜今年という 1 年がかりの範囲になってしまう
-		const since = resolveDateTimeArg('11/1');
-		const before = resolveDateTimeArg('11/30');
+		const now = nowJst();
+		const [y, m, d] = now.slice(0, 10).split('/').map(Number);
+		const base = Date.UTC(y, m - 1, d);
+		const a = new Date(base + 2 * 24 * 60 * 60 * 1000);
+		const b = new Date(base + 3 * 24 * 60 * 60 * 1000);
+		// 年末に流すと翌年へ回り、「今年の未来の日」でなくなる
+		if (a.getUTCFullYear() !== y || b.getUTCFullYear() !== y) return;
+		const md = (t) => `${t.getUTCMonth() + 1}/${t.getUTCDate()}`;
+
+		const since = resolveDateTimeArg(md(a));
+		const before = resolveDateTimeArg(md(b));
+
 		assert.equal(since.slice(0, 4), before.slice(0, 4), '年が食い違っている（非対称に丸めている）');
+		// 名前のとおり「去年に丸まる」ことまで見る。年の一致だけだと素通りする
+		assert.equal(since.slice(0, 4), String(y - 1), '未来の日なのに去年へ丸まっていない');
 	});
 });
 

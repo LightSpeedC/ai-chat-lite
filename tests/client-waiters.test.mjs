@@ -29,7 +29,7 @@ import { WAITER_PATTERN, ID_WRAP } from '../src/client/options.mjs';
  * ダブルクォート付きの -r を読めない穴（#22 medium 7）は、写しを検査していた
  * 間ずっと見えていなかった。
  */
-import { splitRedundant, readArg, roomsFrom as roomsFromRaw } from '../src/client/waiters-pick.mjs';
+import { splitRedundant, readArg, roomsFrom as roomsFromRaw, roomsArg } from '../src/client/waiters-pick.mjs';
 import { DEFAULT_ROOM, PORT } from '../src/server/config.mjs';
 
 /** 一覧の 1 行を作る */
@@ -685,5 +685,36 @@ describe('式の置き場', () => {
 
 	test('式は JavaScript の正規表現として読める', () => {
 		assert.doesNotThrow(() => new RegExp(WAITER_PATTERN));
+	});
+});
+
+/*
+ * 【なぜ必要か】
+ * 「次を張ってください」の 1 行に載る -r の値である。複数のルームを裸で
+ * 書くと PowerShell がカンマを配列の区切りと読み、2 つの引数に割れて
+ * 1 ルームだけを待つ。USAGE は「エラーは出ず、届かないことにも気づけない」と
+ * 書いている。道具が割れる形の見本を出してはいけない。
+ *
+ * 直したとき（#22 medium 8）、この関数だけ回帰テストが無かった。chat.mjs の
+ * 中にあって呼べなかったためで、cli-cs.test.mjs の NOTE の検査も接頭辞しか
+ * 見ておらず、基準が 1 ルームなので複数の枝を通っていなかった
+ * （レビュー #23 medium 9）。
+ */
+describe('張り方の見本に載せるルームの並び', () => {
+	test('複数ならダブルクォートで囲む', () => {
+		assert.equal(roomsArg(['public', 'ai-chat-lite']), '"public,ai-chat-lite"');
+		assert.equal(roomsArg(['a', 'b', 'c']), '"a,b,c"');
+	});
+
+	test('1 つなら囲まない', () => {
+		assert.equal(roomsArg(['public']), 'public');
+	});
+
+	test('囲んだ値は readArg で読み戻せる', () => {
+		// 出した見本をそのまま貼って張り直したとき、同じルームに戻ること
+		const rooms = ['public', 'ai-chat-lite'];
+		const cmd = `aichat wait :me: -p 8787 -r ${roomsArg(rooms)}`;
+
+		assert.deepEqual(roomsFromRaw(readArg(cmd, 'room', 'r'), 'public'), rooms);
 	});
 });

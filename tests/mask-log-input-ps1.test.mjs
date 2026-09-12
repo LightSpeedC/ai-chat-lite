@@ -151,3 +151,48 @@ test('claude が走っていたら、下見の時点で止まり、原因が分�
 	const calls = readFileSync(CALL_LOG, 'utf8').trim().split('\n').filter(Boolean);
 	assert.equal(calls.length, 1, `本実行まで進んでいる（呼ばれた回数 ${calls.length}）\n--- 出力 ---\n${stdout}`);
 });
+
+/*
+ * 【なぜ必要か】
+ * ここまでの検査はすべて偽物に差し替えており、本物の mask-log.ps1 を 1 度も
+ * 走らせていなかった。そのため終了コードの取り決め（成功なら 0、claude が
+ * 走っていれば 4）が本物で守られているかを誰も見ていない。exit 0 を落として
+ * も 3 件とも緑のまま通る（レビュー #23 medium 12）。
+ *
+ * 本物は下見でも claude が走っていれば走査する前に止まるので、この検査は
+ * 会話ログを 1 ファイルも読まない。逆に claude が動いていない環境では
+ * 本番のログを走査してしまうため、そのときはスキップする。
+ */
+test('本物の mask-log.ps1 は、claude が走っていれば走査せず 4 で止まる', (t) => {
+	if (!has51) return t.skip('powershell.exe が無い');
+
+	// このプロセス自身が claude の下で動いているとは限らない
+	let running = false;
+	try {
+		const out = execFileSync('powershell.exe', [
+			'-NoProfile', '-Command', '@(Get-Process -Name claude -ErrorAction SilentlyContinue).Count',
+		], { encoding: 'utf8' });
+		running = Number(out.trim()) > 0;
+	} catch {
+		running = false;
+	}
+	if (!running) return t.skip('claude が動いていない（本物を走らせると本番のログを走査する）');
+
+	const real = join(ROOT, 'tools', '80_ops', 'mask-log.ps1');
+	let stdout = '';
+	let code = 0;
+	try {
+		stdout = execFileSync('powershell.exe', [
+			'-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', real,
+			'-Word', 'この語は現れない-mask-log-test', '-WhatIfOnly',
+		], { encoding: 'utf8', timeout: 20000 });
+	} catch (err) {
+		code = err.status ?? -1;
+		stdout = String(err.stdout ?? '') + String(err.stderr ?? '');
+	}
+
+	assert.equal(code, 4, `終了コードが 4 でない（${code}）\n--- 出力 ---\n${stdout}`);
+	assert.match(stdout, /claude が動いています/, stdout);
+	// 走査まで進んでいれば件数の行が出る。出ていないことが「読んでいない」証拠
+	assert.doesNotMatch(stdout, /ファイル・\d+ 件が見つかりました/, '会話ログを走査してしまっている');
+});

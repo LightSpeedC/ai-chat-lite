@@ -292,6 +292,19 @@ describe('C# 版と node 版で同じものが出る', () => {
 			assert.match(stdout, /recent --since-day 1/);
 			assert.match(stdout, /カーソルを立てました。改めて wait を実行してください。/);
 			assert.doesNotMatch(stdout, /pid \d+ で待受け中/, '即終わらず、通常の待受けに入ってしまっている');
+
+			/*
+			 * 見本の -r まで見る。
+			 *
+			 * recent の既定は public なので、-r が無いと「初めてだと言った
+			 * ルーム」ではなく public を見ることになる。node 側だけ検査して
+			 * いて、C# 側はこの条件に入っていなかった（レビュー #23 medium 10）。
+			 */
+			const samples = stdout.split('\n').filter((l) => l.includes('aichat recent'));
+			assert.equal(samples.length, 2, `見本の行が拾えていない\n--- 出力 ---\n${stdout}`);
+			for (const line of samples) {
+				assert.match(line, /-r \S+/, `見本に -r が無い: ${line.trim()}`);
+			}
 		}
 	});
 

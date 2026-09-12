@@ -20,7 +20,7 @@ import {
 	EXIT_UNREACHABLE,
 	FLAGS,
 } from './options.mjs';
-import { splitRedundant, readArg, roomsFrom as roomsFromShared } from './waiters-pick.mjs';
+import { splitRedundant, readArg, roomsFrom as roomsFromShared, roomsArg } from './waiters-pick.mjs';
 
 /**
  * ai-chat-lite の CLI クライアント。
@@ -831,21 +831,6 @@ async function cmdWho() {
  * 「aichat wait :id:」がそのまま入っており、放っておくと 1 本が 2 本になる。
  * aichat-node なら cmd.exe → node.exe と 2 段になる。親をたどって落とす。
  */
-/**
- * 張り方の 1 行に載せる -r の値。
- *
- * 複数のルームはダブルクォートで囲む。囲まないと PowerShell がカンマを配列の
- * 区切りと読み、2 つの引数に割れて 1 ルームだけを待つ（USAGE 622「エラーは
- * 出ず、届かないことにも気づけない」）。共通ルールは「やることは集計より
- * 後ろの行に出るので、それに従う」と、この行に従う運用を定めているので、
- * 道具が割れる形の見本を出してはいけない（レビュー #22 medium 8）。
- *
- * 1 つだけのときは囲まない（共通ルールも「単一のルームなら囲まなくてよい」）。
- */
-function roomsArg(rooms) {
-	const joined = rooms.join(',');
-	return rooms.length > 1 ? `"${joined}"` : joined;
-}
 
 async function cmdWaiters() {
 	const all = listWaiters();
