@@ -5,6 +5,8 @@
 use crate::client::{CallError, Client};
 use crate::json::Json;
 use crate::jst;
+use crate::waiters;
+use crate::width::{pad_end, pad_start, width};
 
 /// 新着を待つときの設定
 pub struct WaitOpts {
@@ -641,6 +643,207 @@ fn format_stamp(digits: &str) -> String {
 		return digits.to_string();
 	}
 	format!("{}-{}", &digits[..8], &digits[8..14])
+}
+
+/// `waiters` に渡す基準。どこを見ている待受けを数えるか
+pub struct Basis {
+	pub label: String,
+	pub port: i64,
+	pub rooms: Vec<String>,
+	/// 見本に出す接続先（`-p 8787` の形）
+	pub where_: String,
+}
+
+/// 1 本の待受けを、表に出せる形にまとめたもの
+struct Row {
+	pid: i64,
+	id: String,
+	via: String,
+	at: String,
+	target: waiters::Target,
+}
+
+/// 走っている待受けを数えて出す。**サーバーには繋がない**
+pub fn waiters_cmd(me: &str, basis: &Basis, default_room: &str) -> Result<(), String> {
+	let rows = waiters::list_processes()?;
+	let self_pid = std::process::id() as i64;
+	let picked = waiters::pick_waiters(&rows, &[self_pid]);
+
+	// 親の名前を引けるようにしておく。cmd 越しの node は aichat-node になる
+	let name_of: Vec<(i64, String)> = rows.iter().map(|p| (p.pid, p.name.clone())).collect();
+
+	let all: Vec<Row> = picked
+		.iter()
+		.map(|(p, id)| Row {
+			pid: p.pid,
+			id: id.clone(),
+			via: waiters::via_of(
+				&p.name,
+				name_of.iter().find(|(pid, _)| *pid == p.ppid).map(|(_, n)| n.as_str()),
+			),
+			at: p.at.clone(),
+			target: waiters::target_of(&p.cmd, default_room),
+		})
+		.collect();
+
+	if all.is_empty() {
+		println!("待受けは走っていません。");
+		println!("  {} の待受けがありません。次を張ってください:", basis.rooms.join(", "));
+		println!(
+			"    aichat wait :{}: {} -r {}",
+			me,
+			basis.where_,
+			waiters::rooms_arg(&basis.rooms)
+		);
+		return Ok(());
+	}
+
+	print_waiters(&all, basis, me);
+	Ok(())
+}
+
+/// 一覧を出す
+fn print_waiters(all: &[Row], basis: &Basis, me: &str) {
+	// 同じ接続先の分を並べる。ルームは列に出す。1 本が複数を見ていることがある
+	let here: Vec<&Row> = all.iter().filter(|h| h.target.port == basis.port).collect();
+	let elsewhere: Vec<&Row> = all.iter().filter(|h| h.target.port != basis.port).collect();
+
+	println!("  {} を見ている待受け", basis.label);
+	println!();
+
+	if here.is_empty() {
+		println!("  ありません。");
+	} else {
+		let rooms_of = |h: &Row| h.target.rooms.join(", ");
+		let id_w = here.iter().map(|h| width(&h.id)).chain(std::iter::once(width("ID"))).max().unwrap_or(2);
+		let via_w = here.iter().map(|h| width(&h.via)).chain(std::iter::once(width("張り方"))).max().unwrap_or(6);
+		let room_w = here
+			.iter()
+			.map(|h| width(&rooms_of(h)))
+			.chain(std::iter::once(width("ルーム")))
+			.max()
+			.unwrap_or(6);
+
+		println!(
+			"  {}  {}  {}  {}  {}  {}",
+			pad_end("ID", id_w),
+			pad_end("張り方", via_w),
+			pad_end("いつから", 8),
+			pad_start("経過", 5),
+			pad_end("ルーム", room_w),
+			pad_start("pid", 6)
+		);
+
+		let now = jst::parse_jst(&jst::now_jst()).unwrap_or(0);
+		for h in &here {
+			// 自分の分に印を付ける。止めてよいのはこれだけである
+			let mark = if h.id == me { "*" } else { " " };
+			// at は `yyyy-MM-dd HH:mm:ss`。時刻の部分だけを出す
+			let time = if h.at.len() > 11 { &h.at[11..] } else { "" };
+			println!(
+				"{} {}  {}  {}  {}  {}  {}",
+				mark,
+				pad_end(&h.id, id_w),
+				pad_end(&h.via, via_w),
+				time,
+				pad_start(&waiters::elapsed_of(&h.at, now), 5),
+				pad_end(&rooms_of(h), room_w),
+				pad_start(&h.pid.to_string(), 6)
+			);
+		}
+	}
+
+	let mine: Vec<&&Row> = here.iter().filter(|h| h.id == me).collect();
+
+	println!();
+	println!("  自分（{}）: {} 本 / この場所に {} 本", me, mine.len(), here.len());
+
+	/*
+	 * 別の場所を見ている自分の分は、pid まで出す。
+	 *
+	 * ルームを間違えた待受けは静かに動く。繋がっているので who は「接続中」と
+	 * 出すが、この場所の発言は 1 つも届かない。件数だけでは止めようがない。
+	 * 他プロジェクトの分は件数だけにする（止めてはいけないため）。
+	 */
+	let stray: Vec<&&Row> = elsewhere.iter().filter(|h| h.id == me).collect();
+	if !stray.is_empty() {
+		let shown: Vec<String> = stray
+			.iter()
+			.map(|h| format!("pid {}（{} / {}）", h.pid, h.target.label, h.target.rooms.join(", ")))
+			.collect();
+		println!("  自分の分が別の場所に {} 本: {}", stray.len(), shown.join("、"));
+	}
+
+	// elsewhere は接続先が違う分だけ。同じ接続先ならルームが違っても表に出ている
+	let others = elsewhere.len() - stray.len();
+	if others > 0 {
+		println!("  他に {} 本（別の接続先）", others);
+	}
+
+	/*
+	 * 覆えているかで見る。本数では見ない。
+	 *
+	 * 1 本が複数のルームを見られるので、「2 ルームなら 2 本」は成り立たない。
+	 * 渡したルームが 1 つでも欠けていれば、そこを名指しして張り方を出す。
+	 */
+	let mut covered: Vec<String> = Vec::new();
+	for h in &mine {
+		for r in &h.target.rooms {
+			if !covered.contains(r) {
+				covered.push(r.clone());
+			}
+		}
+	}
+	let missing: Vec<String> = basis.rooms.iter().filter(|r| !covered.contains(r)).cloned().collect();
+
+	// 残すものと止めてよいものに分ける。選び方は waiters.rs に置いた
+	let mine_waiters: Vec<waiters::Waiter> = mine
+		.iter()
+		.map(|h| waiters::Waiter {
+			pid: h.pid,
+			rooms: h.target.rooms.clone(),
+			at: h.at.clone(),
+		})
+		.collect();
+	let (keep, stop) = waiters::split_redundant(&mine_waiters, &basis.rooms);
+
+	/*
+	 * やることは 1 つとは限らない。片方で打ち切ると、もう片方が隠れる。
+	 * 「足りない」と「余っている」は同時に起こる。
+	 */
+	if !missing.is_empty() {
+		println!("  {} の待受けがありません。次を張ってください:", missing.join(", "));
+		println!(
+			"    aichat wait :{}: {} -r {}",
+			me,
+			basis.where_,
+			waiters::rooms_arg(&missing)
+		);
+	}
+
+	if !stop.is_empty() {
+		// 出すのも基準の中だけ。渡していないルームの名前を混ぜない
+		let mut rooms: Vec<String> = Vec::new();
+		for w in &stop {
+			for r in &w.rooms {
+				if basis.rooms.contains(r) && !rooms.contains(r) {
+					rooms.push(r.clone());
+				}
+			}
+		}
+		let stopped: Vec<String> = stop.iter().map(|w| w.pid.to_string()).collect();
+		let kept: Vec<String> = keep.iter().map(|w| w.pid.to_string()).collect();
+		println!(
+			"  {} を二重に張っています。pid {} を止めてください（pid {} を残す）。",
+			rooms.join(", "),
+			stopped.join(", "),
+			kept.join(", ")
+		);
+	}
+
+	if missing.is_empty() && stop.is_empty() {
+		println!("  すべて覆えています。張る必要はありません。");
+	}
 }
 
 /// 全ルームの発言を JSONL に書き出す

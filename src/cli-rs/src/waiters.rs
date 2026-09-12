@@ -29,6 +29,25 @@ pub struct Process {
 	pub at: String,
 }
 
+/// 経過を `h:mm` で返す。**日をまたいでも時のまま増やす**（2 日なら 48:00）。
+///
+/// 日数に繰り上げると、張りっぱなしの待受けが「2 日」と出て、何時間走って
+/// いるのか読めなくなる。
+pub fn elapsed_of(at: &str, now_ms: i64) -> String {
+	// at は `yyyy-MM-dd HH:mm:ss`（ps ・ Get-CimInstance の形）
+	let started = parse_at(at).unwrap_or(now_ms);
+	let min = ((now_ms - started) / 60000).max(0);
+	format!("{}:{:02}", min / 60, min % 60)
+}
+
+/// `yyyy-MM-dd HH:mm:ss` を JST としてのミリ秒に直す
+fn parse_at(at: &str) -> Option<i64> {
+	// jst の読み取りは `yyyy/mm/dd HH:mm:ss.fff` なので、区切りを合わせてから渡す
+	let (date, time) = at.split_once(' ')?;
+	let slashed = date.replace('-', "/");
+	crate::jst::parse_jst(&format!("{} {}.000", slashed, time)).ok()
+}
+
 /// 走っているプロセスの一覧を取る。
 ///
 /// **ここだけ OS で分かれる。**node 版は PowerShell を起こしているが、
@@ -405,6 +424,41 @@ mod tests {
 
 	fn proc(pid: i64, ppid: i64, name: &str, cmd: &str, at: &str) -> Process {
 		Process { pid, ppid, name: name.to_string(), cmd: cmd.to_string(), at: at.to_string() }
+	}
+
+	/// 経過のテスト用。基準の時刻をミリ秒で作る
+	fn at_ms(text: &str) -> i64 {
+		crate::jst::parse_jst(text).unwrap()
+	}
+
+	#[test]
+	fn 経過を時と分で出す() {
+		let now = at_ms("2026/09/13 12:34:00.000");
+		assert_eq!(elapsed_of("2026-09-13 12:34:00", now), "0:00");
+		assert_eq!(elapsed_of("2026-09-13 12:00:00", now), "0:34");
+		assert_eq!(elapsed_of("2026-09-13 10:34:00", now), "2:00");
+		assert_eq!(elapsed_of("2026-09-13 10:00:00", now), "2:34");
+	}
+
+	#[test]
+	fn 日をまたいでも時のまま増やす() {
+		// 「2 日」と出すと、何時間走っているのか読めなくなる
+		let now = at_ms("2026/09/15 10:00:00.000");
+		assert_eq!(elapsed_of("2026-09-13 10:00:00", now), "48:00");
+	}
+
+	#[test]
+	fn 先の時刻なら0にする() {
+		// 時計のずれで未来に見えることがある。負の経過は出さない
+		let now = at_ms("2026/09/13 10:00:00.000");
+		assert_eq!(elapsed_of("2026-09-13 12:00:00", now), "0:00");
+	}
+
+	#[test]
+	fn 読めない時刻は0にする() {
+		let now = at_ms("2026/09/13 10:00:00.000");
+		assert_eq!(elapsed_of("", now), "0:00");
+		assert_eq!(elapsed_of("いつか", now), "0:00");
 	}
 
 	#[test]

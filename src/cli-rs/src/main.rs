@@ -109,8 +109,23 @@ fn run() -> i32 {
 	 */
 	let offline = def.command(command).map(|c| c.offline).unwrap_or(false);
 	if offline {
-		eprintln!("{} はまだ作っていません（Rust 版）", command);
-		return EXIT_USAGE;
+		// waiters は名乗る ID が要る。サーバーには繋がない
+		let me = match require_id(&def, &connector_id, &positionals) {
+			Ok(id) => id,
+			Err(code) => return code,
+		};
+		let basis = match basis_of(&def, &a, &base, &room) {
+			Ok(b) => b,
+			Err(code) => return code,
+		};
+		return match commands::waiters_cmd(&me, &basis, &def.default_room) {
+			Ok(()) => 0,
+			Err(e) => {
+				eprintln!("プロセスの一覧を取れませんでした。");
+				eprintln!("  {}", e);
+				1
+			}
+		};
 	}
 
 	let base = match base {
@@ -430,4 +445,48 @@ fn warn_if_foreground(limit_sec: i64, from_default: bool) {
 	eprintln!("  それまでの間、呼び出し側は待たされます。");
 	eprintln!("  はじめから run_in_background で呼んでください。");
 	eprintln!();
+}
+
+/// どこを見ている待受けを数えるかを決める。
+///
+/// **接続先を省略できない。既定値を持たない。**他のコマンドと同じ扱いにする。
+/// 既定を本番にすると、テストのつもりで数えたものが本番の本数として返る。
+/// 「張っているから張らない」と判断して本番の待受けが 1 本も無いまま止まる。
+/// 書き込まないだけで、事故の形は同じ。
+fn basis_of(def: &Definition, a: &Args, base: &Option<client::Base>, room: &str) -> Result<commands::Basis, i32> {
+	let b = match base {
+		Some(b) => b,
+		None => {
+			eprintln!("どこを見ている待受けを数えるかが指定されていません。");
+			eprintln!();
+			eprintln!(
+				"  本番: waiters {w}<自分のID>{w} -p {} -r {}",
+				def.default_port,
+				def.default_room,
+				w = def.id_wrap
+			);
+			eprintln!();
+			eprintln!("  既定値は持ちません。テストのつもりで数えた本数を本番の本数と読み違えるのを防ぐためです。");
+			return Err(2);
+		}
+	};
+
+	let where_ = match a.option("port", Some("p")) {
+		Some(p) => format!("-p {}", p),
+		None => format!("-u {}", a.option("url", Some("u")).unwrap_or("")),
+	};
+
+	// 案内に出す形は、ポートで渡したときだけ :ポート にする
+	let label = if a.option("port", Some("p")).is_some() {
+		format!(":{}", b.port)
+	} else {
+		commands::describe_place(&b.display)
+	};
+
+	Ok(commands::Basis {
+		label,
+		port: b.port as i64,
+		rooms: waiters::rooms_from(Some(room), &def.default_room),
+		where_,
+	})
 }

@@ -246,5 +246,24 @@
 			"--wait-sec",
 			"一"
 		]
+	},
+	{
+		"args": [
+			"waiters",
+			":rust-check:"
+		]
+	},
+	{
+		"args": [
+			"waiters"
+		]
+	},
+	{
+		"args": [
+			"waiters",
+			":rust-check:",
+			"-r",
+			"public,ai-chat-lite"
+		]
 	}
 ]
