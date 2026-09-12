@@ -23,6 +23,7 @@ import {
 	FLAGS,
 } from './options.mjs';
 import { splitRedundant, readArg, roomsFrom as roomsFromShared, roomsArg } from './waiters-pick.mjs';
+import { listProcesses } from './proc-list.mjs';
 
 /**
  * ai-chat-lite の CLI クライアント。
@@ -909,33 +910,8 @@ async function cmdWho() {
  * aichat-node なら cmd.exe → node.exe と 2 段になる。親をたどって落とす。
  */
 
-/**
- * Windows で、隣に C# 版があれば waiters をそちらに任せる。
- *
- * **C# は .NET から WMI を直に叩ける。**こちらは PowerShell を起こすしかなく、
- * その起動だけで 213 ms を使う。同じ答えを出すのに 3 倍かかる（実測 668 ms 対 207 ms）。
- *
- * 同じフォルダだけを見る。PATH を辿ると、別の版や別プロジェクトのものを掴みうる。
- * 起こせなければ黙って自分で数える。**任せられないことは失敗ではない。**
- *
- * @returns 任せたら true（この関数の中で終了するので戻らない）
- */
-function delegateWaiters() {
-	if (process.platform !== 'win32') return false;
-
-	const target = join(ROOT, 'aichat-cs.exe');
-	if (!existsSync(target)) return false;
-
-	const run = spawnSync(target, process.argv.slice(2), { stdio: 'inherit' });
-	if (run.error) return false;
-
-	process.exit(run.status ?? 1);
-}
-
 async function cmdWaiters() {
-	if (delegateWaiters()) return;
-
-	const all = listWaiters();
+	const all = await listWaiters();
 	const basis = basisOf();
 
 	if (all.length === 0) {
@@ -1016,33 +992,23 @@ function basisOf() {
  * 絞り込みは JavaScript 側で行う。PowerShell に渡す式に ID を入れないので、
  * 子プロセス自身が数に混ざらない。
  */
-function listWaiters() {
-	const script =
-		'Get-CimInstance Win32_Process | ' +
-		"Where-Object { $_.CommandLine -and $_.CommandLine -like '*wait*' } | " +
-		'ForEach-Object { [pscustomobject]@{ pid = $_.ProcessId; ppid = $_.ParentProcessId; name = $_.Name; ' +
-		"cmd = $_.CommandLine; at = $_.CreationDate.ToString('yyyy-MM-dd HH:mm:ss') } } | " +
-		'ConvertTo-Json -Compress -Depth 3';
-
-	const run = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], {
-		encoding: 'utf8',
-		maxBuffer: 32 * 1024 * 1024,
-	});
-
-	if (run.status !== 0) {
+async function listWaiters() {
+	let rows;
+	try {
+		rows = await listProcesses();
+	} catch (err) {
 		console.error('プロセスの一覧を取れませんでした。');
-		console.error(`  ${(run.stderr ?? '').trim() || 'powershell.exe が動きませんでした'}`);
+		console.error(`  ${err.message}`);
 		process.exit(1);
 	}
 
-	const text = (run.stdout ?? '').trim();
-	if (!text) return [];
-
-	// 1 件のときオブジェクト、複数のとき配列で返る
-	const parsed = JSON.parse(text);
-	const rows = Array.isArray(parsed) ? parsed : [parsed];
-
-	return pickWaiters(rows, [process.pid, run.pid]);
+	/*
+	 * 外すのは自分だけでよい。
+	 *
+	 * API を直に呼ぶ経路では子プロセスを起こさない。PowerShell へ落ちたときも、
+	 * 式の中に wait という並びを置かないので、その子は条件に当たらない。
+	 */
+	return pickWaiters(rows, [process.pid]);
 }
 
 /**

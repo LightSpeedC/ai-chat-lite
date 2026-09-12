@@ -73,7 +73,7 @@ pub fn parse_jst(jst: &str) -> Result<i64, String> {
 }
 
 /// JST としてのミリ秒を `yyyy/mm/dd HH:mm:ss.fff` に直す
-fn from_epoch_ms(ms: i64) -> String {
+pub fn from_epoch_ms(ms: i64) -> String {
 	// 負の側でも切り下げる。単純な除算だと 0 に向かって丸まり、1970 年より
 	// 前の時刻が 1 日ずれる
 	let days = ms.div_euclid(MS_PER_DAY);

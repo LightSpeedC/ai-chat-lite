@@ -80,15 +80,33 @@ pub fn exe_dir() -> Option<std::path::PathBuf> {
 
 /// 走っているプロセスの一覧を取る。
 ///
-/// **ここだけ OS で分かれる。**node 版は PowerShell を起こしているが、
-/// Mac ・ Linux に PowerShell は無い。取り方だけを分け、選び方（`pick_waiters`）は
-/// 1 つに保つ。
+/// **ここだけ OS で分かれる。**Mac ・ Linux に PowerShell は無い。
+/// 取り方だけを分け、選び方（`pick_waiters`）は 1 つに保つ。
+///
+/// Windows では 2 段で試す。
+///
+///   1. Windows の API を直に呼ぶ（20 ms）
+///   2. PowerShell を起こす（213 ms）
+///
+/// **1 は非公開の仕組みに乗っている。**PEB の並びは公開されておらず、
+/// Windows の版が変わると位置がずれうる。そのときは黙って 2 へ落ちる。
+/// `waiters` は「止めてよい待受けを名指しする」道具なので、
+/// **誤って数えるより遅いほうがよい。**
 pub fn list_processes() -> Result<Vec<Process>, String> {
-	if cfg!(windows) {
-		list_windows()
-	} else {
-		list_unix()
+	if !cfg!(windows) {
+		return list_unix();
 	}
+
+	#[cfg(windows)]
+	{
+		// 空が返ったときも失敗として扱う。1 件も無いことは起こらない
+		if let Ok(rows) = crate::winapi::list_processes() {
+			if !rows.is_empty() {
+				return Ok(rows);
+			}
+		}
+	}
+	list_windows()
 }
 
 /// Windows。`Get-CimInstance` で立った時刻まで取れる
