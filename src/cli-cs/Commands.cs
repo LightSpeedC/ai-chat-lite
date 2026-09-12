@@ -703,16 +703,25 @@ namespace AiChat
 				"\"exit_code\":" + exitCode + "}";
 			Dictionary<string, object> result = client.Post("/api/admin/exit", body);
 
+			/*
+			 * 出す文はサーバーの応答をそのまま使う。
+			 *
+			 * 以前は exit_code だけを見て固定文を出していた。ところが実際に
+			 * 起動し直すかどうかは、サーバーが WinSW 経由で動いているか
+			 * （AICHAT_MANAGED）で決まる。テスト用サーバーのようにサービス
+			 * 経由でない相手には、10 秒後に起動し直すと言いながら止まったまま
+			 * になる。node 版は応答の note と will_restart を読んでいたので、
+			 * 2 本の CLI が逆のことを言っていた（レビュー #23 medium 4）。
+			 */
 			Console.WriteLine("終了コード " + Json.Int(result, "exit_code") + " で終了します");
-			if (exitCode == 1)
+			Console.WriteLine("  " + Json.Str(result, "note", ""));
+			if (Json.Bool(result, "will_restart"))
 			{
-				Console.WriteLine("  異常終了として扱われるため、10 秒後に起動し直します");
 				Console.WriteLine("  10 秒ほど待ってから接続してください");
 			}
-			else
+			else if (Json.Str(result, "managed_by", null) != null)
 			{
-				Console.WriteLine("  正常終了として扱われるため、止まったままになります");
-				Console.WriteLine("  起動するには winsw の start が要ります");
+				Console.WriteLine("  もう一度動かすには: node-ai-chat-lite-winsw.exe start");
 			}
 			return 0;
 		}
