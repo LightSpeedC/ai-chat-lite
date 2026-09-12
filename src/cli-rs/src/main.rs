@@ -8,6 +8,7 @@
 
 mod args;
 mod client;
+mod commands;
 mod definition;
 mod http;
 mod id;
@@ -102,7 +103,61 @@ fn run() -> i32 {
 		return if !wants_help && !command.is_empty() { 1 } else { 0 };
 	}
 
-	// ここから先は段 3 以降で埋める
-	eprintln!("{} はまだ作っていません（Rust 版）", command);
-	EXIT_USAGE
+	/*
+	 * 接続先はここで要る。既定値を持たないので、無ければ止める。
+	 * サーバーに繋がないコマンド（waiters）だけは先に振り分ける。
+	 */
+	let offline = def.command(command).map(|c| c.offline).unwrap_or(false);
+	if offline {
+		eprintln!("{} はまだ作っていません（Rust 版）", command);
+		return EXIT_USAGE;
+	}
+
+	let base = match base {
+		Some(b) => b,
+		None => {
+			eprintln!("接続先が指定されていません。--port <ポート> か --url <URL> を渡してください。");
+			eprintln!("  本番: --port {}", def.default_port);
+			eprintln!("  テスト用: 置き場の server.json の port を使う");
+			return EXIT_USAGE;
+		}
+	};
+
+	let cli = client::Client {
+		base,
+		access_token: a.option("access-token", Some("a")).map(|s| s.to_string()),
+		retry_times: def.retry_times(command),
+		retry_interval_sec: def.retry_interval_sec,
+	};
+
+	// サーバーに繋ぐコマンドなら、どちらの環境かを先に出す
+	commands::announce_env(&cli);
+
+	let outcome = match command {
+		"who" => commands::who(&cli),
+		_ => {
+			eprintln!("{} はまだ作っていません（Rust 版）", command);
+			return EXIT_USAGE;
+		}
+	};
+
+	match outcome {
+		Ok(()) => 0,
+		Err(client::CallError::Rejected { status, error, detail }) => {
+			eprintln!("エラー ({}): {}", status, error);
+			if let Some(d) = detail {
+				eprintln!("  {}", d);
+			}
+			1
+		}
+		Err(client::CallError::Unreachable { reason }) => {
+			eprintln!("諦めました: {}", reason);
+			if cli.retry_times > 0 {
+				eprintln!("  {}繋がりませんでした", cli.describe_retry());
+			}
+			eprintln!("  サービスが動いているか確認してください");
+			eprintln!("  例: node-ai-chat-lite-winsw.exe status");
+			def.exit_unreachable as i32
+		}
+	}
 }
