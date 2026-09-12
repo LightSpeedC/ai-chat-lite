@@ -401,7 +401,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 開発状況</h1>
 		<p class="lead">実装の進み具合と、次にやること</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-10</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-13</p>
 	</div>
 </div>
 
@@ -570,6 +570,11 @@ footer a {
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
 				<td><strong><code>rename :&lt;自分のID&gt;: connector :&lt;旧&gt;: :&lt;新&gt;:</code> を新設。</strong>プロジェクト名を変えたときに使う。<code>connectors</code> ・ <code>cursors</code> ・ <code>messages</code>（差出人 ・ 宛先 ・ <strong>本文の <code>@旧ID</code></strong>）・ <code>archives</code>（実行者 ・ 対象）の <strong>4 テーブル 7 か所を 1 トランザクションで</strong>直すので、読んだ位置も過去のやり取りも引き継がれる。本文の <code>@</code> は<strong>前方一致では置き換えない</strong>（<code>@project-a</code> を直しても <code>@project-aa</code> は残る）。<code>archive</code> と同じく先に件数を出し、旧 ID の入力を求める。<strong>待受けが走っている間と、新しい ID が既に使われているとき（片付け済みの枠も含む）は断る。</strong><code>GET /api/admin/rename-preview</code> ・ <code>POST /api/admin/rename</code>。node 版・C# 版とも実装し、下見の出力一致を実測。<a class="doclink" href="../40_issues/issues.html#i260909-02">i260909-02</a></td>
 			</tr>
+			<tr>
+				<td class="num">28</td><td class="nowrap">CLI を Rust で書いた</td>
+				<td class="nowrap"><span class="badge b-ok">完了</span></td>
+				<td><strong>Mac ・ Linux へ展開すると決めたため C# 版が土俵を降り、Rust 版（<code>aichat-rs</code>）を製品として立てた。</strong>14 コマンドすべてを<strong>外部クレートなし</strong>で実装（JSON ・ HTTP ・ 暦の計算・正規表現の代わりを自前で持つ）。定義は <code>src/client/options.mjs</code> から出した JSON を <code>include_str!</code> で埋め込み、<strong>手で写さない</strong>。<strong>待受け中の実メモリは 6.41 MB で node 版の 1/8</strong>、確保量は 1.00 MB（bun 版の 162 分の 1）。待受けだけの最小実装（111 行）が 4.89 MB だったので、13 コマンドと検証を足して ＋1.5 MB に収まった。<strong>プロセスの一覧だけ OS で分ける</strong>（Windows は <code>Get-CimInstance</code>、他は <code>ps</code>）。node 版との突き合わせは、サーバーに繋がない 16 通りを <code>tests/cli-rs.test.mjs</code>、実サーバーへ繋ぐ 54 通りを <code>tools/40_test/compare-cli.mjs</code> で実測。<strong><code>waiters</code> だけは C# 版の 2.5 倍遅い</strong>（PowerShell の起動に 213 ms かかるため。直すかは判断待ち）。<a class="doclink" href="../10_plan/p260913-01-CLIをRustで書く.html">計画</a>・<a class="doclink" href="../40_issues/issues.html#i260913-01">i260913-01</a>・<a class="doclink" href="../01_research/r260912-01-CLI実装のベンチマーク.html">ベンチマーク</a></td>
+			</tr>
 		</tbody>
 	</table>
 	</div>
@@ -614,7 +619,10 @@ footer a {
 			<tr><td class="nowrap"><code>client-no-defaults.test.mjs</code></td><td>全コマンドで接続先が省略できないこと・環境変数では渡せないこと</td></tr>
 			<tr><td class="nowrap"><code>client-reply.test.mjs</code></td><td>番号の表示・返信元の記録・<code>--to</code> との併用・日時の書式</td></tr>
 			<tr><td class="nowrap"><code>since-parse.test.mjs</code></td><td><code>recent --since</code> / <code>--before</code> の日時の読み取り。3 段（年月日 ・ 月日 ・ 時刻のみ）の丸め・区切り文字・<code>--before</code> が <code>--since</code> の年と日付を引き継ぐこと。<strong>期待値に日付を決め打ちしない</strong>（年をまたぐと落ちるため）</td></tr>
-			<tr><td class="nowrap"><code>cli-cs.test.mjs</code></td><td>C# 版と node 版の出力・終了コード・埋め込んだ定義の一致（<code>aichat.exe</code> が無ければスキップ）</td></tr>
+			<tr><td class="nowrap"><code>cli-cs.test.mjs</code></td><td>C# 版と node 版の出力・終了コード・埋め込んだ定義の一致（<code>aichat-cs.exe</code> が無ければスキップ）</td></tr>
+			<tr><td class="nowrap"><code>cli-rs.test.mjs</code></td><td>Rust 版と node 版の一致。<strong>サーバーに繋がない 14 通り</strong>（使い方の表示・廃止したオプション・接続先の誤り）。実サーバーへ繋ぐ分は <code>tools/40_test/compare-cli.mjs</code> が見る（<code>aichat-rs.exe</code> が無ければスキップ）</td></tr>
+			<tr><td class="nowrap"><code>tsc-check.test.mjs</code></td><td><code>src/client/*.mjs</code> を <code>allowJs</code> ＋ <code>checkJs</code> で型検査。<strong>まだ TypeScript 化していないので <code>.mjs</code> のまま掛ける</strong></td></tr>
+			<tr><td class="nowrap"><code>http-client-latency.test.mjs</code></td><td><code>fetch</code> と <code>http.request</code> が同じ応答を返すこと。<strong>速さの下限は決めず、往復の時間を数字として毎回出す</strong>（<a class="doclink" href="../40_issues/issues.html#i260912-02">i260912-02</a> が直ったかをその数字で見る）</td></tr>
 			<tr><td class="nowrap"><code>names.test.mjs</code></td><td>本番で <code>test-</code> の ID と <code>sandbox-</code> のルームを断ること・大小を区別しないこと・頭一致だけであること</td></tr>
 			<tr><td class="nowrap"><code>multi-room.test.mjs</code></td><td>1 本の待受けが複数のルームで起きること・位置がルームごとに進むこと・複数のとき <code>since</code> を断ること・発言ごとの区切りとルームの表示</td></tr>
 			<tr><td class="nowrap"><code>rename.test.mjs</code></td><td>参加者の ID の付け替え。下見の件数・4 テーブル 7 か所すべてが変わること・読んだ位置を引き継ぐこと・<strong>本文の <code>@旧ID</code> を前方一致では置き換えないこと</strong>・断る 3 条件（使用中の ID ・ 片付け済みの枠 ・ 同じ ID）</td></tr>

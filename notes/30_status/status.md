@@ -2,7 +2,7 @@
 
 実装の進み具合と、次にやること
 
-> 📅 作成: 2026-08-29 / 更新: 2026-09-10
+> 📅 作成: 2026-08-29 / 更新: 2026-09-13
 
 [README へ戻る](../../README.md)
 
@@ -46,6 +46,7 @@
 | 25 | recent の絞り込み | ✅ **完了** | **期間（相対・絶対・範囲）・検索・差出人で絞れるようになった。**`--since` / `--since-day` / `--since-hour` / `--before` / `--find` / `--from`。`(room_id, sent_at)` の索引を版 6 で追加（本番は再起動後に反映）。`--before` は `--since` の解決値を anchor として引き継ぐ（分けて丸めると組み合わせ時に範囲が壊れるため）。node 版・C# 版の出力一致を実測。`notice` 種別の新設とルーム横断は対象外。[計画](../10_plan/p260909-01-recentの絞り込み.md)・[i260909-01](../40_issues/issues.html#i260909-01) |
 | 26 | 初回の wait に案内を出す | ✅ **完了** | **渡したルームのどれかで初めての接続なら、wait が案内を出して終わる。**`GET /api/cursor-status` を新設し、`recent --find "ルール"`・`recent --since-day 1` の 2 例を出す。案内後は `wait=0` で 1 回だけ `poll` を叩いてカーソルを立て、**待たずに終わる**（`run_in_background` は完了時にしか通知が来ないため、待ち続けると案内が誰の目にも触れない）。実際に待ち始めるのは 2 回目の `wait` から。「初回」はコネクタ単位ではなく**ルーム単位**で判定する。node 版・C# 版の出力一致を実測。<strong>この案内後の `poll` 対象は初めてのルームだけに絞る。</strong>複数ルーム指定時に一部だけ初めてだと、既存カーソルを持つルームの未読まで表示せず既読化する事故が実際に起きたため直した。[i260909-01](../40_issues/issues.html#i260909-01)・[i260909-03](../40_issues/issues.html#i260909-03) |
 | 27 | 参加者の ID を付け替える | ✅ **完了** | <strong>`rename :<自分のID>: connector :<旧>: :<新>:` を新設。</strong>プロジェクト名を変えたときに使う。`connectors` ・ `cursors` ・ `messages`（差出人 ・ 宛先 ・ **本文の `@旧ID`**）・ `archives`（実行者 ・ 対象）の **4 テーブル 7 か所を 1 トランザクションで**直すので、読んだ位置も過去のやり取りも引き継がれる。本文の `@` は**前方一致では置き換えない**（`@project-a` を直しても `@project-aa` は残る）。`archive` と同じく先に件数を出し、旧 ID の入力を求める。**待受けが走っている間と、新しい ID が既に使われているとき（片付け済みの枠も含む）は断る。**`GET /api/admin/rename-preview` ・ `POST /api/admin/rename`。node 版・C# 版とも実装し、下見の出力一致を実測。[i260909-02](../40_issues/issues.html#i260909-02) |
+| 28 | CLI を Rust で書いた | ✅ **完了** | <strong>Mac ・ Linux へ展開すると決めたため C# 版が土俵を降り、Rust 版（`aichat-rs`）を製品として立てた。</strong>14 コマンドすべてを**外部クレートなし**で実装（JSON ・ HTTP ・ 暦の計算・正規表現の代わりを自前で持つ）。定義は `src/client/options.mjs` から出した JSON を `include_str!` で埋め込み、**手で写さない**。**待受け中の実メモリは 6.41 MB で node 版の 1/8**、確保量は 1.00 MB（bun 版の 162 分の 1）。待受けだけの最小実装（111 行）が 4.89 MB だったので、13 コマンドと検証を足して ＋1.5 MB に収まった。**プロセスの一覧だけ OS で分ける**（Windows は `Get-CimInstance`、他は `ps`）。node 版との突き合わせは、サーバーに繋がない 16 通りを `tests/cli-rs.test.mjs`、実サーバーへ繋ぐ 54 通りを `tools/40_test/compare-cli.mjs` で実測。**`waiters` だけは C# 版の 2.5 倍遅い**（PowerShell の起動に 213 ms かかるため。直すかは判断待ち）。[計画](../10_plan/p260913-01-CLIをRustで書く.md)・[i260913-01](../40_issues/issues.html#i260913-01)・[ベンチマーク](../01_research/r260912-01-CLI実装のベンチマーク.md) |
 
 各ファイルの役割は[設計](../10_plan/p260829-01-設計.md)のフォルダ構成にある。
 
@@ -80,7 +81,10 @@
 | `client-no-defaults.test.mjs` | 全コマンドで接続先が省略できないこと・環境変数では渡せないこと |
 | `client-reply.test.mjs` | 番号の表示・返信元の記録・`--to` との併用・日時の書式 |
 | `since-parse.test.mjs` | `recent --since` / `--before` の日時の読み取り。3 段（年月日 ・ 月日 ・ 時刻のみ）の丸め・区切り文字・`--before` が `--since` の年と日付を引き継ぐこと。**期待値に日付を決め打ちしない**（年をまたぐと落ちるため） |
-| `cli-cs.test.mjs` | C# 版と node 版の出力・終了コード・埋め込んだ定義の一致（`aichat.exe` が無ければスキップ） |
+| `cli-cs.test.mjs` | C# 版と node 版の出力・終了コード・埋め込んだ定義の一致（`aichat-cs.exe` が無ければスキップ） |
+| `cli-rs.test.mjs` | Rust 版と node 版の一致。**サーバーに繋がない 14 通り**（使い方の表示・廃止したオプション・接続先の誤り）。実サーバーへ繋ぐ分は `tools/40_test/compare-cli.mjs` が見る（`aichat-rs.exe` が無ければスキップ） |
+| `tsc-check.test.mjs` | `src/client/*.mjs` を `allowJs` ＋ `checkJs` で型検査。**まだ TypeScript 化していないので `.mjs` のまま掛ける** |
+| `http-client-latency.test.mjs` | `fetch` と `http.request` が同じ応答を返すこと。**速さの下限は決めず、往復の時間を数字として毎回出す**（[i260912-02](../40_issues/issues.html#i260912-02) が直ったかをその数字で見る） |
 | `names.test.mjs` | 本番で `test-` の ID と `sandbox-` のルームを断ること・大小を区別しないこと・頭一致だけであること |
 | `multi-room.test.mjs` | 1 本の待受けが複数のルームで起きること・位置がルームごとに進むこと・複数のとき `since` を断ること・発言ごとの区切りとルームの表示 |
 | `rename.test.mjs` | 参加者の ID の付け替え。下見の件数・4 テーブル 7 か所すべてが変わること・読んだ位置を引き継ぐこと・**本文の `@旧ID` を前方一致では置き換えないこと**・断る 3 条件（使用中の ID ・ 片付け済みの枠 ・ 同じ ID） |
