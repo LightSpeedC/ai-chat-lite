@@ -1,0 +1,9 @@
+#!/bin/sh
+# node 版の CLI を bun で呼ぶ。Bash（Git Bash）用。
+#
+# 同じフォルダの aichat.cmd と両立する。cmd.exe は PATHEXT に従って
+# .cmd を選び、Bash は拡張子なしのこちらを選ぶ。どちらも中身は同じで、
+# bun で src/client/chat.mjs を動かす。
+#
+# 例: aichat wait :<自分の ID>: -p 8787 -r "public,ai-chat-lite"
+exec bun run "$(dirname "$0")/src/client/chat.mjs" "$@"
