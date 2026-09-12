@@ -1,5 +1,5 @@
 import { basename, join } from 'node:path';
-import { writeFileSync, mkdirSync, appendFileSync } from 'node:fs';
+import { writeFileSync, mkdirSync, appendFileSync, existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { request as httpRequest } from 'node:http';
 import { request as httpsRequest } from 'node:https';
@@ -909,7 +909,32 @@ async function cmdWho() {
  * aichat-node なら cmd.exe → node.exe と 2 段になる。親をたどって落とす。
  */
 
+/**
+ * Windows で、隣に C# 版があれば waiters をそちらに任せる。
+ *
+ * **C# は .NET から WMI を直に叩ける。**こちらは PowerShell を起こすしかなく、
+ * その起動だけで 213 ms を使う。同じ答えを出すのに 3 倍かかる（実測 668 ms 対 207 ms）。
+ *
+ * 同じフォルダだけを見る。PATH を辿ると、別の版や別プロジェクトのものを掴みうる。
+ * 起こせなければ黙って自分で数える。**任せられないことは失敗ではない。**
+ *
+ * @returns 任せたら true（この関数の中で終了するので戻らない）
+ */
+function delegateWaiters() {
+	if (process.platform !== 'win32') return false;
+
+	const target = join(ROOT, 'aichat-cs.exe');
+	if (!existsSync(target)) return false;
+
+	const run = spawnSync(target, process.argv.slice(2), { stdio: 'inherit' });
+	if (run.error) return false;
+
+	process.exit(run.status ?? 1);
+}
+
 async function cmdWaiters() {
+	if (delegateWaiters()) return;
+
 	const all = listWaiters();
 	const basis = basisOf();
 

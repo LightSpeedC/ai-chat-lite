@@ -118,6 +118,25 @@ fn run() -> i32 {
 			Ok(b) => b,
 			Err(code) => return code,
 		};
+
+		/*
+		 * Windows で隣に C# 版があれば、数えるところから任せる。
+		 *
+		 * C# は .NET から WMI を直に叩けるが、こちらは PowerShell を起こすしかなく、
+		 * その起動だけで 213 ms を使う。同じ答えを出すのに 2.5 倍かかる。
+		 *
+		 * **名乗る ID と接続先を確かめてから任せる。**先に任せると、書き忘れの
+		 * 案内まで C# 版が出すことになり、node 版と出る順序が食い違う。
+		 *
+		 * 起こせなければ黙って自分で数える。任せられないことは失敗ではない。
+		 */
+		if let Some(target) = waiters::delegate_for_waiters(waiters::exe_dir().as_deref(), cfg!(windows)) {
+			let passed: Vec<String> = std::env::args().skip(1).collect();
+			if let Ok(status) = std::process::Command::new(&target).args(&passed).status() {
+				return status.code().unwrap_or(1);
+			}
+		}
+
 		return match commands::waiters_cmd(&me, &basis, &def.default_room) {
 			Ok(()) => 0,
 			Err(e) => {

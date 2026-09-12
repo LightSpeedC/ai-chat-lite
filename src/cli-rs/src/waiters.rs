@@ -48,6 +48,36 @@ fn parse_at(at: &str) -> Option<i64> {
 	crate::jst::parse_jst(&format!("{} {}.000", slashed, time)).ok()
 }
 
+/// 委譲先の実行ファイル名（Windows 専用）
+const DELEGATE_NAME: &str = "aichat-cs.exe";
+
+/// Windows で `waiters` を任せる相手を探す。
+///
+/// **C# は .NET から WMI を直に叩ける。**こちらは PowerShell を起こすしかなく、
+/// その起動だけで 213 ms を使う。同じ答えを出すのに 2.5 倍かかるので、
+/// 隣に C# 版が置いてあるならそちらに任せる。
+///
+/// **同じフォルダだけを見る。**PATH を辿ると、別の版や別プロジェクトのものを
+/// 掴みうる。自分と一緒に配られたものだけを相手にする。
+///
+/// Windows 以外では常に `None`。`ps` で足りるので任せる理由がない。
+pub fn delegate_for_waiters(exe_dir: Option<&std::path::Path>, is_windows: bool) -> Option<std::path::PathBuf> {
+	if !is_windows {
+		return None;
+	}
+	let target = exe_dir?.join(DELEGATE_NAME);
+	if target.is_file() {
+		Some(target)
+	} else {
+		None
+	}
+}
+
+/// いま走っている実行ファイルの置き場
+pub fn exe_dir() -> Option<std::path::PathBuf> {
+	std::env::current_exe().ok()?.parent().map(|p| p.to_path_buf())
+}
+
 /// 走っているプロセスの一覧を取る。
 ///
 /// **ここだけ OS で分かれる。**node 版は PowerShell を起こしているが、
@@ -459,6 +489,48 @@ mod tests {
 		let now = at_ms("2026/09/13 10:00:00.000");
 		assert_eq!(elapsed_of("", now), "0:00");
 		assert_eq!(elapsed_of("いつか", now), "0:00");
+	}
+
+	#[test]
+	fn 隣にC版があればそちらに任せる() {
+		// 一時の置き場を作り、そこに委譲先を置いてみる
+		let dir = std::env::temp_dir().join(format!("aichat-rs-test-{}", std::process::id()));
+		let _ = std::fs::create_dir_all(&dir);
+		let target = dir.join(DELEGATE_NAME);
+		let _ = std::fs::write(&target, b"dummy");
+
+		assert_eq!(delegate_for_waiters(Some(&dir), true), Some(target.clone()));
+
+		let _ = std::fs::remove_file(&target);
+		let _ = std::fs::remove_dir(&dir);
+	}
+
+	#[test]
+	fn 隣に無ければ自分で数える() {
+		let dir = std::env::temp_dir().join(format!("aichat-rs-empty-{}", std::process::id()));
+		let _ = std::fs::create_dir_all(&dir);
+		assert_eq!(delegate_for_waiters(Some(&dir), true), None);
+		let _ = std::fs::remove_dir(&dir);
+	}
+
+	#[test]
+	fn Windows以外では任せない() {
+		// ps で足りるので、任せる理由がない
+		let dir = std::env::temp_dir().join(format!("aichat-rs-unix-{}", std::process::id()));
+		let _ = std::fs::create_dir_all(&dir);
+		let target = dir.join(DELEGATE_NAME);
+		let _ = std::fs::write(&target, b"dummy");
+
+		assert_eq!(delegate_for_waiters(Some(&dir), false), None);
+
+		let _ = std::fs::remove_file(&target);
+		let _ = std::fs::remove_dir(&dir);
+	}
+
+	#[test]
+	fn 置き場が分からなければ任せない() {
+		// PATH を辿ると別の版や別プロジェクトのものを掴みうる
+		assert_eq!(delegate_for_waiters(None, true), None);
 	}
 
 	#[test]
