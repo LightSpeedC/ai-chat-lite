@@ -146,6 +146,42 @@ describe('範囲外は断る', () => {
 		assert.throws(() => resolveDateTimeArg('9/10 25:0'), /時は/);
 		assert.throws(() => resolveDateTimeArg('9/10 12:60'), /分は/);
 	});
+
+	/*
+	 * 【なぜ必要か】
+	 * 日の検査が 1〜31 までで月ごとの日数を見なかったため、4/31 は Date が
+	 * 5/1 へ繰り上げていた。エラーも警告も出ないので、--since 4/31 と打つと
+	 * 「4 月末以降」のつもりが 5/1 以降になり、4/30 の発言が範囲から落ちる。
+	 *
+	 * 日付の絞り込みは「どの範囲を見たか」が結果の意味を決める。範囲が黙って
+	 * 動くと、出てこなかったことを「無かった」と読んでしまう。
+	 *
+	 * C# 版は同じ入力で .NET の例外がそのまま出て exit 1 になっていた。
+	 * 2 本で終わり方が分かれていた（レビュー #23 medium 6）。
+	 */
+	test('その月に無い日は断る（繰り上げない）', () => {
+		assert.throws(() => resolveDateTimeArg('4/31'), /4 月は 30 日までです/);
+		assert.throws(() => resolveDateTimeArg('2026/4/31'), /4 月は 30 日までです/);
+		assert.throws(() => resolveDateTimeArg('6/31'), /6 月は 30 日までです/);
+	});
+
+	test('2 月は年で日数が変わる', () => {
+		// 2026 は平年、2028 は閏年。年を明示した形で両方を確かめる
+		assert.throws(() => resolveDateTimeArg('2026/2/29'), /2 月は 28 日までです/);
+		assert.equal(resolveDateTimeArg('2028/2/29'), '2028/02/29 00:00:00.000');
+		assert.equal(resolveDateTimeArg('2026/2/28'), '2026/02/28 00:00:00.000');
+	});
+
+	test('年を省いた 2/29 は、解決に使う年で判定する', () => {
+		// 年を省くと「今年」で組み立てる。今年が平年なら断る
+		const thisYear = Number(nowJst().slice(0, 4));
+		const leap = (thisYear % 4 === 0 && thisYear % 100 !== 0) || thisYear % 400 === 0;
+		if (leap) {
+			assert.match(resolveDateTimeArg('2/29'), /^\d{4}\/02\/29 /);
+		} else {
+			assert.throws(() => resolveDateTimeArg('2/29'), /2 月は 28 日までです/);
+		}
+	});
 });
 
 describe('形が合わないものは断る', () => {

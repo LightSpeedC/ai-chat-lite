@@ -60,6 +60,25 @@ namespace AiChat
 			}
 		}
 
+		/// <summary>
+		/// その月に無い日を断る。
+		///
+		/// 日の検査は 1〜31 までしか見ない（月ごとの日数は見ない仕様）。
+		/// 素通りさせると、node 版は翌月へ繰り上げて別の範囲を静かに返し、
+		/// C# 版は .NET の例外がそのまま出る。2 本で終わり方が分かれていた。
+		///
+		/// 2 月は年で日数が変わるので、年が決まってから呼ぶこと。
+		/// </summary>
+		private static void CheckDayOfMonth(int year, int month, int day)
+		{
+			int last = DateTime.DaysInMonth(year, month);
+			if (day > last)
+			{
+				throw new FormatException(
+					month + " 月は " + last + " 日までです（" + year + " 年）: " + month + "/" + day);
+			}
+		}
+
 		/// <summary>年月日だけの組。C# 5 の csc（.NET Framework 同梱）にはタプル構文が無いため</summary>
 		private struct Ymd
 		{
@@ -81,13 +100,16 @@ namespace AiChat
 			if (anchorTs != null)
 			{
 				Ymd anchor = DateParts(anchorTs);
+				CheckDayOfMonth(anchor.Year, month, day);
 				return JstTime.FromParts(anchor.Year, month, day, hour, minute, second);
 			}
 
 			string now = JstTime.NowJst();
 			Ymd today = DateParts(now);
+			CheckDayOfMonth(today.Year, month, day);
 			string candidate = JstTime.FromParts(today.Year, month, day, hour, minute, second);
 			if (string.CompareOrdinal(candidate, now) <= 0) return candidate;
+			CheckDayOfMonth(today.Year - 1, month, day);
 			return JstTime.FromParts(today.Year - 1, month, day, hour, minute, second);
 		}
 
@@ -135,6 +157,7 @@ namespace AiChat
 				CheckRange("時", hour, 0, 23);
 				CheckRange("分", minute, 0, 59);
 				CheckRange("秒", second, 0, 59);
+				CheckDayOfMonth(year, month, day);
 				// 年月日をすべて指定しているので、丸めない（anchorTs も見ない）
 				return JstTime.FromParts(year, month, day, hour, minute, second);
 			}

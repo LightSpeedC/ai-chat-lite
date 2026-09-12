@@ -66,21 +66,52 @@ function dateParts(jstStr) {
 }
 
 /**
+ * その年・その月の最終日。
+ *
+ * Date.UTC は月を 0 起点で取るので、1 起点の month をそのまま渡すと
+ * 「翌月の 0 日」＝「その月の最終日」になる。閏年もここで吸収される。
+ */
+function daysInMonth(year, month) {
+	return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+/**
+ * その月に無い日を断る。
+ *
+ * 日の検査は 1〜31 までしか見ていない（月ごとの日数は計画書のとおり
+ * 見ない仕様）。ここを素通りさせると Date が翌月へ繰り上げるため、
+ * 打った日付とは別の範囲を静かに返すことになる。
+ *
+ * 2 月は年で日数が変わるので、年が決まってから呼ぶこと。
+ */
+function checkDayOfMonth(year, month, day) {
+	const last = daysInMonth(year, month);
+	if (day > last) {
+		throw new Error(`${month} 月は ${last} 日までです（${year} 年）: ${month}/${day}`);
+	}
+}
+
+/**
  * ② 月日（年を省く）を決める。
  *
  * anchorTs があれば、その年をそのまま使う（丸めない）。
  * 無ければ「いま」の年を使い、組み立てた結果が未来なら 1 年遡る。
+ *
+ * 日数の検査は年が決まってから行う。2/29 は年によって有無が変わるため。
  */
 function resolveMonthDay({ month, day, hour, minute, second }, anchorTs) {
 	if (anchorTs) {
 		const { year } = dateParts(anchorTs);
+		checkDayOfMonth(year, month, day);
 		return jstFromParts(year, month, day, hour, minute, second);
 	}
 
 	const now = nowJst();
 	const { year } = dateParts(now);
+	checkDayOfMonth(year, month, day);
 	const candidate = jstFromParts(year, month, day, hour, minute, second);
 	if (candidate <= now) return candidate;
+	checkDayOfMonth(year - 1, month, day);
 	return jstFromParts(year - 1, month, day, hour, minute, second);
 }
 
@@ -124,6 +155,7 @@ export function resolveDateTimeArg(raw, anchorTs = null) {
 		checkRange('時', parts.hour, 0, 23);
 		checkRange('分', parts.minute, 0, 59);
 		checkRange('秒', parts.second, 0, 59);
+		checkDayOfMonth(parts.year, parts.month, parts.day);
 		// 年月日をすべて指定しているので、丸めない（anchorTs も見ない）
 		return jstFromParts(parts.year, parts.month, parts.day, parts.hour, parts.minute, parts.second);
 	}
