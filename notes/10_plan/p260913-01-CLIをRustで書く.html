@@ -539,6 +539,85 @@ footer a {
 
 	<p><strong>段ごとにコミットする。</strong>3,000 行を超える見込みなので、動く単位で区切る。</p>
 
+	<h2>やってみた結果</h2>
+
+	<div class="callout callout-important">
+		<p><strong>6 段すべて終わった。</strong>14 コマンドが動き、Rust 側の単体テスト 182 件と、node 版との突き合わせ（繋がない 14 通り ・ 実サーバーへ繋ぐ 54 通り）が通っている。</p>
+	</div>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th class="nowrap">段</th><th>結果</th><th>見込みとの違い</th></tr></thead>
+			<tbody>
+				<tr><td class="num">1</td><td>土台（JSON ・ JST ・ 引数 ・ 定義）</td><td>暦の計算も自前になった。外部クレートを使わないので当然だが、見込みに入れていなかった</td></tr>
+				<tr><td class="num">2</td><td>日時の解析と待受けの選別</td><td><strong>正規表現の代わりを手で書く量が思ったより多かった</strong></td></tr>
+				<tr><td class="num">3</td><td>HTTP と読み取り系</td><td>—</td></tr>
+				<tr><td class="num">4</td><td>書き込み系</td><td>—</td></tr>
+				<tr><td class="num">5</td><td>管理系</td><td>—</td></tr>
+				<tr><td class="num">6</td><td>突き合わせと測り直し</td><td>—</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h3>見込みが外れたこと</h3>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>書いたこと</th><th>実際</th></tr></thead>
+			<tbody>
+				<tr>
+					<td>JSON と HTTP を自前で書くと 200〜300 行ほど増える</td>
+					<td><strong>3 本で 968 行</strong>（JSON 440 ・ HTTP 307 ・ 暦 221。テストを含む）。見込みの 3 倍以上</td>
+				</tr>
+				<tr>
+					<td>3,000 行を超える見込み</td>
+					<td><strong>5,297 行。</strong>うちテストが 1,621 行で、実装は 3,676 行（C# 版は 2,985 行）</td>
+				</tr>
+				<tr>
+					<td>（課題に）機能を足せば増える</td>
+					<td><strong>ほとんど増えなかった。</strong>待受けだけの 111 行で 4.89 MB、14 コマンドで 6.41 MB</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h3>突き合わせで見つかった食い違い</h3>
+
+	<p><strong>8 件。どれも目で読んで気づける差ではなかった。</strong></p>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>食い違い</th><th>なぜ起きたか</th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap">桁の詰め方</td><td><strong>揃え方が 2 種類あった。</strong>使い方の表示は表示幅、<code>who</code> は文字数（node の <code>padEnd</code>）。「一時切断」は 4 文字で表示幅 8 なので、6 桁に詰めると空白が 0 個と 2 個に分かれる</td></tr>
+				<tr><td class="nowrap">終了コード</td><td>知らないコマンドは 2 ではなく <strong>1</strong>。書き間違いに気づけるようにするため</td></tr>
+				<tr><td class="nowrap">末尾の空行</td><td>node は <code>console.log</code> がもう 1 つ改行を足す</td></tr>
+				<tr><td class="nowrap">案内の順序</td><td><strong>ID の検証が環境の表示より先。</strong>逆だと、ID を書き忘れたときに案内の頭に別の行が挟まる</td></tr>
+				<tr><td class="nowrap">エラーの粒度</td><td>node は 3 段の正規表現でどれにも当たらなければ「形が違います」の 1 つだけを返す。桁や区切りの誤りを言い分けると文言が食い違う</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="callout callout-caution">
+		<p><strong>突き合わせの道具でも 2 度外した。</strong>どちらも「桁を揃えた出力から機械的に値を取る」形で、<code>waiters</code> の pid と <code>archives</code> の番号を取り損ねた。後者では<strong>両方が同じ使い方の誤りで終わったのを「一致」と読んだ</strong>（偽の一致）。取り直して確かめ直している。</p>
+	</div>
+
+	<h3>測った結果</h3>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>実装</th><th>待受け中の実メモリ</th><th>確保量</th><th><code>waiters</code></th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap"><strong>Rust 版</strong></td><td class="num"><strong>6.41 MB</strong></td><td class="num"><strong>1.00 MB</strong></td><td class="num">523.1 ms</td></tr>
+				<tr><td class="nowrap">C# 版</td><td class="num">24.89 MB</td><td class="num">18.53 MB</td><td class="num"><strong>206.6 ms</strong></td></tr>
+				<tr><td class="nowrap">bun 版</td><td class="num">38.31 MB</td><td class="num">162.45 MB</td><td class="num">673.0 ms</td></tr>
+				<tr><td class="nowrap">node 版</td><td class="num">54.20 MB</td><td class="num">60.50 MB</td><td class="num">667.9 ms</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<p><code>waiters</code> だけ Rust が負ける。<strong>PowerShell を起こしており、その起動に 213 ms かかる。</strong>詳しくは<a class="doclink" href="../01_research/r260912-01-CLI実装のベンチマーク.html">ベンチマーク</a>。</p>
+
 	<h2>テストは 2 段で持つ</h2>
 
 	<div class="tablewrap">
