@@ -3598,8 +3598,10 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 							<li><strong>8</strong> 待受けの読み取りの写しを <code>src/client/waiters-pick.mjs</code> へ移した（<a href="#i260910-03">#22</a> medium 7 と同時）</li>
 						</ul>
 					</li>
-					<li><span class="badge b-todo">未</span> <strong>high 4（<code>-Recurse</code>）と high 5（<code>/api/admin/exit</code> の到達経路）は方針を決めてから直す。</strong>4 は伏せ字の対象をどこまで広げるか、5 は本番に認証を入れるかどうかの判断が要る</li>
-					<li><span class="badge b-todo">未</span> medium 6（名乗る ID の書き忘れが <code>exit 1</code>）・ medium 9（SSE に <code>rejectTestNames</code> が無い）も判断が要る。<strong>6 は終了コードを変えると呼ぶ側に響き、9 は画面の動きが変わる</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>high 4（<code>-Recurse</code>）を直した。</strong>両方の置き場を再帰で走査する。<strong>直下 1 件 → 再帰 153 件</strong>が対象になり、これまで外れていた 152 件（サブエージェントの記録）が入る</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>high 5（<code>/api/admin/exit</code>）を直した。POST 限定にした。</strong><code>archive</code> ・ <code>restore</code> ・ <code>rename</code> と同じ扱いに揃えた形で、<code>&lt;img&gt;</code> や先読みでは POST が飛ばないので塞がる。README と設計書の見本を落とし、止める手段を <code>aichat restart</code> ・ <code>stop</code> に一本化した。<code>handleExit</code> の <code>connector_id</code> も検査を通す</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>medium 6（名乗る ID の書き忘れ）を <code>exit 2</code> にした。</strong>定義と USAGE が「2 = 使い方の誤り」と公言しており、囲みの誤り・本文の不足・接続先の不足はすべて 2 だった。<strong>周知はしない判断</strong>（「変わったこと」には記録した）</li>
+					<li><span class="badge b-todo">未</span> <strong>medium 9（SSE に <code>rejectTestNames</code> が無い）は判断が要る。</strong>本番で <code>test-</code> を名乗る画面接続が通る。<strong>入口を塞がないと、今日消した痕跡がまた入る</strong></li>
 				</ul>
 			</div>
 		</details>
@@ -3695,9 +3697,9 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 			</div>
 		</details>
 
-		<details class="issue" id="i260911-01" open>
+		<details class="issue doing" id="i260911-01" open>
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-doing">着手</span>
 				<span class="no">i260911-01</span>
 				レビュー #23 の 19 件。<strong>前回 30 件のうち 22 件は解消を確認</strong>
 			</summary>
@@ -3765,12 +3767,13 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 				<p>定義の出どころ（<code>options.mjs</code> → <code>export-options.mjs</code> → <code>aichat -h</code> の実出力）は一致し、USAGE の貼り付けも <code>rename</code> ・ <code>--with-joins</code> ・ <code>recent</code> の絞り込み 6 つまで含めて実物と一致 ／ <code>rename</code> の実装 ／ <strong>課題の連番に重複・欠番とも 0。目次と 4 グループの見出しが数え直した結果と一致</strong> ／ DB マイグレーション全 7 本と手引き ／ 画面への挿入（XSS）の経路 ／ <strong>コードを触った 5 本のコミットはいずれも回帰テスト付き</strong>（欠けは medium 9 の 1 つだけ）／ WinSW</p>
 
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> <strong>high 1（伏せ字の 3 つ目の出口）を最初に見る。</strong><code>claude</code> が走っているときにどう終わるかを決める必要がある（終了コードを分ける／下見の時点で止める）。<strong>本物を走らせるテストが 0 件</strong>という指摘（medium 12）も同じ道具の話なので一緒に見る</li>
-					<li><span class="badge b-todo">未</span> medium 5（<code>closeDb</code>）を見る。<strong>SQLite の大原則に触れる</strong>ので、資料の食い違いより先に置く</li>
-					<li><span class="badge b-todo">未</span> medium 9 ・ 10 ・ 11 ・ 12 はテストの穴。<strong>直したはずのものが守られていない</strong>形なので、資料より先に直す</li>
-					<li><span class="badge b-todo">未</span> medium 4 ・ 6 ・ 13 ・ 16 は実装の食い違い。<strong>2 本の CLI で終わり方が分かれるもの（4 ・ 6）は仕様を決めてから</strong></li>
-					<li><span class="badge b-todo">未</span> medium 1 ・ 2 ・ 3 ・ 7 ・ 8 ・ 14 ・ 15 ・ 17 と low 1 は資料の追随。<strong>1 と 17 は「どちらが正か」を決める必要がある</strong>（残りは実装に合わせるだけ）</li>
-					<li><span class="badge b-todo">未</span> 一部解消の 3 件（<code>targetOf</code> ・ <code>pickWaiters</code> の写し、<code>status</code> の「5 テーブル」）も片付ける</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>high 1（伏せ字の 3 つ目の出口）を直した。</strong><strong>下見の時点で止め、終了コードを 4 に分けた</strong>（1 は「会話ログが見つからない」で使っており、混ぜると呼ぶ側が同じ文面しか出せない）。呼ぶ側は「セッションが開いているので中止します」と書き分ける</li>
+					<li class="done"><span class="badge b-done">☑</span> medium 5（<code>closeDb</code>）を直した。<strong>シグナルの経路にだけ足した</strong>——<code>stopServers</code> に入れるとテスト 7 本が同じプロセスで開き直せなくなる</li>
+					<li class="done"><span class="badge b-done">☑</span> medium 9 ・ 10 ・ 11 ・ 12（テストの穴）を塞いだ。<code>roomsArg</code> を <code>waiters-pick.mjs</code> へ移して 3 件追加 ／ 初回案内の検査で<strong>拾えた行数を数える</strong>ようにし C# 側にも <code>-r</code> の条件を追加 ／ <code>since-parse</code> の残る決め打ちを実行日から作る形に ／ <strong>本物の <code>mask-log.ps1</code> を走らせる検査を追加</strong>（<code>claude</code> が走っていれば走査前に止まるので、会話ログを読まずに確かめられる）</li>
+					<li class="done"><span class="badge b-done">☑</span> medium 4 ・ 6 ・ 13 ・ 16（実装の食い違い）を直した。C# 版の <code>restart</code> / <code>stop</code> が応答を読む ／ 存在しない日は<strong>両方とも断る</strong> ／ 画面の ID を検証してから保存 ／ 自動リンクが <code>&amp;</code> で切れない（<strong>通すのは <code>&amp;amp;</code> だけ</strong>）</li>
+					<li class="done"><span class="badge b-done">☑</span> medium 1 ・ 2 ・ 3 ・ 7 ・ 8 ・ 14 ・ 15 ・ 17 と low 1（資料の追随）を直した。<code>[killed]</code> は「メモリで刈られる」に統一して <strong>60 分の記述を USAGE から落とし</strong>、<code>backup.ps1</code> のコメントを実装に合わせ、<strong>「変わったこと」に 09-04 以降の 6 項目を足した</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> 一部解消の 3 件も片付けた（<code>status</code> の「5 テーブル」、写しの解消は <code>roomsArg</code> の移動で前進）</li>
+					<li><span class="badge b-todo">未</span> <strong><code>targetOf</code> ・ <code>pickWaiters</code> の写しは残っている</strong>（<code>tests/client-waiters.test.mjs</code>）。本体を壊してもテストが緑になる形なので、<code>waiters-pick.mjs</code> へ移す</li>
 				</ul>
 			</div>
 		</details>

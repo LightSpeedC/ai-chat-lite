@@ -518,7 +518,7 @@ footer a {
 			<tr>
 				<td class="num">17</td><td class="nowrap">CLI のオプションを整える</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><strong>CLI が読む環境変数は 0 になった。</strong><code>--connector-id</code> / <code>--port</code> / <code>--url</code> / <code>--wait-hour</code> ほか。既定値を持たず、接続先も ID も省略できない。<a class="doclink" href="../10_plan/p260901-01-CLIのオプションを整える.html">計画</a></td>
+				<td><strong>接続先も ID も、環境変数では渡せなくなった。</strong><code>--port</code> / <code>--url</code> / <code>--wait-hour</code> ほかで渡す。既定値を持たず、省略できない。<strong>ただし <code>AICHAT_DATA</code> だけは 2 本とも読む</strong>（テスト用の置き場かどうかで待受けの記録を書くかが変わるため）。<a class="doclink" href="../10_plan/p260901-01-CLIのオプションを整える.html">計画</a></td>
 			</tr>
 			<tr>
 				<td class="num">18</td><td class="nowrap">ID の名乗り方を作り直す</td>

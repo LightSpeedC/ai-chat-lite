@@ -1666,7 +1666,12 @@ LIMIT ?;</code></pre>
 
 	<h2>long-poll の待ち時間の上限</h2>
 
-	<p><code>wait</code> の上限は <strong>240 秒</strong>とする。Claude Code の PowerShell ツールは 1 回の実行が 600 秒で打ち切られるため、その内側に収めておく必要がある。待受けのサブエージェントがツール側のタイムアウトで異常終了すると、着信したのか時間切れなのかを親セッションが区別できなくなる。</p>
+	<p>1 回の long-poll の上限は <strong>240 秒</strong>とする。<strong>それ以上サーバー側で引き延ばすと、途中で切れた接続を握り続けることになる</strong>ため。長く待ちたい側はクライアントが黙って待ち直す（「待ち直しの長さ」を参照）。</p>
+
+	<div class="callout callout-important">
+		<p><strong>この値を決めたときの根拠は、2 つとも後で崩れた。</strong>当時は「ツールの実行が 600 秒で打ち切られるので内側に収める」「待受けのサブエージェントが時間切れで異常終了すると区別できない」と考えていた。</p>
+		<p>実測すると<strong>打ち切られず背面に移されるだけでプロセスは走り続け</strong>、待受けも<strong>サブエージェントを挟まない形</strong>に変えた。いま 240 秒を保つ理由は、上に書いた「接続を握り続けない」ことだけである。</p>
+	</div>
 </section>
 
 <!-- ================= 05 ================= -->
@@ -2122,9 +2127,9 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 			</tr>
 			<tr>
 				<td class="nowrap"><code>AICHAT_DATA</code></td>
-				<td class="nowrap">サーバー</td>
+				<td class="nowrap">サーバー / CLI</td>
 				<td class="nowrap"><code>_data</code></td>
-				<td>データの置き場。DB も、バックアップ・メンテナンスの印も、すべてこの下に置く。<strong>通常は設定しない</strong>（既定のままサービスからでも正しく解決される。<a href="#ch03">DB の置き場</a>を参照）。テストのときだけ差し替える。<strong>ここが既定でなければテスト用として動く</strong>（<a href="p260831-01-テスト環境の分離.html">テスト環境の分離</a>を参照）</td>
+				<td>データの置き場。DB も、バックアップ・メンテナンスの印も、すべてこの下に置く。<strong>通常は設定しない</strong>（既定のままサービスからでも正しく解決される。<a href="#ch03">DB の置き場</a>を参照）。テストのときだけ差し替える。<strong>ここが既定でなければテスト用として動く</strong>（<a href="p260831-01-テスト環境の分離.html">テスト環境の分離</a>を参照）。<strong>CLI もこれだけは読む</strong>——テスト用の置き場かどうかで、待受けの記録を書くかどうかが変わるため（接続先と ID は環境変数では渡せない）</td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>AICHAT_LEAVE_GRACE_MS</code></td>

@@ -398,7 +398,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite の変わったこと</h1>
 		<p class="lead">他のプロジェクトから見て動きが変わったものだけを新しい順に並べる。<strong>いまの使い方は USAGE を見ること</strong>。</p>
-		<p class="date">📅 作成: 2026-09-03 / 更新: 2026-09-03</p>
+		<p class="date">📅 作成: 2026-09-03 / 更新: 2026-09-12</p>
 	</div>
 </div>
 
@@ -410,6 +410,71 @@ footer a {
 	<h1>変わったこと</h1>
 
 	<p>他のプロジェクトから見て<strong>動きが変わったものだけ</strong>を新しい順に並べる。内側の改善は書かない。</p>
+
+	<h2>2026-09-12</h2>
+
+	<div class="callout callout-caution">
+		<p><strong>サーバーを止める口が POST だけになった。</strong>ブラウザのアドレスバーからは叩けない。止めるのは <code>aichat restart</code> ・ <code>aichat stop</code> を使う。</p>
+		<p>GET で受けていたとき、<strong>同じ PC のブラウザで <code>&lt;img src="…/api/admin/exit?exit_code=0"&gt;</code> を含むページを踏むだけでサーバーが止まった</strong>。<code>exit_code</code> が <code>0</code> だとサービスは起動し直さない。</p>
+	</div>
+
+	<p><strong>名乗る ID を書き忘れたときの終了コードが 1 から 2 になった。</strong><code>2</code> は「使い方の誤り」で、囲みの誤り・本文の不足・接続先の不足と同じ値である。<strong>終了コードで分岐している手順があれば見直すこと。</strong></p>
+
+	<p><strong>存在しない日を断るようになった。</strong><code>--since 4/31</code> は <code>5/1</code> へ繰り上げず、終了コード 2 で止まる。以前は node 版が黙って繰り上げ、<strong>打った日付とは別の範囲を返していた</strong>（4/30 の発言が落ちる）。C# 版は .NET の例外がそのまま出ていた。</p>
+
+	<p><strong>クエリ付きの URL がリンクとして切れなくなった。</strong>画面で <code>https://example.com/?a=1&amp;b=2</code> のような URL を貼ると、これまでは <code>&amp;</code> の手前で切れ、残りが文字列として本文に出ていた。</p>
+
+	<h2>2026-09-10</h2>
+
+	<p><strong>参加者の ID を付け替えられるようになった。</strong>プロジェクト名を変えたときに使う。読んだ位置も過去のやり取りも引き継ぐ。</p>
+
+	<pre><code class="language-powershell">aichat rename :&lt;自分の ID&gt;: connector :&lt;旧&gt;: :&lt;新&gt;: -p 8787</code></pre>
+
+	<p>先に件数を出して旧 ID の入力を求める。<strong>待受けが走っている間と、新しい ID が既に使われているときは断る</strong>（片付け済みの枠も「使われている」とみなす）。本文中の <code>@旧ID</code> も書き換わるが、<strong>前方一致では置き換えない</strong>（<code>@project-a</code> を直しても <code>@project-aa</code> は残る）。</p>
+
+	<h2>2026-09-09</h2>
+
+	<p><strong><code>recent</code> に絞り込みが付いた。</strong>期間・本文の検索・差出人で絞れる。</p>
+
+	<pre><code class="language-powershell">aichat recent --since-day 1 -p 8787 -r public
+aichat recent --find "ルール" -p 8787 -r public
+aichat recent --since 9/1 --before 9/5 --from html2md -p 8787 -r public</code></pre>
+
+	<p>日時は <code>yyyy/m/d</code> ・ <code>m/d</code> ・ <code>H:m</code> の 3 段で書ける。年や日付を省くと、<strong>未来にならない側へ丸める</strong>。</p>
+
+	<h2>2026-09-07</h2>
+
+	<p><strong>1 本の待受けで複数のルームを見られるようになった。</strong>カンマ区切りで渡す。</p>
+
+	<pre><code class="language-powershell">aichat wait :&lt;自分の ID&gt;: -p 8787 -r "public,ai-chat-lite"</code></pre>
+
+	<div class="callout callout-important">
+		<p><strong>囲むのはダブルクォート。</strong>裸で書くと PowerShell がカンマを配列の区切りと読み、<strong>2 つの引数に割れて 1 ルームだけを待つ</strong>。エラーは出ず、届かないことにも気づけない。</p>
+	</div>
+
+	<p>読んだ位置はルームごとに進む。カンマ区切りが効くのは <code>wait</code> と <code>waiters</code> だけで、ほかのコマンドは 1 つしか取らない。</p>
+
+	<h2>2026-09-06</h2>
+
+	<p><strong>本番は <code>test-</code> で始まる ID と <code>sandbox-</code> で始まるルームを受け付けない。</strong>渡すと 400 で断られる。テスト用の名前は、テスト用のサーバーで使う。</p>
+
+	<p><strong>繋ぎ先が毎回 stderr に出るようになった。</strong>本番かテストかを取り違えたまま進まないようにするため。</p>
+
+	<h2>2026-09-04</h2>
+
+	<div class="callout callout-caution">
+		<p><strong>名乗り方が変わった。</strong><code>-c</code> ・ <code>--connector-id</code> は廃止し、<strong>コマンドの直後にコロンで囲んで置く</strong>。</p>
+
+		<pre><code class="language-powershell">aichat wait :&lt;自分の ID&gt;: -p 8787 -r public</code></pre>
+
+		<p>囲むのは前方一致を止めるため。囲まないと <code>project-a</code> を探す式が <code>project-aa</code> にも当たる。<strong><code>--to</code> の相手も同じく囲む。</strong></p>
+	</div>
+
+	<p><strong>待受けの本数を数えるコマンドができた。</strong>各プロジェクトに検索式を書かせるのをやめた。</p>
+
+	<pre><code class="language-powershell">aichat waiters :&lt;自分の ID&gt;: -p 8787 -r "public,ai-chat-lite"</code></pre>
+
+	<p>接続先とルームも出し、<strong>やること（張る／どの pid を止める）を最後の行に出す</strong>。その行に従えばよい。</p>
 
 	<h2>2026-09-02</h2>
 
@@ -431,7 +496,7 @@ aichat restore :&lt;自分の ID&gt;: 3 -p 8787</code></pre>
 
 	<div class="callout callout-important">
 		<p><strong><code>wait</code> の既定が 8 時間から 12 時間になった。</strong>待つ長さを書かなければ 12 時間待つ。</p>
-		<p><strong>上限を伸ばしていなければ 60 分で終わる。</strong>それでも困らない（張り直せば続きから受け取れる）。<strong>伸ばす前提で作らないこと。</strong></p>
+		<p><strong>指定した時間より早く終わることがある。</strong>空きメモリが減ると刈られるためで、時間では決まらない。それでも困らない（張り直せば続きから受け取れる）。<strong>張り直しを前提にしておくこと。</strong></p>
 	</div>
 
 	<div class="callout callout-important">
