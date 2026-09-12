@@ -597,7 +597,7 @@ footer a {
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（5 件 / 未 3 / 着手 0 / 済 2）</a></li>
 		<li class="g02"><a href="#g02">データ（7 件 / 未 1 / 着手 0 / 済 6）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（27 件 / 未 3 / 着手 6 / 済 18）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（28 件 / 未 3 / 着手 7 / 済 18）</a></li>
 		<li class="g04"><a href="#g04">チャットの機能（24 件 / 未 8 / 着手 1 / 済 15）</a></li>
 	</ol>
 </section>
@@ -1334,10 +1334,81 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">27 件 / 未 3 / 着手 6 / 済 18</span>
+		<span class="count">28 件 / 未 3 / 着手 7 / 済 18</span>
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue doing" id="i260913-01" open>
+			<summary>
+				<span class="badge b-doing">着手</span>
+				<span class="no">i260913-01</span>
+				【最優先】CLI を Rust で書き直す（aichat-rs.exe）
+			</summary>
+			<div class="issuebody">
+				<div class="callout callout-important">
+					<p><strong>これが最優先の課題である。</strong>他の未着手より先に進める。</p>
+				</div>
+
+				<p><strong>Mac ・ Linux へ展開すると決めたため、C# 版は土俵を降りた。</strong>残る選択肢は TypeScript（node ・ bun）と Rust の 2 系統になる。Rust 版を製品として立てる。</p>
+
+				<h3>なぜ Rust か</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead><tr><th>実装</th><th>待受け中の実メモリ</th><th>確保量</th></tr></thead>
+				<tbody>
+					<tr><td class="nowrap"><strong>Rust（最小の待受け）</strong></td><td class="num"><strong>4.89 MB</strong></td><td class="num"><strong>0.84 MB</strong></td></tr>
+					<tr><td class="nowrap">bun</td><td class="num">25.59 MB</td><td class="num">108.43 MB</td></tr>
+					<tr><td class="nowrap">node</td><td class="num">58.24 MB</td><td class="num">62.44 MB</td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<p>待受けは 1 プロジェクトにつき 1 本、12 時間張りっぱなしになる。<strong>常駐するものなので、ここが効く。</strong>数値の出どころは<a class="doclink" href="../01_research/r260912-01-CLI実装のベンチマーク.html">CLI 実装のベンチマーク</a>。</p>
+
+				<div class="callout callout-caution">
+					<p><strong>上の 4.89 MB は待受けしか持たない 111 行の最小実装で測った値である。</strong>検証も表示も持たない。<strong>全機能を入れれば増える。</strong>どこまで増えるかは作ってから測る。</p>
+				</div>
+
+				<h3>作るもの</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead><tr><th>項目</th><th>中身</th></tr></thead>
+				<tbody>
+					<tr><td class="nowrap">置き場</td><td><code>src/cli-rs/</code>。ビルド出力は <code>aichat-rs.exe</code></td></tr>
+					<tr><td class="nowrap">範囲</td><td><strong>全部。</strong>14 コマンド（<code>join</code> <code>wait</code> <code>say</code> <code>recent</code> <code>who</code> <code>waiters</code> <code>dump</code> <code>leave</code> <code>archive</code> <code>archives</code> <code>restore</code> <code>rename</code> <code>restart</code> <code>stop</code>）と 22 オプション。検証も含める</td></tr>
+					<tr><td class="nowrap">外部クレート</td><td><strong>使わない。</strong>C# 版が <code>Json.cs</code> を自前で持つのと同じ。JSON も HTTP も標準ライブラリだけで書く</td></tr>
+					<tr><td class="nowrap">定義の出どころ</td><td><code>src/client/options.mjs</code> のまま。<code>export-options.mjs</code> が書き出す JSON を埋め込む。<strong>手で写さない</strong></td></tr>
+					<tr><td class="nowrap">進め方</td><td><strong>TDD。</strong>落ちるテストを見てから実装する</td></tr>
+					<tr><td class="nowrap">突き合わせ</td><td><code>tests/cli-rs.test.mjs</code> で node 版と出力・終了コードを比べる（<code>cli-cs.test.mjs</code> と同じ形）</td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-caution">
+					<p><strong>CLI が 3 本になると、食い違いは必ず出る。</strong>ローカルルール「CLI を直したら 2 本とも直す」は 2 本を前提にしている。<strong>Rust 版が動いたら、C# 版を落とすかどうかを決める必要がある。</strong>それまでは 3 本を保守することになる。</p>
+				</div>
+
+				<h3>やること</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead><tr><th class="nowrap">状態</th><th>中身</th></tr></thead>
+				<tbody>
+					<tr><td class="nowrap"><span class="badge b-todo">未</span></td><td>計画書を立てる（<code>notes/10_plan/</code>）</td></tr>
+					<tr><td class="nowrap"><span class="badge b-todo">未</span></td><td>土台（JSON ・ JST ・ 引数 ・ 定義の読み取り）を TDD で作る</td></tr>
+					<tr><td class="nowrap"><span class="badge b-todo">未</span></td><td>日時の解析（<code>--since</code> ・ <code>--before</code>）と待受けの選別を移す</td></tr>
+					<tr><td class="nowrap"><span class="badge b-todo">未</span></td><td>HTTP と 14 コマンドを実装する</td></tr>
+					<tr><td class="nowrap"><span class="badge b-todo">未</span></td><td>node 版との突き合わせテストを通す</td></tr>
+					<tr><td class="nowrap"><span class="badge b-todo">未</span></td><td>待受け中のメモリを測り直し、資料に反映する</td></tr>
+					<tr><td class="nowrap"><span class="badge b-todo">未</span></td><td>C# 版をどうするかを決める</td></tr>
+				</tbody>
+				</table>
+				</div>
+			</div>
+		</details>
 
 		<details class="issue doing" id="i260912-02" open>
 			<summary>

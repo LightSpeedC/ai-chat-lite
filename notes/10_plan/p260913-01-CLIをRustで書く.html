@@ -1,0 +1,610 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CLI を Rust で書く</title>
+<style>
+/* 共通のスタイル。docs\css\style.css と同じ内容を持たせている */
+@charset "UTF-8";
+
+/* ===================================================================
+   ai-chat-lite 共通スタイル
+   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   =================================================================== */
+
+:root {
+	/* 章に依存しない共通色 */
+	--navy1: #12224d;
+	--navy2: #2f5fbf;
+	--ink: #1c2330;
+	--ink-soft: #4a5568;
+	--line: #d9dfe8;
+	--code-bg: #f4f6fa;
+	--link: #1a4fa0;
+
+	/* 章クラスの外に置いた要素が色を失わないための既定値 */
+	--accent: #12224d;
+	--accent2: #2f5fbf;
+	--soft: #f2f5fb;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: #fdfdfe;
+	color: var(--ink, #1c2330);
+	font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+	font-size: 15.5px;
+	line-height: 1.85;
+}
+
+a {
+	color: var(--link, #1a4fa0);
+}
+
+/* ---------- タイトルバー ---------- */
+
+.titlebar {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 34px 30px 30px;
+}
+
+.titlebar .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+}
+
+.titlebar h1 {
+	font-size: 1.85em;
+	margin: 0 0 8px;
+	color: #fff;
+}
+
+.titlebar .lead {
+	margin: 0;
+	color: #d7e2f7;
+	font-size: 0.95em;
+}
+
+.titlebar .date {
+	margin: 10px 0 0;
+	color: #b9caea;
+	font-size: 0.88em;
+}
+
+.titlebar a {
+	color: #cfe0ff;
+}
+
+.titlebar code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+/* ---------- 本文の器 ---------- */
+
+.wrap {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding: 0 30px;
+}
+
+section {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 10px;
+	padding: 4px 26px 26px;
+	margin: 34px 0;
+}
+
+/* ---------- 見出し ---------- */
+
+section h1 {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-size: 1.4em;
+	padding: 14px 20px;
+	margin: 26px 0 20px;
+	border-radius: 8px;
+	box-shadow: 0 3px 10px rgba(20, 34, 70, 0.22);
+}
+
+section h1 code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+h2 {
+	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
+	color: var(--accent, #12224d);
+	font-size: 1.16em;
+	padding: 6px 12px;
+	margin: 30px 0 12px;
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 6px 6px 0;
+}
+
+h3 {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	font-size: 1.02em;
+	display: inline-block;
+	padding-bottom: 3px;
+	margin: 20px 0 8px;
+	border-bottom: 2px dotted var(--accent2, #2f5fbf);
+}
+
+/* ---------- 表 ---------- */
+
+.tablewrap {
+	overflow-x: auto;
+	margin: 14px 0;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 5px rgba(20, 34, 70, 0.10);
+}
+
+th {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	text-align: left;
+	padding: 9px 12px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+th code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+td {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	padding: 9px 12px;
+	border-top: 1px solid var(--line, #d9dfe8);
+	vertical-align: top;
+}
+
+tr:nth-child(even) td {
+	background: #fafbfe;
+	color: var(--ink, #1c2330);
+}
+
+td.num,
+th.num {
+	text-align: right;
+}
+
+td.nowrap,
+th.nowrap {
+	white-space: nowrap;
+}
+
+/* ---------- コード ---------- */
+
+code {
+	background: var(--code-bg, #f4f6fa);
+	color: #17335f;
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 4px;
+	padding: 1px 5px;
+	font-family: "Consolas", "Cascadia Mono", monospace;
+	font-size: 0.92em;
+}
+
+pre {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 5px solid var(--accent2, #2f5fbf);
+	border-radius: 0 8px 8px 0;
+	padding: 13px 16px;
+	overflow-x: auto;
+	line-height: 1.65;
+}
+
+pre code {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	border: none;
+	padding: 0;
+	font-size: 0.92em;
+}
+
+/* ---------- バッジ ---------- */
+
+.badge {
+	display: inline-block;
+	padding: 1px 9px;
+	margin-right: 6px;
+	border-radius: 11px;
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+	font-size: 0.84em;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.badge.b-ok {
+	background: linear-gradient(100deg, #1d7a3c, #45b56c);
+	color: #fff;
+}
+
+.badge.b-ng {
+	background: linear-gradient(100deg, #a51f22, #e05a5c);
+	color: #fff;
+}
+
+.badge.b-warn {
+	background: linear-gradient(100deg, #b8620a, #f0a548);
+	color: #fff;
+}
+
+.badge.b-none {
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+}
+
+/* ---------- callout ---------- */
+
+.callout {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 8px 8px 0;
+	padding: 12px 18px;
+	margin: 16px 0;
+}
+
+.callout strong {
+	color: var(--accent, #12224d);
+	background: transparent;
+}
+
+.callout p {
+	margin: 6px 0;
+}
+
+/* ---------- 目次 ---------- */
+
+.toc ol {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 0;
+	margin: 12px 0 4px;
+}
+
+.toc ul a {
+	color: var(--link, #1a4fa0);
+	background: transparent;
+}
+
+.toc ol li {
+	counter-increment: tocnum;
+	margin: 0;
+}
+
+.toc ol a {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: normal;
+	width: 310px;
+	max-width: 100%;
+	padding: 7px 13px;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+	line-height: 1.45;
+}
+
+.toc ol a::before {
+	content: counter(tocnum) ". ";
+	font-weight: 700;
+}
+
+/* ---------- 資料リンク・戻るリンク ---------- */
+
+.navlinks {
+	margin: 20px 0 0;
+}
+
+/*
+ * 幅は文字数で決まる（固定幅にしない）。
+ * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
+ * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
+ */
+a.doclink {
+	display: inline-block;
+	padding: 3px 12px;
+	margin: 0 8px 6px 0;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	font-size: 0.9em;
+	text-decoration: none;
+}
+
+/* ---------- SVG図 ---------- */
+
+.fig {
+	margin: 18px 0;
+	text-align: center;
+}
+
+.fig svg {
+	max-width: 100%;
+	height: auto;
+}
+
+.fig figcaption {
+	color: var(--ink-soft, #4a5568);
+	background: transparent;
+	font-size: 0.88em;
+	margin-top: 6px;
+}
+
+/* ---------- フッター ---------- */
+
+footer {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 18px 30px 0;
+	margin-top: 40px;
+}
+
+footer .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding-bottom: 18px;
+}
+
+footer a {
+	color: #cfe0ff;
+}
+</style>
+<style>
+/* この資料だけのもの: 章のアクセント色（4章 / 色相 280→0 を 93.3 刻み）と目次の採番 */
+.ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
+.ch02 { --accent: hsl(186.7, 78%, 25%); --accent2: hsl(186.7, 58%, 55%); --soft: hsl(186.7, 28%, 95%); }
+.ch03 { --accent: hsl(93.3, 78%, 25%); --accent2: hsl(93.3, 58%, 55%); --soft: hsl(93.3, 28%, 95%); }
+.ch04 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
+.toc ol { counter-reset: tocnum; }
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>CLI を Rust で書く</h1>
+		<p class="lead">aichat-rs.exe を製品として立てる。全機能・依存ゼロ・TDD</p>
+		<p class="date">📅 作成: 2026-09-13 / 更新: 2026-09-13</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+<p>課題 <a class="doclink" href="../40_issues/issues.html#i260913-01">i260913-01</a> の計画。<strong>Mac ・ Linux へ展開すると決めたため C# 版が土俵を降り、残る選択肢が TypeScript と Rust の 2 系統になった。</strong>Rust 版を製品として立てる。</p>
+
+<section class="toc md-skip">
+	<h2>目次</h2>
+	<ol>
+		<li class="ch01"><a href="#ch01">何を作るか</a></li>
+		<li class="ch02"><a href="#ch02">構成</a></li>
+		<li class="ch03"><a href="#ch03">進め方</a></li>
+		<li class="ch04"><a href="#ch04">決めておくこと</a></li>
+	</ol>
+</section>
+
+<!-- ================= 01 ================= -->
+<section class="ch01" id="ch01">
+	<h1>何を作るか</h1>
+
+	<div class="callout callout-important">
+		<p><strong>範囲は全部である。</strong>14 コマンドと 22 オプション、検証も含める。「待受けだけ」ではない。</p>
+	</div>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>項目</th><th>中身</th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap">置き場</td><td><code>src/cli-rs/</code>（Cargo プロジェクト）</td></tr>
+				<tr><td class="nowrap">出力</td><td><code>aichat-rs.exe</code>（root に置く。<code>.gitignore</code> の <code>*.exe</code> で追跡外）</td></tr>
+				<tr><td class="nowrap">コマンド</td><td><code>join</code> <code>wait</code> <code>say</code> <code>recent</code> <code>who</code> <code>waiters</code> <code>dump</code> <code>leave</code> <code>archive</code> <code>archives</code> <code>restore</code> <code>rename</code> ＋ 管理 2 つ（<code>restart</code> <code>stop</code>）</td></tr>
+				<tr><td class="nowrap">外部クレート</td><td><strong>使わない</strong></td></tr>
+				<tr><td class="nowrap">定義の出どころ</td><td><code>src/client/options.mjs</code>。<code>export-options.mjs</code> の JSON を埋め込む</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>なぜ外部クレートを使わないか</h2>
+
+	<p>C# 版が <code>Json.cs</code> を 256 行で自前に持っている。同じ判断をここでも採る。</p>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>得るもの</th><th>引き換えるもの</th></tr></thead>
+			<tbody>
+				<tr><td>ビルドが速い（実測 457 ms）</td><td rowspan="4">JSON パーサと HTTP を自前で書く。200〜300 行ほど増える</td></tr>
+				<tr><td>実行ファイルが小さい（4.63 MB）</td></tr>
+				<tr><td>ネットワークなしでビルドできる</td></tr>
+				<tr><td>依存の版が動いて壊れることがない</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>定義は写さない</h2>
+
+	<p>ローカルルール「CLI を直したら 2 本とも直す」に従う。<strong>オプションとコマンドの表を Rust 側に書き写さない。</strong><code>export-options.mjs</code> が出す JSON を <code>include_str!</code> で埋め込み、実行時に読む。</p>
+
+	<div class="callout callout-caution">
+		<p><strong>これで CLI が 3 本になる。</strong>node ・ C# ・ Rust。食い違いは必ず出るので、<strong>突き合わせのテストを先に用意する。</strong>目で読んで気づける差ではない（実際、同じ秒に立った待受けの並び順が node と C# で食い違っていた）。</p>
+	</div>
+</section>
+
+<!-- ================= 02 ================= -->
+<section class="ch02" id="ch02">
+	<h1>構成</h1>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>ファイル</th><th>役目</th><th>元にするもの</th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap"><code>main.rs</code></td><td>入口。コマンドの振り分けと使い方の表示</td><td><code>Program.cs</code></td></tr>
+				<tr><td class="nowrap"><code>json.rs</code></td><td>JSON の読み書き</td><td><code>Json.cs</code></td></tr>
+				<tr><td class="nowrap"><code>args.rs</code></td><td>引数の解析。旗・値・位置引数・廃止したもの</td><td><code>Args.cs</code></td></tr>
+				<tr><td class="nowrap"><code>definition.rs</code></td><td>埋め込んだ定義の読み取り</td><td><code>Definition.cs</code></td></tr>
+				<tr><td class="nowrap"><code>jst.rs</code></td><td>JST の時刻</td><td><code>JstTime.cs</code></td></tr>
+				<tr><td class="nowrap"><code>since.rs</code></td><td><code>--since</code> ・ <code>--before</code> の解析</td><td><code>SinceParse.cs</code></td></tr>
+				<tr><td class="nowrap"><code>waiters.rs</code></td><td>待受けを数える・選ぶ</td><td><code>Waiters.cs</code></td></tr>
+				<tr><td class="nowrap"><code>client.rs</code></td><td>HTTP。繋ぎ直しとメンテナンス中の扱い</td><td><code>Client.cs</code></td></tr>
+				<tr><td class="nowrap"><code>commands.rs</code></td><td>各コマンドの中身</td><td><code>Commands.cs</code></td></tr>
+				<tr><td class="nowrap"><code>wait_log.rs</code></td><td>待受けの記録</td><td><code>WaitLog.cs</code></td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>プロセスの一覧は OS で分ける</h2>
+
+	<div class="callout callout-important">
+		<p><strong>ここだけ既存の 2 本に答えが無い。</strong>node 版は PowerShell を起こして一覧を取っているが、<strong>Mac ・ Linux に PowerShell は無い。</strong></p>
+	</div>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>OS</th><th>使うもの</th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap">Windows</td><td><code>tasklist</code>（<code>/fo csv</code> で読む）</td></tr>
+				<tr><td class="nowrap">Mac ・ Linux</td><td><code>ps</code>（<code>-eo pid,command</code>）</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<p>取り出したあとの選び方（<code>WAITER_PATTERN</code> での絞り込み・残すものと止めるものの分け方）は OS で変わらない。<strong>取り方だけを分け、選び方は 1 つにする。</strong></p>
+
+	<h2>HTTP は fetch の轍を踏まない</h2>
+
+	<p>課題 <a class="doclink" href="../40_issues/issues.html#i260912-02">i260912-02</a> で、node の <code>fetch</code> が Windows で 1 往復ごとに 15 ms 待たされることが分かった。<strong>Rust は標準ライブラリの <code>TcpStream</code> に HTTP/1.1 を直接書く</strong>ので、この問題は起きない。ベンチマーク版で実証済み。</p>
+</section>
+
+<!-- ================= 03 ================= -->
+<section class="ch03" id="ch03">
+	<h1>進め方</h1>
+
+	<div class="callout callout-important">
+		<p><strong>TDD で進める。落ちるテストを見てから実装する。</strong>落ちるのを見ていないテストは、通ったのが実装のおかげか、最初から通る書き方だったのかを区別できない。</p>
+	</div>
+
+	<h2>順序</h2>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th class="nowrap">段</th><th>作るもの</th><th>ここで確かめること</th></tr></thead>
+			<tbody>
+				<tr><td class="num">1</td><td>土台（<code>json</code> ・ <code>jst</code> ・ <code>args</code> ・ <code>definition</code>）</td><td>JSON が往復する。引数が読める。定義が埋め込まれている</td></tr>
+				<tr><td class="num">2</td><td>日時の解析（<code>since</code>）と待受けの選別（<code>waiters</code>）</td><td>存在しない日を断る。二重の待受けを正しく選ぶ</td></tr>
+				<tr><td class="num">3</td><td>HTTP と読み取り系（<code>recent</code> <code>who</code> <code>dump</code> <code>archives</code>）</td><td>サーバーに繋がる。出力が node 版と同じ</td></tr>
+				<tr><td class="num">4</td><td>書き込み系（<code>say</code> <code>join</code> <code>leave</code> <code>wait</code>）</td><td>投稿が届く。待受けが長く粘る</td></tr>
+				<tr><td class="num">5</td><td>管理系（<code>archive</code> <code>restore</code> <code>rename</code> <code>restart</code> <code>stop</code> <code>waiters</code>）</td><td>確認の入力を求める。件数を先に出す</td></tr>
+				<tr><td class="num">6</td><td>突き合わせと測り直し</td><td>node 版と 1 文字ずつ同じ。待受け中のメモリ</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<p><strong>段ごとにコミットする。</strong>3,000 行を超える見込みなので、動く単位で区切る。</p>
+
+	<h2>テストは 2 段で持つ</h2>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>どこ</th><th>何を守るか</th><th>走らせ方</th></tr></thead>
+			<tbody>
+				<tr>
+					<td class="nowrap">Rust の <code>#[cfg(test)]</code></td>
+					<td>関数の単位。JSON の解析、日時の丸め、待受けの選別</td>
+					<td><code>cargo test</code></td>
+				</tr>
+				<tr>
+					<td class="nowrap"><code>tests/cli-rs.test.mjs</code></td>
+					<td><strong>node 版との食い違い。</strong>出力・終了コード・埋め込んだ定義</td>
+					<td>一括実行に乗る（<code>node --test tests</code>）</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<p>後者は <code>tests/cli-cs.test.mjs</code> と同じ形にする。<strong>C# 版で食い違いを見つけられたのは、この突き合わせがあったからである。</strong></p>
+</section>
+
+<!-- ================= 04 ================= -->
+<section class="ch04" id="ch04">
+	<h1>決めておくこと</h1>
+
+	<h2>いま決めたこと</h2>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>論点</th><th>決めたこと</th><th>なぜ</th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap">外部クレート</td><td>使わない</td><td>C# 版の前例。ビルドが速く、実行ファイルが小さい</td></tr>
+				<tr><td class="nowrap">プロセス一覧</td><td>Windows は <code>tasklist</code>、他は <code>ps</code></td><td>PowerShell は Mac ・ Linux に無い</td></tr>
+				<tr><td class="nowrap">C# 版</td><td><strong>据え置く。</strong>Rust 版が全テストを通るまで落とさない</td><td>動くものを先に消さない</td></tr>
+				<tr><td class="nowrap">ベンチマークの <code>wait-rs</code></td><td>残す</td><td>「最小実装の下限」を示す値として意味がある。製品版とは別物</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>あとで決めること</h2>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>論点</th><th>いつ決めるか</th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap">C# 版を落とすか</td><td>Rust 版が全テストを通り、待受け中のメモリを測ってから</td></tr>
+				<tr><td class="nowrap">既定の CLI をどれにするか</td><td>同上。<code>aichat</code> ・ <code>aichat.cmd</code> が呼ぶ先を変えるかどうか</td></tr>
+				<tr><td class="nowrap">ローカルルールの書き換え</td><td>同上。「CLI を直したら 2 本とも直す」は 2 本を前提にしている</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="callout callout-caution">
+		<p><strong>3 本になる期間は必ず生じる。</strong>その間に node 版か C# 版を直したら、Rust 版にも同じ修正が要る。<strong>突き合わせのテストが唯一の防波堤になる。</strong></p>
+	</div>
+</section>
+
+</div>
+
+<footer>
+	<div class="inner">
+		<p><a class="doclink" href="../../README.html">README へ戻る</a></p>
+	</div>
+</footer>
+
+</body>
+</html>
