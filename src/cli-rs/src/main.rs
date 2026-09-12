@@ -307,6 +307,9 @@ fn run() -> i32 {
 				Err(e) => Err(e),
 			}
 		}
+		// 落とす。1 は異常終了として扱われ 10 秒後に起動し直す。0 は止まったまま
+		"restart" => commands::exit_server(&cli, &me, 1),
+		"stop" => commands::exit_server(&cli, &me, 0),
 		"archives" => commands::archives(&cli),
 		"dump" => {
 			// 既定は tmp/messages.jsonl。ROOT からの相対で決める

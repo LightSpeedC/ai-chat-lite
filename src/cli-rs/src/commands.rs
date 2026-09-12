@@ -823,6 +823,34 @@ pub fn rename(client: &Client, me: &str, from: &str, to: &str) -> Result<i32, Ca
 	Ok(0)
 }
 
+/// 落とす。**再起動されるかどうかは終了コードで決まる。**
+///
+///   `restart` … 終了コード 1。異常終了として扱われ、10 秒後に起動し直す
+///   `stop`    … 終了コード 0。正常終了として扱われ、止まったまま
+///
+/// サービスの再起動と違い管理者権限が要らないため、ソースを直したあとの反映に使える。
+pub fn exit_server(client: &Client, me: &str, exit_code: i64) -> Result<(), CallError> {
+	let body = Json::Obj(vec![
+		("connector_id".to_string(), Json::Str(me.to_string())),
+		("exit_code".to_string(), Json::Num(exit_code as f64)),
+	]);
+	let result = client.call("POST", "/api/admin/exit", Some(&body.to_string()), None)?;
+
+	println!(
+		"終了コード {} で終了します",
+		result.get("exit_code").and_then(|v| v.as_i64()).unwrap_or(exit_code)
+	);
+	println!("  {}", result.get("note").and_then(|v| v.as_str()).unwrap_or(""));
+
+	// 次に何をすればよいかは、サーバーの答えで変わる
+	if result.get("will_restart").and_then(|v| v.as_bool()).unwrap_or(false) {
+		println!("  10 秒ほど待ってから接続してください");
+	} else if result.get("managed_by").map(|v| !v.is_null()).unwrap_or(false) {
+		println!("  もう一度動かすには: node-ai-chat-lite-winsw.exe start");
+	}
+	Ok(())
+}
+
 /// `waiters` に渡す基準。どこを見ている待受けを数えるか
 pub struct Basis {
 	pub label: String,
