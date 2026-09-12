@@ -28,3 +28,6 @@ logs/
 !.claude/skills/
 # Rust のビルド出力（src/cli-rs/target）。cargo build で作り直せる
 target/
+
+# Rust 版 CLI が埋め込む定義（export-options.mjs が作る生成物）
+src/cli-rs/cli-options.json

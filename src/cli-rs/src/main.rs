@@ -6,7 +6,10 @@
 //! 外部クレートを使わない。JSON も HTTP も標準ライブラリだけで書く。
 //! 理由は計画書（notes/10_plan/p260913-01-CLIをRustで書く.html）にある。
 
+mod args;
+mod definition;
 mod json;
+mod jst;
 
 fn main() {
 	// 段ごとに組み上げる。いまは土台だけ
