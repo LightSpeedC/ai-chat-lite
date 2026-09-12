@@ -135,6 +135,25 @@ fn run() -> i32 {
 
 	let outcome = match command {
 		"who" => commands::who(&cli),
+		"recent" => {
+			let opts = match recent_opts(&def, &a) {
+				Ok(o) => o,
+				Err(e) => {
+					eprintln!("{}", e);
+					return EXIT_USAGE;
+				}
+			};
+			commands::recent(&cli, &room, &opts)
+		}
+		"archives" => commands::archives(&cli),
+		"dump" => {
+			// 既定は tmp/messages.jsonl。ROOT からの相対で決める
+			let out = match a.option("out", None) {
+				Some(p) => std::path::PathBuf::from(p),
+				None => std::env::current_dir().unwrap_or_default().join("tmp").join("messages.jsonl"),
+			};
+			commands::dump(&cli, &out)
+		}
 		_ => {
 			eprintln!("{} はまだ作っていません（Rust 版）", command);
 			return EXIT_USAGE;
@@ -160,4 +179,67 @@ fn run() -> i32 {
 			def.exit_unreachable as i32
 		}
 	}
+}
+
+/// `recent` の絞り込みを引数から組み立てる。
+///
+/// 期間の起点は 1 つだけにする。複数あると、どれが効いているか読めない。
+fn recent_opts(def: &Definition, a: &Args) -> Result<commands::RecentOpts, String> {
+	const MS_PER_DAY: i64 = 24 * 60 * 60 * 1000;
+	const MS_PER_HOUR: i64 = 60 * 60 * 1000;
+
+	// 起点は --since / --since-day / --since-hour の 3 通り
+	let given: Vec<(&str, &str)> = [("since", "since"), ("since-day", "since-day"), ("since-hour", "since-hour")]
+		.iter()
+		.filter_map(|(long, _)| a.option(long, None).map(|v| (*long, v)))
+		.collect();
+
+	if given.len() > 1 {
+		let names: Vec<String> = given.iter().map(|(l, _)| format!("--{}", l)).collect();
+		return Err(format!(
+			"期間の起点は 1 つだけ指定してください: {} が両方あります。",
+			names.join(" と ")
+		));
+	}
+
+	let since = match given.first() {
+		None => None,
+		Some(("since", raw)) => Some(since::resolve(raw, None).map_err(|e| e.to_string())?),
+		Some((long, raw)) => {
+			if raw.is_empty() || !raw.bytes().all(|b| b.is_ascii_digit()) {
+				return Err(format!("--{} には 0 以上の数だけを渡してください: {}", long, raw));
+			}
+			let n: i64 = raw.parse().map_err(|_| format!("--{} には 0 以上の数だけを渡してください: {}", long, raw))?;
+			let unit = if *long == "since-day" { MS_PER_DAY } else { MS_PER_HOUR };
+			Some(jst::before(n * unit))
+		}
+	};
+
+	// --before は --since が決めた値を引き継ぐ。独立に丸めると範囲が壊れる
+	let before = match a.option("before", None) {
+		Some(raw) => Some(since::resolve(raw, since.as_deref()).map_err(|e| e.to_string())?),
+		None => None,
+	};
+
+	let find = a.option("find", None).map(|s| s.to_string());
+	let from = match a.option("from", None) {
+		Some(raw) => Some(id::unwrap_flexible(raw, &def.id_wrap, "--from")?),
+		None => None,
+	};
+
+	let has_filter = since.is_some() || before.is_some() || find.is_some() || from.is_some();
+
+	/*
+	 * 絞り込みを指定したときは既定の上限を 500 にする。-n を明示すればそちらが勝つ。
+	 *
+	 * 期間や検索で自然に絞られているのに、既定の 20 件で黙って古い方が
+	 * 切り捨てられると気づきにくい。
+	 */
+	let limit = match a.option("n", Some("n")) {
+		Some(raw) => raw.parse::<i64>().ok().filter(|n| *n != 0).unwrap_or(20),
+		None if has_filter => 500,
+		None => 20,
+	};
+
+	Ok(commands::RecentOpts { limit, since, before, find, from, has_filter })
 }
