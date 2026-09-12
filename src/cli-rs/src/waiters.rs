@@ -17,6 +17,246 @@ pub struct Waiter {
 	pub at: String,
 }
 
+/// 走っているプロセス 1 つ
+#[derive(Debug, Clone, PartialEq)]
+pub struct Process {
+	pub pid: i64,
+	pub ppid: i64,
+	/// 実行ファイルの名前（`aichat-rs.exe` ・ `node.exe` など）
+	pub name: String,
+	pub cmd: String,
+	/// 立った時刻（`yyyy-MM-dd HH:mm:ss`）
+	pub at: String,
+}
+
+/// 走っているプロセスの一覧を取る。
+///
+/// **ここだけ OS で分かれる。**node 版は PowerShell を起こしているが、
+/// Mac ・ Linux に PowerShell は無い。取り方だけを分け、選び方（`pick_waiters`）は
+/// 1 つに保つ。
+pub fn list_processes() -> Result<Vec<Process>, String> {
+	if cfg!(windows) {
+		list_windows()
+	} else {
+		list_unix()
+	}
+}
+
+/// Windows。`Get-CimInstance` で立った時刻まで取れる
+fn list_windows() -> Result<Vec<Process>, String> {
+	let script = "Get-CimInstance Win32_Process | \
+		Where-Object { $_.CommandLine -and $_.CommandLine -like '*wait*' } | \
+		ForEach-Object { \"$($_.ProcessId)`t$($_.ParentProcessId)`t$($_.Name)`t$($_.CreationDate.ToString('yyyy-MM-dd HH:mm:ss'))`t$($_.CommandLine)\" }";
+
+	let out = std::process::Command::new("powershell")
+		.args(["-NoProfile", "-NonInteractive", "-Command", script])
+		.output()
+		.map_err(|e| format!("powershell が動きませんでした: {}", e))?;
+
+	if !out.status.success() {
+		let err = String::from_utf8_lossy(&out.stderr).trim().to_string();
+		return Err(if err.is_empty() { "powershell が動きませんでした".to_string() } else { err });
+	}
+	Ok(parse_rows(&String::from_utf8_lossy(&out.stdout), 5))
+}
+
+/// Mac ・ Linux。`ps` で親と起動時刻まで取る
+fn list_unix() -> Result<Vec<Process>, String> {
+	let out = std::process::Command::new("ps")
+		.args(["-eo", "pid=,ppid=,lstart=,comm=,args="])
+		.output()
+		.map_err(|e| format!("ps が動きませんでした: {}", e))?;
+
+	if !out.status.success() {
+		return Err("ps が動きませんでした".to_string());
+	}
+
+	// ps は桁で揃えて返すので、空白で区切って読む
+	let mut rows = Vec::new();
+	for line in String::from_utf8_lossy(&out.stdout).lines() {
+		let mut it = line.split_whitespace();
+		let pid: i64 = match it.next().and_then(|s| s.parse().ok()) {
+			Some(v) => v,
+			None => continue,
+		};
+		let ppid: i64 = it.next().and_then(|s| s.parse().ok()).unwrap_or(0);
+		// lstart は 5 語（曜 月 日 時刻 年）。並べ替えに使うので順に並ぶ形へ直す
+		let stamp: Vec<&str> = (0..5).filter_map(|_| it.next()).collect();
+		let name = it.next().unwrap_or("").to_string();
+		let cmd = it.collect::<Vec<_>>().join(" ");
+		if !cmd.contains("wait") {
+			continue;
+		}
+		rows.push(Process { pid, ppid, name, at: normalize_lstart(&stamp), cmd });
+	}
+	Ok(rows)
+}
+
+/// `ps` の `Www Mmm dd hh:mm:ss yyyy` を `yyyy-MM-dd HH:mm:ss` に直す。
+///
+/// **並べ替えに使うので、文字列のまま比べて時系列になる形にする。**
+fn normalize_lstart(parts: &[&str]) -> String {
+	if parts.len() < 5 {
+		return String::new();
+	}
+	let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+	let month = months.iter().position(|m| *m == parts[1]).map(|i| i + 1).unwrap_or(0);
+	let day: u32 = parts[2].parse().unwrap_or(0);
+	format!("{}-{:02}-{:02} {}", parts[4], month, day, parts[3])
+}
+
+/// タブ区切りの行を読む。項目が足りない行は捨てる
+fn parse_rows(text: &str, fields: usize) -> Vec<Process> {
+	let mut rows = Vec::new();
+	for line in text.lines() {
+		let parts: Vec<&str> = line.splitn(fields, '\t').collect();
+		if parts.len() < fields {
+			continue;
+		}
+		let pid: i64 = match parts[0].trim().parse() {
+			Ok(v) => v,
+			Err(_) => continue,
+		};
+		rows.push(Process {
+			pid,
+			ppid: parts[1].trim().parse().unwrap_or(0),
+			name: parts[2].trim().to_string(),
+			at: parts[3].trim().to_string(),
+			cmd: parts[4].trim().to_string(),
+		});
+	}
+	rows
+}
+
+/// コマンドラインから待受けの ID を取り出す。
+///
+/// node 版は `WAITER_PATTERN` の正規表現で見ているが、外部クレートを使わないので
+/// 同じ判定を手で書く。**`wait` の後ろに空白を要求するのが要点。**これが無いと
+/// `waiters` 自身に一致し、数えているコマンドが数に入る。
+///
+/// 古い形（`-c` ・ `--connector-id`）も拾う。切り替えの途中は新旧が混ざるため、
+/// 片方しか見ないと相手の待受けを見落として二重に張らせてしまう。
+pub fn waiter_id(cmd: &str) -> Option<String> {
+	let bytes = cmd.as_bytes();
+	let mut from = 0;
+
+	while let Some(found) = cmd[from..].find("wait") {
+		let start = from + found;
+		let end = start + 4;
+		from = end;
+
+		// 語の頭であること（行頭か空白のあと）
+		let head_ok = start == 0 || bytes[start - 1].is_ascii_whitespace();
+		// 直後に空白があること。waiters に当たらないようにする
+		let tail_ok = end < bytes.len() && bytes[end].is_ascii_whitespace();
+		if !head_ok || !tail_ok {
+			continue;
+		}
+
+		let rest = cmd[end..].trim_start();
+
+		// 新しい形: :id: で囲まれている
+		if let Some(inner) = rest.strip_prefix(':') {
+			if let Some(close) = inner.find(':') {
+				let id = &inner[..close];
+				if !id.is_empty() && id.chars().all(|c| c.is_ascii_alphanumeric() || "-_.".contains(c)) {
+					return Some(id.to_string());
+				}
+			}
+		}
+
+		// 古い形: -c <id> / --connector-id <id>
+		for name in ["--connector-id", "-c"] {
+			if let Some(after) = rest.strip_prefix(name) {
+				if after.starts_with(|c: char| c.is_ascii_whitespace()) {
+					let id: String = after.trim_start().chars().take_while(|c| !c.is_whitespace() && *c != '"').collect();
+					if !id.is_empty() {
+						return Some(id);
+					}
+				}
+			}
+		}
+	}
+	None
+}
+
+/// 待受けが見ている先
+#[derive(Debug, Clone, PartialEq)]
+pub struct Target {
+	/// 案内に出す形（`:8787` ・ `example:9000` ・ `(未指定)`）
+	pub label: String,
+	pub rooms: Vec<String>,
+	/// 同じ場所かを比べるための番号。読めなければ 0
+	pub port: i64,
+}
+
+/// コマンドラインから、その待受けが見ている先を読む
+pub fn target_of(cmd: &str, default_room: &str) -> Target {
+	let port = read_arg(cmd, "port", "p");
+	let url = read_arg(cmd, "url", "u");
+	// 1 本が複数のルームを見られる。カンマで割って持つ
+	let rooms = rooms_from(read_arg(cmd, "room", "r").as_deref(), default_room);
+
+	if let Some(p) = port {
+		let num = p.parse().unwrap_or(0);
+		return Target { label: format!(":{}", p), rooms, port: num };
+	}
+	if let Some(u) = url {
+		// 仕組みの名前は落として host:port だけ出す
+		let mut label = match u.find("://") {
+			Some(i) => u[i + 3..].to_string(),
+			None => u.clone(),
+		};
+		while label.ends_with('/') {
+			label.pop();
+		}
+		// 末尾の :数字 を番号として読む
+		let num = label
+			.rsplit_once(':')
+			.and_then(|(_, tail)| tail.parse::<i64>().ok())
+			.unwrap_or(0);
+		return Target { label, rooms, port: num };
+	}
+	Target { label: "(未指定)".to_string(), rooms, port: 0 }
+}
+
+/// 張り方の名前。出力に出るのは `aichat` ・ `aichat-node` ・ `node` の 3 つ
+pub fn via_of(name: &str, parent_name: Option<&str>) -> String {
+	let lower = name.to_ascii_lowercase();
+	if lower == "aichat.exe" || lower == "aichat-rs.exe" || lower == "aichat-cs.exe" {
+		return lower.trim_end_matches(".exe").to_string();
+	}
+	if lower == "node.exe" || lower == "node" {
+		let parent = parent_name.unwrap_or("").to_ascii_lowercase();
+		return if parent == "cmd.exe" { "aichat-node".to_string() } else { "node".to_string() };
+	}
+	lower.trim_end_matches(".exe").to_string()
+}
+
+/// 一覧から待受けだけを選ぶ。
+///
+/// **親を落とす。**`cmd.exe → node.exe` と連なるとき、途中の段はすべて同じ
+/// コマンドラインを抱えているため全部が当たる。当たったものの直親を落とすと、
+/// 連鎖でも末端 1 つだけが残る。
+pub fn pick_waiters(rows: &[Process], exclude_pids: &[i64]) -> Vec<(Process, String)> {
+	let hits: Vec<(Process, String)> = rows
+		.iter()
+		.filter(|r| !exclude_pids.contains(&r.pid))
+		.filter_map(|r| waiter_id(&r.cmd).map(|id| (r.clone(), id)))
+		.collect();
+
+	let parents: Vec<i64> = hits.iter().map(|(p, _)| p.ppid).collect();
+	let mut leaves: Vec<(Process, String)> = hits
+		.iter()
+		.filter(|(p, _)| !parents.contains(&p.pid))
+		.cloned()
+		.collect();
+
+	// 古い順。同じ時刻なら pid の小さい順
+	leaves.sort_by(|(a, _), (b, _)| a.at.cmp(&b.at).then(a.pid.cmp(&b.pid)));
+	leaves
+}
+
 /// コマンドラインから `--名前 値` を読む。短い形も同じ値として受ける。
 ///
 /// **ダブルクォートの囲みを剥がす。**共通ルールは、カンマ区切りで複数のルームを
@@ -161,6 +401,172 @@ mod tests {
 
 	fn pids(waiters: &[Waiter]) -> Vec<i64> {
 		waiters.iter().map(|w| w.pid).collect()
+	}
+
+	fn proc(pid: i64, ppid: i64, name: &str, cmd: &str, at: &str) -> Process {
+		Process { pid, ppid, name: name.to_string(), cmd: cmd.to_string(), at: at.to_string() }
+	}
+
+	#[test]
+	fn タブ区切りの行を読む() {
+		let text = "100\t1\taichat.exe\t2026-09-13 10:00:00\taichat wait :me: -p 8787\n";
+		let rows = parse_rows(text, 5);
+		assert_eq!(rows.len(), 1);
+		assert_eq!(rows[0].pid, 100);
+		assert_eq!(rows[0].ppid, 1);
+		assert_eq!(rows[0].name, "aichat.exe");
+		assert_eq!(rows[0].at, "2026-09-13 10:00:00");
+		assert_eq!(rows[0].cmd, "aichat wait :me: -p 8787");
+	}
+
+	#[test]
+	fn コマンドラインにタブが入っていても切らない() {
+		// 5 つに分けたあとは残り全部が本文。途中で切ると ID を見失う
+		let text = "100\t1\tnode.exe\t2026-09-13 10:00:00\tnode chat.mjs wait :me:\tあまり\n";
+		let rows = parse_rows(text, 5);
+		assert_eq!(rows[0].cmd, "node chat.mjs wait :me:\tあまり");
+	}
+
+	#[test]
+	fn 項目が足りない行は捨てる() {
+		assert!(parse_rows("100\t1\n", 5).is_empty());
+		assert!(parse_rows("", 5).is_empty());
+		assert!(parse_rows("数でない\t1\tx\ty\tz\n", 5).is_empty());
+	}
+
+	#[test]
+	fn psの時刻を並べ替えられる形に直す() {
+		// Www Mmm dd hh:mm:ss yyyy → yyyy-MM-dd HH:mm:ss
+		let parts = vec!["Sat", "Sep", "13", "10:00:00", "2026"];
+		assert_eq!(normalize_lstart(&parts), "2026-09-13 10:00:00");
+
+		// 1 桁の日も 2 桁に詰める。詰めないと文字列の比較で順が崩れる
+		let parts = vec!["Tue", "Jan", "5", "09:30:00", "2027"];
+		assert_eq!(normalize_lstart(&parts), "2027-01-05 09:30:00");
+	}
+
+	#[test]
+	fn 直した時刻は文字列のまま時系列になる() {
+		let a = normalize_lstart(&["Sat", "Sep", "13", "10:00:00", "2026"]);
+		let b = normalize_lstart(&["Tue", "Jan", "5", "09:30:00", "2027"]);
+		assert!(a < b, "年をまたいで順が崩れた: {} / {}", a, b);
+	}
+
+	#[test]
+	fn 待受けのIDを取り出す() {
+		assert_eq!(waiter_id("aichat wait :me: -p 8787").as_deref(), Some("me"));
+		assert_eq!(waiter_id("node chat.mjs wait :ai-chat-lite: -r public").as_deref(), Some("ai-chat-lite"));
+	}
+
+	#[test]
+	fn 古い形のIDも拾う() {
+		// 切り替えの途中は新旧が混ざる。片方しか見ないと相手の待受けを見落とす
+		assert_eq!(waiter_id("aichat wait -c me -p 8787").as_deref(), Some("me"));
+		assert_eq!(waiter_id("aichat wait --connector-id me -p 8787").as_deref(), Some("me"));
+	}
+
+	#[test]
+	fn 数えているコマンド自身に当たらない() {
+		// wait の後ろに空白を要求するのが要点。waiters に当たると数が狂う
+		assert_eq!(waiter_id("aichat waiters :me: -p 8787"), None);
+		assert_eq!(waiter_id("aichat waiters"), None);
+	}
+
+	#[test]
+	fn 語の途中のwaitに当たらない() {
+		assert_eq!(waiter_id("somewait :me:"), None, "前に文字がある");
+		assert_eq!(waiter_id("aichat waiting :me:"), None, "後ろが空白でない");
+	}
+
+	#[test]
+	fn IDが無ければ拾わない() {
+		assert_eq!(waiter_id("aichat wait -p 8787"), None);
+		assert_eq!(waiter_id("aichat wait ::"), None, "中身が空");
+	}
+
+	#[test]
+	fn 見ている先をポートから読む() {
+		let t = target_of("aichat wait :me: -p 8787 -r public", "public");
+		assert_eq!(t.label, ":8787");
+		assert_eq!(t.port, 8787);
+		assert_eq!(t.rooms, strs(&["public"]));
+	}
+
+	#[test]
+	fn 見ている先をURLから読む() {
+		// 仕組みの名前は落として host:port だけ出す
+		let t = target_of("aichat wait :me: -u http://example:9000/ -r a", "public");
+		assert_eq!(t.label, "example:9000");
+		assert_eq!(t.port, 9000);
+	}
+
+	#[test]
+	fn 接続先が無ければ未指定と出す() {
+		let t = target_of("aichat wait :me:", "public");
+		assert_eq!(t.label, "(未指定)");
+		assert_eq!(t.port, 0);
+		assert_eq!(t.rooms, strs(&["public"]), "ルームは既定になる");
+	}
+
+	#[test]
+	fn 囲んで渡した複数ルームを読む() {
+		// 囲みを読み落とすと 2 ルームが 1 ルームに見え、二重に張らせてしまう
+		let t = target_of("aichat wait :me: -p 8787 -r \"public,ai-chat-lite\"", "public");
+		assert_eq!(t.rooms, strs(&["public", "ai-chat-lite"]));
+	}
+
+	#[test]
+	fn 張り方の名前を決める() {
+		assert_eq!(via_of("aichat.exe", None), "aichat");
+		assert_eq!(via_of("aichat-rs.exe", None), "aichat-rs");
+		// cmd 越しの node は aichat-node。直に呼ばれた node は node
+		assert_eq!(via_of("node.exe", Some("cmd.exe")), "aichat-node");
+		assert_eq!(via_of("node.exe", Some("pwsh.exe")), "node");
+		assert_eq!(via_of("node.exe", None), "node");
+	}
+
+	#[test]
+	fn 自分と一覧を取る子は外す() {
+		let rows = vec![
+			proc(100, 1, "aichat.exe", "aichat wait :me: -p 8787", "2026-09-13 10:00:00"),
+			proc(200, 1, "aichat.exe", "aichat waiters :me: -p 8787", "2026-09-13 10:00:01"),
+		];
+		let picked = pick_waiters(&rows, &[200]);
+		assert_eq!(picked.len(), 1);
+		assert_eq!(picked[0].0.pid, 100);
+	}
+
+	#[test]
+	fn 連なったプロセスは末端だけを残す() {
+		// cmd.exe → node.exe と連なると、途中の段も同じコマンドラインを抱えている
+		let rows = vec![
+			proc(10, 1, "cmd.exe", "cmd /c aichat wait :me: -p 8787", "2026-09-13 10:00:00"),
+			proc(20, 10, "node.exe", "node chat.mjs wait :me: -p 8787", "2026-09-13 10:00:01"),
+		];
+		let picked = pick_waiters(&rows, &[]);
+		assert_eq!(picked.len(), 1, "末端 1 つだけ");
+		assert_eq!(picked[0].0.pid, 20);
+	}
+
+	#[test]
+	fn 古い順に並べる() {
+		let rows = vec![
+			proc(30, 1, "aichat.exe", "aichat wait :c: -p 1", "2026-09-13 12:00:00"),
+			proc(10, 1, "aichat.exe", "aichat wait :a: -p 1", "2026-09-13 10:00:00"),
+			proc(20, 1, "aichat.exe", "aichat wait :b: -p 1", "2026-09-13 11:00:00"),
+		];
+		let picked = pick_waiters(&rows, &[]);
+		assert_eq!(picked.iter().map(|(p, _)| p.pid).collect::<Vec<_>>(), vec![10, 20, 30]);
+	}
+
+	#[test]
+	fn 同じ時刻ならpidの小さい順() {
+		let rows = vec![
+			proc(20, 1, "aichat.exe", "aichat wait :b: -p 1", "2026-09-13 10:00:00"),
+			proc(10, 1, "aichat.exe", "aichat wait :a: -p 1", "2026-09-13 10:00:00"),
+		];
+		let picked = pick_waiters(&rows, &[]);
+		assert_eq!(picked.iter().map(|(p, _)| p.pid).collect::<Vec<_>>(), vec![10, 20]);
 	}
 
 	#[test]
