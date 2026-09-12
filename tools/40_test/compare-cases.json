@@ -265,5 +265,104 @@
 			"-r",
 			"public,ai-chat-lite"
 		]
+	},
+	{
+		"args": [
+			"archive",
+			":rust-check:"
+		]
+	},
+	{
+		"args": [
+			"archive",
+			":rust-check:",
+			"message"
+		]
+	},
+	{
+		"args": [
+			"archive",
+			":rust-check:",
+			"知らない種別",
+			"x"
+		]
+	},
+	{
+		"args": [
+			"archive",
+			":rust-check:",
+			"room",
+			"public"
+		]
+	},
+	{
+		"args": [
+			"archive",
+			":rust-check:",
+			"connector",
+			"囲みなし"
+		]
+	},
+	{
+		"args": [
+			"archive",
+			":rust-check:",
+			"message",
+			"99999"
+		]
+	},
+	{
+		"args": [
+			"restore",
+			":rust-check:"
+		]
+	},
+	{
+		"args": [
+			"restore",
+			":rust-check:",
+			"abc"
+		]
+	},
+	{
+		"args": [
+			"rename",
+			":rust-check:"
+		]
+	},
+	{
+		"args": [
+			"rename",
+			":rust-check:",
+			"connector",
+			":a:"
+		]
+	},
+	{
+		"args": [
+			"rename",
+			":rust-check:",
+			"message",
+			":a:",
+			":b:"
+		]
+	},
+	{
+		"args": [
+			"rename",
+			":rust-check:",
+			"connector",
+			":same:",
+			":same:"
+		]
+	},
+	{
+		"args": [
+			"rename",
+			":rust-check:",
+			"connector",
+			"囲みなし",
+			":b:"
+		]
 	}
 ]

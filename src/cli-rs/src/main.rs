@@ -235,6 +235,78 @@ fn run() -> i32 {
 			};
 			commands::wait(&cli, &me, &room, &opts)
 		}
+		"archive" => {
+			let kind = positionals.get(1).copied().unwrap_or("");
+			let raw_id = positionals.get(2).copied().unwrap_or("");
+			if kind.is_empty() || raw_id.is_empty() {
+				eprintln!("対象を指定してください: archive {w}<自分のID>{w} message|connector|room <対象>", w = def.id_wrap);
+				return EXIT_USAGE;
+			}
+			if !["message", "connector", "room"].contains(&kind) {
+				eprintln!("kind は message / connector / room です: {}", kind);
+				return EXIT_USAGE;
+			}
+			// 参加者を片付けるときだけ、対象も参加者の ID なので囲みを剥がす
+			let target = if kind == "connector" {
+				match id::unwrap(raw_id, &def.id_wrap, "archive connector の対象") {
+					Ok(v) => v,
+					Err(e) => {
+						eprintln!("{}", e);
+						return EXIT_USAGE;
+					}
+				}
+			} else {
+				raw_id.to_string()
+			};
+			/*
+			 * 既定のルームはサーバー側でも弾くが、ここでも先に弾く。
+			 * 下見を出して名前まで打たせてから断るのは、手間をかけさせるだけになる。
+			 */
+			if kind == "room" && target == def.default_room {
+				eprintln!("{} は片付けられません（参加時の行き先です）", def.default_room);
+				return EXIT_USAGE;
+			}
+			match commands::archive(&cli, &me, kind, &target, a.has_flag("with-messages", None), a.option("description", None)) {
+				Ok(0) => Ok(()),
+				Ok(code) => return code,
+				Err(e) => Err(e),
+			}
+		}
+		"restore" => {
+			let raw = positionals.get(1).copied().unwrap_or("");
+			let ok = !raw.is_empty() && raw.bytes().all(|b| b.is_ascii_digit());
+			if !ok {
+				eprintln!("戻す番号を指定してください: restore {w}<自分のID>{w} <archived_seq>", w = def.id_wrap);
+				return EXIT_USAGE;
+			}
+			commands::restore(&cli, &me, raw.parse().unwrap_or(0))
+		}
+		"rename" => {
+			let kind = positionals.get(1).copied().unwrap_or("");
+			let raw_from = positionals.get(2).copied().unwrap_or("");
+			let raw_to = positionals.get(3).copied().unwrap_or("");
+			if kind != "connector" || raw_from.is_empty() || raw_to.is_empty() {
+				eprintln!("対象を指定してください: rename {w}<自分のID>{w} connector {w}<旧>{w} {w}<新>{w}", w = def.id_wrap);
+				return EXIT_USAGE;
+			}
+			let from = match id::unwrap(raw_from, &def.id_wrap, "rename の旧 ID") {
+				Ok(v) => v,
+				Err(e) => { eprintln!("{}", e); return EXIT_USAGE; }
+			};
+			let to = match id::unwrap(raw_to, &def.id_wrap, "rename の新しい ID") {
+				Ok(v) => v,
+				Err(e) => { eprintln!("{}", e); return EXIT_USAGE; }
+			};
+			if from == to {
+				eprintln!("同じ ID には付け替えられません: {}", from);
+				return EXIT_USAGE;
+			}
+			match commands::rename(&cli, &me, &from, &to) {
+				Ok(0) => Ok(()),
+				Ok(code) => return code,
+				Err(e) => Err(e),
+			}
+		}
 		"archives" => commands::archives(&cli),
 		"dump" => {
 			// 既定は tmp/messages.jsonl。ROOT からの相対で決める

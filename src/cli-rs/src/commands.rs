@@ -645,6 +645,184 @@ fn format_stamp(digits: &str) -> String {
 	format!("{}-{}", &digits[..8], &digits[8..14])
 }
 
+/// 標準入力から 1 行読む。
+///
+/// **`y` では通さず、対象の名前を打たせる。**勢いで確定させないため。
+/// 打ち間違いや別の対象を指していたときに、そこで気づける。
+pub fn read_line(prompt: &str) -> String {
+	use std::io::Write;
+	print!("{}", prompt);
+	let _ = std::io::stdout().flush();
+
+	let mut line = String::new();
+	if std::io::stdin().read_line(&mut line).is_err() {
+		return String::new();
+	}
+	line.trim().to_string()
+}
+
+/// 何件片付くかを先に出す。**件数が思っていたより多ければ、そこで気づける**
+pub fn print_preview(kind: &str, id: &str, counts: &Json) {
+	let num = |key: &str| counts.get(key).and_then(|v| v.as_i64()).unwrap_or(0);
+	println!("{} {} を片付けると、次が見えなくなります。", archive_label(kind), id);
+
+	if num("messages") > 0 {
+		// 期間が分かると、思っていた範囲と違うことに気づける
+		let span = match (
+			counts.get("first").and_then(|v| v.as_str()),
+			counts.get("last").and_then(|v| v.as_str()),
+		) {
+			(Some(f), Some(l)) if !f.is_empty() && !l.is_empty() => {
+				format!("（{} 〜 {}）", slice_chars(f, 5, 16), slice_chars(l, 5, 16))
+			}
+			_ => String::new(),
+		};
+		println!("  発言       {:>4} 件{}", num("messages"), span);
+	}
+	if num("cursors") > 0 {
+		println!("  読んだ位置 {:>4} 件", num("cursors"));
+	}
+	if num("connectors") > 0 {
+		println!("  参加者     {:>4} 件", num("connectors"));
+	}
+	println!("archives に記録され、restore で戻せます。");
+}
+
+/// 文字の位置で切り出す。**バイトではなく文字**で数える
+fn slice_chars(text: &str, from: usize, to: usize) -> String {
+	text.chars().skip(from).take(to.saturating_sub(from)).collect()
+}
+
+/// 片付ける
+pub fn archive(
+	client: &Client,
+	me: &str,
+	kind: &str,
+	id: &str,
+	with_messages: bool,
+	description: Option<&str>,
+) -> Result<i32, CallError> {
+	let query = format!(
+		"/api/admin/archive-preview?kind={}&id={}{}",
+		encode_query(kind),
+		encode_query(id),
+		if with_messages { "&with_messages=1" } else { "" }
+	);
+	let counts = client.call("GET", &query, None, None)?;
+
+	let total = ["messages", "cursors", "connectors"]
+		.iter()
+		.map(|k| counts.get(k).and_then(|v| v.as_i64()).unwrap_or(0))
+		.sum::<i64>();
+	if total == 0 {
+		eprintln!("片付けるものがありません: {} {}", kind, id);
+		return Ok(1);
+	}
+
+	print_preview(kind, id, &counts);
+	let answer = read_line(&format!("本当に片付ける場合は「{}」と入力してください: ", id));
+	if answer != id {
+		println!("中止しました。");
+		return Ok(1);
+	}
+
+	let mut fields = vec![
+		("kind".to_string(), Json::Str(kind.to_string())),
+		("id".to_string(), Json::Str(id.to_string())),
+		("with_messages".to_string(), Json::Bool(with_messages)),
+	];
+	// 説明は省略できる。省くとサーバーが組み立てる
+	if let Some(d) = description {
+		fields.push(("description".to_string(), Json::Str(d.to_string())));
+	}
+	fields.push(("connector_id".to_string(), Json::Str(me.to_string())));
+	fields.push(("confirm".to_string(), Json::Str(id.to_string())));
+
+	let result = client.call("POST", "/api/admin/archive", Some(&Json::Obj(fields).to_string()), None)?;
+	let seq = result.get("archived_seq").and_then(|v| v.as_i64()).unwrap_or(0);
+	println!("片付けました（archived_seq {}）", seq);
+	println!("  {}", result.get("description").and_then(|v| v.as_str()).unwrap_or(""));
+	println!("戻すには: restore :{}: {}", me, seq);
+	Ok(0)
+}
+
+/// 片付けたものをまとめて戻す
+pub fn restore(client: &Client, me: &str, seq: i64) -> Result<(), CallError> {
+	let body = Json::Obj(vec![
+		("archived_seq".to_string(), Json::Num(seq as f64)),
+		("connector_id".to_string(), Json::Str(me.to_string())),
+	]);
+	let result = client.call("POST", "/api/admin/restore", Some(&body.to_string()), None)?;
+	println!(
+		"archived_seq {} を戻しました（{} 件）",
+		result.get("archived_seq").and_then(|v| v.as_i64()).unwrap_or(seq),
+		result.get("restored").and_then(|v| v.as_i64()).unwrap_or(0)
+	);
+	println!("  {}", result.get("description").and_then(|v| v.as_str()).unwrap_or(""));
+	Ok(())
+}
+
+/// 参加者の ID を付け替える。
+///
+/// `archive` と同じ形にする。先に件数を出し、旧 ID の入力を求めてから実行する。
+/// ID は参加者・読んだ位置・発言（差出人・宛先・本文の @旧ID）・片付けの記録に
+/// 散っており、手で書くと洗い出しから毎回やり直しになる。
+pub fn rename(client: &Client, me: &str, from: &str, to: &str) -> Result<i32, CallError> {
+	let counts = client.call(
+		"GET",
+		&format!("/api/admin/rename-preview?from={}", encode_query(from)),
+		None,
+		None,
+	)?;
+	let num = |key: &str| counts.get(key).and_then(|v| v.as_i64()).unwrap_or(0);
+
+	println!("参加者 {} を {} に付け替えます。", from, to);
+	println!("  参加者        {:>4} 件", num("connectors"));
+	println!("  読んだ位置    {:>4} 件", num("cursors"));
+	println!("  発言（差出人）{:>4} 件", num("messages_from"));
+	println!("  発言（宛先）  {:>4} 件", num("messages_to"));
+	println!("  発言（本文の @{}）{:>4} 件", from, num("messages_body"));
+	println!("  片付けの記録  {:>4} 件", num("archives") + num("archive_targets"));
+	println!("走っている待受けがあると断られます。先に止めてください。");
+
+	let answer = read_line(&format!("本当に付け替える場合は「{}」と入力してください: ", from));
+	if answer != from {
+		println!("中止しました。");
+		return Ok(1);
+	}
+
+	let body = Json::Obj(vec![
+		("from".to_string(), Json::Str(from.to_string())),
+		("to".to_string(), Json::Str(to.to_string())),
+		("connector_id".to_string(), Json::Str(me.to_string())),
+		("confirm".to_string(), Json::Str(from.to_string())),
+	]);
+	let result = client.call("POST", "/api/admin/rename", Some(&body.to_string()), None)?;
+
+	// 散っている置き場をすべて足す。1 つでも漏れると「直したつもり」になる
+	let total: i64 = [
+		"connectors",
+		"cursors",
+		"messages_from",
+		"messages_to",
+		"messages_body",
+		"archives",
+		"archive_targets",
+	]
+	.iter()
+	.map(|k| result.get(k).and_then(|v| v.as_i64()).unwrap_or(0))
+	.sum();
+
+	println!(
+		"付け替えました（{} → {} / {} 件）",
+		result.get("from").and_then(|v| v.as_str()).unwrap_or(from),
+		result.get("to").and_then(|v| v.as_str()).unwrap_or(to),
+		total
+	);
+	println!("  待受けを張り直すときは、新しい ID で張ってください。");
+	Ok(0)
+}
+
 /// `waiters` に渡す基準。どこを見ている待受けを数えるか
 pub struct Basis {
 	pub label: String,
