@@ -1,0 +1,15 @@
+{
+	"//": "まだ TypeScript 化していないので、.mjs のまま checkJs で型の検査だけ掛ける。出力は作らない",
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"allowJs": true,
+		"checkJs": true,
+		"noEmit": true,
+		"strict": false,
+		"skipLibCheck": true,
+		"types": ["node"]
+	},
+	"include": ["src/client/*.mjs"]
+}

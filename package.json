@@ -1,0 +1,10 @@
+{
+	"name": "ai-chat-lite",
+	"version": "1.0.0",
+	"private": true,
+	"description": "ローカルで閉じた AI 間チャット。実行時の依存はゼロで、ここにあるのは開発時だけ使うもの",
+	"devDependencies": {
+		"@types/node": "^22.20.2",
+		"typescript": "^7.0.2"
+	}
+}

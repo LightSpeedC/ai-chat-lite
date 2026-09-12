@@ -1,6 +1,8 @@
 import { basename, join } from 'node:path';
 import { writeFileSync, mkdirSync, appendFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { request as httpRequest } from 'node:http';
+import { request as httpsRequest } from 'node:https';
 
 import { ROOT, PORT, DEFAULT_ROOM, MAX_WAIT_SEC, IS_TEST } from '../server/config.mjs';
 import { nowJst, jstBefore } from '../server/time.mjs';
@@ -331,6 +333,80 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const retryTimes = RETRY_TIMES[command] ?? RETRY_TIMES.default;
 
 /**
+ * HTTP を 1 往復し、本文を JSON として読んで返す。
+ *
+ * 【なぜ fetch を使わないか】
+ * node の fetch は Windows で 1 往復ごとに 15 ms ほど待たされる（課題 i260912-02）。
+ * 最小は 0.36 ms まで下がるので返せないのではなく、待たされている。Windows の
+ * 既定のタイマー解像度 15.6 ms と一致する。node:http なら 0.2 ms で返り、
+ * bun で動かしても同じ速さになる。
+ *
+ * 【agent を持たない理由】
+ * CLI は数回叩いて終わる。keepAlive の Agent を持つとソケットが開いたまま残り、
+ * プロセスが終わらなくなる。繋ぎ直しの分は localhost では 0.1 ms ほどで、
+ * 消した 15 ms に比べれば無視できる。
+ *
+ * 例外は fetch と揃えてある。繋がらないときの code は fetch が err.cause.code、
+ * node:http は err.code に入れるため、呼ぶ側は両方を見る。
+ *
+ * @param {string} url 宛先
+ * @param {{method?: string, headers?: Record<string, string>, body?: string, timeoutMs?: number}} [init]
+ * @returns {Promise<{status: number, ok: boolean, json: any}>}
+ */
+function httpJson(url, init = {}) {
+	const { method = 'GET', headers = {}, body = null, timeoutMs = 0 } = init;
+	return new Promise((resolve, reject) => {
+		const target = new URL(url);
+		const send = target.protocol === 'https:' ? httpsRequest : httpRequest;
+
+		const req = send(
+			target,
+			{
+				method,
+				agent: false,
+				headers: {
+					...headers,
+					...(body === null ? {} : { 'Content-Length': Buffer.byteLength(body) }),
+				},
+			},
+			(res) => {
+				const chunks = [];
+				res.on('data', (chunk) => chunks.push(chunk));
+				res.on('end', () => {
+					const text = Buffer.concat(chunks).toString('utf8');
+					let json = {};
+					// 本文が JSON でないことはある（502 の HTML 等）。fetch 版も同じように黙って空にしていた
+					try {
+						json = text ? JSON.parse(text) : {};
+					} catch {
+						json = {};
+					}
+					const status = res.statusCode ?? 0;
+					resolve({ status, ok: status >= 200 && status < 300, json });
+				});
+			}
+		);
+
+		req.on('error', reject);
+
+		/*
+		 * 待つ長さを渡されたときだけ時間を切る。
+		 *
+		 * 既定で切らないのは wait があるため。long-poll は 1 往復が 240 秒で、
+		 * 短い上限を置くと待受けがそこで切れる。
+		 */
+		if (timeoutMs > 0) {
+			req.setTimeout(timeoutMs, () => {
+				req.destroy(Object.assign(new Error('時間切れ'), { code: 'ETIMEDOUT' }));
+			});
+		}
+
+		if (body !== null) req.write(body);
+		req.end();
+	});
+}
+
+/**
  * サーバーを呼ぶ。繋がらないときと、メンテナンス中（503）のときは繋ぎ直す。
  *
  * 出すのは始めの 1 行と、諦めたときの 1 行だけ。黙ると固まったように見えるが、
@@ -349,9 +425,10 @@ async function call(path, init) {
 
 		let res;
 		try {
-			res = await fetch(base + path, { ...init, headers });
+			res = await httpJson(base + path, { ...init, headers });
 		} catch (err) {
-			lastReason = `繋がりません（${err?.cause?.code ?? err?.message ?? err}）`;
+			// node:http は err.code、fetch は err.cause.code に入れる。移したので両方を見る
+			lastReason = `繋がりません（${err?.code ?? err?.cause?.code ?? err?.message ?? err}）`;
 			if (!announced && retryTimes > 0) {
 				console.error(`サーバーに繋がりません: ${base}`);
 				console.error(`  ${describeRetry()}繋ぎ直します`);
@@ -360,7 +437,7 @@ async function call(path, init) {
 			continue;
 		}
 
-		const json = await res.json().catch(() => ({}));
+		const json = res.json;
 
 		// メンテナンス中。落ちているのではないので、同じように粘る
 		if (res.status === 503) {
@@ -1044,7 +1121,8 @@ function viaOf(name, parentName) {
 /** 経過を h:mm で返す。日をまたいでも時のまま増やす（2 日なら 48:00 になる） */
 function elapsedOf(at, now = new Date()) {
 	const started = new Date(at.replace(' ', 'T'));
-	const min = Math.max(0, Math.floor((now - started) / 60000));
+	// getTime() を挟むのは型の検査を通すため。Date どうしの引き算は動くが、tsc が認めない
+	const min = Math.max(0, Math.floor((now.getTime() - started.getTime()) / 60000));
 	return `${Math.floor(min / 60)}:${String(min % 60).padStart(2, '0')}`;
 }
 
@@ -1481,9 +1559,9 @@ async function announceEnv() {
 	 */
 	let info;
 	try {
-		const res = await fetch(`${base}/api/version`, { signal: AbortSignal.timeout(3000) });
+		const res = await httpJson(`${base}/api/version`, { timeoutMs: 3000 });
 		if (!res.ok) return;
-		info = await res.json();
+		info = res.json;
 	} catch {
 		return;
 	}

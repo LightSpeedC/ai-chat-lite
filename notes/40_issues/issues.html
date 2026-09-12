@@ -597,7 +597,7 @@ footer a {
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（5 件 / 未 3 / 着手 0 / 済 2）</a></li>
 		<li class="g02"><a href="#g02">データ（7 件 / 未 1 / 着手 0 / 済 6）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（26 件 / 未 3 / 着手 5 / 済 18）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（27 件 / 未 3 / 着手 6 / 済 18）</a></li>
 		<li class="g04"><a href="#g04">チャットの機能（24 件 / 未 8 / 着手 1 / 済 15）</a></li>
 	</ol>
 </section>
@@ -1334,10 +1334,106 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">26 件 / 未 3 / 着手 5 / 済 18</span>
+		<span class="count">27 件 / 未 3 / 着手 6 / 済 18</span>
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue doing" id="i260912-02" open>
+			<summary>
+				<span class="badge b-doing">着手</span>
+				<span class="no">i260912-02</span>
+				node の fetch は Windows で 1 往復ごとに 15 ms 遅い
+			</summary>
+			<div class="issuebody">
+				<p>ローカルの HTTP を 200 往復して測ったところ、<strong>node の <code>fetch</code> だけが 15 ms 前後に張り付いた</strong>。同じ node の <code>http.request</code> は 0.18 ms で、85 倍の開きがある。</p>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th>手段</th><th>中央値</th><th>最小</th><th>p95</th></tr>
+				</thead>
+				<tbody>
+					<tr><td class="nowrap">node の <code>fetch</code></td><td class="num">15.21 ms</td><td class="num">0.36 ms</td><td class="num">20.28 ms</td></tr>
+					<tr><td class="nowrap">node の <code>http.request</code></td><td class="num">0.18 ms</td><td class="num">0.14 ms</td><td class="num">0.31 ms</td></tr>
+					<tr><td class="nowrap">bun の <code>fetch</code></td><td class="num">0.09 ms</td><td class="num">0.07 ms</td><td class="num">0.21 ms</td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<p><strong>最小は 0.36 ms まで下がる。</strong>速く返せないのではなく、たいてい 15 ms 待たされている。<strong>Windows の既定のタイマー解像度（15.6 ms）と一致する。</strong></p>
+
+				<h3>どこに効くか</h3>
+
+				<p>CLI は <code>src/client/chat.mjs</code> の 1 か所で <code>fetch</code> を呼んでおり、<strong>API を叩くコマンドはすべてここを通る</strong>（<code>say</code> ・ <code>who</code> ・ <code>waiters</code> ・ <code>recent</code> ・ <code>restart</code>）。</p>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th>使い方</th><th>効き方</th></tr>
+				</thead>
+				<tbody>
+					<tr><td class="nowrap">待受け（<code>wait</code>）</td><td>効かない。long-poll は 1 往復が 240 秒なので 15 ms は埋もれる</td></tr>
+					<tr><td class="nowrap"><code>say</code> ・ <code>recent</code></td><td>1 往復ぶん乗る。起動 43.6 ms に足して 15 ms</td></tr>
+					<tr><td class="nowrap">bun で動かしたとき</td><td>乗らない。<code>aichat</code> ・ <code>aichat.cmd</code> は <code>bun run</code> で呼んでいる</td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-important">
+					<p><strong>この 15 ms は、測る側にも乗る。</strong>サーバーのベンチマークを node で走らせたとき、<code>say</code> も <code>recent</code> も件数を変えても一律 15 ms になり、<strong>サーバーの性能差がまったく見えなくなった</strong>。クライアントを bun に替えて測り直して初めて、node と bun の差が出た。<br>
+					<strong>ローカルの往復を node の <code>fetch</code> で測ってはいけない。</strong></p>
+				</div>
+
+				<h3>やること</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">状態</th><th>中身</th></tr>
+				</thead>
+				<tbody>
+					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>ベンチマークの側を <code>http.request</code> に替えた。</strong>測る側が 15 ms を載せていては、サーバーの差が見えない</td></tr>
+					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>CLI（<code>src/client/chat.mjs</code>）を <code>http.request</code> に替えた（案 A）。</strong><code>httpJson</code> を 1 つ置き、<code>call</code> と版チェックの 2 か所をそこへ通した</td></tr>
+					<tr><td class="nowrap"><span class="badge b-todo">未</span></td><td><strong>Mac ・ Linux で再現するか確かめる。</strong>タイマー解像度が理由なら出ないはずだが、確かめていない。直したので困りはしないが、<strong>同じ穴が他にもあるかの手がかりになる</strong></td></tr>
+				</tbody>
+				</table>
+				</div>
+
+				<h3>選べる道</h3>
+
+				<div class="tablewrap">
+				<table>
+				<thead>
+					<tr><th class="nowrap">案</th><th>中身</th><th>引き換えるもの</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="nowrap"><strong>A（採った）</strong></td>
+						<td><code>fetch</code> をやめ、<code>node:http</code> の <code>http.request</code> で書く</td>
+						<td>1 か所で済むが、<code>fetch</code> より記述が増える。bun でも同じ速さで動く</td>
+					</tr>
+					<tr>
+						<td class="nowrap">B</td>
+						<td>node で動かすことを諦め、bun を既定にする</td>
+						<td>node しか無い環境で遅いまま。CLI を 2 系統で保つ方針とぶつかる</td>
+					</tr>
+					<tr>
+						<td class="nowrap">C</td>
+						<td>何もしない</td>
+						<td>人が待つぶんには 15 ms は気づかない。ただし測るたびに踏む</td>
+					</tr>
+				</tbody>
+				</table>
+				</div>
+
+				<p>再現の手順は <code>tests/http-client-latency.test.mjs</code> に置いた。測り方と数値は<a href="../01_research/r260912-02-サーバーのベンチマーク.html">サーバーのベンチマーク</a>にある。</p>
+
+				<div class="callout callout-tip">
+					<p><strong>keepAlive の Agent は持たせなかった。</strong>CLI は数回叩いて終わるので、ソケットが開いたまま残るとプロセスが終わらない。<strong>繋ぎ直す分は localhost で 0.1 ms ほどで、消した 15 ms に比べれば無視できる。</strong></p>
+				</div>
+			</div>
+		</details>
 
 		<details class="issue doing" id="i260905-01" open>
 			<summary>

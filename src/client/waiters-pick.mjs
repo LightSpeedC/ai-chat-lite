@@ -90,9 +90,15 @@ export function roomsArg(rooms) {
  * 並びは基準の外を多く持つものを先に。止められるものをより多く見つけられる。
  * 古い順は、基準の外の数が同じときの決め方として残す。
  *
- * @param {{pid: number, rooms: string[], at: string}[]} mine 自分の待受け
+ * 形を @typedef に出しているのは、同じものが 3 か所（mine ・ keep ・ stop）に出るため。
+ * 戻り値だけ object[] と書いていたときは、受け取った側で .pid も .rooms も引けず、
+ * tsc が 3 件のエラーを出した（i260912-02 を入れて初めて見えた）。
+ *
+ * @typedef {{pid: number, rooms: string[], at: string}} Waiter
+ *
+ * @param {Waiter[]} mine 自分の待受け
  * @param {{rooms: string[]}} basis -r で渡したルーム
- * @returns {{keep: object[], stop: object[]}} 残すものと止めてよいもの
+ * @returns {{keep: Waiter[], stop: Waiter[]}} 残すものと止めてよいもの
  */
 export function splitRedundant(mine, basis) {
 	const basisRooms = new Set(basis.rooms);
