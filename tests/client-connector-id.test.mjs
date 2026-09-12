@@ -89,10 +89,20 @@ describe('ID はコマンドの直後に置く', () => {
 		assert.match(stdout, /参加者:/);
 	});
 
-	test('ID を書かないと止まる', async () => {
+	/*
+	 * 【なぜ 2 なのか】
+	 * options.mjs が 1 = 一般のエラー / 2 = 使い方の誤り / 3 = 繋がらない、と
+	 * 決めており、USAGE も同じ説明を載せている。ID の書き忘れは使い方の誤りで、
+	 * 囲みの誤り・本文の不足・接続先の不足はすべて 2 を返す。
+	 *
+	 * ここだけ 1 のままだったので、同じ関数の中で「囲みが違えば 2、丸ごと
+	 * 無ければ 1」という分かれ方をしていた。C# 版も同じ値だったため、
+	 * 2 本の突き合わせでは見つからなかった（レビュー #21 medium 6）。
+	 */
+	test('ID を書かないと、使い方の誤りとして止まる', async () => {
 		const { code, stderr } = await failing(['wait', '--wait-sec', '1']);
 
-		assert.equal(code, 1);
+		assert.equal(code, 2, '使い方の誤りなので 2');
 		assert.match(stderr, /名乗る ID が指定されていません/);
 		assert.match(stderr, /wait の直後に、コロンで囲んで置いてください/);
 	});

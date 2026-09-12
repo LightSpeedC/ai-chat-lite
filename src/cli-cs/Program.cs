@@ -215,7 +215,8 @@ namespace AiChat
 					new DirectoryInfo(Directory.GetCurrentDirectory()).Name + w);
 				Console.Error.WriteLine("");
 				Console.Error.WriteLine("  自分の project フォルダ名にしておくと、誰の発言か分かりやすくなります。");
-				Environment.Exit(1);
+				// 2 = 使い方の誤り。囲みの誤り・本文の不足・接続先の不足と揃える
+				Environment.Exit(2);
 			}
 
 			connectorId = Args.UnwrapId(raw, args.Command + " の直後");

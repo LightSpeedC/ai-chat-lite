@@ -147,7 +147,8 @@ describe('名乗る ID にも既定値が無い', () => {
 		for (const name of ['join', 'wait', 'say', 'leave', 'restore', 'restart', 'stop', 'waiters']) {
 			const { code, stderr } = await failing([name, '-p', '1']);
 
-			assert.equal(code, 1, `${name} が終了コード 1 で止まっていない`);
+			// 2 = 使い方の誤り（options.mjs の取り決め）
+			assert.equal(code, 2, `${name} が終了コード 2 で止まっていない`);
 			assert.match(stderr, /名乗る ID が指定されていません/, `${name} が ID の不足で止まっていない`);
 		}
 	});
