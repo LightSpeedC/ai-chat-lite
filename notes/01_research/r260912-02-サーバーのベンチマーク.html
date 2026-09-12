@@ -1,0 +1,907 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>サーバーのベンチマーク</title>
+<style>
+/* 共通のスタイル。docs\css\style.css と同じ内容を持たせている */
+@charset "UTF-8";
+
+/* ===================================================================
+   ai-chat-lite 共通スタイル
+   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   =================================================================== */
+
+:root {
+	/* 章に依存しない共通色 */
+	--navy1: #12224d;
+	--navy2: #2f5fbf;
+	--ink: #1c2330;
+	--ink-soft: #4a5568;
+	--line: #d9dfe8;
+	--code-bg: #f4f6fa;
+	--link: #1a4fa0;
+
+	/* 章クラスの外に置いた要素が色を失わないための既定値 */
+	--accent: #12224d;
+	--accent2: #2f5fbf;
+	--soft: #f2f5fb;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: #fdfdfe;
+	color: var(--ink, #1c2330);
+	font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+	font-size: 15.5px;
+	line-height: 1.85;
+}
+
+a {
+	color: var(--link, #1a4fa0);
+}
+
+/* ---------- タイトルバー ---------- */
+
+.titlebar {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 34px 30px 30px;
+}
+
+.titlebar .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+}
+
+.titlebar h1 {
+	font-size: 1.85em;
+	margin: 0 0 8px;
+	color: #fff;
+}
+
+.titlebar .lead {
+	margin: 0;
+	color: #d7e2f7;
+	font-size: 0.95em;
+}
+
+.titlebar .date {
+	margin: 10px 0 0;
+	color: #b9caea;
+	font-size: 0.88em;
+}
+
+.titlebar a {
+	color: #cfe0ff;
+}
+
+.titlebar code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+/* ---------- 本文の器 ---------- */
+
+.wrap {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding: 0 30px;
+}
+
+section {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 10px;
+	padding: 4px 26px 26px;
+	margin: 34px 0;
+}
+
+/* ---------- 見出し ---------- */
+
+section h1 {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-size: 1.4em;
+	padding: 14px 20px;
+	margin: 26px 0 20px;
+	border-radius: 8px;
+	box-shadow: 0 3px 10px rgba(20, 34, 70, 0.22);
+}
+
+section h1 code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+h2 {
+	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
+	color: var(--accent, #12224d);
+	font-size: 1.16em;
+	padding: 6px 12px;
+	margin: 30px 0 12px;
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 6px 6px 0;
+}
+
+h3 {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	font-size: 1.02em;
+	display: inline-block;
+	padding-bottom: 3px;
+	margin: 20px 0 8px;
+	border-bottom: 2px dotted var(--accent2, #2f5fbf);
+}
+
+/* ---------- 表 ---------- */
+
+.tablewrap {
+	overflow-x: auto;
+	margin: 14px 0;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 5px rgba(20, 34, 70, 0.10);
+}
+
+th {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	text-align: left;
+	padding: 9px 12px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+th code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+td {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	padding: 9px 12px;
+	border-top: 1px solid var(--line, #d9dfe8);
+	vertical-align: top;
+}
+
+tr:nth-child(even) td {
+	background: #fafbfe;
+	color: var(--ink, #1c2330);
+}
+
+td.num,
+th.num {
+	text-align: right;
+}
+
+td.nowrap,
+th.nowrap {
+	white-space: nowrap;
+}
+
+/* ---------- コード ---------- */
+
+code {
+	background: var(--code-bg, #f4f6fa);
+	color: #17335f;
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 4px;
+	padding: 1px 5px;
+	font-family: "Consolas", "Cascadia Mono", monospace;
+	font-size: 0.92em;
+}
+
+pre {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 5px solid var(--accent2, #2f5fbf);
+	border-radius: 0 8px 8px 0;
+	padding: 13px 16px;
+	overflow-x: auto;
+	line-height: 1.65;
+}
+
+pre code {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	border: none;
+	padding: 0;
+	font-size: 0.92em;
+}
+
+/* ---------- バッジ ---------- */
+
+.badge {
+	display: inline-block;
+	padding: 1px 9px;
+	margin-right: 6px;
+	border-radius: 11px;
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+	font-size: 0.84em;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.badge.b-ok {
+	background: linear-gradient(100deg, #1d7a3c, #45b56c);
+	color: #fff;
+}
+
+.badge.b-ng {
+	background: linear-gradient(100deg, #a51f22, #e05a5c);
+	color: #fff;
+}
+
+.badge.b-warn {
+	background: linear-gradient(100deg, #b8620a, #f0a548);
+	color: #fff;
+}
+
+.badge.b-none {
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+}
+
+/* ---------- callout ---------- */
+
+.callout {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 8px 8px 0;
+	padding: 12px 18px;
+	margin: 16px 0;
+}
+
+.callout strong {
+	color: var(--accent, #12224d);
+	background: transparent;
+}
+
+.callout p {
+	margin: 6px 0;
+}
+
+/* ---------- 目次 ---------- */
+
+.toc ol {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 0;
+	margin: 12px 0 4px;
+}
+
+.toc ul a {
+	color: var(--link, #1a4fa0);
+	background: transparent;
+}
+
+.toc ol li {
+	counter-increment: tocnum;
+	margin: 0;
+}
+
+.toc ol a {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: normal;
+	width: 310px;
+	max-width: 100%;
+	padding: 7px 13px;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+	line-height: 1.45;
+}
+
+.toc ol a::before {
+	content: counter(tocnum) ". ";
+	font-weight: 700;
+}
+
+/* ---------- 資料リンク・戻るリンク ---------- */
+
+.navlinks {
+	margin: 20px 0 0;
+}
+
+/*
+ * 幅は文字数で決まる（固定幅にしない）。
+ * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
+ * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
+ */
+a.doclink {
+	display: inline-block;
+	padding: 3px 12px;
+	margin: 0 8px 6px 0;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	font-size: 0.9em;
+	text-decoration: none;
+}
+
+/* ---------- SVG図 ---------- */
+
+.fig {
+	margin: 18px 0;
+	text-align: center;
+}
+
+.fig svg {
+	max-width: 100%;
+	height: auto;
+}
+
+.fig figcaption {
+	color: var(--ink-soft, #4a5568);
+	background: transparent;
+	font-size: 0.88em;
+	margin-top: 6px;
+}
+
+/* ---------- フッター ---------- */
+
+footer {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 18px 30px 0;
+	margin-top: 40px;
+}
+
+footer .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding-bottom: 18px;
+}
+
+footer a {
+	color: #cfe0ff;
+}
+</style>
+<style>
+/* この資料だけのもの: 章のアクセント色（6章 / 色相 280→0 を 56 刻み）と目次の採番 */
+.ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
+.ch02 { --accent: hsl(224, 78%, 25%); --accent2: hsl(224, 58%, 55%); --soft: hsl(224, 28%, 95%); }
+.ch03 { --accent: hsl(168, 78%, 25%); --accent2: hsl(168, 58%, 55%); --soft: hsl(168, 28%, 95%); }
+.ch04 { --accent: hsl(112, 78%, 25%); --accent2: hsl(112, 58%, 55%); --soft: hsl(112, 28%, 95%); }
+.ch05 { --accent: hsl( 56, 78%, 25%); --accent2: hsl( 56, 58%, 55%); --soft: hsl( 56, 28%, 95%); }
+.ch06 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
+.toc ol { counter-reset: tocnum; }
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>サーバーのベンチマーク</h1>
+		<p class="lead">node と bun で、待受けの相手としてのメモリ・say ・ recent ・ 配信の遅れを測った</p>
+		<p class="date">📅 作成: 2026-09-12 / 更新: 2026-09-12</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+<p>サーバーは Windows サービスとして常駐し、待受けの相手をしている。<strong>常駐するものなのでメモリがいちばん効く。</strong>そこに <code>say</code> ・ <code>recent</code> の往復と、発言を待受けへ配る遅れを足して測った。</p>
+
+<p>測ったのは <strong>node と bun の 2 つだけ</strong>である。サーバーは TypeScript（node ・ bun）で進めると決めたため、他の処理系は土俵に載せていない。</p>
+
+<section class="toc md-skip">
+	<h2>目次</h2>
+	<ol>
+		<li class="ch01"><a href="#ch01">分かったこと</a></li>
+		<li class="ch02"><a href="#ch02">待受けの相手としてのメモリ</a></li>
+		<li class="ch03"><a href="#ch03">say と recent</a></li>
+		<li class="ch04"><a href="#ch04">配信の遅れ</a></li>
+		<li class="ch05"><a href="#ch05">測り方</a></li>
+		<li class="ch06"><a href="#ch06">測り直しになった話</a></li>
+	</ol>
+</section>
+
+<!-- ================= 01 ================= -->
+<section class="ch01" id="ch01">
+	<h1>分かったこと</h1>
+
+	<div class="callout callout-important">
+		<p><strong>差が出たのはメモリと起動だけで、そこは bun が勝つ。</strong>待受けが 10 本ぶら下がった状態で node 56.51 MB ・ bun 37.47 MB。<br>
+		<strong><code>say</code> ・ <code>recent</code> ・ 配信の遅れには差が無い。</strong>どれも SQLite と配信の仕組みが決めていて、処理系を替えても動かない。</p>
+	</div>
+
+	<div class="tablewrap">
+		<table>
+			<thead>
+				<tr><th>項目</th><th>node</th><th>bun</th><th>読み方</th></tr>
+			</thead>
+			<tbody>
+				<tr><td class="nowrap">起動（待ち受け開始まで）</td><td class="num">181.3 ms</td><td class="num">113.8 ms</td><td>bun が 68 ms 速い。常駐するので効かない</td></tr>
+				<tr><td class="nowrap">メモリ 待受け 0 本</td><td class="num">54.43 MB</td><td class="num">31.54 MB</td><td><strong>bun が 22.9 MB 軽い</strong></td></tr>
+				<tr><td class="nowrap">メモリ 待受け 10 本</td><td class="num">56.51 MB</td><td class="num">37.47 MB</td><td>bun が 19.0 MB 軽い</td></tr>
+				<tr><td class="nowrap">say</td><td class="num">3.18 ms</td><td class="num">3.13 ms</td><td>差なし</td></tr>
+				<tr><td class="nowrap">recent 50 件</td><td class="num">0.33 ms</td><td class="num">0.34 ms</td><td>差なし</td></tr>
+				<tr><td class="nowrap">recent 500 件</td><td class="num">1.31 ms</td><td class="num">0.98 ms</td><td>わずかに bun</td></tr>
+				<tr><td class="nowrap">配信 10 本へ</td><td class="num">27.95 ms</td><td class="num">26.35 ms</td><td>差なし</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>待受けの相手をするコストは、ほとんど無かった</h2>
+
+	<p>測る前は「待受けを何本も抱えると重くなる」と思っていたが、<strong>10 本ぶら下げても node で 2.08 MB、bun で 5.93 MB しか増えなかった</strong>。1 本あたり 0.21 MB ・ 0.59 MB である。</p>
+
+	<p><strong>常駐コストを決めているのは、ぶら下がっている本数ではなく処理系そのもの</strong>だった。そこで 22.9 MB の差が付いている。</p>
+
+	<div class="callout callout-tip">
+		<p><strong>1 本あたりの伸びは bun のほうが 2.8 倍きつい。</strong>それでも出発点が 22.9 MB 低いので、追いつかれるのは <strong>59 本ぶら下がったとき</strong>である。<br>
+		待受けは 1 プロジェクトにつき 1 本。<strong>現実に並ぶのは数本なので、この交差点には届かない。</strong></p>
+	</div>
+
+	<h2>速さを決めているのは処理系ではない</h2>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>操作</th><th>かかる時間</th><th>何が決めているか</th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap"><code>say</code></td><td class="num">3.1 ms</td><td>SQLite への書き込み。処理系を替えても動かない</td></tr>
+				<tr><td class="nowrap"><code>recent</code> 50 件</td><td class="num">0.33 ms</td><td>読むだけ。十分速い</td></tr>
+				<tr><td class="nowrap"><code>recent</code> 500 件</td><td class="num">1.1 ms</td><td>件数に比例。10 倍にして 3 倍</td></tr>
+				<tr><td class="nowrap">配信</td><td class="num">2.2 ms/本</td><td>待受けを 1 本ずつ起こす手間</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<p><code>say</code> の 3.1 ms は<strong>読み取りの 10 倍</strong>かかっている。WAL に同期で書いているためで、ここを速くしたいなら処理系ではなく書き方を変えることになる。<strong>ただし人が待つ時間としては十分短い。</strong></p>
+
+	<div class="callout callout-caution">
+		<p><strong>測ったのは実メモリ（RSS）だけである。</strong>確保量（Private Bytes）は測っていない。OS ごとに測り方が分かれるため、<code>process.memoryUsage()</code> で揃えた結果として落ちた。<br>
+		CLI を測ったときは <strong>bun の確保量が 5 実装のうち最大（108 MB）</strong>だった。サーバーでも同じ傾向なら、この資料の数字だけで決めるのは早い。</p>
+	</div>
+</section>
+
+<!-- ================= 02 ================= -->
+<section class="ch02" id="ch02">
+	<h1>待受けの相手としてのメモリ</h1>
+
+	<p>待受けを 0 ・ 1 ・ 5 ・ 10 本ぶら下げ、それぞれで落ち着くのを待ってから 3 秒ぶんを平均した。</p>
+
+	<figure class="fig">
+		<svg viewBox="0 0 760 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="待受けの本数とサーバーのメモリ">
+			<rect width="100%" height="100%" fill="#ffffff"/>
+			<text x="10" y="24" font-size="14" font-weight="700" fill="#1c2330">待受けの本数とサーバーの実メモリ（MB・小さいほど良い）</text>
+			<g stroke="#d9dfe8" stroke-width="1">
+				<line x1="90" y1="270" x2="690" y2="270"/>
+				<line x1="90" y1="215" x2="690" y2="215"/>
+				<line x1="90" y1="160" x2="690" y2="160"/>
+				<line x1="90" y1="105" x2="690" y2="105"/>
+				<line x1="90" y1="50" x2="690" y2="50"/>
+			</g>
+			<g font-size="12" fill="#4a5568" text-anchor="end">
+				<text x="82" y="274">0</text><text x="82" y="219">15</text><text x="82" y="164">30</text><text x="82" y="109">45</text><text x="82" y="54">60</text>
+			</g>
+			<g font-size="12" fill="#4a5568" text-anchor="middle">
+				<text x="90" y="292">0 本</text><text x="150" y="292">1 本</text><text x="390" y="292">5 本</text><text x="690" y="292">10 本</text>
+			</g>
+			<text x="390" y="314" font-size="12" fill="#4a5568" text-anchor="middle">ぶら下がっている待受けの本数</text>
+
+			<polyline points="90,70.4 150,69.2 390,66.9 690,62.8" fill="none" stroke="hsl(210,78%,25%)" stroke-width="3"/>
+			<g fill="hsl(210,78%,25%)">
+				<circle cx="90" cy="70.4" r="5"/><circle cx="150" cy="69.2" r="5"/><circle cx="390" cy="66.9" r="5"/><circle cx="690" cy="62.8" r="5"/>
+			</g>
+			<text x="100" y="58" font-size="13" font-weight="700" fill="hsl(210,78%,25%)">node（青）</text>
+
+			<polyline points="90,154.4 150,143.1 390,137.5 690,132.6" fill="none" stroke="hsl(140,78%,25%)" stroke-width="3"/>
+			<g fill="hsl(140,78%,25%)">
+				<circle cx="90" cy="154.4" r="5"/><circle cx="150" cy="143.1" r="5"/><circle cx="390" cy="137.5" r="5"/><circle cx="690" cy="132.6" r="5"/>
+			</g>
+			<text x="100" y="176" font-size="13" font-weight="700" fill="hsl(140,78%,25%)">bun（緑）</text>
+
+			<g font-size="12" fill="#1c2330" text-anchor="middle">
+				<text x="90" y="86">54.4</text><text x="690" y="54">56.5</text>
+				<text x="90" y="170">31.5</text><text x="690" y="124">37.5</text>
+			</g>
+		</svg>
+		<figcaption>図 1: 待受けを増やしてもほとんど伸びない。差は出発点に付いている</figcaption>
+	</figure>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>待受け</th><th>node</th><th>bun</th><th>差</th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap">0 本</td><td class="num">54.43 MB</td><td class="num">31.54 MB</td><td class="num">22.89 MB</td></tr>
+				<tr><td class="nowrap">1 本</td><td class="num">54.75 MB</td><td class="num">34.62 MB</td><td class="num">20.13 MB</td></tr>
+				<tr><td class="nowrap">5 本</td><td class="num">55.39 MB</td><td class="num">36.14 MB</td><td class="num">19.25 MB</td></tr>
+				<tr><td class="nowrap">10 本</td><td class="num">56.51 MB</td><td class="num">37.47 MB</td><td class="num">19.04 MB</td></tr>
+				<tr><td class="nowrap"><strong>1 本あたりの伸び</strong></td><td class="num">0.21 MB</td><td class="num">0.59 MB</td><td class="num">—</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>なぜ伸びないか</h2>
+
+	<p>待受けは <code>/api/poll</code> にぶら下がったまま何もしない。サーバー側が抱えるのは <strong>TCP の接続 1 本と、いつ起こすかを覚えておく分だけ</strong>である。発言が来るまで処理は動かない。</p>
+
+	<p>1 本あたり node 0.21 MB ・ bun 0.59 MB。<strong>bun のほうが 1 本を重く持つ</strong>が、出発点の差が大きいので順位は変わらない。</p>
+
+	<h2>どこで追いつかれるか</h2>
+
+	<p>この伸び方がそのまま続くとして解くと、<strong>59 本</strong>で交差する。</p>
+
+	<pre><code class="language-text">node   54.43 + 0.21 × n
+bun    31.54 + 0.59 × n
+                       → n ≒ 59</code></pre>
+
+	<p>待受けは 1 プロジェクトにつき 1 本と決めている。<strong>59 本が並ぶことは無い。</strong></p>
+</section>
+
+<!-- ================= 03 ================= -->
+<section class="ch03" id="ch03">
+	<h1>say と recent</h1>
+
+	<p>人が待つのはここである。<code>say</code> は 200 回、<code>recent</code>（<code>/api/history</code>）は件数を変えて 200 回ずつ測った。</p>
+
+	<figure class="fig">
+		<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="say と recent の往復時間">
+			<defs>
+				<linearGradient id="g-02-2-nd" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(210,78%,25%)"/><stop offset="1" stop-color="hsl(210,58%,55%)"/></linearGradient>
+				<linearGradient id="g-02-2-bn" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(140,78%,25%)"/><stop offset="1" stop-color="hsl(140,58%,55%)"/></linearGradient>
+			</defs>
+			<rect width="100%" height="100%" fill="#ffffff"/>
+			<text x="10" y="22" font-size="14" font-weight="700" fill="#1c2330">1 回あたりの往復（中央値 ms・小さいほど良い）</text>
+			<g stroke="#d9dfe8" stroke-width="1">
+				<line x1="170" y1="36" x2="170" y2="248"/>
+				<line x1="295" y1="36" x2="295" y2="248"/>
+				<line x1="420" y1="36" x2="420" y2="248"/>
+				<line x1="545" y1="36" x2="545" y2="248"/>
+				<line x1="670" y1="36" x2="670" y2="248"/>
+			</g>
+			<g font-size="12" fill="#4a5568" text-anchor="middle">
+				<text x="170" y="268">0</text><text x="295" y="268">1</text><text x="420" y="268">2</text><text x="545" y="268">3</text><text x="670" y="268">4</text>
+			</g>
+			<g font-size="12" fill="#1c2330" text-anchor="end" font-weight="700">
+				<text x="162" y="58">say（node）</text>
+				<text x="162" y="90">say（bun）</text>
+				<text x="162" y="128">recent 50（node）</text>
+				<text x="162" y="160">recent 50（bun）</text>
+				<text x="162" y="198">recent 500（node）</text>
+				<text x="162" y="230">recent 500（bun）</text>
+			</g>
+			<rect x="170" y="42" width="397.5" height="20" rx="3" fill="url(#g-02-2-nd)"/>
+			<rect x="170" y="74" width="391.3" height="20" rx="3" fill="url(#g-02-2-bn)"/>
+			<rect x="170" y="112" width="41.3" height="20" rx="3" fill="url(#g-02-2-nd)"/>
+			<rect x="170" y="144" width="42.5" height="20" rx="3" fill="url(#g-02-2-bn)"/>
+			<rect x="170" y="182" width="163.8" height="20" rx="3" fill="url(#g-02-2-nd)"/>
+			<rect x="170" y="214" width="122.5" height="20" rx="3" fill="url(#g-02-2-bn)"/>
+			<g font-size="13" fill="#1c2330" font-weight="700">
+				<text x="575.5" y="58">3.18</text>
+				<text x="569.3" y="90">3.13</text>
+				<text x="219.3" y="128">0.33</text>
+				<text x="220.5" y="160">0.34</text>
+				<text x="341.8" y="198">1.31</text>
+				<text x="300.5" y="230">0.98</text>
+			</g>
+		</svg>
+		<figcaption>図 2: node（青）と bun（緑）で差が出ていない。決めているのは DB のほう</figcaption>
+	</figure>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>操作</th><th>処理系</th><th>中央値</th><th>p95</th><th>最小</th><th>最大</th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap" rowspan="2"><code>say</code></td><td class="nowrap">node</td><td class="num">3.18</td><td class="num">4.57</td><td class="num">2.26</td><td class="num">9.46</td></tr>
+				<tr><td class="nowrap">bun</td><td class="num">3.13</td><td class="num">4.55</td><td class="num">2.29</td><td class="num">6.08</td></tr>
+				<tr><td class="nowrap" rowspan="2"><code>recent</code> 50 件</td><td class="nowrap">node</td><td class="num">0.33</td><td class="num">0.54</td><td class="num">0.29</td><td class="num">1.05</td></tr>
+				<tr><td class="nowrap">bun</td><td class="num">0.34</td><td class="num">0.46</td><td class="num">0.29</td><td class="num">1.88</td></tr>
+				<tr><td class="nowrap" rowspan="2"><code>recent</code> 500 件</td><td class="nowrap">node</td><td class="num">1.31</td><td class="num">2.51</td><td class="num">1.18</td><td class="num">3.53</td></tr>
+				<tr><td class="nowrap">bun</td><td class="num">0.98</td><td class="num">1.95</td><td class="num">0.82</td><td class="num">3.93</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<p>単位は ms。</p>
+
+	<h2>書くのは読むより 10 倍かかる</h2>
+
+	<p><code>say</code> 3.1 ms に対して <code>recent</code> 50 件が 0.33 ms。<strong>差は SQLite に同期で書いているぶん</strong>である。読むほうはメモリの上で済むことが多い。</p>
+
+	<p>件数を 50 から 500 へ 10 倍にしても、かかる時間は 3 倍にしかならない。<strong>問い合わせ自体の手間が大きく、件数はその上に乗るだけ</strong>だからである。</p>
+
+	<h2>待受けを抱えたままでも遅くならない</h2>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>状況</th><th>node</th><th>bun</th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap">誰もぶら下がっていない</td><td class="num">3.18 ms</td><td class="num">3.13 ms</td></tr>
+				<tr><td class="nowrap">待受けが 10 本ぶら下がっている</td><td class="num">3.02 ms</td><td class="num">3.02 ms</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<p>別のルームへ打って、起こす処理が混ざらないようにして測った。<strong>抱えているだけでは何も起きない。</strong></p>
+</section>
+
+<!-- ================= 04 ================= -->
+<section class="ch04" id="ch04">
+	<h1>配信の遅れ</h1>
+
+	<p><code>say</code> を打ってから、ぶら下がっている待受けが<strong>全員返るまで</strong>を測った。人から見ると「送った」から「相手に出た」までである。</p>
+
+	<figure class="fig">
+		<svg viewBox="0 0 760 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="待受けの本数と配信の遅れ">
+			<rect width="100%" height="100%" fill="#ffffff"/>
+			<text x="10" y="24" font-size="14" font-weight="700" fill="#1c2330">say から全員に届くまで（中央値 ms・小さいほど良い）</text>
+			<g stroke="#d9dfe8" stroke-width="1">
+				<line x1="90" y1="260" x2="690" y2="260"/>
+				<line x1="90" y1="205" x2="690" y2="205"/>
+				<line x1="90" y1="150" x2="690" y2="150"/>
+				<line x1="90" y1="95" x2="690" y2="95"/>
+				<line x1="90" y1="40" x2="690" y2="40"/>
+			</g>
+			<g font-size="12" fill="#4a5568" text-anchor="end">
+				<text x="82" y="264">0</text><text x="82" y="209">10</text><text x="82" y="154">20</text><text x="82" y="99">30</text><text x="82" y="44">40</text>
+			</g>
+			<g font-size="12" fill="#4a5568" text-anchor="middle">
+				<text x="90" y="282">1 本</text><text x="390" y="282">5 本</text><text x="690" y="282">10 本</text>
+			</g>
+			<text x="390" y="304" font-size="12" fill="#4a5568" text-anchor="middle">ぶら下がっている待受けの本数</text>
+
+			<polyline points="90,229.5 390,171.3 690,106.3" fill="none" stroke="hsl(210,78%,25%)" stroke-width="3"/>
+			<g fill="hsl(210,78%,25%)">
+				<circle cx="90" cy="229.5" r="5"/><circle cx="390" cy="171.3" r="5"/><circle cx="690" cy="106.3" r="5"/>
+			</g>
+			<text x="100" y="222" font-size="13" font-weight="700" fill="hsl(210,78%,25%)">node（青）</text>
+
+			<polyline points="90,227.9 390,170.5 690,115.1" fill="none" stroke="hsl(140,78%,25%)" stroke-width="3" stroke-dasharray="7 5"/>
+			<g fill="hsl(140,78%,25%)">
+				<circle cx="90" cy="227.9" r="5"/><circle cx="390" cy="170.5" r="5"/><circle cx="690" cy="115.1" r="5"/>
+			</g>
+			<text x="560" y="140" font-size="13" font-weight="700" fill="hsl(140,78%,25%)">bun（緑・破線）</text>
+
+			<g font-size="12" fill="#1c2330" text-anchor="middle">
+				<text x="90" y="250">5.6</text><text x="390" y="192">16.1</text><text x="690" y="96">28.0</text>
+			</g>
+		</svg>
+		<figcaption>図 3: 本数にきれいに比例する。node と bun はほぼ重なる</figcaption>
+	</figure>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>待受け</th><th>node</th><th>bun</th><th>1 本あたり</th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap">1 本</td><td class="num">5.55 ms</td><td class="num">5.83 ms</td><td class="num">—</td></tr>
+				<tr><td class="nowrap">5 本</td><td class="num">16.12 ms</td><td class="num">16.27 ms</td><td class="num">2.6 ms</td></tr>
+				<tr><td class="nowrap">10 本</td><td class="num">27.95 ms</td><td class="num">26.35 ms</td><td class="num">2.2 ms</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>読み取れること</h2>
+
+	<p><strong>本数に比例する。</strong>1 本増えるごとに 2.2 〜 2.6 ms。待受けを 1 本ずつ起こし、その相手ごとに返すものを作っているためである。</p>
+
+	<p>最初の 1 本に 5.6 ms かかるのは、<strong><code>say</code> 自体の 3.1 ms が含まれている</strong>から。書き終えてから起こしにいく。</p>
+
+	<div class="callout callout-note">
+		<p><strong>10 本で 28 ms なら、人には分からない。</strong>並ぶのはせいぜい数本なので、いまの作りで困る場面は無い。<br>
+		比例するということは、<strong>本数が 2 桁になれば効いてくる</strong>という意味でもある。100 本なら 220 ms。そこまで増やすなら配り方を変える話になる。</p>
+	</div>
+</section>
+
+<!-- ================= 05 ================= -->
+<section class="ch05" id="ch05">
+	<h1>測り方</h1>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>項目</th><th>版</th></tr></thead>
+			<tbody>
+				<tr><td>OS</td><td>Microsoft Windows NT 10.0.26200.0</td></tr>
+				<tr><td>Node.js</td><td>v26.8.1</td></tr>
+				<tr><td>bun</td><td>1.4.2</td></tr>
+				<tr><td>測った日</td><td>2026-09-12</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>使ったもの</h2>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>置き場</th><th>中身</th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap"><code>tools/40_test/benchmark-server.mjs</code></td><td>本体。結果を <code>tmp/benchmark-server.json</code> に書く</td></tr>
+				<tr><td class="nowrap"><code>tools/40_test/server-probe.mjs</code></td><td>サーバーを同じプロセスで立て、メモリを報告する</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>メモリは、外からではなく中から測る</h2>
+
+	<p>別のプロセスのメモリを測る手立ては OS ごとに違う。Windows は <code>tasklist</code> ・ WMI、Mac ・ Linux は <code>ps</code> になる。<strong>Mac ・ Linux にも展開するので、測り方が OS で分かれる形は持ちたくない。</strong></p>
+
+	<p>そこで <strong>サーバーを子プロセスの中で <code>import</code> し、そのプロセス自身に <code>process.memoryUsage()</code> を呼ばせた。</strong>node でも bun でも、どの OS でも同じ 1 本のコードで済む。</p>
+
+	<pre><code class="language-javascript">// server-probe.mjs
+await import(pathToFileURL(join(root, 'src', 'server', 'main.mjs')).href);
+process.stdout.write('__READY__\n');
+setInterval(() =&gt; {
+	const m = process.memoryUsage();
+	process.stdout.write(`__MEM__ ${m.rss} ${m.heapUsed} ${m.heapTotal} ${m.external}\n`);
+}, 250);</code></pre>
+
+	<p>親は標準出力の印つきの行だけを拾う。<strong>サーバー自身のログも同じ出力に混ざる</strong>ので、印で選り分けている。</p>
+
+	<h2>本番に触らない作りにする</h2>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>守り</th><th>やり方</th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap">置き場</td><td><code>tmp/bench-server/&lt;処理系&gt;/_data</code> を渡す。既定でなければテスト用として立つ</td></tr>
+				<tr><td class="nowrap">ポート</td><td>OS に空きを割り当てさせる。<strong>番号をソースに書かない</strong>ので、本番へ飛ぶ打ち間違いが起きない</td></tr>
+				<tr><td class="nowrap">立った後</td><td>probe が本番の置き場だったら、測る前に <code>exit 3</code> で止める</td></tr>
+				<tr><td class="nowrap">終わったら</td><td>置き場ごと捨てる</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="callout callout-caution">
+		<p><strong>ベンチマークは <code>say</code> を 800 回以上打つ。</strong>置き場を渡し損ねて本番の DB を掴むと、そのまま残る。<br>
+		だから probe 側にも確かめを置いた。<strong>渡す側の注意に頼らず、立った先で止める。</strong></p>
+	</div>
+
+	<h2>測る手順</h2>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>何を</th><th>どう測ったか</th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap">起動</td><td>プロセスを作ってから <code>__READY__</code> が出るまで</td></tr>
+				<tr><td class="nowrap">メモリ</td><td>本数ごとに 2 秒落ち着かせ、3 秒ぶん（250 ms 間隔）を平均</td></tr>
+				<tr><td class="nowrap"><code>say</code> ・ <code>recent</code></td><td>捨てる 20 回のあと 200 回。<code>recent</code> は先に 600 件積んでから</td></tr>
+				<tr><td class="nowrap">配信</td><td>張り直しては 1 回打つ、を 10 回</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>この測定の限界</h2>
+
+	<ul>
+		<li><strong>実メモリ（RSS）しか測っていない。</strong>確保量は OS ごとに測り方が分かれるため落とした</li>
+		<li><strong>1 台の Windows で測った。</strong>Mac ・ Linux では変わりうる</li>
+		<li><strong>DB は空から 600 件まで。</strong>本番の量では <code>recent</code> の数字が変わる</li>
+		<li><strong>待受けは同じマシンから張った。</strong>すべてループバックで、実際の経路とは違う</li>
+	</ul>
+</section>
+
+<!-- ================= 06 ================= -->
+<section class="ch06" id="ch06">
+	<h1>測り直しになった話</h1>
+
+	<div class="callout callout-important">
+		<p><strong>最初の測定は捨てた。</strong>サーバーではなく、測っている側を測っていた。<br>
+		<code>say</code> も <code>recent</code> も、件数を 10 倍にしても<strong>一律 15 ms</strong>になった。そこで気づいた。</p>
+	</div>
+
+	<h2>気づいた形</h2>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>測ったもの</th><th>node の値</th><th>bun の値</th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap"><code>say</code></td><td class="num">15.46 ms</td><td class="num">15.37 ms</td></tr>
+				<tr><td class="nowrap"><code>recent</code> 50 件</td><td class="num">13.64 ms</td><td class="num">15.53 ms</td></tr>
+				<tr><td class="nowrap"><code>recent</code> 500 件</td><td class="num">15.66 ms</td><td class="num">15.10 ms</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<p><strong>書くのも読むのも、50 件も 500 件も同じ値になる</strong>ことはない。<strong>どれかが全部を律速している。</strong></p>
+
+	<h2>切り分け</h2>
+
+	<p>何もしない HTTP サーバーを立てて、同じやり方で測った。</p>
+
+	<figure class="fig">
+		<svg viewBox="0 0 760 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="クライアントの作りによる往復時間の違い">
+			<defs>
+				<linearGradient id="g-02-4-a" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(0,78%,25%)"/><stop offset="1" stop-color="hsl(0,58%,55%)"/></linearGradient>
+				<linearGradient id="g-02-4-b" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(210,78%,25%)"/><stop offset="1" stop-color="hsl(210,58%,55%)"/></linearGradient>
+				<linearGradient id="g-02-4-c" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(140,78%,25%)"/><stop offset="1" stop-color="hsl(140,58%,55%)"/></linearGradient>
+			</defs>
+			<rect width="100%" height="100%" fill="#ffffff"/>
+			<text x="10" y="22" font-size="14" font-weight="700" fill="#1c2330">同じサーバーへの 1 往復（中央値 ms）</text>
+			<g stroke="#d9dfe8" stroke-width="1">
+				<line x1="200" y1="36" x2="200" y2="170"/>
+				<line x1="317.5" y1="36" x2="317.5" y2="170"/>
+				<line x1="435" y1="36" x2="435" y2="170"/>
+				<line x1="552.5" y1="36" x2="552.5" y2="170"/>
+				<line x1="670" y1="36" x2="670" y2="170"/>
+			</g>
+			<g font-size="12" fill="#4a5568" text-anchor="middle">
+				<text x="200" y="190">0</text><text x="317.5" y="190">4</text><text x="435" y="190">8</text><text x="552.5" y="190">12</text><text x="670" y="190">16</text>
+			</g>
+			<g font-size="13" fill="#1c2330" text-anchor="end" font-weight="700">
+				<text x="192" y="62">node の fetch</text>
+				<text x="192" y="106">node の http.request</text>
+				<text x="192" y="150">bun の fetch</text>
+			</g>
+			<rect x="200" y="44" width="447.2" height="24" rx="3" fill="url(#g-02-4-a)"/>
+			<rect x="200" y="88" width="5.3" height="24" rx="2" fill="url(#g-02-4-b)"/>
+			<rect x="200" y="132" width="2.6" height="24" rx="1" fill="url(#g-02-4-c)"/>
+			<g font-size="13" fill="#1c2330" font-weight="700">
+				<text x="655" y="62">15.21</text>
+				<text x="213" y="106">0.18</text>
+				<text x="211" y="150">0.09</text>
+			</g>
+		</svg>
+		<figcaption>図 4: 遅いのは node の fetch だけ。同じ node でも http.request は 85 倍速い</figcaption>
+	</figure>
+
+	<p><strong>node の <code>fetch</code> だけが遅かった。</strong>最小は 0.36 ms まで下がるので、返せないのではなく待たされている。<strong>Windows の既定のタイマー解像度 15.6 ms と一致する。</strong></p>
+
+	<h2>直した形</h2>
+
+	<p>ベンチマークの側を <code>node:http</code> の <code>http.request</code>（keepAlive つき）に替えた。<strong>node で走らせても bun で走らせても同じ数字が出る</strong>ようになり、そこで初めて処理系の差が見えた。</p>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>測り方</th><th>node サーバーの say</th><th>bun サーバーの say</th><th>差が見えるか</th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap">node の fetch で測る</td><td class="num">15.46 ms</td><td class="num">15.37 ms</td><td>見えない</td></tr>
+				<tr><td class="nowrap">http.request で測る</td><td class="num">3.18 ms</td><td class="num">3.13 ms</td><td>見える（そして差は無かった）</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<p>結論は変わらなかったが、<strong>「差が無い」と「差が見えない」は別のこと</strong>である。前者は測ってから言える。</p>
+
+	<h2>持ち帰り</h2>
+
+	<div class="callout callout-caution">
+		<p><strong>ローカルの往復を node の <code>fetch</code> で測ってはいけない。</strong>15 ms 未満のものはすべて 15 ms に見える。<br>
+		CLI も <code>src/client/chat.mjs</code> で <code>fetch</code> を使っているので、<strong>node で動かすと 1 往復ごとにこれが乗る</strong>。課題 <a class="doclink" href="../40_issues/issues.html#i260912-02">i260912-02</a> に残した。</p>
+	</div>
+
+	<p>再現の手順は <code>tests/http-client-latency.test.mjs</code> に置いた。速さの下限は決めていない。<strong>手段によって結果が変わったときだけ落ち、往復の時間は毎回数字として出る。</strong>課題が直ったかはその数字で見る。</p>
+</section>
+
+</div>
+
+<footer>
+	<div class="inner">
+		<p><a class="doclink" href="../../README.html">README へ戻る</a></p>
+	</div>
+</footer>
+
+</body>
+</html>

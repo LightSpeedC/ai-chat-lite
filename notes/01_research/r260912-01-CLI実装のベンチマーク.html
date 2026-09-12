@@ -1,0 +1,1162 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CLI 5 実装のベンチマーク</title>
+<style>
+/* 共通のスタイル。docs\css\style.css と同じ内容を持たせている */
+@charset "UTF-8";
+
+/* ===================================================================
+   ai-chat-lite 共通スタイル
+   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   =================================================================== */
+
+:root {
+	/* 章に依存しない共通色 */
+	--navy1: #12224d;
+	--navy2: #2f5fbf;
+	--ink: #1c2330;
+	--ink-soft: #4a5568;
+	--line: #d9dfe8;
+	--code-bg: #f4f6fa;
+	--link: #1a4fa0;
+
+	/* 章クラスの外に置いた要素が色を失わないための既定値 */
+	--accent: #12224d;
+	--accent2: #2f5fbf;
+	--soft: #f2f5fb;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: #fdfdfe;
+	color: var(--ink, #1c2330);
+	font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+	font-size: 15.5px;
+	line-height: 1.85;
+}
+
+a {
+	color: var(--link, #1a4fa0);
+}
+
+/* ---------- タイトルバー ---------- */
+
+.titlebar {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 34px 30px 30px;
+}
+
+.titlebar .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+}
+
+.titlebar h1 {
+	font-size: 1.85em;
+	margin: 0 0 8px;
+	color: #fff;
+}
+
+.titlebar .lead {
+	margin: 0;
+	color: #d7e2f7;
+	font-size: 0.95em;
+}
+
+.titlebar .date {
+	margin: 10px 0 0;
+	color: #b9caea;
+	font-size: 0.88em;
+}
+
+.titlebar a {
+	color: #cfe0ff;
+}
+
+.titlebar code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+/* ---------- 本文の器 ---------- */
+
+.wrap {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding: 0 30px;
+}
+
+section {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 10px;
+	padding: 4px 26px 26px;
+	margin: 34px 0;
+}
+
+/* ---------- 見出し ---------- */
+
+section h1 {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-size: 1.4em;
+	padding: 14px 20px;
+	margin: 26px 0 20px;
+	border-radius: 8px;
+	box-shadow: 0 3px 10px rgba(20, 34, 70, 0.22);
+}
+
+section h1 code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+h2 {
+	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
+	color: var(--accent, #12224d);
+	font-size: 1.16em;
+	padding: 6px 12px;
+	margin: 30px 0 12px;
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 6px 6px 0;
+}
+
+h3 {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	font-size: 1.02em;
+	display: inline-block;
+	padding-bottom: 3px;
+	margin: 20px 0 8px;
+	border-bottom: 2px dotted var(--accent2, #2f5fbf);
+}
+
+/* ---------- 表 ---------- */
+
+.tablewrap {
+	overflow-x: auto;
+	margin: 14px 0;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 5px rgba(20, 34, 70, 0.10);
+}
+
+th {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	text-align: left;
+	padding: 9px 12px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+th code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+td {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	padding: 9px 12px;
+	border-top: 1px solid var(--line, #d9dfe8);
+	vertical-align: top;
+}
+
+tr:nth-child(even) td {
+	background: #fafbfe;
+	color: var(--ink, #1c2330);
+}
+
+td.num,
+th.num {
+	text-align: right;
+}
+
+td.nowrap,
+th.nowrap {
+	white-space: nowrap;
+}
+
+/* ---------- コード ---------- */
+
+code {
+	background: var(--code-bg, #f4f6fa);
+	color: #17335f;
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 4px;
+	padding: 1px 5px;
+	font-family: "Consolas", "Cascadia Mono", monospace;
+	font-size: 0.92em;
+}
+
+pre {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 5px solid var(--accent2, #2f5fbf);
+	border-radius: 0 8px 8px 0;
+	padding: 13px 16px;
+	overflow-x: auto;
+	line-height: 1.65;
+}
+
+pre code {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	border: none;
+	padding: 0;
+	font-size: 0.92em;
+}
+
+/* ---------- バッジ ---------- */
+
+.badge {
+	display: inline-block;
+	padding: 1px 9px;
+	margin-right: 6px;
+	border-radius: 11px;
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+	font-size: 0.84em;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.badge.b-ok {
+	background: linear-gradient(100deg, #1d7a3c, #45b56c);
+	color: #fff;
+}
+
+.badge.b-ng {
+	background: linear-gradient(100deg, #a51f22, #e05a5c);
+	color: #fff;
+}
+
+.badge.b-warn {
+	background: linear-gradient(100deg, #b8620a, #f0a548);
+	color: #fff;
+}
+
+.badge.b-none {
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+}
+
+/* ---------- callout ---------- */
+
+.callout {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 8px 8px 0;
+	padding: 12px 18px;
+	margin: 16px 0;
+}
+
+.callout strong {
+	color: var(--accent, #12224d);
+	background: transparent;
+}
+
+.callout p {
+	margin: 6px 0;
+}
+
+/* ---------- 目次 ---------- */
+
+.toc ol {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 0;
+	margin: 12px 0 4px;
+}
+
+.toc ul a {
+	color: var(--link, #1a4fa0);
+	background: transparent;
+}
+
+.toc ol li {
+	counter-increment: tocnum;
+	margin: 0;
+}
+
+.toc ol a {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: normal;
+	width: 310px;
+	max-width: 100%;
+	padding: 7px 13px;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+	line-height: 1.45;
+}
+
+.toc ol a::before {
+	content: counter(tocnum) ". ";
+	font-weight: 700;
+}
+
+/* ---------- 資料リンク・戻るリンク ---------- */
+
+.navlinks {
+	margin: 20px 0 0;
+}
+
+/*
+ * 幅は文字数で決まる（固定幅にしない）。
+ * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
+ * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
+ */
+a.doclink {
+	display: inline-block;
+	padding: 3px 12px;
+	margin: 0 8px 6px 0;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	font-size: 0.9em;
+	text-decoration: none;
+}
+
+/* ---------- SVG図 ---------- */
+
+.fig {
+	margin: 18px 0;
+	text-align: center;
+}
+
+.fig svg {
+	max-width: 100%;
+	height: auto;
+}
+
+.fig figcaption {
+	color: var(--ink-soft, #4a5568);
+	background: transparent;
+	font-size: 0.88em;
+	margin-top: 6px;
+}
+
+/* ---------- フッター ---------- */
+
+footer {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 18px 30px 0;
+	margin-top: 40px;
+}
+
+footer .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding-bottom: 18px;
+}
+
+footer a {
+	color: #cfe0ff;
+}
+</style>
+<style>
+/* この資料だけのもの: 章のアクセント色（6章 / 色相 280→0 を 56 刻み）と目次の採番 */
+.ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
+.ch02 { --accent: hsl(224, 78%, 25%); --accent2: hsl(224, 58%, 55%); --soft: hsl(224, 28%, 95%); }
+.ch03 { --accent: hsl(168, 78%, 25%); --accent2: hsl(168, 58%, 55%); --soft: hsl(168, 28%, 95%); }
+.ch04 { --accent: hsl(112, 78%, 25%); --accent2: hsl(112, 58%, 55%); --soft: hsl(112, 28%, 95%); }
+.ch05 { --accent: hsl( 56, 78%, 25%); --accent2: hsl( 56, 58%, 55%); --soft: hsl( 56, 28%, 95%); }
+.ch06 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
+.toc ol { counter-reset: tocnum; }
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>CLI 5 実装のベンチマーク</h1>
+		<p class="lead">待受け中のメモリ・起動の速さ・大きさ・ビルドの時間を、C# ・ node ・ bun ・ Rust ・ Go で並べて測った</p>
+		<p class="date">📅 作成: 2026-09-12 / 更新: 2026-09-12</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+<p>待受け（<code>aichat wait</code>）は 1 プロジェクトにつき 1 本、12 時間張りっぱなしになる。<strong>常駐するものなので、待受け中のメモリがいちばん効く。</strong>そこを軸に、起動の速さ・ソースと実行ファイルの大きさ・ビルドにかかる時間まで並べて測った。</p>
+
+<p>測った時点で持っていたのは <strong>C# 版</strong>（<code>aichat-cs.exe</code>）と <strong>node 版</strong>（<code>src/client/chat.mjs</code>）の 2 本で、node 版は <strong>bun</strong> でも動く。ここに<strong>比較の下限を知るためだけの最小実装</strong>として <strong>Rust 版</strong>・<strong>Go 版</strong>を足した。後の 2 本は待受けしか持たず、検証も表示もしない。</p>
+
+<div class="callout callout-important">
+	<p><strong>測ったあとで前提が変わった。Mac ・ Linux にも展開すると決めたため、C# は土俵を降りる。</strong>PowerShell で書いた道具も同じである。<br>
+	<strong>CLI は TypeScript（node ・ bun）と Rust の 2 系統で進める。</strong>この資料の数字はそのまま使えるが、<strong>読む順番が変わる</strong>。C# が最小だった項目は、比べる相手がいなくなったという意味になる。</p>
+</div>
+
+<p>サーバー側は別に測った。<a class="doclink" href="r260912-02-サーバーのベンチマーク.html">サーバーのベンチマーク</a>にある。</p>
+
+<section class="toc md-skip">
+	<h2>目次</h2>
+	<ol>
+		<li class="ch01"><a href="#ch01">分かったこと</a></li>
+		<li class="ch02"><a href="#ch02">待受け中のメモリ</a></li>
+		<li class="ch03"><a href="#ch03">起動の速さ</a></li>
+		<li class="ch04"><a href="#ch04">ソースと実行ファイルの大きさ</a></li>
+		<li class="ch05"><a href="#ch05">ビルドと文法チェックの時間</a></li>
+		<li class="ch06"><a href="#ch06">測り方</a></li>
+	</ol>
+</section>
+
+<!-- ================= 01 ================= -->
+<section class="ch01" id="ch01">
+	<h1>分かったこと</h1>
+
+	<div class="callout callout-important">
+		<p><strong>待受け中の実メモリは Rust 版が 4.89 MB で、node 版の 1/12 だった。</strong>C# 24.90 MB ・ bun 25.59 MB ・ node 58.24 MB とは桁が違う。<br>
+		ただし Rust 版・Go 版は<strong>待受けしか持たない 100 行あまりの最小実装</strong>で、製品と同じ仕事はしていない。<strong>そのまま置き換えられる数字ではない。</strong></p>
+	</div>
+
+	<div class="callout callout-note">
+		<p><strong>Mac ・ Linux へ展開すると決めたので、残る選択肢は TypeScript（node ・ bun）と Rust になる。</strong>その 2 系統で読むと、待受け中の実メモリは <strong>bun 25.59 MB 対 Rust 4.89 MB</strong>。<strong>差は 20.7 MB/本</strong>である。</p>
+	</div>
+
+	<h2>5 実装を 1 枚に</h2>
+
+	<div class="tablewrap">
+		<table>
+			<thead>
+				<tr>
+					<th>実装</th>
+					<th>実メモリ<br>(MB)</th>
+					<th>確保量<br>(MB)</th>
+					<th>起動 中央値<br>(ms)</th>
+					<th>ソース<br>(行)</th>
+					<th>実行ファイル</th>
+					<th>ビルド<br>(ms)</th>
+					<th>持っている機能</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td class="nowrap">C# 版</td>
+					<td class="num">24.90</td>
+					<td class="num">18.54</td>
+					<td class="num">44.0</td>
+					<td class="num">2,985</td>
+					<td class="num nowrap">68.5 KB</td>
+					<td class="num">63</td>
+					<td>全部</td>
+				</tr>
+				<tr>
+					<td class="nowrap">node 版</td>
+					<td class="num">58.24</td>
+					<td class="num">62.44</td>
+					<td class="num">43.6</td>
+					<td class="num">2,061</td>
+					<td class="num nowrap">—</td>
+					<td class="num">—</td>
+					<td>全部</td>
+				</tr>
+				<tr>
+					<td class="nowrap">bun 版</td>
+					<td class="num">25.59</td>
+					<td class="num">108.43</td>
+					<td class="num">16.9</td>
+					<td class="num">2,061</td>
+					<td class="num nowrap">—</td>
+					<td class="num">—</td>
+					<td>全部（node 版と同じソース）</td>
+				</tr>
+				<tr>
+					<td class="nowrap">Rust 版</td>
+					<td class="num">4.89</td>
+					<td class="num">0.84</td>
+					<td class="num">21.1</td>
+					<td class="num">111</td>
+					<td class="num nowrap">4.63 MB</td>
+					<td class="num">457</td>
+					<td>待受けだけ</td>
+				</tr>
+				<tr>
+					<td class="nowrap">Go 版</td>
+					<td class="num">8.08</td>
+					<td class="num">45.15</td>
+					<td class="num">24.8</td>
+					<td class="num">124</td>
+					<td class="num nowrap">8.13 MB</td>
+					<td class="num">518</td>
+					<td>待受けだけ</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>読み取れること</h2>
+
+	<h3>常駐のコストは Rust が圧倒的に低い</h3>
+
+	<p>実メモリ（Working Set）で <strong>Rust 4.89 MB ・ Go 8.08 MB ・ C# 24.90 MB ・ bun 25.59 MB ・ node 58.24 MB</strong>。<strong>確保量（Private Bytes）ではさらに差が開き、Rust は 0.84 MB しか確保していない。</strong>bun の 108.43 MB とは 129 倍になる。</p>
+
+	<h3>bun は「軽い」とは言い切れない</h3>
+
+	<div class="callout callout-caution">
+		<p><strong>実メモリと確保量は別物である。</strong>bun は実メモリ 25.59 MB で C# 版と並ぶが、<strong>確保量は 108.43 MB で 5 実装のうち最大</strong>だった。<br>
+		実メモリだけを見て「bun は node の半分」と判断すると、<strong>空きメモリが減ったときの挙動を読み違える。</strong>Claude Code が背面のコマンドを刈るのは、この空きが減ったときである。</p>
+	</div>
+
+	<h3>起動は bun が最速で、Rust より速い</h3>
+
+	<p>中央値で <strong>bun 16.9 ms &lt; Rust 21.1 ms &lt; Go 24.8 ms &lt; node 43.6 ms ≒ C# 44.0 ms</strong>。ネイティブの実行ファイルが bun に負けるのは意外だが、<strong>この領域ではプロセスを 1 つ作る手間そのものが大きい。</strong>詳しくは <a href="#ch03">起動の速さ</a> に書いた。</p>
+
+	<h3>機能の量が違うことを忘れない</h3>
+
+	<p>Rust 版・Go 版は待受けの 1 コマンドしか持たない。製品の 2 本は <code>say</code> ・ <code>who</code> ・ <code>waiters</code> ・ <code>recent</code> ・ <code>restart</code> などを備え、引数の検証・JST の整形・カーソルの保存まで面倒を見ている。<strong>行数で 2,985 行 ・ 2,061 行 に対して 111 行 ・ 124 行 である。</strong></p>
+
+	<p>置き換えを考えるなら、<strong>常駐する <code>wait</code> だけを別の実行ファイルに切り出す</strong>形になる。この資料はその判断材料までで、実装の計画はまだ無い。</p>
+
+	<h3>node で動かすと、往復ごとに 15 ms 乗る</h3>
+
+	<p>この資料は<strong>起動だけを測っていて、API を叩く時間は測っていない</strong>。サーバーを測ったときに分かったことを 1 つ書いておく。</p>
+
+	<div class="callout callout-caution">
+		<p><strong>node の <code>fetch</code> は Windows で 1 往復ごとに 15 ms ほど待たされる。</strong>同じ node の <code>http.request</code> は 0.18 ms で、85 倍の開きがある。<br>
+		<code>src/client/chat.mjs</code> は <code>fetch</code> を使っているので、<strong><code>say</code> ・ <code>who</code> ・ <code>recent</code> はこれを踏む</strong>。bun で動かすと乗らない。<br>
+		待受け（<code>wait</code>）には効かない。1 往復が 240 秒なので埋もれる。課題 <a class="doclink" href="../40_issues/issues.html#i260912-02">i260912-02</a> に残した。</p>
+	</div>
+
+	<p>つまり <strong>node 版の <code>say</code> は、起動 43.6 ms に 15 ms を足した値</strong>になる。bun 版なら 16.9 ms のままである。<strong>起動の表だけを見て node と bun の差を 27 ms と読むと、実際より小さく見積もることになる。</strong></p>
+</section>
+
+<!-- ================= 02 ================= -->
+<section class="ch02" id="ch02">
+	<h1>待受け中のメモリ</h1>
+
+	<p>いちばん知りたかったところ。<strong>待受けを立ち上げて 10 秒待ち、2 秒おきに 5 回測る。それを 3 回繰り返した平均</strong>である。子プロセスが居れば合算する（bun は子を作らないため、どの実装も 1 プロセスだった）。</p>
+
+	<h2>実メモリ（Working Set）</h2>
+
+	<figure class="fig">
+		<svg viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="待受け中の実メモリの比較">
+			<defs>
+				<linearGradient id="g-01-1-cs" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(280,78%,25%)"/><stop offset="1" stop-color="hsl(280,58%,55%)"/></linearGradient>
+				<linearGradient id="g-01-1-nd" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(210,78%,25%)"/><stop offset="1" stop-color="hsl(210,58%,55%)"/></linearGradient>
+				<linearGradient id="g-01-1-bn" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(140,78%,25%)"/><stop offset="1" stop-color="hsl(140,58%,55%)"/></linearGradient>
+				<linearGradient id="g-01-1-rs" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(70,78%,25%)"/><stop offset="1" stop-color="hsl(70,58%,55%)"/></linearGradient>
+				<linearGradient id="g-01-1-go" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(0,78%,25%)"/><stop offset="1" stop-color="hsl(0,58%,55%)"/></linearGradient>
+			</defs>
+			<rect width="100%" height="100%" fill="#ffffff"/>
+			<text x="10" y="22" font-size="14" font-weight="700" fill="#1c2330">待受け中の実メモリ（Working Set / MB・小さいほど良い）</text>
+			<g stroke="#d9dfe8" stroke-width="1">
+				<line x1="140" y1="36" x2="140" y2="248"/>
+				<line x1="272.5" y1="36" x2="272.5" y2="248"/>
+				<line x1="405" y1="36" x2="405" y2="248"/>
+				<line x1="537.5" y1="36" x2="537.5" y2="248"/>
+				<line x1="670" y1="36" x2="670" y2="248"/>
+			</g>
+			<g font-size="12" fill="#4a5568" text-anchor="middle">
+				<text x="140" y="268">0</text><text x="272.5" y="268">15</text><text x="405" y="268">30</text><text x="537.5" y="268">45</text><text x="670" y="268">60</text>
+			</g>
+			<g font-size="13" fill="#1c2330" text-anchor="end" font-weight="700">
+				<text x="130" y="63">C# 版</text>
+				<text x="130" y="107">node 版</text>
+				<text x="130" y="151">bun 版</text>
+				<text x="130" y="195">Rust 版</text>
+				<text x="130" y="239">Go 版</text>
+			</g>
+			<rect x="140" y="46" width="219.9" height="24" rx="3" fill="url(#g-01-1-cs)"/>
+			<rect x="140" y="90" width="514.5" height="24" rx="3" fill="url(#g-01-1-nd)"/>
+			<rect x="140" y="134" width="226.1" height="24" rx="3" fill="url(#g-01-1-bn)"/>
+			<rect x="140" y="178" width="43.2" height="24" rx="3" fill="url(#g-01-1-rs)"/>
+			<rect x="140" y="222" width="71.4" height="24" rx="3" fill="url(#g-01-1-go)"/>
+			<g font-size="13" fill="#1c2330" font-weight="700">
+				<text x="367.9" y="63">24.90</text>
+				<text x="662.5" y="107">58.24</text>
+				<text x="374.1" y="151">25.59</text>
+				<text x="191.2" y="195">4.89</text>
+				<text x="219.4" y="239">8.08</text>
+			</g>
+		</svg>
+		<figcaption>図 1: 待受け中の実メモリ。3 回 × 5 サンプルの平均（MB）</figcaption>
+	</figure>
+
+	<h2>確保量（Private Bytes）</h2>
+
+	<figure class="fig">
+		<svg viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="待受け中の確保量の比較">
+			<defs>
+				<linearGradient id="g-01-2-cs" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(280,78%,25%)"/><stop offset="1" stop-color="hsl(280,58%,55%)"/></linearGradient>
+				<linearGradient id="g-01-2-nd" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(210,78%,25%)"/><stop offset="1" stop-color="hsl(210,58%,55%)"/></linearGradient>
+				<linearGradient id="g-01-2-bn" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(140,78%,25%)"/><stop offset="1" stop-color="hsl(140,58%,55%)"/></linearGradient>
+				<linearGradient id="g-01-2-rs" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(70,78%,25%)"/><stop offset="1" stop-color="hsl(70,58%,55%)"/></linearGradient>
+				<linearGradient id="g-01-2-go" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(0,78%,25%)"/><stop offset="1" stop-color="hsl(0,58%,55%)"/></linearGradient>
+			</defs>
+			<rect width="100%" height="100%" fill="#ffffff"/>
+			<text x="10" y="22" font-size="14" font-weight="700" fill="#1c2330">待受け中の確保量（Private Bytes / MB・小さいほど良い）</text>
+			<g stroke="#d9dfe8" stroke-width="1">
+				<line x1="140" y1="36" x2="140" y2="248"/>
+				<line x1="260.5" y1="36" x2="260.5" y2="248"/>
+				<line x1="380.9" y1="36" x2="380.9" y2="248"/>
+				<line x1="501.4" y1="36" x2="501.4" y2="248"/>
+				<line x1="621.8" y1="36" x2="621.8" y2="248"/>
+			</g>
+			<g font-size="12" fill="#4a5568" text-anchor="middle">
+				<text x="140" y="268">0</text><text x="260.5" y="268">25</text><text x="380.9" y="268">50</text><text x="501.4" y="268">75</text><text x="621.8" y="268">100</text>
+			</g>
+			<g font-size="13" fill="#1c2330" text-anchor="end" font-weight="700">
+				<text x="130" y="63">C# 版</text>
+				<text x="130" y="107">node 版</text>
+				<text x="130" y="151">bun 版</text>
+				<text x="130" y="195">Rust 版</text>
+				<text x="130" y="239">Go 版</text>
+			</g>
+			<rect x="140" y="46" width="89.3" height="24" rx="3" fill="url(#g-01-2-cs)"/>
+			<rect x="140" y="90" width="300.8" height="24" rx="3" fill="url(#g-01-2-nd)"/>
+			<rect x="140" y="134" width="522.4" height="24" rx="3" fill="url(#g-01-2-bn)"/>
+			<rect x="140" y="178" width="4" height="24" rx="1" fill="url(#g-01-2-rs)"/>
+			<rect x="140" y="222" width="217.5" height="24" rx="3" fill="url(#g-01-2-go)"/>
+			<g font-size="13" fill="#1c2330" font-weight="700">
+				<text x="237.3" y="63">18.54</text>
+				<text x="448.8" y="107">62.44</text>
+				<text x="670.4" y="151">108.43</text>
+				<text x="152" y="195">0.84</text>
+				<text x="365.5" y="239">45.15</text>
+			</g>
+		</svg>
+		<figcaption>図 2: 待受け中の確保量。bun がいちばん大きい（MB）</figcaption>
+	</figure>
+
+	<h2>数値</h2>
+
+	<div class="tablewrap">
+		<table>
+			<thead>
+				<tr>
+					<th>実装</th>
+					<th>実メモリ 平均</th>
+					<th>実メモリ 幅</th>
+					<th>確保量 平均</th>
+					<th>確保量 幅</th>
+					<th>プロセス数</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr><td class="nowrap">C# 版</td><td class="num">24.90</td><td class="num nowrap">24.88 〜 24.92</td><td class="num">18.54</td><td class="num nowrap">18.50 〜 18.58</td><td class="num">1</td></tr>
+				<tr><td class="nowrap">node 版</td><td class="num">58.24</td><td class="num nowrap">58.21 〜 58.31</td><td class="num">62.44</td><td class="num nowrap">61.74 〜 62.86</td><td class="num">1</td></tr>
+				<tr><td class="nowrap">bun 版</td><td class="num">25.59</td><td class="num nowrap">25.56 〜 25.63</td><td class="num">108.43</td><td class="num nowrap">100.78 〜 112.29</td><td class="num">1</td></tr>
+				<tr><td class="nowrap">Rust 版</td><td class="num">4.89</td><td class="num nowrap">4.88 〜 4.90</td><td class="num">0.84</td><td class="num nowrap">0.82 〜 0.86</td><td class="num">1</td></tr>
+				<tr><td class="nowrap">Go 版</td><td class="num">8.08</td><td class="num nowrap">7.95 〜 8.27</td><td class="num">45.15</td><td class="num nowrap">44.98 〜 45.42</td><td class="num">1</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<p>単位は MB。<strong>幅は 3 回 × 5 サンプル、計 15 点の最小と最大。</strong>どの実装もぶれが小さく、待受けはずっと同じ量を掴んだまま動く。</p>
+
+	<h2>実メモリと確保量の違い</h2>
+
+	<div class="tablewrap">
+		<table>
+			<thead>
+				<tr><th>指標</th><th>何を表すか</th><th>足りなくなると</th></tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td class="nowrap">実メモリ<br>(Working Set)</td>
+					<td>いま物理メモリの上に載っている量</td>
+					<td>ページアウトされて減る。数字は小さくなるが動きは遅くなる</td>
+				</tr>
+				<tr>
+					<td class="nowrap">確保量<br>(Private Bytes)</td>
+					<td>そのプロセスが OS に確保させた量（載っていない分も含む）</td>
+					<td>減らない。ページングファイルを食い続ける</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<p>ランタイムを持つ 3 実装（node ・ bun ・ Go）は、<strong>使う予定の領域をまとめて確保してから、必要になった分だけ物理メモリに載せる。</strong>だから確保量が実メモリを上回る。Rust 版は逆で、確保量 0.84 MB に対して実メモリ 4.89 MB — <strong>この差は実行ファイルそのものと、OS が貸している共有ライブラリの分</strong>である。</p>
+
+	<h2>何本張れるか</h2>
+
+	<p>待受けはプロジェクトにつき 1 本。同時に 5 本張ったときの実メモリを単純に足すと、こうなる。</p>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>実装</th><th>1 本</th><th>3 本</th><th>5 本</th><th>10 本</th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap">node 版</td><td class="num">58 MB</td><td class="num">175 MB</td><td class="num">291 MB</td><td class="num">582 MB</td></tr>
+				<tr><td class="nowrap">bun 版</td><td class="num">26 MB</td><td class="num">77 MB</td><td class="num">128 MB</td><td class="num">256 MB</td></tr>
+				<tr><td class="nowrap">C# 版</td><td class="num">25 MB</td><td class="num">75 MB</td><td class="num">125 MB</td><td class="num">249 MB</td></tr>
+				<tr><td class="nowrap">Go 版</td><td class="num">8 MB</td><td class="num">24 MB</td><td class="num">40 MB</td><td class="num">81 MB</td></tr>
+				<tr><td class="nowrap">Rust 版</td><td class="num">5 MB</td><td class="num">15 MB</td><td class="num">24 MB</td><td class="num">49 MB</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="callout callout-tip">
+		<p><strong>共有ライブラリの分は本数だけ増えるわけではない。</strong>同じ実行ファイルを 5 本走らせても、コードの領域は OS が 1 つを貸し回す。上の表は上限の見積もりであり、<strong>実際にはこれより少なく済む。</strong></p>
+	</div>
+</section>
+
+<!-- ================= 03 ================= -->
+<section class="ch03" id="ch03">
+	<h1>起動の速さ</h1>
+
+	<p><code>--help</code> を渡して、<strong>起動して 1 行出して終わるまで</strong>を測った。ウォームアップ 3 回のあと 20 回。実装の並び順による差を見るため、順番を変えて 2 巡している。</p>
+
+	<figure class="fig">
+		<svg viewBox="0 0 800 350" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="起動にかかる時間の比較">
+			<defs>
+				<linearGradient id="g-01-3-cs" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(280,78%,25%)"/><stop offset="1" stop-color="hsl(280,58%,55%)"/></linearGradient>
+				<linearGradient id="g-01-3-nd" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(210,78%,25%)"/><stop offset="1" stop-color="hsl(210,58%,55%)"/></linearGradient>
+				<linearGradient id="g-01-3-bn" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(140,78%,25%)"/><stop offset="1" stop-color="hsl(140,58%,55%)"/></linearGradient>
+				<linearGradient id="g-01-3-rs" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(70,78%,25%)"/><stop offset="1" stop-color="hsl(70,58%,55%)"/></linearGradient>
+				<linearGradient id="g-01-3-go" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(0,78%,25%)"/><stop offset="1" stop-color="hsl(0,58%,55%)"/></linearGradient>
+			</defs>
+			<rect width="100%" height="100%" fill="#ffffff"/>
+			<text x="10" y="22" font-size="14" font-weight="700" fill="#1c2330">起動して 1 行出して終わるまで（中央値 ms・小さいほど良い）</text>
+			<g stroke="#d9dfe8" stroke-width="1">
+				<line x1="140" y1="36" x2="140" y2="310"/>
+				<line x1="316.7" y1="36" x2="316.7" y2="310"/>
+				<line x1="493.3" y1="36" x2="493.3" y2="310"/>
+				<line x1="670" y1="36" x2="670" y2="310"/>
+			</g>
+			<g font-size="12" fill="#4a5568" text-anchor="middle">
+				<text x="140" y="330">0</text><text x="316.7" y="330">15</text><text x="493.3" y="330">30</text><text x="670" y="330">45</text>
+			</g>
+			<g font-size="13" fill="#1c2330" text-anchor="end" font-weight="700">
+				<text x="130" y="63">C# 版</text>
+				<text x="130" y="103">node 版</text>
+				<text x="130" y="143">bun 版</text>
+				<text x="130" y="183">Rust 版</text>
+				<text x="130" y="223">Go 版</text>
+			</g>
+			<g font-size="12" fill="#4a5568" text-anchor="end">
+				<text x="130" y="263">node -e 0（素）</text>
+				<text x="130" y="303">bun -e 0（素）</text>
+			</g>
+			<rect x="140" y="46" width="518.2" height="22" rx="3" fill="url(#g-01-3-cs)"/>
+			<rect x="140" y="86" width="513.5" height="22" rx="3" fill="url(#g-01-3-nd)"/>
+			<rect x="140" y="126" width="199" height="22" rx="3" fill="url(#g-01-3-bn)"/>
+			<rect x="140" y="166" width="248.5" height="22" rx="3" fill="url(#g-01-3-rs)"/>
+			<rect x="140" y="206" width="292.1" height="22" rx="3" fill="url(#g-01-3-go)"/>
+			<rect x="140" y="246" width="498.1" height="22" rx="3" fill="url(#g-01-3-nd)" opacity="0.45"/>
+			<rect x="140" y="286" width="213.2" height="22" rx="3" fill="url(#g-01-3-bn)" opacity="0.45"/>
+			<g font-size="13" fill="#1c2330" font-weight="700">
+				<text x="666.2" y="63">44.0</text>
+				<text x="661.5" y="103">43.6</text>
+				<text x="347" y="143">16.9</text>
+				<text x="396.5" y="183">21.1</text>
+				<text x="440.1" y="223">24.8</text>
+			</g>
+			<g font-size="12" fill="#4a5568">
+				<text x="646.1" y="263">42.3</text>
+				<text x="361.2" y="303">18.1</text>
+			</g>
+		</svg>
+		<figcaption>図 3: 起動にかかる時間の中央値。下 2 本（淡い色）はランタイムを素で起動しただけの参考値</figcaption>
+	</figure>
+
+	<div class="tablewrap">
+		<table>
+			<thead>
+				<tr><th>実装</th><th>最短</th><th>中央値</th><th>平均</th><th>最長</th><th>1 巡目 中央値</th><th>2 巡目 中央値</th></tr>
+			</thead>
+			<tbody>
+				<tr><td class="nowrap">bun 版</td><td class="num">12.1</td><td class="num">16.9</td><td class="num">17.4</td><td class="num">21.8</td><td class="num">16.9</td><td class="num">17.9</td></tr>
+				<tr><td class="nowrap">Rust 版</td><td class="num">19.8</td><td class="num">21.1</td><td class="num">21.8</td><td class="num">28.1</td><td class="num">21.1</td><td class="num">21.9</td></tr>
+				<tr><td class="nowrap">Go 版</td><td class="num">23.0</td><td class="num">24.8</td><td class="num">25.1</td><td class="num">29.9</td><td class="num">24.8</td><td class="num">25.0</td></tr>
+				<tr><td class="nowrap">node 版</td><td class="num">38.4</td><td class="num">43.6</td><td class="num">44.2</td><td class="num">49.4</td><td class="num">43.6</td><td class="num">44.5</td></tr>
+				<tr><td class="nowrap">C# 版</td><td class="num">38.7</td><td class="num">44.0</td><td class="num">44.2</td><td class="num">49.8</td><td class="num">44.0</td><td class="num">44.2</td></tr>
+				<tr><td class="nowrap">node -e 0（素）</td><td class="num">38.9</td><td class="num">42.3</td><td class="num">43.2</td><td class="num">49.7</td><td class="num">42.3</td><td class="num">42.7</td></tr>
+				<tr><td class="nowrap">bun -e 0（素）</td><td class="num">15.4</td><td class="num">18.1</td><td class="num">19.6</td><td class="num">24.4</td><td class="num">20.6</td><td class="num">18.1</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<p>単位は ms。<strong>1 巡目と 2 巡目の差はどれも 1 ms 前後で、順番による偏りは無かった。</strong></p>
+
+	<h2>読み取れること</h2>
+
+	<h3>アプリのコードはほとんど乗っていない</h3>
+
+	<p><strong>node 版 43.6 ms に対して、素の <code>node -e 0</code> が 42.3 ms。</strong>差は 1.3 ms しかない。<code>chat.mjs</code> と 3 つのモジュール、計 2,061 行を読んで構文解析する分がこれである。<strong>起動時間の 97% は Node そのものの立ち上がり</strong>で、アプリを削っても速くならない。</p>
+
+	<p>bun も同じで、bun 版 16.9 ms に対して素の bun が 18.1 ms。<strong>誤差の中に埋もれている。</strong></p>
+
+	<h3>C# 版が node と並ぶのは意外だった</h3>
+
+	<p>ネイティブの実行ファイルなら速いと思っていたが、<strong>44.0 ms で node 版と変わらない。</strong>.NET は実行ファイル自体が 68.5 KB でも、走らせるには共有のランタイムを読み込んで JIT を立ち上げる必要がある。<strong>そこが node の立ち上がりと同じくらいかかっている。</strong></p>
+
+	<h3>Rust・Go が bun に負ける</h3>
+
+	<div class="callout callout-note">
+		<p>Rust 21.1 ms ・ Go 24.8 ms は、<strong>どちらも「何もしないに等しい 100 行あまり」の起動である。</strong>それでも bun の 16.9 ms に届かない。<br>
+		この領域では<strong>プロセスを 1 つ作って、実行ファイルを読み込んで、終了コードを返すまでの OS の手間</strong>が支配的になる。実行ファイルが 4.63 MB ・ 8.13 MB と大きいことも効いている。</p>
+	</div>
+
+	<h3>ただし待受けでは効かない</h3>
+
+	<p>待受けは 12 時間に 1 回しか起動しない。<strong>起動が 20 ms 速いことには、ほとんど意味が無い。</strong>効くのは <code>say</code> ・ <code>who</code> のように何度も叩くコマンドのほうで、そこでは bun が有利になる。</p>
+</section>
+
+<!-- ================= 04 ================= -->
+<section class="ch04" id="ch04">
+	<h1>ソースと実行ファイルの大きさ</h1>
+
+	<div class="callout callout-important">
+		<p><strong>Rust 版・Go 版の行数は参考値である。</strong>製品の 2 本と同じ仕事をしていない。待受けの 1 コマンドだけを、検証も表示も省いて書いたものである。</p>
+	</div>
+
+	<h2>ソースの行数</h2>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>実装</th><th>行数</th><th>内訳</th></tr></thead>
+			<tbody>
+				<tr>
+					<td class="nowrap">C# 版</td>
+					<td class="num">2,985</td>
+					<td><code>Commands.cs</code> 798 / <code>Waiters.cs</code> 509 / <code>Program.cs</code> 368 / <code>Args.cs</code> 303 / <code>Json.cs</code> 256 / <code>Client.cs</code> 227 / <code>Definition.cs</code> 216 / <code>SinceParse.cs</code> 196 / <code>WaitLog.cs</code> 66 / <code>JstTime.cs</code> 46</td>
+				</tr>
+				<tr>
+					<td class="nowrap">node 版<br>bun 版</td>
+					<td class="num">2,061</td>
+					<td><code>chat.mjs</code> 1,530 / <code>options.mjs</code> 230 / <code>since-parse.mjs</code> 186 / <code>waiters-pick.mjs</code> 115</td>
+				</tr>
+				<tr><td class="nowrap">Rust 版</td><td class="num">111</td><td><code>tools/40_test/wait-rs/main.rs</code>（参考）</td></tr>
+				<tr><td class="nowrap">Go 版</td><td class="num">124</td><td><code>tools/40_test/wait-go/main.go</code>（参考）</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<p>C# 版が node 版より 45% 多い。<strong>JSON の読み書き（<code>Json.cs</code> 256 行）が標準で用意されておらず、自前で持っているのが効いている。</strong>node 側はこれが <code>JSON.parse</code> の 1 行で済む。</p>
+
+	<h2>実行ファイルの大きさ</h2>
+
+	<figure class="fig">
+		<svg viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="実行ファイルとランタイムの大きさの比較">
+			<defs>
+				<linearGradient id="g-01-4-cs" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(280,78%,25%)"/><stop offset="1" stop-color="hsl(280,58%,55%)"/></linearGradient>
+				<linearGradient id="g-01-4-rs" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(70,78%,25%)"/><stop offset="1" stop-color="hsl(70,58%,55%)"/></linearGradient>
+				<linearGradient id="g-01-4-go" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(0,78%,25%)"/><stop offset="1" stop-color="hsl(0,58%,55%)"/></linearGradient>
+				<linearGradient id="g-01-4-nd" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(210,78%,25%)"/><stop offset="1" stop-color="hsl(210,58%,55%)"/></linearGradient>
+				<linearGradient id="g-01-4-bn" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(140,78%,25%)"/><stop offset="1" stop-color="hsl(140,58%,55%)"/></linearGradient>
+			</defs>
+			<rect width="100%" height="100%" fill="#ffffff"/>
+			<text x="10" y="22" font-size="14" font-weight="700" fill="#1c2330">走らせるのに要るファイルの大きさ（MB）</text>
+			<g stroke="#d9dfe8" stroke-width="1">
+				<line x1="140" y1="36" x2="140" y2="248"/>
+				<line x1="272.5" y1="36" x2="272.5" y2="248"/>
+				<line x1="405" y1="36" x2="405" y2="248"/>
+				<line x1="537.5" y1="36" x2="537.5" y2="248"/>
+				<line x1="670" y1="36" x2="670" y2="248"/>
+			</g>
+			<g font-size="12" fill="#4a5568" text-anchor="middle">
+				<text x="140" y="268">0</text><text x="272.5" y="268">25</text><text x="405" y="268">50</text><text x="537.5" y="268">75</text><text x="670" y="268">100</text>
+			</g>
+			<g font-size="13" fill="#1c2330" text-anchor="end" font-weight="700">
+				<text x="130" y="63">aichat-cs.exe</text>
+				<text x="130" y="107">aichat-rs.exe</text>
+				<text x="130" y="151">aichat-go.exe</text>
+				<text x="130" y="195">node.exe</text>
+				<text x="130" y="239">bun.exe</text>
+			</g>
+			<rect x="140" y="46" width="3" height="24" rx="1" fill="url(#g-01-4-cs)"/>
+			<rect x="140" y="90" width="24.5" height="24" rx="3" fill="url(#g-01-4-rs)"/>
+			<rect x="140" y="134" width="43.1" height="24" rx="3" fill="url(#g-01-4-go)"/>
+			<rect x="140" y="178" width="524.4" height="24" rx="3" fill="url(#g-01-4-nd)"/>
+			<rect x="140" y="222" width="435.2" height="24" rx="3" fill="url(#g-01-4-bn)"/>
+			<g font-size="13" fill="#1c2330" font-weight="700">
+				<text x="151" y="63">0.067（68.5 KB）</text>
+				<text x="172.5" y="107">4.63</text>
+				<text x="191.1" y="151">8.13</text>
+				<text x="672.4" y="195">98.94</text>
+				<text x="583.2" y="239">82.11</text>
+			</g>
+		</svg>
+		<figcaption>図 4: 走らせるのに要るファイル。C# 版は棒が見えないほど小さいが、別に .NET ランタイムが要る</figcaption>
+	</figure>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>ファイル</th><th>バイト</th><th>読みやすく</th><th>これだけで動くか</th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap"><code>aichat-cs.exe</code></td><td class="num nowrap">70,144</td><td class="num nowrap">68.5 KB</td><td>いいえ。.NET ランタイムが要る</td></tr>
+				<tr><td class="nowrap"><code>aichat-rs.exe</code></td><td class="num nowrap">4,851,614</td><td class="num nowrap">4.63 MB</td><td>はい</td></tr>
+				<tr><td class="nowrap"><code>aichat-go.exe</code></td><td class="num nowrap">8,526,336</td><td class="num nowrap">8.13 MB</td><td>はい</td></tr>
+				<tr><td class="nowrap"><code>node.exe</code></td><td class="num nowrap">103,747,400</td><td class="num nowrap">98.94 MB</td><td>スクリプトと合わせて動く</td></tr>
+				<tr><td class="nowrap"><code>bun.exe</code></td><td class="num nowrap">86,096,984</td><td class="num nowrap">82.11 MB</td><td>スクリプトと合わせて動く</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="callout callout-tip">
+		<p><strong>「小さい」の意味が 3 通りある。</strong><br>
+		<strong>配る量</strong>なら C# 版の 68.5 KB が最小。ただし受け取る側に .NET が要る。<br>
+		<strong>1 ファイルで完結する量</strong>なら Rust 版の 4.63 MB が最小。何も前提を置かずに渡せる。<br>
+		<strong>すでに入っているものを使う</strong>なら node ・ bun は 0 バイト。このマシンにはどちらも入っている。</p>
+	</div>
+
+	<p>Rust 版が 4.63 MB もあるのは、<strong>外部クレートを 1 つも使っていないのに標準ライブラリを丸ごと抱き込むため</strong>である。Go 版の 8.13 MB も同じで、<code>net/http</code> を入れた分だけ大きい。</p>
+</section>
+
+<!-- ================= 05 ================= -->
+<section class="ch05" id="ch05">
+	<h1>ビルドと文法チェックの時間</h1>
+
+	<p>コードを直してから確かめられるまでの待ち時間である。<strong>node 版・bun 版はビルドが無いので 0 ms</strong>だが、代わりに <strong>TypeScript の検査を掛ける</strong>とどうなるかを測った。</p>
+
+	<figure class="fig">
+		<svg viewBox="0 0 800 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ビルドと文法チェックにかかる時間の比較">
+			<defs>
+				<linearGradient id="g-01-5-cs" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(280,78%,25%)"/><stop offset="1" stop-color="hsl(280,58%,55%)"/></linearGradient>
+				<linearGradient id="g-01-5-ts" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(210,78%,25%)"/><stop offset="1" stop-color="hsl(210,58%,55%)"/></linearGradient>
+				<linearGradient id="g-01-5-rs" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(70,78%,25%)"/><stop offset="1" stop-color="hsl(70,58%,55%)"/></linearGradient>
+				<linearGradient id="g-01-5-go" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(0,78%,25%)"/><stop offset="1" stop-color="hsl(0,58%,55%)"/></linearGradient>
+			</defs>
+			<rect width="100%" height="100%" fill="#ffffff"/>
+			<text x="10" y="22" font-size="14" font-weight="700" fill="#1c2330">直してから確かめられるまで（中央値 ms・小さいほど良い）</text>
+			<g stroke="#d9dfe8" stroke-width="1">
+				<line x1="140" y1="36" x2="140" y2="204"/>
+				<line x1="272.5" y1="36" x2="272.5" y2="204"/>
+				<line x1="405" y1="36" x2="405" y2="204"/>
+				<line x1="537.5" y1="36" x2="537.5" y2="204"/>
+				<line x1="670" y1="36" x2="670" y2="204"/>
+			</g>
+			<g font-size="12" fill="#4a5568" text-anchor="middle">
+				<text x="140" y="224">0</text><text x="272.5" y="224">150</text><text x="405" y="224">300</text><text x="537.5" y="224">450</text><text x="670" y="224">600</text>
+			</g>
+			<g font-size="13" fill="#1c2330" text-anchor="end" font-weight="700">
+				<text x="130" y="64">C# 版 csc</text>
+				<text x="130" y="108">node/bun tsc</text>
+				<text x="130" y="152">Rust 版 rustc</text>
+				<text x="130" y="196">Go 版 go build</text>
+			</g>
+			<rect x="140" y="46" width="55.7" height="26" rx="3" fill="url(#g-01-5-cs)"/>
+			<rect x="140" y="90" width="282.7" height="26" rx="3" fill="url(#g-01-5-ts)"/>
+			<rect x="140" y="134" width="403.7" height="26" rx="3" fill="url(#g-01-5-rs)"/>
+			<rect x="140" y="178" width="457.6" height="26" rx="3" fill="url(#g-01-5-go)"/>
+			<g font-size="13" fill="#1c2330" font-weight="700">
+				<text x="203.7" y="64">63</text>
+				<text x="430.7" y="108">320</text>
+				<text x="551.7" y="152">457</text>
+				<text x="605.6" y="196">518</text>
+			</g>
+		</svg>
+		<figcaption>図 5: ビルド（C# ・ Rust ・ Go）と文法チェック（node/bun）にかかる時間の中央値</figcaption>
+	</figure>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>実装</th><th>使ったもの</th><th>1 回目</th><th>2 回目</th><th>3 回目</th><th>中央値</th><th>対象</th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap">C# 版</td><td class="nowrap"><code>csc</code></td><td class="num">85</td><td class="num">63</td><td class="num">58</td><td class="num">63</td><td>2,985 行</td></tr>
+				<tr><td class="nowrap">node 版<br>bun 版</td><td class="nowrap"><code>tsc --noEmit</code></td><td class="num">319</td><td class="num">320</td><td class="num">331</td><td class="num">320</td><td>2,061 行</td></tr>
+				<tr><td class="nowrap">Rust 版</td><td class="nowrap"><code>rustc -O</code></td><td class="num">457</td><td class="num">463</td><td class="num">456</td><td class="num">457</td><td>111 行</td></tr>
+				<tr><td class="nowrap">Go 版</td><td class="nowrap"><code>go build</code></td><td class="num">1,362</td><td class="num">518</td><td class="num">435</td><td class="num">518</td><td>124 行</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<p>単位は ms。<strong>Go の 1 回目 1,362 ms はビルドキャッシュが空だったため。</strong>2 回目以降は標準ライブラリの再コンパイルが要らなくなり、435 〜 518 ms に落ち着く。</p>
+
+	<p>Rust は 111 行に対して 457 ms かかっている。<strong>キャッシュの効き方は Go と違い、1 回目から 3 回目までほぼ変わらない。</strong>単一ファイルを <code>rustc</code> に直接渡しているので、毎回まるごとやり直している。</p>
+
+	<h2>TypeScript の文法チェック</h2>
+
+	<p>まだ TypeScript 化していないので、<strong><code>allowJs</code> ＋ <code>checkJs</code> で <code>.mjs</code> のまま型検査に掛けた</strong>。設定は <code>tmp/tsc-check/tsconfig.json</code> に置いた一時のもの。</p>
+
+	<pre><code class="language-json">{
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"allowJs": true,
+		"checkJs": true,
+		"noEmit": true,
+		"strict": false,
+		"skipLibCheck": true,
+		"types": ["node"]
+	},
+	"include": ["../../src/client/*.mjs"]
+}</code></pre>
+
+	<div class="callout callout-important">
+		<p><strong>320 ms で 5 件のエラーが出た。</strong><code>strict</code> を切った緩い設定でこれである。<strong>文法の誤りではなく、型の食い違いを 5 件見つけた。</strong></p>
+	</div>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>場所</th><th>件数</th><th>何を言っているか</th></tr></thead>
+			<tbody>
+				<tr>
+					<td class="nowrap"><code>chat.mjs:1047</code></td>
+					<td class="num">2</td>
+					<td>算術演算の左右が数値だと保証できない。文字列が入りうる値をそのまま引き算している</td>
+				</tr>
+				<tr>
+					<td class="nowrap"><code>chat.mjs:1147</code><br><code>chat.mjs:1148</code><br><code>chat.mjs:1149</code></td>
+					<td class="num">3</td>
+					<td><code>Property 'rooms' / 'pid' does not exist on type 'object'</code>。<code>JSON.parse</code> の戻りを <code>object</code> のまま辿っている</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<p>どちらも<strong>実際に落ちる場所ではない</strong>（サーバーが返す形は決まっている）。それでも、<strong>320 ms で 5 件の「保証できていない箇所」が機械的に出てくる</strong>のは、2,061 行を目で読むより確実である。</p>
+
+	<div class="callout callout-caution">
+		<p><strong>検査には <code>@types/node</code> が要る。</strong>入れずに走らせると <code>process</code> ・ <code>fs</code> など Node の API がすべてエラーになり、<strong>57 件の無意味なエラーに本物の 5 件が埋もれる。</strong><br>
+		今回は <code>tmp/tsc-check/</code> に一時で入れて測った。<strong>常用するなら、プロジェクト側に開発用の依存として置く判断が要る。</strong>この資料はその判断材料までで、まだ入れていない。</p>
+	</div>
+</section>
+
+<!-- ================= 06 ================= -->
+<section class="ch06" id="ch06">
+	<h1>測り方</h1>
+
+	<h2>環境</h2>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>項目</th><th>版</th></tr></thead>
+			<tbody>
+				<tr><td>OS</td><td>Microsoft Windows NT 10.0.26200.0</td></tr>
+				<tr><td>Node.js</td><td>v26.8.1</td></tr>
+				<tr><td>bun</td><td>1.4.2</td></tr>
+				<tr><td>Rust</td><td>1.96.1</td></tr>
+				<tr><td>Go</td><td>1.26.4</td></tr>
+				<tr><td>TypeScript</td><td>7.0.2</td></tr>
+				<tr><td>測った日時</td><td>2026-09-12 21:56</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>使ったもの</h2>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>置き場</th><th>中身</th></tr></thead>
+			<tbody>
+				<tr><td class="nowrap"><code>tools/40_test/benchmark-cli.ps1</code></td><td>本体。メモリと起動を測って <code>tmp/benchmark-cli.json</code> に書き出す</td></tr>
+				<tr><td class="nowrap"><code>tools/40_test/benchmark-cli.cmd</code></td><td>ダブルクリック用のランチャー</td></tr>
+				<tr><td class="nowrap"><code>tools/40_test/wait-rs/main.rs</code></td><td>Rust 版の最小の待受け（111 行）</td></tr>
+				<tr><td class="nowrap"><code>tools/40_test/wait-go/main.go</code></td><td>Go 版の最小の待受け（124 行）</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>測る手順</h2>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>何を</th><th>どう測ったか</th></tr></thead>
+			<tbody>
+				<tr>
+					<td class="nowrap">メモリ</td>
+					<td><code>--wait-sec 600</code> で待受けを立て、10 秒待ってから 2 秒おきに 5 回。これを 3 回繰り返して平均を取る。子プロセスも合算する</td>
+				</tr>
+				<tr>
+					<td class="nowrap">起動</td>
+					<td><code>--help</code> を渡し、ウォームアップ 3 回のあと 20 回。並び順を変えて 2 巡</td>
+				</tr>
+				<tr>
+					<td class="nowrap">ソース行数</td>
+					<td><code>wc -l</code>。空行とコメントを含む</td>
+				</tr>
+				<tr>
+					<td class="nowrap">実行ファイル</td>
+					<td>バイト数をそのまま。MB は 1024<sup>2</sup> で割った値</td>
+				</tr>
+				<tr>
+					<td class="nowrap">ビルド</td>
+					<td>出力を消してから 3 回。Go だけキャッシュが効くので 1 回目が突出する</td>
+				</tr>
+				<tr>
+					<td class="nowrap">文法チェック</td>
+					<td><code>tmp/tsc-check/</code> に <code>typescript</code> と <code>@types/node</code> を入れ、<code>tsc --noEmit</code> を 3 回</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>踏んだ落とし穴</h2>
+
+	<h3>待受けが起動直後に落ちる</h3>
+
+	<p>初めて繋ぐ相手には<strong>案内だけ出して終わる仕様</strong>になっている（<a class="doclink" href="../40_issues/issues.html">課題</a>の i260909-01）。そのままだとメモリを測る前に消える。</p>
+
+	<p><strong>先に <code>--wait-sec 1</code> で 1 回走らせてカーソルを立ててから、本番の <code>--wait-sec 600</code> を立てる。</strong>2 回目以降は普通にぶら下がる。</p>
+
+	<h3>CLI の案内が例外になる</h3>
+
+	<p>繋ぎ先の案内を標準エラーに出すため、<code>$ErrorActionPreference = 'Stop'</code> のもとでは <code>NativeCommandError</code> になって止まる。</p>
+
+	<pre><code class="language-powershell">function Invoke-Quiet {
+	param([string] $File, [string[]] $Arguments)
+	$prev = $ErrorActionPreference
+	$ErrorActionPreference = 'Continue'
+	try { &amp; $File @Arguments *&gt; $sink } finally { $ErrorActionPreference = $prev }
+}</code></pre>
+
+	<p><strong>局所的に <code>Continue</code> へ落として、抜けるときに戻す。</strong>スクリプト全体を <code>Continue</code> にすると、本物のエラーまで見逃す。</p>
+
+	<h3>リダイレクト先のファイルが競合する</h3>
+
+	<p>待受けと起動測定で同じ捨て場を共有していたため、<strong>別のプロセスで使用されている</strong>で落ちた。<strong>毎回 <code>[guid]::NewGuid()</code> で別名にし、プロセスを止めてから 500 ms 待って消す。</strong></p>
+
+	<h3>Bash から呼ぶと出力が化ける</h3>
+
+	<div class="callout callout-note">
+		<p>PowerShell 5.1 の標準出力は CP932 として扱われる。Bash 経由で呼ぶと日本語が崩れるので、<strong>先頭で <code>[Console]::OutputEncoding = [Text.Encoding]::UTF8</code> を立てる。</strong><br>
+		<code>aichat-cs.exe</code> だけは化けない。<code>Program.cs</code> が自分で <code>Console.OutputEncoding = Encoding.UTF8</code> を立てているためである。</p>
+	</div>
+
+	<h2>この測り方の限界</h2>
+
+	<ul>
+		<li><strong>Rust 版・Go 版は製品と同じ仕事をしていない。</strong>引数の検証・JST の整形・カーソルの保存・エラーの案内を持たない。機能を足せばメモリも大きさも増える</li>
+		<li><strong>1 台のマシンでの値である。</strong>.NET ランタイムが入っていない環境では C# 版の起動が変わる</li>
+		<li><strong>ビルド時間はキャッシュの状態に強く依存する。</strong>Go の 1 回目と 3 回目で 3 倍以上ちがった</li>
+		<li><strong>tsc の 5 件は、緩い設定での値である。</strong><code>strict</code> を入れれば桁が変わる</li>
+	</ul>
+</section>
+
+</div>
+
+<footer>
+	<div class="inner">
+		<p><a class="doclink" href="../../README.html">README へ戻る</a></p>
+	</div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" width="800" height="300" role="img" aria-label="実行ファイルとランタイムの大きさの比較">
+			<defs>
+				<linearGradient id="i1" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(280,78%,25%)"/><stop offset="1" stop-color="hsl(280,58%,55%)"/></linearGradient>
+				<linearGradient id="i2" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(70,78%,25%)"/><stop offset="1" stop-color="hsl(70,58%,55%)"/></linearGradient>
+				<linearGradient id="i3" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(0,78%,25%)"/><stop offset="1" stop-color="hsl(0,58%,55%)"/></linearGradient>
+				<linearGradient id="i4" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(210,78%,25%)"/><stop offset="1" stop-color="hsl(210,58%,55%)"/></linearGradient>
+				<linearGradient id="i5" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(140,78%,25%)"/><stop offset="1" stop-color="hsl(140,58%,55%)"/></linearGradient>
+			</defs>
+	<rect width="100%" height="100%" fill="#ffffff"/>
+			<rect width="100%" height="100%" fill="#ffffff"/>
+			<text x="10" y="22" font-size="14" font-weight="700" fill="#1c2330">走らせるのに要るファイルの大きさ（MB）</text>
+			<g stroke="#d9dfe8" stroke-width="1">
+				<line x1="140" y1="36" x2="140" y2="248"/>
+				<line x1="272.5" y1="36" x2="272.5" y2="248"/>
+				<line x1="405" y1="36" x2="405" y2="248"/>
+				<line x1="537.5" y1="36" x2="537.5" y2="248"/>
+				<line x1="670" y1="36" x2="670" y2="248"/>
+			</g>
+			<g font-size="12" fill="#4a5568" text-anchor="middle">
+				<text x="140" y="268">0</text><text x="272.5" y="268">25</text><text x="405" y="268">50</text><text x="537.5" y="268">75</text><text x="670" y="268">100</text>
+			</g>
+			<g font-size="13" fill="#1c2330" text-anchor="end" font-weight="700">
+				<text x="130" y="63">aichat-cs.exe</text>
+				<text x="130" y="107">aichat-rs.exe</text>
+				<text x="130" y="151">aichat-go.exe</text>
+				<text x="130" y="195">node.exe</text>
+				<text x="130" y="239">bun.exe</text>
+			</g>
+			<rect x="140" y="46" width="3" height="24" rx="1" fill="url(#i1)"/>
+			<rect x="140" y="90" width="24.5" height="24" rx="3" fill="url(#i2)"/>
+			<rect x="140" y="134" width="43.1" height="24" rx="3" fill="url(#i3)"/>
+			<rect x="140" y="178" width="524.4" height="24" rx="3" fill="url(#i4)"/>
+			<rect x="140" y="222" width="435.2" height="24" rx="3" fill="url(#i5)"/>
+			<g font-size="13" fill="#1c2330" font-weight="700">
+				<text x="151" y="63">0.067（68.5 KB）</text>
+				<text x="172.5" y="107">4.63</text>
+				<text x="191.1" y="151">8.13</text>
+				<text x="672.4" y="195">98.94</text>
+				<text x="583.2" y="239">82.11</text>
+			</g>
+		</svg>
