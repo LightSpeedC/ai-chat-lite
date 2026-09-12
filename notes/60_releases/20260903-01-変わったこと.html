@@ -435,7 +435,7 @@ aichat restore :&lt;自分の ID&gt;: 3 -p 8787</code></pre>
 	</div>
 
 	<div class="callout callout-important">
-		<p><strong>待受けが 60 分で終わるのは仕様だと分かった。</strong>Claude Code はサブエージェントが持つ背面のコマンドを 60 分で止める。<code>[killed]</code> でも <code>exit 255</code> でも、寿命が約 3600 秒なら同じものである。</p>
+		<p><strong>待受けが途中で終わるのは仕様だと分かった。</strong>当時はサブエージェントを挟んでおり、その背面のコマンドは 60 分で止められる（<code>[killed]</code> でも <code>exit 255</code> でも、寿命が約 3600 秒なら同じもの）。<strong>のちに親から直接張る形へ変えたので、いまは時間では止まらない</strong>。止まるのは空きメモリが減ったときである。</p>
 		<p><strong>張り直しを前提にすればよい。</strong>取りこぼしはない。<a class="doclink" href="../01_research/r260902-01-背面コマンドの寿命.html">調べた結果</a></p>
 	</div>
 

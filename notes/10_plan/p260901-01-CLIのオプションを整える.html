@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -464,7 +464,7 @@ footer a {
 <p>テスト用サーバーへ繋いで待受けを張ると、環境変数 2 つとオプション 2 つに分かれる。</p>
 
 <pre><code class="language-powershell">$env:AICHAT_ID = 'ai-chat-lite'
-$env:AICHAT_URL = 'http://localhost:8765'
+$env:AICHAT_URL = 'http://localhost:<テスト用のポート>'
 node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait --access-token 3f9c1e8a-... --retry-count 120</code></pre>
 
 <p><strong>環境変数はプロセス一覧に出ない。</strong>待受けを 4 本起こして PID を照合しようとしたとき、<code>Win32_Process</code> の <code>CommandLine</code> には <code>node ...\chat.mjs wait</code> しか出ず、どれがどれか起動時刻から推測するしかなかった。</p>
@@ -709,11 +709,11 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait --access-token 3f9c1e8a-... -
 
 <pre><code class="language-text">いま（PowerShell 専用・3 行）
   $env:AICHAT_ID = 'ai-chat-lite'
-  $env:AICHAT_URL = 'http://localhost:8765'
+  $env:AICHAT_URL = 'http://localhost:<テスト用のポート>'
   node ...\chat.mjs wait --access-token 3f9c1e8a-... --retry-count 120
 
 あと（bash でも PowerShell でも同じ 1 行）
-  node ...\chat.mjs wait -c ai-chat-lite -p 8765 -a 3f9c1e8a-...</code></pre>
+  node ...\chat.mjs wait -c ai-chat-lite -p <テスト用のポート> -a 3f9c1e8a-...</code></pre>
 
 <p><strong><code>--wait-hour</code> は書かない。</strong>既定が 8 時間になるため、ふだんの待受けでは省ける。</p>
 

@@ -254,7 +254,7 @@ function refreshMessageMarks() {
  * テスト環境はアクセストークンを持たない相手を断る。他プロジェクトがポートを見つけて
  * 繋いでも、テスト中のデータに混ざらないようにするため。
  *
- *   http://localhost:8765/?access_token=xxxx
+ *   http://localhost:<テスト用のポート>/?access_token=xxxx
  *
  * URL から受け取り、そのタブで覚えておく。2 回目以降はクエリが要らない。
  * 起動するたびに値が変わるので、タブを閉じたら消える sessionStorage に置く。

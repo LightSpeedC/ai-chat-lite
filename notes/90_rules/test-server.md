@@ -45,6 +45,21 @@ tools\40_test\run-ui-tests.cmd chat-ui
 tools\40_test\run-tests.cmd
 ```
 
+### はじめに設定ファイルを置く
+
+<strong>探し始めるポートは `_secrets/test-server.json` から読む。</strong>無ければ立たない（終了コード 2）。
+
+```json
+{
+    "firstPort": 8000
+}
+```
+
+> [!IMPORTANT]
+> <strong>番号はここには書かない。</strong>上は形を示すための値である。このリポジトリは公開しているので、**他プロジェクトへ案内していない値を公開する側に置かない**。実際の番号は置いてあるファイルを見ること。
+> <strong>本番のポートとは離れた番号にする。</strong>字面が近いと、打ち間違いがそのまま本番に飛ぶ。
+> 先頭 `_` のフォルダなので Git 管理外になる。**環境を移したら作り直す。**
+
 ### 個別に立てる・止める
 
 ```batch
@@ -56,11 +71,11 @@ tools\40_test\stop-test-server.cmd
 
 ```text
 テスト用サーバーを立てました。
-  ポート  8765
+  ポート  <テスト用のポート>
   置き場  .\tmp\_data
   環境    test
   pid     12345
-  画面    http://localhost:8765/?access_token=（毎回変わる）
+  画面    http://localhost:<テスト用のポート>/?access_token=（毎回変わる）
 ```
 
 止めると**置き場ごと捨てられる**。DB も印も接続情報も一緒に消える。
@@ -129,10 +144,10 @@ node tools\40_test\purge-test-data.mjs --test --dry-run
 
 ### ポートが空かない
 
-`8765` から 10 個下げても空きが無いと止まる。**前のテストサーバーが残っている**ことが多い。
+**設定した番号から 10 個下げても**空きが無いと止まる。**前のテストサーバーが残っている**ことが多い。エラーには実際の番号が出る。
 
 ```powershell
-Get-NetTCPConnection -LocalPort 8765 -State Listen |
+Get-NetTCPConnection -LocalPort <テスト用のポート> -State Listen |
 	ForEach-Object { Get-Process -Id $_.OwningProcess }
 ```
 

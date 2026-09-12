@@ -450,6 +450,20 @@ tools\40_test\run-ui-tests.cmd chat-ui</code></pre>
 
 	<pre><code class="language-batch">tools\40_test\run-tests.cmd</code></pre>
 
+	<h2>はじめに設定ファイルを置く</h2>
+
+	<p><strong>探し始めるポートは <code>_secrets/test-server.json</code> から読む。</strong>無ければ立たない（終了コード 2）。</p>
+
+	<pre><code class="language-json">{
+    "firstPort": 8000
+}</code></pre>
+
+	<div class="callout callout-important">
+		<p><strong>番号はここには書かない。</strong>上は形を示すための値である。このリポジトリは公開しているので、<strong>他プロジェクトへ案内していない値を公開する側に置かない</strong>。実際の番号は置いてあるファイルを見ること。</p>
+		<p><strong>本番のポートとは離れた番号にする。</strong>字面が近いと、打ち間違いがそのまま本番に飛ぶ。</p>
+		<p>先頭 <code>_</code> のフォルダなので Git 管理外になる。<strong>環境を移したら作り直す。</strong></p>
+	</div>
+
 	<h2>個別に立てる・止める</h2>
 
 	<pre><code class="language-batch">tools\40_test\start-test-server.cmd
@@ -458,11 +472,11 @@ tools\40_test\stop-test-server.cmd</code></pre>
 	<p>立てると、開くための URL が出る。<strong>アクセストークンがクエリに載っている。</strong></p>
 
 	<pre><code class="language-text">テスト用サーバーを立てました。
-  ポート  8765
+  ポート  &lt;テスト用のポート&gt;
   置き場  .\tmp\_data
   環境    test
   pid     12345
-  画面    http://localhost:8765/?access_token=（毎回変わる）</code></pre>
+  画面    http://localhost:&lt;テスト用のポート&gt;/?access_token=（毎回変わる）</code></pre>
 
 	<p>止めると<strong>置き場ごと捨てられる</strong>。DB も印も接続情報も一緒に消える。</p>
 </section>
@@ -558,9 +572,9 @@ node tools\40_test\purge-test-data.mjs --test --dry-run</code></pre>
 
 	<h2>ポートが空かない</h2>
 
-	<p><code>8765</code> から 10 個下げても空きが無いと止まる。<strong>前のテストサーバーが残っている</strong>ことが多い。</p>
+	<p><strong>設定した番号から 10 個下げても</strong>空きが無いと止まる。<strong>前のテストサーバーが残っている</strong>ことが多い。エラーには実際の番号が出る。</p>
 
-	<pre><code class="language-powershell">Get-NetTCPConnection -LocalPort 8765 -State Listen |
+	<pre><code class="language-powershell">Get-NetTCPConnection -LocalPort &lt;テスト用のポート&gt; -State Listen |
 	ForEach-Object { Get-Process -Id $_.OwningProcess }</code></pre>
 
 	<p><code>stop-test-server.cmd</code> で止まらないときは、<code>tmp/_data/server.json</code> の <code>pid</code> を見て止める。</p>

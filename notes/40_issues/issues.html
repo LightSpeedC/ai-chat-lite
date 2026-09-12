@@ -597,7 +597,7 @@ footer a {
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（5 件 / 未 3 / 着手 0 / 済 2）</a></li>
 		<li class="g02"><a href="#g02">データ（7 件 / 未 1 / 着手 0 / 済 6）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（25 件 / 未 3 / 着手 5 / 済 17）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（26 件 / 未 3 / 着手 5 / 済 18）</a></li>
 		<li class="g04"><a href="#g04">チャットの機能（24 件 / 未 8 / 着手 1 / 済 15）</a></li>
 	</ol>
 </section>
@@ -1317,7 +1317,7 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 					<li class="done"><span class="badge b-done">☑</span> <code>GET /api/admin/rename-preview</code> ・ <code>POST /api/admin/rename</code> を足した。<code>confirm</code> に旧 ID を求め、既定のルームへ知らせを積む</li>
 					<li class="done"><span class="badge b-done">☑</span> node 版 ・ C# 版の両方に実装した（<a href="../90_rules/local-rule.html">ローカルルール</a>「CLI を直したら 2 本とも直す」に従う）。<code>tests/cli-cs.test.mjs</code> で下見の出力と中止の終了コードを突き合わせている</li>
 					<li class="done"><span class="badge b-done">☑</span> <code>tests/rename.test.mjs</code>（11 件）と <code>server.test.mjs</code>（5 件）を新設。<strong>いずれも直す前に落ちることを確認してから（RED）、直して通ることを確認した（GREEN）</strong>。全 494 件が通る</li>
-					<li class="done"><span class="badge b-done">☑</span> テスト用サーバー（<code>:8765</code>・<code>tmp/_data</code>）で通しの動作も確かめた。<strong>本番には触れていない</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> テスト用サーバー（<code>tmp/_data</code>）で通しの動作も確かめた。<strong>本番には触れていない</strong></li>
 				</ul>
 
 				<div class="callout">
@@ -1334,7 +1334,7 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">25 件 / 未 3 / 着手 5 / 済 17</span>
+		<span class="count">26 件 / 未 3 / 着手 5 / 済 18</span>
 	</summary>
 
 	<div class="groupbody">
@@ -3667,6 +3667,34 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 			</div>
 		</details>
 
+		<details class="issue done" id="i260912-01">
+			<summary>
+				<span class="badge b-done">☑</span>
+				<span class="no">i260912-01</span>
+				後始末の道具が <code>archives</code> を見ない
+			</summary>
+			<div class="issuebody">
+				<p><code>tools/40_test/purge-test-data.mjs</code> が相手にするのは <code>messages</code> ・ <code>cursors</code> ・ <code>connectors</code> の 3 つだけ。<strong><code>archives</code> は対象外</strong>だった。</p>
+
+				<div class="callout callout-caution">
+					<p><strong>片付けた記録だけが本番に残り続ける。</strong>本番に入り込んだ <code>test-</code> の参加者を <code>archive</code> で片付けると、<code>archives</code> に「何を片付けたか」の行が残る。<strong>この道具を実行しても、その行は消えない。</strong></p>
+					<p>実際に 5 件が残っていた。<code>archives</code> の説明は <code>aichat archives</code> の一覧に出るので、<strong>テストの痕跡が読める状態</strong>だった。</p>
+				</div>
+
+				<p><strong>片付けの知らせ（<code>msg_kind = archive</code>）も残る。</strong>差出人は片付けを実行した側なので、<code>from_connector_id LIKE 'test-%'</code> には当たらない。本文に対象の名前が出るため、<strong>読めば何を片付けたかが分かる</strong>。</p>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> <strong>本番に残っていた分は手で消した</strong>（23 行。<code>messages</code> 11 ・ <code>connectors</code> 4 ・ <code>cursors</code> 3 ・ <code>archives</code> 5）。控えを取り、1 トランザクションで消し、宙に浮いた参照が 0 件であることを実測した</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>道具に <code>archives</code> を足した。</strong>対象が <code>test-</code> / <code>sandbox-</code> の行と、それを指す知らせも消す</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>tests/purge-test-data.test.mjs</code> に検査を足した</li>
+				</ul>
+
+				<div class="callout callout-important">
+					<p><strong>見落としは <code>cursors</code> にもあった。</strong><code>connectors</code> に行を持たない <code>test-</code> の参加者と、<code>sandbox-</code> のルームの位置が残っていた。<strong><code>who</code> にも画面にも出ないので、目で見て気づくことはできない。</strong></p>
+				</div>
+			</div>
+		</details>
+
 		<details class="issue" id="i260911-01" open>
 			<summary>
 				<span class="badge b-todo">未</span>
@@ -3710,7 +3738,7 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 						<tr><td class="num">1</td><td class="nowrap">USAGE <code>794</code> ⇔ <code>981</code> ・ <code>1014</code> ・ <code>1015</code></td><td><code>[killed]</code> の原因が<strong>同じ資料の中で正反対</strong>（「時間で打ち切られることはない」⇔「60 分で必ず起きる」）。09-08 の直しから 2 か所が取り残された。<strong>対象のずれも残る</strong>——60 分の規則は「サブエージェントが持つコマンド」に対するものだが、USAGE は「サブエージェントを挟まない」を指示しており、<strong>指示どおり張った待受けに当たるのかが資料の中で決まらない</strong></td></tr>
 						<tr><td class="num">2</td><td class="nowrap"><code>status:521</code> ・ 設計 <code>2116-2119</code></td><td>「CLI が読む環境変数は 0」と書いているが、<strong>両実装とも <code>AICHAT_DATA</code> を読む</strong>（node は <code>config.mjs</code> 経由で <code>IS_TEST</code> を決め、待受けの記録を書くかを分けている。C# 版は直読み）</td></tr>
 						<tr><td class="num">3</td><td class="nowrap">設計 <code>1875-1876</code></td><td>「<code>--wait-sec</code> は <code>--help</code> に出さない」と書いたが、<strong>隠す仕組みは無く両実装の <code>-h</code> に出る</strong>。USAGE は 3 か所で通常のオプションとして案内しており、<strong>外れているのは設計書の 1 行だけ</strong>（<code>5904a81</code> が新規に書いた行）</td></tr>
-						<tr><td class="num">4</td><td class="nowrap"><code>Commands.cs:699-718</code></td><td>C# 版の <code>restart</code> / <code>stop</code> が<strong>サーバーの応答（<code>note</code> ・ <code>will_restart</code>）を読まず固定文を出す</strong>。サービス経由でないサーバー（テスト用の :8765 など）に対して <strong>2 本の CLI が逆のことを言う</strong></td></tr>
+						<tr><td class="num">4</td><td class="nowrap"><code>Commands.cs:699-718</code></td><td>C# 版の <code>restart</code> / <code>stop</code> が<strong>サーバーの応答（<code>note</code> ・ <code>will_restart</code>）を読まず固定文を出す</strong>。サービス経由でないサーバー（テスト用のものなど）に対して <strong>2 本の CLI が逆のことを言う</strong></td></tr>
 						<tr><td class="num">5</td><td class="nowrap"><code>main.mjs:82-88</code></td><td><strong>SIGINT / SIGTERM の経路だけ <code>closeDb()</code> を呼ばない</strong>。<code>/api/admin/exit</code> の経路は呼んでおり、そのコメントが「閉じなければ 4 KB の本体と 2.2 MB の <code>-wal</code> が残った」と実測を書いている。設計書の「正常終了後は <code>-wal</code> が消えている」と食い違う</td></tr>
 						<tr><td class="num">6</td><td class="nowrap"><code>since-parse.mjs:136</code> ⇔ <code>SinceParse.cs:151</code></td><td><code>--since 4/31</code> のような<strong>存在しない日で 2 本の終わり方が分かれる</strong>。node 版は 5/1 へ繰り上がって <code>exit 0</code>（<strong>打った日付とは別の範囲を静かに返す</strong>）、C# 版は .NET の英語例外で <code>exit 1</code>。日の検査を 1〜31 までにしたのは仕様だが、<strong>その先が決まっていない</strong></td></tr>
 						<tr><td class="num">7</td><td class="nowrap">設計 <code>1669</code></td><td>long-poll 240 秒の<strong>根拠に挙げた 2 つの前提を、同じ設計書が否定している</strong>（600 秒で打ち切られる／待受けはサブエージェント）。値の是非ではなく根拠の話</td></tr>
@@ -3910,7 +3938,7 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 			<div class="issuebody">
 				<p><strong>接続先が環境変数のままである。</strong>テスト用サーバーを叩くには 2 つを渡すが、片方だけが環境変数になっている。</p>
 
-				<pre><code class="language-powershell">$env:AICHAT_URL = 'http://localhost:8765'
+				<pre><code class="language-powershell">$env:AICHAT_URL = 'http://localhost:<テスト用のポート>'
 node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 
 				<p><a href="#i260831-02">i260831-02</a> で <code>AICHAT_ID</code> を引数にすると、<strong>「ID は引数、接続先は環境変数」という不揃いが残る</strong>。理由は同じ（コマンドラインを見れば分かる・シェルを問わない）。</p>
@@ -4676,7 +4704,7 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 					<li class="done"><span class="badge b-done">☑</span> 計画書に「自動のテストだけでは足りない」を足した。継ぎ目にテストを置いたことも書いた</li>
 					<li class="done"><span class="badge b-done">☑</span> テスト・品質・資料を含めた総合レビューを依頼した（<code>msg_seq</code> 565。結果は 566）</li>
 					<li class="done"><span class="badge b-done">☑</span> 総合レビューの 1・5・6 を直した</li>
-					<li class="done"><span class="badge b-done">☑</span> <strong>2 を直した</strong>（A-1）。<strong>判定に入れるのは <code>-r</code> で渡したルームに触れる待受けだけ</strong>にし、並びは基準の外を多く持つものを先にした。テストを 2 件足して全 404 件。<strong>テスト用サーバー（8765）で 3 通りを手で確かめ、node 版と C# 版の出力が一字一句同じ</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>2 を直した</strong>（A-1）。<strong>判定に入れるのは <code>-r</code> で渡したルームに触れる待受けだけ</strong>にし、並びは基準の外を多く持つものを先にした。テストを 2 件足して全 404 件。<strong>テスト用サーバーで 3 通りを手で確かめ、node 版と C# 版の出力が一字一句同じ</strong></li>
 					<li class="done"><span class="badge b-done">☑</span> <strong>止めてよいかを全ルームで見る形に直した</strong>（レビュー <code>msg_seq</code> 605 の 1 件。A）。基準の外を「数」でしか見ていなかったため、<strong>外の数が同じで中身が違うと、片方だけが持つルームの覆いが消えていた</strong>。数ではなく中身を見るので、<code>public,devA</code> と <code>public,devB</code> はどちらも残る。テストを 2 件足して全 406 件。<strong>テスト用サーバーで 4 通りを手で確かめ、2 本の出力は一字一句同じ</strong></li>
 					<li class="done"><span class="badge b-done">☑</span> <strong>4 を直した</strong>（A）。選び方を <code>src/client/waiters-pick.mjs</code> に純粋な関数として出し、<code>chat.mjs</code> とテストが同じものを読む形にした。<strong>写しは 4 か所から 2 か所へ</strong>（node の実体と C# 版）。計画書はコードを貼るのをやめ、置き場を書いた。<strong><code>every</code> を <code>some</code> に変えるとテストが落ちることを実際に確かめた</strong>（写しだった間は落ちなかった）</li>
 					<li><span class="badge b-todo">未</span> 総合レビューの 3 を直す（<code>strayMine</code> のコメント。<strong>直し方を決める</strong>）</li>
@@ -4775,7 +4803,7 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 				</table>
 				</div>
 
-				<p>node 版・C# 版とも、テスト用サーバー（8765）で <code>test-20260908.project</code> のような ID が実際に参加できること、<code>.bad</code> ・ <code>bad.</code> が両方とも同じ理由で断られることを実測した。</p>
+				<p>node 版・C# 版とも、テスト用サーバーで <code>test-20260908.project</code> のような ID が実際に参加できること、<code>.bad</code> ・ <code>bad.</code> が両方とも同じ理由で断られることを実測した。</p>
 
 				<ul class="todos">
 					<li class="done"><span class="badge b-done">☑</span> 使える形を決めた（<strong>先頭・末尾には置けない</strong>）</li>

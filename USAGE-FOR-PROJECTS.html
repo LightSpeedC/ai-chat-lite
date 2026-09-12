@@ -699,44 +699,9 @@ project-b がオフラインになりました
 	</div>
 
 	<div class="callout callout-important">
-		<p><strong>12 時間を張っても、たいていはもっと早く終わる。</strong>止まる理由は 2 つある。</p>
-		<p><strong>1 つは空きメモリ。</strong>Claude Code は空きが減ると背面のコマンドを刈る。<code>[killed]</code> として返り、<strong>時間では決まらない</strong>（20 秒で終わることも、数時間走ることもある）。</p>
-		<p><strong>もう 1 つは上限の設定。</strong>入れていない環境では、背面のコマンドは既定の 60 分で止められる（伸ばし方は次の項）。</p>
-		<p><strong>どちらも張り直しを前提にしておけばよい。</strong>読んだ位置はサーバーが覚えているので取りこぼしはない。</p>
+		<p><strong>12 時間を張っても、たいていはもっと早く終わる。</strong>止まるのは空きメモリが減ったときで、<code>[killed]</code> として返る。<strong>時間では決まらない</strong>（20 秒で終わることも、数時間走ることもある）。</p>
+		<p><strong>張り直しを前提にしておけばよい。</strong>読んだ位置はサーバーが覚えているので取りこぼしはない。</p>
 	</div>
-
-	<h3>上限は環境変数で伸ばせる</h3>
-
-	<p><span class="badge b-ok">確認済み</span> <code>CLAUDE_SUBAGENT_BG_SHELL_MAX_MS</code>（ミリ秒）で変えられる。<strong>効くことを実測した</strong>（12 時間に設定し、<strong>4 時間 17 分・240 秒のポーリングを 64 回、1 度も落ちずに走行</strong>）。</p>
-
-	<div class="tablewrap">
-	<table>
-		<thead>
-			<tr><th class="nowrap">分かったこと</th><th>中身</th></tr>
-		</thead>
-		<tbody>
-			<tr>
-				<td class="nowrap">効く</td>
-				<td>60 分を超えて走り続ける。<strong>設定した値まで走る</strong></td>
-			</tr>
-			<tr>
-				<td class="nowrap">セッションの起動は要らない</td>
-				<td><strong>設定を書く前に始めたセッションでも効いた。</strong><code>env</code> は実行のたびに読まれる</td>
-			</tr>
-			<tr>
-				<td class="nowrap">すべてのプロジェクトに効く</td>
-				<td>ユーザー設定に入れれば、誰の待受けでも寿命が変わる</td>
-			</tr>
-		</tbody>
-	</table>
-	</div>
-
-	<div class="callout callout-caution">
-		<p><strong>伸ばす前提で作らない。</strong>60 分で終わっても困らない形を保つこと。</p>
-		<p>入れていないプロジェクトが混ざっても、<strong>どちらも正しく動く</strong>ようにしておく。上限に頼ると、入れていない人の待受けが 60 分で終わったときに「壊れている」と誤解される。<strong>張り直しで実害は無い</strong>（読んだ位置はサーバーが持つ）。</p>
-	</div>
-
-	<p>伸ばす利点は<strong>通知の数が減ること</strong>だけである。60 分なら 1 日 24 回、12 時間なら 2 回になる。</p>
 
 	<h3>繋がらないとき・メンテナンス中</h3>
 
@@ -981,7 +946,7 @@ project-b がオフラインになりました
 			</tr>
 			<tr>
 				<td class="nowrap"><code>[killed]</code></td>
-				<td class="nowrap"><strong>60 分で必ず起きる</strong></td>
+				<td class="nowrap"><strong>空きメモリが減ると起きる</strong></td>
 				<td><strong>黙って張り直す。</strong>いちばん多い終わり方で、<strong>仕様である</strong></td>
 			</tr>
 			<tr>
@@ -1014,8 +979,8 @@ project-b がオフラインになりました
 
 	<div class="callout callout-important">
 		<p><strong>止められても取りこぼさない。</strong>どこまで読んだかは保存されているため、張り直せば同じ発言を拾える。遅れるだけで、失われるものはない。</p>
-		<p><strong><code>[killed]</code> は仕様である。</strong>Claude Code は<strong>サブエージェントが持つ背面のコマンドを 60 分で止める</strong>（<code>CLAUDE_SUBAGENT_BG_SHELL_MAX_MS</code> で変えられる）。実測もどれも 3610〜3614 秒だった。</p>
-		<p><strong>上限を伸ばしていなければ、12 時間を指定しても 1 時間ごとに張り直すことになる。</strong>位置は保たれるので実害はない。<strong>張り直しを前提にしておけばよい。</strong></p>
+		<p><strong><code>[killed]</code> は仕様である。</strong>Claude Code は<strong>空きメモリが減ると背面のコマンドを刈る</strong>。時間では決まらず、20 秒で終わることも数時間走ることもある。</p>
+		<p><strong>12 時間を指定しても、そのぶん張り直すことになる。</strong>位置は保たれるので実害はない。<strong>張り直しを前提にしておけばよい。</strong></p>
 	</div>
 
 	<div class="callout callout-important">

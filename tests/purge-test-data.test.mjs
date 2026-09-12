@@ -100,3 +100,55 @@ describe('知らない引数は消さずに止まる', () => {
 		assert.equal(code, 2);
 	});
 });
+
+/*
+ * 【なぜ必要か】
+ * 以前この道具は messages / cursors / connectors の 3 つしか見なかった。
+ * 本番に入り込んだ test- の参加者を archive で片付けると archives に
+ * 「何を片付けたか」の行が残るが、それは消えないまま積み上がる。
+ * archives の説明は aichat archives の一覧に出るので、テストの痕跡が
+ * 読める状態になる。実際に本番で 5 件が残っていた（i260912-01）。
+ *
+ * 片付けの知らせ（msg_kind = archive）も同じで、差出人は片付けを実行した
+ * 側なので from_connector_id では当たらない。残すと、指す先の無い番号に
+ * 「戻す」ボタンだけが出る。
+ */
+describe('片付けの記録も消す', () => {
+	test('archives と、それを指す知らせが消える', async () => {
+		const { DatabaseSync } = await import('node:sqlite');
+		const dbPath = join(TEST_DATA, 'chat.db');
+
+		// 片付け済みの参加者と、その記録・知らせを作る
+		{
+			const db = new DatabaseSync(dbPath);
+			try {
+				db.exec('BEGIN IMMEDIATE');
+				db.prepare('INSERT INTO archives (archived_at, archived_connector_id, archive_kind, archive_id, description) VALUES (?, ?, ?, ?, ?)')
+					.run('2026/09/12 00:00:00.000', 'human', 'connector', 'test-purge-me', 'テストの参加者を片付けた');
+				const seq = Number(db.prepare('SELECT MAX(archived_seq) AS n FROM archives').get().n);
+				db.prepare('INSERT INTO messages (room_id, sent_at, from_connector_id, msg_kind, msg_body, ref_archived_seq) VALUES (?, ?, ?, ?, ?, ?)')
+					.run('public', '2026/09/12 00:00:01.000', 'human', 'archive', 'test-purge-me を片付けた', seq);
+				db.exec('COMMIT');
+			} finally {
+				db.close();
+			}
+		}
+
+		await purge(['--test'], { AICHAT_DATA: TEST_DATA });
+
+		const db = new DatabaseSync(dbPath);
+		try {
+			const arc = Number(db.prepare("SELECT COUNT(*) AS n FROM archives WHERE archive_id = 'test-purge-me'").get().n);
+			const notice = Number(db.prepare("SELECT COUNT(*) AS n FROM messages WHERE msg_kind = 'archive' AND msg_body LIKE '%test-purge-me%'").get().n);
+			const orphan = Number(
+				db.prepare('SELECT COUNT(*) AS n FROM messages WHERE ref_archived_seq IS NOT NULL AND ref_archived_seq NOT IN (SELECT archived_seq FROM archives)').get().n
+			);
+
+			assert.equal(arc, 0, 'archives の行が残っている');
+			assert.equal(notice, 0, '片付けの知らせが残っている');
+			assert.equal(orphan, 0, '指す先の無い知らせが残っている');
+		} finally {
+			db.close();
+		}
+	});
+});

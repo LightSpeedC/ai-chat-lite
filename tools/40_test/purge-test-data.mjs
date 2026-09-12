@@ -4,8 +4,11 @@
  * テストは実際に動いているサーバーへ投稿するため、走らせるたびに参加者とルームが
  * 増える。名前で見分けられるようにしておき、終わったらまとめて消す。
  *
- *   connector_id が test-  で始まるもの … connectors / cursors / messages（発言者・宛先）
- *   room_id が sandbox- で始まるもの … messages / cursors
+ *   connector_id が test-  で始まるもの … connectors / cursors / messages（発言者・宛先） / archives
+ *   room_id が sandbox- で始まるもの … messages / cursors / archives
+ *
+ * 片付け（archive）の記録と、それを指す知らせも消す。以前は 3 テーブルしか
+ * 見ておらず、片付けた記録だけが本番に残り続けた（i260912-01）。
  *
  * public のように残したいルームへ投稿したものも、発言者が test- なら消える。
  *
@@ -172,24 +175,47 @@ db.exec('PRAGMA secure_delete = ON');
  *   名前を渡されたとき … その名前と一致するものだけ
  *   渡されないとき     … 接頭辞に当たるもの全部
  */
+/*
+ * archives も相手にする。
+ *
+ * 本番に入り込んだ test- の参加者を archive で片付けると、archives に
+ * 「何を片付けたか」の行が残る。以前はこの道具が 3 テーブルしか見なかった
+ * ため、その行だけが残り続けた。archives の説明は aichat archives の一覧に
+ * 出るので、テストの痕跡が読める状態になる（実際に 5 件が残っていた）。
+ *
+ * 片付けの知らせ（msg_kind = archive）も一緒に消す。差出人は片付けを実行した
+ * 側なので from_connector_id では当たらないが、消す archives を指している
+ * ものは残しても意味がない。番号の指す先が無くなり、画面には押しても何も
+ * 起きない「戻す」ボタンだけが出る。
+ */
+const ARCHIVE_NOTICE = `ref_archived_seq IN (SELECT archived_seq FROM archives WHERE %COND%)`;
+
 const build = () => {
 	if (names.length === 0) {
 		const u = `${CONNECTOR_PREFIX}%`;
 		const r = `${ROOM_PREFIX}%`;
+		const arcCond = 'archive_id LIKE ? OR archive_id LIKE ? OR archived_connector_id LIKE ?';
 		return {
-			messages: ['from_connector_id LIKE ? OR to_connector_id LIKE ? OR room_id LIKE ?', [u, u, r]],
+			messages: [
+				`from_connector_id LIKE ? OR to_connector_id LIKE ? OR room_id LIKE ? OR ${ARCHIVE_NOTICE.replace('%COND%', arcCond)}`,
+				[u, u, r, u, r, u],
+			],
 			cursors: ['connector_id LIKE ? OR room_id LIKE ?', [u, r]],
 			connectors: ['connector_id LIKE ?', [u]],
+			archives: [arcCond, [u, r, u]],
 		};
 	}
 	const marks = names.map(() => '?').join(', ');
+	const arcCond = `archive_id IN (${marks}) OR archived_connector_id IN (${marks})`;
 	return {
 		messages: [
-			`from_connector_id IN (${marks}) OR to_connector_id IN (${marks}) OR room_id IN (${marks})`,
-			[...names, ...names, ...names],
+			`from_connector_id IN (${marks}) OR to_connector_id IN (${marks}) OR room_id IN (${marks})` +
+				` OR ${ARCHIVE_NOTICE.replace('%COND%', arcCond)}`,
+			[...names, ...names, ...names, ...names, ...names],
 		],
 		cursors: [`connector_id IN (${marks}) OR room_id IN (${marks})`, [...names, ...names]],
 		connectors: [`connector_id IN (${marks})`, [...names]],
+		archives: [arcCond, [...names, ...names]],
 	};
 };
 
@@ -199,8 +225,13 @@ const count = (table) => {
 	return Number(db.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE ${cond}`).get(...args).n);
 };
 
-const found = { messages: count('messages'), cursors: count('cursors'), connectors: count('connectors') };
-const total = found.messages + found.cursors + found.connectors;
+const found = {
+	messages: count('messages'),
+	cursors: count('cursors'),
+	connectors: count('connectors'),
+	archives: count('archives'),
+};
+const total = found.messages + found.cursors + found.connectors + found.archives;
 const scope = names.length === 0 ? '接頭辞に当たる全部' : `指定された ${names.length} 件の名前`;
 
 if (total === 0) {
@@ -209,7 +240,9 @@ if (total === 0) {
 	process.exit(0);
 }
 
-console.log(`テストデータ（${scope}）: messages ${found.messages} / cursors ${found.cursors} / connectors ${found.connectors}`);
+console.log(
+	`テストデータ（${scope}）: messages ${found.messages} / cursors ${found.cursors} / connectors ${found.connectors} / archives ${found.archives}`
+);
 
 if (dryRun) {
 	console.log('（--dry-run のため消していません）');
@@ -218,7 +251,13 @@ if (dryRun) {
 }
 
 db.exec('BEGIN IMMEDIATE');
-for (const table of ['messages', 'cursors', 'connectors']) {
+/*
+ * archives は最後に消す。
+ *
+ * messages の条件が「消す archives を指している知らせ」を拾うため、先に
+ * archives を消すと、その知らせが条件に当たらなくなって残る。
+ */
+for (const table of ['messages', 'cursors', 'connectors', 'archives']) {
 	const [cond, args] = conditions[table];
 	db.prepare(`DELETE FROM ${table} WHERE ${cond}`).run(...args);
 }
