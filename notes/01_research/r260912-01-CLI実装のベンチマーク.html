@@ -418,7 +418,8 @@ footer a {
 
 <div class="callout callout-important">
 	<p><strong>測ったあとで前提が変わった。Mac ・ Linux にも展開すると決めたため、C# は土俵を降りる。</strong>PowerShell で書いた道具も同じである。<br>
-	<strong>CLI は TypeScript（node ・ bun）と Rust の 2 系統で進める。</strong>この資料の数字はそのまま使えるが、<strong>読む順番が変わる</strong>。C# が最小だった項目は、比べる相手がいなくなったという意味になる。</p>
+	<strong>CLI は TypeScript（node ・ bun）と Rust の 2 系統で進める。</strong>この資料の数字はそのまま使えるが、<strong>読む順番が変わる</strong>。C# が最小だった項目は、比べる相手がいなくなったという意味になる。<br>
+	その後 <strong>Rust 版を製品として作り、14 コマンドすべてが揃った</strong>（<a class="doclink" href="../40_issues/issues.html#i260913-01">i260913-01</a>）。測り直した数字は「<a href="#ch01">分かったこと</a>」の後半にある。</p>
 </div>
 
 <p>サーバー側は別に測った。<a class="doclink" href="r260912-02-サーバーのベンチマーク.html">サーバーのベンチマーク</a>にある。</p>
@@ -448,6 +449,37 @@ footer a {
 		<p><strong>Mac ・ Linux へ展開すると決めたので、残る選択肢は TypeScript（node ・ bun）と Rust になる。</strong>その 2 系統で読むと、待受け中の実メモリは <strong>bun 25.59 MB 対 Rust 4.89 MB</strong>。<strong>差は 20.7 MB/本</strong>である。<br>
 		ただし<strong>確保量では bun 108.43 MB 対 node 62.44 MB で、bun のほうが大きい。</strong>同じ傾向はサーバーでも出た（<a class="doclink" href="r260912-02-サーバーのベンチマーク.html">サーバーのベンチマーク</a>）。<strong>処理系の癖であり、どちらのメモリを見るかで結論が変わる。</strong></p>
 	</div>
+
+	<h2>その後、Rust 版を製品として作った</h2>
+
+	<div class="callout callout-important">
+		<p><strong>全 14 コマンドを入れても 6.41 MB だった。</strong>上の 4.89 MB は待受けしか持たない 111 行の最小実装で、そこに 13 コマンドと検証を足して<strong>増えたのは 1.5 MB</strong>である。<br>
+		「機能を足せば増える」と書いたが、<strong>ほとんど増えなかった。</strong></p>
+	</div>
+
+	<div class="tablewrap">
+		<table>
+			<thead>
+				<tr><th>実装</th><th>待受け中の実メモリ</th><th>確保量</th><th><code>waiters</code></th><th>持っている機能</th></tr>
+			</thead>
+			<tbody>
+				<tr><td class="nowrap"><strong>Rust 版（製品）</strong></td><td class="num"><strong>6.41 MB</strong></td><td class="num"><strong>1.00 MB</strong></td><td class="num">523.1 ms</td><td>14 コマンド</td></tr>
+				<tr><td class="nowrap">C# 版</td><td class="num">24.89 MB</td><td class="num">18.53 MB</td><td class="num"><strong>206.6 ms</strong></td><td>14 コマンド</td></tr>
+				<tr><td class="nowrap">bun 版</td><td class="num">38.31 MB</td><td class="num">162.45 MB</td><td class="num">673.0 ms</td><td>14 コマンド</td></tr>
+				<tr><td class="nowrap">node 版</td><td class="num">54.20 MB</td><td class="num">60.50 MB</td><td class="num">667.9 ms</td><td>14 コマンド</td></tr>
+				<tr><td class="nowrap">Rust 版（最小）</td><td class="num">4.89 MB</td><td class="num">0.84 MB</td><td class="num">—</td><td>待受けだけ（111 行）</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<p><strong>4 実装とも同じ 14 コマンドを持ったうえでの比較になった。</strong>実メモリで node 版の 1/8、確保量では bun 版の 162 分の 1 である。</p>
+
+	<div class="callout callout-caution">
+		<p><strong>ここだけ Rust が負ける。</strong><code>waiters</code> は C# 版の 2.5 倍かかる。<strong>PowerShell を起こしているため</strong>で、その起動だけで 213 ms を使う。C# 版は .NET から直に問い合わせられるので、その分が無い。<br>
+		<code>waiters</code> は待受けを張る前に毎回叩くので、ここは体感に出る。ただし<strong>node ・ bun（668 ・ 673 ms）よりは速く、いまの運用よりは改善している。</strong></p>
+	</div>
+
+	<p>測り方を分けてあるのは、上の 5 実装の表が「起動」を見ているのに対し、こちらは<strong>張りっぱなしの状態</strong>を見ているため。道具も <code>tools/40_test/benchmark-waiters.mjs</code> に分けた（<strong>PowerShell ではなく node で書いてある</strong>。Mac ・ Linux でも測れるようにするため）。</p>
 
 	<h2>5 実装を 1 枚に</h2>
 
