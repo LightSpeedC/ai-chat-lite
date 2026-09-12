@@ -415,8 +415,13 @@ async function loadRooms() {
  * 検証せずに localStorage へ書くと、誤入力した名前がそのまま固定され、
  * リロードのたびに同じ失敗（サーバーの 400）を繰り返す（レビュー #19、
  * i260908-05）。
+ *
+ * ルーム名と名乗る ID の両方に使う。以前はルーム名だけを通しており、
+ * ID の側は空かどうかしか見ずに localStorage へ書いていた。サーバーは
+ * /api/join の connector_id にも同じ検査を掛けるので、上のコメントが
+ * 警告している状況が ID 側にだけ残っていた（レビュー #23 medium 13）。
  */
-const ROOM_ID_RE = /^[A-Za-z0-9_-](?:[A-Za-z0-9_.-]*[A-Za-z0-9_-])?$/;
+const ID_RE = /^[A-Za-z0-9_-](?:[A-Za-z0-9_.-]*[A-Za-z0-9_-])?$/;
 
 /**
  * ルームを切り替える。表示を空にしてから読み直す。
@@ -573,7 +578,7 @@ el.roomDialog.addEventListener('close', () => {
 	if (el.roomDialog.returnValue !== 'ok') return;
 	const name = el.roomInput.value.trim();
 	if (!name) return;
-	if (!ROOM_ID_RE.test(name)) {
+	if (!ID_RE.test(name)) {
 		showBanner(`ルーム名に使えるのは英数字・ハイフン・下線・ピリオド（先頭と末尾には置けません）だけです: ${name}`);
 		return;
 	}
@@ -738,6 +743,12 @@ function askId(force) {
 el.dialog.addEventListener('close', () => {
 	const value = el.idInput.value.trim();
 	if (!value) {
+		el.dialog.showModal();
+		return;
+	}
+	// 検証せずに書くと、誤った名前が固定されてリロードのたびに 400 を繰り返す
+	if (!ID_RE.test(value)) {
+		showBanner(`ID に使えるのは英数字・ハイフン・下線・ピリオド（先頭と末尾には置けません）だけです: ${value}`);
 		el.dialog.showModal();
 		return;
 	}

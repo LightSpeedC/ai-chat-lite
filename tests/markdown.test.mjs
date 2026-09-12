@@ -98,6 +98,51 @@ test('リンクの直後の " はリンクに含まれない', () => {
 	assert.ok(out.includes('&quot;'), out);
 });
 
+/*
+ * 【なぜ必要か】
+ * 自動リンクの文字集合が & を除いていたため、クエリ付きの URL が最初の
+ * &amp; の手前で切れていた。エスケープが先に走って URL 内の & は &amp; に
+ * なっているので、[^\s&"'<>]+ はそこで止まる。
+ *
+ * 結果、href が投稿された URL と別のものになり、残りが「amp;b=2」という
+ * 文字列として本文に出る。クエリ付き URL はチャットでよく貼られる
+ * （レビュー #23 medium 16）。
+ *
+ * & を戻しても < > " ' は外したままなので、タグを飲み込む経路は塞がれている。
+ */
+test('クエリ付きの URL が & で切れない', () => {
+	const out = renderBody('https://example.com/?a=1&b=2 のあと');
+
+	// href は投稿された URL と同じものを指す（& はエスケープされた形で入る）
+	assert.ok(out.includes('href="https://example.com/?a=1&amp;b=2"'), out);
+	// 切れた残りが本文に落ちていない
+	assert.ok(!out.includes('amp;b=2 のあと'), out);
+	assert.ok(out.includes('</a> のあと'), out);
+});
+
+test('& を戻してもタグは飲み込まない', () => {
+	// &amp; を含む URL の直後に生成タグが来ても、そこで切れる
+	const out = renderBody('https://example.com/?a=1&b=2`x`');
+	assert.ok(!/href="[^"]*<code>/.test(out), out);
+	assert.ok(out.includes('<code>x</code>'), out);
+});
+
+/*
+ * 【なぜ必要か】
+ * & を無条件に通すと、エスケープ後の " < > （&quot; &lt; &gt;）まで URL に
+ * 入る。そうなると「" と < > を文字集合から外した」理由がそのまま崩れ、
+ * 属性から抜け出す経路とタグを飲み込む経路が戻る。
+ * 通すのは &amp; だけで、他の実体参照ではリンクを切る。
+ */
+test('&quot; や &lt; ではリンクが切れる', () => {
+	const quoted = renderBody('https://example.com/?a=1&b=2" data-x=1');
+	assert.ok(quoted.includes('href="https://example.com/?a=1&amp;b=2"'), quoted);
+	assert.ok(!/href="[^"]*&quot;/.test(quoted), quoted);
+
+	const tagged = renderBody('https://example.com/?a=1&b=2<script>');
+	assert.ok(!/href="[^"]*&lt;/.test(tagged), tagged);
+});
+
 // --- 通す記法 ---
 
 test('太字', () => {

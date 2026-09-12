@@ -54,7 +54,15 @@ export function renderBody(src) {
 	s = s.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
 
 	// 4. 自動リンク。http と https だけを対象にする（javascript: を通さないため）。
-	//    エスケープ済みなので、URL 内の & は既に &amp; になっている。
+	//
+	//    & は &amp; の形だけ通す。エスケープ済みなので URL 内の & は &amp; に
+	//    なっており、& を丸ごと外すとクエリ付きの URL が最初の &amp; の手前で
+	//    切れる。href が投稿された URL と別のものになり、残りが「amp;b=2」と
+	//    いう文字列として本文に落ちる（クエリ付き URL はよく貼られる）。
+	//
+	//    ただし & を無条件に通すと、&quot; &lt; &gt; まで URL に入ってしまう。
+	//    エスケープ後は " < > がその形になっているので、下の「外す理由」が
+	//    そのまま崩れる。だから &amp; だけを許し、他の実体参照では切る
 	//
 	//    " と ' も文字集合から外す。escapeText が " を実体参照にしているので
 	//    ここに生の " は来ないが、属性値に埋める側でも閉じておく。
@@ -64,7 +72,10 @@ export function renderBody(src) {
 	//    戻したコードブロックの <pre><code> を URL ごと飲み込む。href の中身
 	//    だけならまだしも、表示文字にも同じ値を使っているため、そちらは
 	//    innerHTML としてそのまま解釈され、飲み込んだタグが生き返ってしまう
-	s = s.replace(/(https?:\/\/[^\s&"'<>]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+	s = s.replace(
+		/(https?:\/\/(?:[^\s&"'<>]|&amp;)+)/g,
+		'<a href="$1" target="_blank" rel="noopener">$1</a>'
+	);
 
 	// 5. 残った改行
 	s = s.replace(/\r?\n/g, '<br>');
