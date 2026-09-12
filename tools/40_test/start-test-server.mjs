@@ -31,8 +31,43 @@ const DATA_DIR = process.env.AICHAT_DATA ?? join(root, 'tmp', '_data');
 const INFO = join(DATA_DIR, 'server.json');
 const LOG = join(DATA_DIR, 'server.log');
 
-/** 8765 から下へ探す。本番の 8787 とは離しておく */
-const FIRST_PORT = 8765;
+/*
+ * 探し始めるポート。Git 管理外の設定ファイルから読む。
+ *
+ * 【なぜソースに書かないか】
+ * このリポジトリは公開されている。テスト用サーバーの番号は USAGE に載せて
+ * おらず、他プロジェクトへ案内していない値なので、公開する側に置かない。
+ *
+ * 既定値をここに書くと、設定ファイルを消しても動いてしまい、番号がソースに
+ * 残ったままになる。だから既定値は持たず、無ければ起動を断る。
+ *
+ * 置き場は先頭 _ のフォルダ。.gitignore が全階層を管理外にしている。
+ */
+const SECRETS = join(root, '_secrets', 'test-server.json');
+
+function readFirstPort() {
+	if (!existsSync(SECRETS)) {
+		console.error('テスト用サーバーの設定がありません。');
+		console.error('  _secrets/test-server.json に { "firstPort": <番号> } を置いてください。');
+		console.error('  本番のポートとは離れた番号にすること。打ち間違いがそのまま本番に飛びます。');
+		process.exit(2);
+	}
+	let conf;
+	try {
+		conf = JSON.parse(readFileSync(SECRETS, 'utf8'));
+	} catch (err) {
+		console.error(`テスト用サーバーの設定が読めません: ${err.message}`);
+		process.exit(2);
+	}
+	const port = Number(conf.firstPort);
+	if (!Number.isInteger(port) || port < 1024 || port > 65535) {
+		console.error(`firstPort は 1024〜65535 の整数にしてください: ${conf.firstPort}`);
+		process.exit(2);
+	}
+	return port;
+}
+
+const FIRST_PORT = readFirstPort();
 
 /*
  * 下げる回数に上限を置く。
