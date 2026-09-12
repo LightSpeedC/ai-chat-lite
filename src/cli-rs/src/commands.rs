@@ -4,6 +4,195 @@
 
 use crate::client::{CallError, Client};
 use crate::json::Json;
+use crate::jst;
+
+/// 新着を待つときの設定
+pub struct WaitOpts {
+	/// 最大どれだけ待つか（秒）。0 は上限なし
+	pub limit_sec: i64,
+	/// 参加・離脱でも起こすか
+	pub with_joins: bool,
+	/// 1 回の long-poll の上限（定義の max_wait_sec）
+	pub max_wait_sec: i64,
+	/// テスト用として動いているか。記録を残すかの判断に使う
+	pub is_test: bool,
+	/// 初めての接続のときに見本へ出す接続先（`-p 8787` の形）
+	pub where_: String,
+}
+
+/// 新着を待つ。
+///
+/// **1 回の long-poll は 240 秒で必ず返る。**サーバー側で引き延ばすと、途中の
+/// 切断に気づけないまま握り続けることになる。代わりに、返ってきたら黙って
+/// 張り直す。何回に分かれたかは呼ぶ側に関係がないので出さない。
+pub fn wait(client: &Client, id: &str, room: &str, opts: &WaitOpts) -> Result<(), CallError> {
+	let unlimited = opts.limit_sec == 0;
+	let label = describe_wait(opts.limit_sec);
+
+	/*
+	 * 参加・離脱では起こさない。
+	 *
+	 * public には join と leave が数分ごとに流れるため、既定のままだと 12 時間を
+	 * 指定しても数分で返っていた。絞るのはサーバー側にする。ここで捨てて待ち直すと、
+	 * 待った秒数の数え方が「待ち切った」前提のままになり、実際の経過より速く上限に達する。
+	 */
+	let exclude = if opts.with_joins { "" } else { "&exclude=join,leave" };
+
+	/*
+	 * 初めての接続なら案内を出して終わる（課題 i260909-01）。
+	 *
+	 * wait は背面に張る運用が前提で、完了時にしか通知が来ない。案内を出しても
+	 * そのまま 12 時間待ち続けると、案内そのものが誰の目にも触れない。
+	 */
+	let status = client.call(
+		"GET",
+		&format!(
+			"/api/cursor-status?connector_id={}&room_id={}",
+			encode_query(id),
+			encode_query(room)
+		),
+		None,
+		None,
+	)?;
+
+	if status.get("first_time").and_then(|v| v.as_bool()).unwrap_or(false) {
+		let empty: Vec<Json> = Vec::new();
+		let rooms = status.get("rooms").and_then(|v| v.as_arr()).unwrap_or(&empty);
+		// 初めてなのは、指定したルームのうち一部だけのことがある
+		let first: Vec<&str> = rooms
+			.iter()
+			.filter(|r| r.get("first_time").and_then(|v| v.as_bool()).unwrap_or(false))
+			.filter_map(|r| r.get("room_id").and_then(|v| v.as_str()))
+			.collect();
+
+		println!(
+			"初めての接続です（{}）。参加より前の発言は待ちません。過去が必要なら recent で取ってください（例）:",
+			first.join(", ")
+		);
+		/*
+		 * 見本には -r を必ず付ける。recent の既定は public なので、付けずに
+		 * 写されると「初めてだと言ったルーム」ではなく public を見ることになり、
+		 * 取れると言われた過去が出てこない。recent は 1 ルームずつなので、
+		 * ルームごとに見本を出す。
+		 */
+		for r in &first {
+			println!(
+				"    aichat recent --find \"ルール\" {} -r {}   # {} のルール変更の周知をまとめて見る",
+				opts.where_, r, r
+			);
+			println!("    aichat recent --since-day 1 {} -r {}     # {} の 1 日前からの発言を見る", opts.where_, r, r);
+		}
+		println!();
+
+		/*
+		 * 対象は初めてのルームだけに絞る。全体に対して呼ぶと、既存カーソルを持つ
+		 * ルームの未読まで取得したうえで画面に出さず、カーソルだけ最新に進めてしまう。
+		 * 取りこぼしではなく「表示せずに既読化する」形のデータ消失になる（i260909-03）。
+		 */
+		client.call(
+			"GET",
+			&format!(
+				"/api/poll?connector_id={}&room_id={}&wait=0",
+				encode_query(id),
+				encode_query(&first.join(","))
+			),
+			None,
+			None,
+		)?;
+		println!("カーソルを立てました。改めて wait を実行してください。");
+		return Ok(());
+	}
+
+	/*
+	 * 出すのは 2 行だけ。12 時間を 240 秒ごとに知らせると 180 行になる。
+	 *
+	 * 「待受け中」と進行形にしてあるのは、この 1 行だけを見た相手に「終わった」と
+	 * 読ませないため。待受けを張るサブエージェントは背面のコマンドを起こした時点で
+	 * 自分の仕事を終えるので、親には「終了」の扱いで通知が届く（課題 i260905-01）。
+	 *
+	 * pid を添えるのは、走っているかを親が確かめられるようにするため。
+	 */
+	let pid = std::process::id();
+	println!(
+		"pid {} で待受け中（最大 {}、ルーム {}、{}{}）",
+		pid,
+		label,
+		room,
+		id,
+		if opts.with_joins { "、参加・離脱も" } else { "" }
+	);
+
+	let root = std::env::current_dir().unwrap_or_default();
+	let log = WaitLog::open(&root, id, opts.is_test);
+	log.write(
+		"INFO",
+		&format!(
+			"待受け開始（最大 {}、ルーム {}、{}、pid {}{}）",
+			label,
+			room,
+			id,
+			pid,
+			if opts.with_joins { "、参加・離脱も" } else { "、参加・離脱は除く" }
+		),
+	);
+
+	let mut waited = 0i64;
+	let mut last: Option<Json> = None;
+
+	while unlimited || waited < opts.limit_sec {
+		let this = if unlimited {
+			opts.max_wait_sec
+		} else {
+			opts.max_wait_sec.min(opts.limit_sec - waited)
+		};
+
+		/*
+		 * since は渡さない。どこまで読んだかはサーバーが覚えている。
+		 * 受け取った分は返答と同時に記録されるので、次はその続きから届く。
+		 */
+		let result = client.call(
+			"GET",
+			&format!(
+				"/api/poll?connector_id={}&room_id={}&wait={}{}",
+				encode_query(id),
+				encode_query(room),
+				this,
+				exclude
+			),
+			None,
+			// 待つ長さより十分に長く取る。ここで切ると待受けが途中で落ちる
+			Some(std::time::Duration::from_secs((this + 60) as u64)),
+		)?;
+		waited += this;
+
+		let empty: Vec<Json> = Vec::new();
+		let messages = result.get("messages").and_then(|v| v.as_arr()).unwrap_or(&empty).to_vec();
+
+		log.write(
+			"INFO",
+			&format!(
+				"待機中（経過 {} 秒 / 上限 {}、新着 {} 件、現在位置 {}）",
+				waited,
+				if unlimited { "無し".to_string() } else { format!("{} 秒", opts.limit_sec) },
+				messages.len(),
+				describe_positions(&result)
+			),
+		);
+
+		if !messages.is_empty() {
+			println!("新着 {} 件:", messages.len());
+			print_messages(&messages);
+			log.write("INFO", &format!("新着 {} 件を受け取って終わります", messages.len()));
+			return Ok(());
+		}
+		last = Some(result);
+	}
+
+	let positions = last.as_ref().map(describe_positions).unwrap_or_else(|| "0".to_string());
+	println!("新着なし（{}待機、現在位置 {}）", label, positions);
+	log.write("INFO", &format!("新着なし。上限まで待ち切って終わります（{}）", label));
+	Ok(())
+}
 
 /// 在席の印。node 版の `STATUS_MARK` と同じ
 pub fn status_mark(status: &str) -> &'static str {
@@ -352,6 +541,108 @@ pub fn leave(client: &Client, id: &str, room: &str) -> Result<(), CallError> {
 	Ok(())
 }
 
+/// 待つ長さを人が読む形にする。0 は上限なし
+pub fn describe_wait(sec: i64) -> String {
+	if sec == 0 {
+		return "上限なし".to_string();
+	}
+	if sec % 3600 == 0 {
+		return format!("{} 時間", sec / 3600);
+	}
+	if sec % 60 == 0 {
+		return format!("{} 分", sec / 60);
+	}
+	format!("{} 秒", sec)
+}
+
+/// 前面のツール実行が背面に移されるまでの秒数
+pub const FOREGROUND_SEC: i64 = 600;
+
+/// 前面で長く待つ設定かどうか。
+///
+/// 打ち切られるのではない。プロセスはそのまま走り続けるが、それまで
+/// 呼び出し側が待たされる。**既定のままなら出さない。**既定は 12 時間なので、
+/// 毎回出ることになって案内の意味がなくなる。
+pub fn should_warn_foreground(limit_sec: i64, from_default: bool) -> bool {
+	!from_default && limit_sec != 0 && limit_sec > FOREGROUND_SEC
+}
+
+/// どこまで読んだかを 1 行にする。
+///
+/// 位置はルームごとに持っている。1 つだけなら数を、複数なら「ルーム 数」を並べる。
+/// 複数のときに 1 つの数で出すと、どのルームの位置か分からない。
+pub fn describe_positions(result: &Json) -> String {
+	let empty: Vec<Json> = Vec::new();
+	let rooms = result.get("rooms").and_then(|v| v.as_arr()).unwrap_or(&empty);
+
+	if rooms.len() <= 1 {
+		let seq = result
+			.get("msg_seq")
+			.and_then(|v| v.as_i64())
+			.or_else(|| rooms.first().and_then(|r| r.get("msg_seq")).and_then(|v| v.as_i64()))
+			.unwrap_or(0);
+		return seq.to_string();
+	}
+	rooms
+		.iter()
+		.map(|r| {
+			format!(
+				"{} {}",
+				r.get("room_id").and_then(|v| v.as_str()).unwrap_or(""),
+				r.get("msg_seq").and_then(|v| v.as_i64()).unwrap_or(0)
+			)
+		})
+		.collect::<Vec<_>>()
+		.join(" / ")
+}
+
+/// 待受けの記録。
+///
+/// 待受けは背面で走るため、外から止められると何も残らない。**1 回の long-poll が
+/// 返るたびに 1 行書く。**最後の行の時刻が「最後に生きていた時刻」になる。
+pub struct WaitLog {
+	path: Option<std::path::PathBuf>,
+}
+
+impl WaitLog {
+	/// 記録先を決める。テスト用として動いているときは書かない
+	pub fn open(root: &std::path::Path, id: &str, is_test: bool) -> WaitLog {
+		if is_test {
+			return WaitLog { path: None };
+		}
+		let dir = root.join("logs").join("client");
+		if std::fs::create_dir_all(&dir).is_err() {
+			return WaitLog { path: None };
+		}
+		// 名前は yyyymmdd-hhmmss-<ID>.log。ID の末尾にピリオドを許さないのはこのため
+		let stamp = jst::now_jst();
+		let compact: String = stamp.chars().filter(|c| c.is_ascii_digit()).take(14).collect();
+		WaitLog {
+			path: Some(dir.join(format!("{}-{}.log", format_stamp(&compact), id))),
+		}
+	}
+
+	/// 1 行書く。**失敗しても黙って捨てる。**記録のために待受けを止めるのは本末転倒
+	pub fn write(&self, level: &str, body: &str) {
+		let path = match &self.path {
+			Some(p) => p,
+			None => return,
+		};
+		use std::io::Write;
+		if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
+			let _ = writeln!(f, "{} {:<5} {}", jst::now_jst(), level, body);
+		}
+	}
+}
+
+/// 数字だけを並べた 14 桁を yyyymmdd-hhmmss にする
+fn format_stamp(digits: &str) -> String {
+	if digits.len() < 14 {
+		return digits.to_string();
+	}
+	format!("{}-{}", &digits[..8], &digits[8..14])
+}
+
 /// 全ルームの発言を JSONL に書き出す
 pub fn dump(client: &Client, out: &std::path::Path) -> Result<(), CallError> {
 	/*
@@ -465,6 +756,38 @@ mod tests {
 		assert_eq!(encode_query("あ"), "%E3%81%82");
 		// そのまま通ると決まっている文字は触らない
 		assert_eq!(encode_query("a-b_c.d~e"), "a-b_c.d~e");
+	}
+
+	#[test]
+	fn 待つ長さを言葉にする() {
+		assert_eq!(describe_wait(0), "上限なし");
+		assert_eq!(describe_wait(12 * 3600), "12 時間");
+		assert_eq!(describe_wait(11 * 60), "11 分");
+		assert_eq!(describe_wait(90), "90 秒");
+		assert_eq!(describe_wait(3600), "1 時間", "時間が優先");
+		assert_eq!(describe_wait(60), "1 分");
+	}
+
+	#[test]
+	fn 前面の警告は長く待つときだけ出す() {
+		// 既定のままなら出さない。既定は 12 時間なので毎回出て意味がなくなる
+		assert!(!should_warn_foreground(12 * 3600, true), "既定");
+		// 上限なしも出さない。秒数として比べられない
+		assert!(!should_warn_foreground(0, false), "上限なし");
+		assert!(!should_warn_foreground(FOREGROUND_SEC, false), "ちょうどは出さない");
+		assert!(should_warn_foreground(FOREGROUND_SEC + 1, false), "超えたら出す");
+		assert!(should_warn_foreground(11 * 60, false), "11 分");
+	}
+
+	#[test]
+	fn 読んだ位置を1行にする() {
+		// 1 ルームなら数だけ
+		let one = json::parse(r#"{"msg_seq":42,"rooms":[{"room_id":"public","msg_seq":42}]}"#).unwrap();
+		assert_eq!(describe_positions(&one), "42");
+
+		// 複数なら「ルーム 数」を並べる。1 つの数だとどのルームか分からない
+		let many = json::parse(r#"{"rooms":[{"room_id":"public","msg_seq":42},{"room_id":"ai-chat-lite","msg_seq":7}]}"#).unwrap();
+		assert_eq!(describe_positions(&many), "public 42 / ai-chat-lite 7");
 	}
 
 	#[test]

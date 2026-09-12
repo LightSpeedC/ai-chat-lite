@@ -43,21 +43,43 @@ function testServer() {
 /** 数字を伏せる。投稿のたびに増える値を「違い」と数えないため */
 const maskNumbers = (text) => text.replace(/\d+/g, 'N');
 
+/**
+ * 状態を変えるコマンド用に、両者へ別々の ID を割り当てる。
+ *
+ * 【なぜ要るか】
+ * wait の初回接続は「案内を出してカーソルを立てて終わる」。同じ ID で
+ * node → Rust の順に走らせると、Rust は 2 回目になって案内が出ない。
+ * 比べているのは実装の差ではなく、走らせた順になってしまう。
+ *
+ * 引数の {ID} を、node 側は cmp-node-xx、Rust 側は cmp-rust-xx に置き換え、
+ * 出力では両方を {ID} に戻してから比べる。**長さを同じにする**のは、
+ * 桁を揃える出力で幅が変わらないようにするため。
+ */
+function idPair() {
+	const tag = Math.random().toString(36).slice(2, 6).replace(/\d/g, 'x');
+	return { node: `cmp-node-${tag}`, rust: `cmp-rust-${tag}` };
+}
+
 /** 1 通りを走らせて結果を返す */
 export function compare(args, { mask = false } = {}) {
 	const server = testServer();
 	const conn = server ? ['-p', server.port, '-a', server.token] : [];
 	const opts = { cwd: root, encoding: 'utf8' };
 
-	const n = spawnSync(process.execPath, [nodeCli, ...args, ...conn], opts);
-	const r = spawnSync(exe, [...args, ...conn], opts);
+	const usesId = args.some((a) => a.includes('{ID}'));
+	const ids = idPair();
+	const fill = (who) => args.map((a) => a.replaceAll('{ID}', ids[who]));
 
-	const clean = (run) => {
-		const text = `${run.stdout ?? ''}${run.stderr ?? ''}`;
+	const n = spawnSync(process.execPath, [nodeCli, ...fill('node'), ...conn], opts);
+	const r = spawnSync(exe, [...fill('rust'), ...conn], opts);
+
+	const clean = (run, who) => {
+		let text = `${run.stdout ?? ''}${run.stderr ?? ''}`;
+		if (usesId) text = text.replaceAll(ids[who], '{ID}');
 		return mask ? maskNumbers(text) : text;
 	};
-	const nodeOut = clean(n);
-	const rustOut = clean(r);
+	const nodeOut = clean(n, 'node');
+	const rustOut = clean(r, 'rust');
 
 	return {
 		args,

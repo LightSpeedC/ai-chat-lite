@@ -197,6 +197,29 @@ fn run() -> i32 {
 		"leave" => {
 			commands::leave(&cli, &me, &room)
 		}
+		"wait" => {
+			let (limit_sec, from_default) = match wait_sec(&def, &a) {
+				Ok(v) => v,
+				Err(e) => {
+					eprintln!("{}", e);
+					return EXIT_USAGE;
+				}
+			};
+			warn_if_foreground(limit_sec, from_default);
+			let where_ = match a.option("port", Some("p")) {
+				Some(p) => format!("-p {}", p),
+				None => format!("-u {}", a.option("url", Some("u")).unwrap_or("")),
+			};
+			let opts = commands::WaitOpts {
+				limit_sec,
+				with_joins: a.has_flag("with-joins", None),
+				max_wait_sec: def.max_wait_sec,
+				// テスト用サーバーにはアクセストークンが要る。それを渡していれば試験中とみなす
+				is_test: cli.access_token.is_some(),
+				where_,
+			};
+			commands::wait(&cli, &me, &room, &opts)
+		}
 		"archives" => commands::archives(&cli),
 		"dump" => {
 			// 既定は tmp/messages.jsonl。ROOT からの相対で決める
@@ -354,4 +377,57 @@ fn reply_to_seq(a: &Args) -> Result<Option<i64>, String> {
 		));
 	}
 	Ok(Some(num))
+}
+
+/// 最大どれだけ待つかを秒で返す。0 は上限なし。
+///
+/// 単位ごとに別のオプションを持つ。値だけを見て取り違えないようにするため
+/// （`--wait 480` が分か秒かは定義を読まないと分からない）。3 つは排他。
+fn wait_sec(def: &Definition, a: &Args) -> Result<(i64, bool), String> {
+	let given: Vec<(&str, &str, i64)> = def
+		.wait_units
+		.iter()
+		.filter_map(|u| a.option(&u.long, if u.long == "wait-hour" { Some("w") } else { None })
+			.map(|raw| (u.long.as_str(), raw, u.sec)))
+		.collect();
+
+	if given.len() > 1 {
+		let names: Vec<String> = given.iter().map(|(l, _, _)| format!("--{}", l)).collect();
+		return Err(format!(
+			"待つ長さは 1 つだけ指定してください: {} が両方あります。",
+			names.join(" と ")
+		));
+	}
+	if given.is_empty() {
+		return Ok((def.default_wait_sec, true));
+	}
+
+	let (long, raw, unit) = given[0];
+	if raw.is_empty() || !raw.bytes().all(|b| b.is_ascii_digit()) {
+		return Err(format!("--{} には 0 以上の数だけを渡してください: {}", long, raw));
+	}
+	let n: i64 = raw.parse().map_err(|_| format!("--{} には 0 以上の数だけを渡してください: {}", long, raw))?;
+	Ok((n * unit, false))
+}
+
+/// 前面で長く待つ設定なら、背面で呼ぶよう案内する。
+///
+/// 打ち切られるのではない。プロセスはそのまま走り続けるが、それまで
+/// 呼び出し側が待たされる。
+fn warn_if_foreground(limit_sec: i64, from_default: bool) {
+	if !commands::should_warn_foreground(limit_sec, from_default) {
+		return;
+	}
+	let label = commands::describe_wait(limit_sec);
+	// 括弧は「11 分」を秒に直して見せるためのもの。--wait-sec なら同じ値が 2 度出る
+	let detail = if label == format!("{} 秒", limit_sec) {
+		label
+	} else {
+		format!("{}（{} 秒）", label, limit_sec)
+	};
+	eprintln!("{}待つ設定です。", detail);
+	eprintln!("  前面で呼ぶと {} 秒で背面に移されます。プロセスは走り続けますが、", commands::FOREGROUND_SEC);
+	eprintln!("  それまでの間、呼び出し側は待たされます。");
+	eprintln!("  はじめから run_in_background で呼んでください。");
+	eprintln!();
 }
