@@ -608,15 +608,15 @@ footer a {
 		<table>
 			<thead><tr><th>実装</th><th>待受け中の実メモリ</th><th>確保量</th><th><code>waiters</code></th></tr></thead>
 			<tbody>
-				<tr><td class="nowrap"><strong>Rust 版</strong></td><td class="num"><strong>6.41 MB</strong></td><td class="num"><strong>1.00 MB</strong></td><td class="num">523.1 ms</td></tr>
-				<tr><td class="nowrap">C# 版</td><td class="num">24.89 MB</td><td class="num">18.53 MB</td><td class="num"><strong>206.6 ms</strong></td></tr>
-				<tr><td class="nowrap">bun 版</td><td class="num">38.31 MB</td><td class="num">162.45 MB</td><td class="num">673.0 ms</td></tr>
-				<tr><td class="nowrap">node 版</td><td class="num">54.20 MB</td><td class="num">60.50 MB</td><td class="num">667.9 ms</td></tr>
+				<tr><td class="nowrap"><strong>Rust 版</strong></td><td class="num"><strong>6.41 MB</strong></td><td class="num"><strong>1.00 MB</strong></td><td class="num">274 ms</td></tr>
+				<tr><td class="nowrap">C# 版</td><td class="num">24.89 MB</td><td class="num">18.53 MB</td><td class="num"><strong>207 ms</strong></td></tr>
+				<tr><td class="nowrap">bun 版</td><td class="num">38.31 MB</td><td class="num">162.45 MB</td><td class="num">310 ms</td></tr>
+				<tr><td class="nowrap">node 版</td><td class="num">54.20 MB</td><td class="num">60.50 MB</td><td class="num">350 ms</td></tr>
 			</tbody>
 		</table>
 	</div>
 
-	<p><code>waiters</code> だけ Rust が負ける。<strong>PowerShell を起こしており、その起動に 213 ms かかる。</strong>詳しくは<a class="doclink" href="../01_research/r260912-01-CLI実装のベンチマーク.html">ベンチマーク</a>。</p>
+	<p><code>waiters</code> は、数えるところだけ <code>aichat-cs.exe</code> に委譲して揃えた。C# は .NET から WMI を直に叩けるが、他の 3 本は PowerShell を起こすしかなく、その起動だけで 213 ms を使う。<strong>Windows では C# 版が waiters の本体になった。</strong>詳しくは<a class="doclink" href="../01_research/r260912-01-CLI実装のベンチマーク.html">ベンチマーク</a>。</p>
 
 	<h2>テストは 2 段で持つ</h2>
 
