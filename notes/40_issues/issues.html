@@ -3601,7 +3601,8 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 					<li class="done"><span class="badge b-done">☑</span> <strong>high 4（<code>-Recurse</code>）を直した。</strong>両方の置き場を再帰で走査する。<strong>直下 1 件 → 再帰 153 件</strong>が対象になり、これまで外れていた 152 件（サブエージェントの記録）が入る</li>
 					<li class="done"><span class="badge b-done">☑</span> <strong>high 5（<code>/api/admin/exit</code>）を直した。POST 限定にした。</strong><code>archive</code> ・ <code>restore</code> ・ <code>rename</code> と同じ扱いに揃えた形で、<code>&lt;img&gt;</code> や先読みでは POST が飛ばないので塞がる。README と設計書の見本を落とし、止める手段を <code>aichat restart</code> ・ <code>stop</code> に一本化した。<code>handleExit</code> の <code>connector_id</code> も検査を通す</li>
 					<li class="done"><span class="badge b-done">☑</span> <strong>medium 6（名乗る ID の書き忘れ）を <code>exit 2</code> にした。</strong>定義と USAGE が「2 = 使い方の誤り」と公言しており、囲みの誤り・本文の不足・接続先の不足はすべて 2 だった。<strong>周知はしない判断</strong>（「変わったこと」には記録した）</li>
-					<li><span class="badge b-todo">未</span> <strong>medium 9（SSE に <code>rejectTestNames</code> が無い）は判断が要る。</strong>本番で <code>test-</code> を名乗る画面接続が通る。<strong>入口を塞がないと、今日消した痕跡がまた入る</strong></li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>medium 9（SSE の検査）を直した。</strong><code>handleEvents</code> にも同じ判定を入れ、<strong>ヘッダを返す前に断る</strong>（返した後では 400 にできない）。あわせて<strong>画面でも SSE を張る前に断って理由を出す</strong>——<code>EventSource</code> は HTTP のステータスを読めず、通すと「接続が切れました。繋ぎ直しています…」だけが出続けて原因が分からない</li>
+					<li class="done"><span class="badge b-done">☑</span> 「外から繋ぐ口はすべて判定を通る」検査を足した。<strong>テストは <code>IS_TEST</code> が真なので API では断られない</strong>（本番として振る舞うサーバーを立てると本番の DB を掴む）。5 つの口が同じ関数を通ることを実装の形で見る</li>
 				</ul>
 			</div>
 		</details>

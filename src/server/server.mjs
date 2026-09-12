@@ -851,6 +851,18 @@ function handleEvents(req, res, url) {
 	const roomId = roomOf(url.searchParams.get('room_id'));
 	const since = numberOf(url.searchParams.get('since'), null);
 
+	/*
+	 * ここにも検査を置く。
+	 *
+	 * join / say / poll / leave の 4 か所には入れていたが、SSE だけ抜けて
+	 * いた。画面は SSE で繋ぐので、本番で test- を名乗った接続がここから
+	 * 通っていた（レビュー #21 medium 9）。
+	 *
+	 * 実際、本番に test- の参加者が入り込んで痕跡が残った。入口を塞がないと
+	 * また入る。ヘッダを返す前に投げること——返した後では 400 にできない。
+	 */
+	if (connectorId) rejectTestNames(connectorId, roomId);
+
 	res.writeHead(200, {
 		'Content-Type': 'text/event-stream; charset=utf-8',
 		'Cache-Control': 'no-store',

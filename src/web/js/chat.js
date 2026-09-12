@@ -424,6 +424,26 @@ async function loadRooms() {
 const ID_RE = /^[A-Za-z0-9_-](?:[A-Za-z0-9_.-]*[A-Za-z0-9_-])?$/;
 
 /**
+ * 本番で断る ID の頭。src/server/names.mjs と同じ値。変えたら両方直す。
+ */
+const TEST_CONNECTOR_PREFIX = 'test-';
+
+/**
+ * いまの繋ぎ先で、この ID が断られるか。
+ *
+ * サーバーは join / say / poll / leave / events のすべてで断るので、
+ * 通してもどこかで 400 になる。ところが EventSource は HTTP のステータスを
+ * 読めず、error イベントしか来ない。画面には「接続が切れました。繋ぎ直して
+ * います…」だけが出続け、原因が分からないまま止まる。
+ *
+ * だから SSE を張る前に、ここで断って理由を出す（レビュー #21 medium 9）。
+ * どちらの環境かは applyEnv が body に入れている。
+ */
+function rejectedHere(id) {
+	return document.body.dataset.env === 'production' && id.toLowerCase().startsWith(TEST_CONNECTOR_PREFIX);
+}
+
+/**
  * ルームを切り替える。表示を空にしてから読み直す。
  *
  * force は同じルームのまま読み直したいとき用。戻したものは SSE で流れて
@@ -749,6 +769,11 @@ el.dialog.addEventListener('close', () => {
 	// 検証せずに書くと、誤った名前が固定されてリロードのたびに 400 を繰り返す
 	if (!ID_RE.test(value)) {
 		showBanner(`ID に使えるのは英数字・ハイフン・下線・ピリオド（先頭と末尾には置けません）だけです: ${value}`);
+		el.dialog.showModal();
+		return;
+	}
+	if (rejectedHere(value)) {
+		showBanner(`本番では ${TEST_CONNECTOR_PREFIX} で始まる ID は使えません。テスト用の名前は、テスト用のサーバーで使ってください: ${value}`);
 		el.dialog.showModal();
 		return;
 	}

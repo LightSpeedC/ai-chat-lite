@@ -13,12 +13,17 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 
 import {
 	rejectionReason,
 	TEST_CONNECTOR_PREFIX,
 	SANDBOX_ROOM_PREFIX,
 } from '../src/server/names.mjs';
+
+const here = dirname(fileURLToPath(import.meta.url));
 
 test('本番では test- で始まる ID を断る', () => {
 	const reason = rejectionReason('test-shape', 'public', false);
@@ -65,4 +70,31 @@ test('断る頭は test- と sandbox- である', () => {
 	// 資料と周知に書く値なので、変えたらここが落ちる
 	assert.equal(TEST_CONNECTOR_PREFIX, 'test-');
 	assert.equal(SANDBOX_ROOM_PREFIX, 'sandbox-');
+});
+
+/*
+ * 【なぜ実装の形を見るのか】
+ * 判定そのものは上で確かめられるが、「繋ぐ口がその判定を通っているか」は
+ * ここでしか見られない。テストは AICHAT_DATA を立てて走るので IS_TEST が
+ * 真になり、API を叩いても断られないためである（本番として振る舞う
+ * サーバーを立てるのは、本番の DB を掴むので本末転倒）。
+ *
+ * 実際 SSE（/api/events）だけ検査が抜けており、画面は SSE で繋ぐため
+ * 本番で test- を名乗った接続が通っていた。そこから入り込んだ痕跡を
+ * 手で消すことになった（レビュー #21 medium 9、i260912-01）。
+ */
+test('外から繋ぐ口はすべて判定を通る', () => {
+	const src = readFileSync(join(here, '..', 'src', 'server', 'server.mjs'), 'utf8');
+
+	/** 関数の本体を、次の「行頭の }」までで切り出す */
+	const bodyOf = (name) => {
+		const start = src.indexOf(`function ${name}(`);
+		assert.ok(start >= 0, `${name} が見つからない`);
+		const end = src.indexOf('\n}', start);
+		return src.slice(start, end);
+	};
+
+	for (const name of ['handleJoin', 'handleSay', 'handlePoll', 'handleLeave', 'handleEvents']) {
+		assert.ok(bodyOf(name).includes('rejectTestNames'), `${name} が判定を通っていない`);
+	}
 });
