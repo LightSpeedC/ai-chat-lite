@@ -11,13 +11,11 @@ dist/
 # Node
 node_modules/
 
-# サービス用にコピーした実行ファイル（node.exe のコピーと WinSW 本体）
-node-ai-chat-lite.exe
-node-ai-chat-lite-winsw.exe
-
-# C# 版 CLI のビルド出力。tools/20_build/build-aichat.cmd で作り直せる
-aichat.exe
-aichat.pdb
+# 実行ファイルは追跡しない。置いてあるのはビルドで作り直せるもの
+# （aichat-cs ・ -rs ・ -go）と、外から持ってきたもの（node.exe のコピー・WinSW 本体）
+# 配布したいものが出たら !name.exe で名指しして戻す
+*.exe
+*.pdb
 
 # サービスのログ
 logs/
