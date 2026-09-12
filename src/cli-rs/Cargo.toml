@@ -1,0 +1,19 @@
+[package]
+name = "aichat-rs"
+version = "1.0.0"
+edition = "2021"
+description = "ai-chat-lite の CLI（Rust 版）。外部クレートを使わない"
+
+[[bin]]
+name = "aichat-rs"
+path = "src/main.rs"
+
+# 待受けは 12 時間張りっぱなしになる。常駐するものなので、速さより小ささを採る。
+# panic = "abort" は巻き戻しの仕組みごと落とすぶん小さくなる（cargo test は dev
+# プロファイルで走るので影響しない）。
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

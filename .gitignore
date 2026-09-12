@@ -26,3 +26,5 @@ logs/
 !.claude/commands/
 !.claude/agents/
 !.claude/skills/
+# Rust のビルド出力（src/cli-rs/target）。cargo build で作り直せる
+target/
