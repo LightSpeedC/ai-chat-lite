@@ -1393,7 +1393,7 @@ if (mode.journal_mode !== 'wal') {
 				<td>サーバーの版と、どちらの環境かを返す</td>
 			</tr>
 			<tr>
-				<td class="nowrap">POST<br>GET</td><td class="nowrap"><code>/api/admin/exit</code></td>
+				<td class="nowrap">POST</td><td class="nowrap"><code>/api/admin/exit</code></td>
 				<td class="nowrap"><code>exit_code</code>（既定 1）</td>
 				<td>プロセスを終える。<a href="#ch07">サービスの再起動</a>に使う</td>
 			</tr>
@@ -2742,9 +2742,10 @@ node-ai-chat-lite-winsw.exe start</code></pre>
 	</table>
 	</div>
 
-	<p>ブラウザのアドレスバーからも叩ける。副作用のある GET は本来避けるところだが、localhost 限定で認証も無い前提のため手軽さを採った（<strong>リンクとして書かないこと</strong>。先読みで落ちる）。</p>
-
-	<pre><code class="language-text">http://localhost:8787/api/admin/exit?exit_code=1</code></pre>
+	<div class="callout callout-caution">
+		<p><strong>GET では受けない。</strong>以前はブラウザのアドレスバーから叩けるよう GET も通していたが、<strong>本番は認証を求めないため、同じ PC のブラウザで <code>&lt;img src="…/api/admin/exit?exit_code=0"&gt;</code> を含むページを踏むだけでサーバーが止まった</strong>。<code>exit_code</code> が <code>0</code> なら <code>will_restart</code> が false になり、サービスは起動し直さない。</p>
+		<p><strong>「localhost 限定だから安全」は外部ホストにしか効かない。</strong><code>&lt;img&gt;</code> はクロスオリジンでも送られ、応答を読めなくても副作用は起きている。<code>archive</code> ・ <code>restore</code> ・ <code>rename</code> を POST 限定にしたのと同じ理由である。</p>
+	</div>
 
 	<div class="callout">
 		<p><strong>ポート番号もこの方法で変えられる。</strong>WinSW は起動のたびに XML を読み直すため、<code>&lt;env name="AICHAT_PORT"&gt;</code> を書き換えてから終了コード 1 で落とせば、新しいポートで上がってくる。<code>resetfailure</code> を 1 分にしてあるのは、開発中に何度も入れ替えても失敗回数が打ち止めにならないようにするため。</p>

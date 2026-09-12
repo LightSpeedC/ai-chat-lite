@@ -508,9 +508,10 @@ aichat say     :project-a: "テストが通りました" -p 8787 -r public</code
 
 	<pre><code class="language-powershell">aichat restart :project-a: -p 8787</code></pre>
 
-	<p>ブラウザのアドレスバーからも叩けます。</p>
-
-	<pre><code class="language-text">http://localhost:8787/api/admin/exit?exit_code=1</code></pre>
+	<div class="callout callout-caution">
+		<p><strong>ブラウザのアドレスバーからは叩けません。</strong><code>/api/admin/exit</code> は <strong>POST でしか受けません</strong>。</p>
+		<p>以前は GET でも受けていましたが、<strong>本番は認証を求めないため、同じ PC のブラウザで <code>&lt;img src="…/api/admin/exit?exit_code=0"&gt;</code> を含むページを踏むだけでサーバーが止まりました</strong>。<code>exit_code</code> が <code>0</code> だとサービスは起動し直しません。<strong>止めるのは上のコマンドだけにしてください。</strong></p>
+	</div>
 
 	<div class="tablewrap">
 	<table>

@@ -809,18 +809,22 @@ async function handleRename(req, res) {
 	sendJson(res, 200, { from, to, ...result });
 }
 
-async function handleExit(req, res, url) {
-	// GET でも受ける。ブラウザのアドレスバーから直接叩けるようにするため。
-	// 副作用のある GET は本来避けるところだが、localhost 限定で認証も無い前提なので
-	// 手軽さを優先する。リンクとして書かないこと（先読みで落ちる）。
-	const input =
-		req.method === 'POST'
-			? await readJsonBody(req)
-			: {
-					connector_id: url.searchParams.get('connector_id'),
-					exit_code: url.searchParams.get('exit_code'),
-				};
-	const who = input.connector_id ?? '不明';
+async function handleExit(req, res) {
+	/*
+	 * POST だけで受ける。
+	 *
+	 * 以前はブラウザのアドレスバーから叩けるよう GET も受けていたが、本番は
+	 * 認証を求めないため、同じ PC のブラウザで <img src="…/api/admin/exit"> を
+	 * 含むページを踏むだけでサーバーが止まった。exit_code 0 なら will_restart が
+	 * false なので、サービスは起動し直さない（レビュー #21 high 5）。
+	 *
+	 * 「localhost 限定だから安全」は外部ホストには効くが、同じ PC のブラウザ
+	 * 経由には効かない。archive / restore / rename は同じ理由で先に POST 限定に
+	 * してあり、exit だけが例外として残っていた。
+	 */
+	const input = await readJsonBody(req);
+	// ID はログに入るので、他の口と同じ検査を通す
+	const who = optionalId(input.connector_id, 'connector_id') ?? '不明';
 
 	const code = Math.trunc(numberOf(input.exit_code, 1));
 	if (!Number.isInteger(code) || code < 0 || code > 255) {
@@ -956,7 +960,7 @@ export async function handleRequest(req, res) {
 			if (path === '/api/join') return await handleJoin(req, res);
 			if (path === '/api/say') return await handleSay(req, res);
 			if (path === '/api/leave') return await handleLeave(req, res);
-			// 落とす。うっかり叩かないよう /api/admin/ に分けている
+			// 落とす。うっかり叩かないよう /api/admin/ に分け、GET では受けない
 			if (path === '/api/admin/exit') return await handleExit(req, res, url);
 			// 片付けと戻しは GET では受けない。先読みや履歴からの再実行で起きては困る
 			if (path === '/api/admin/archive') return await handleArchive(req, res);
@@ -977,8 +981,6 @@ export async function handleRequest(req, res) {
 			if (path === '/api/admin/archive-preview') return await handleArchivePreview(req, res, url);
 			if (path === '/api/admin/rename-preview') return handleRenamePreview(res, url);
 			if (path === '/api/events') return handleEvents(req, res, url);
-			// ブラウザのアドレスバーから叩けるよう GET も受ける
-			if (path === '/api/admin/exit') return await handleExit(req, res, url);
 			if (!path.startsWith('/api/')) return await serveStatic(res, path);
 		}
 		sendJson(res, 404, { error: '該当するものがありません', path });

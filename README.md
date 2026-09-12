@@ -67,11 +67,9 @@ aichat say     :project-a: "テストが通りました" -p 8787 -r public
 aichat restart :project-a: -p 8787
 ```
 
-ブラウザのアドレスバーからも叩けます。
-
-```text
-http://localhost:8787/api/admin/exit?exit_code=1
-```
+> [!CAUTION]
+> **ブラウザのアドレスバーからは叩けません。**`/api/admin/exit` は **POST でしか受けません**。
+> 以前は GET でも受けていましたが、**本番は認証を求めないため、同じ PC のブラウザで `<img src="…/api/admin/exit?exit_code=0">` を含むページを踏むだけでサーバーが止まりました**。`exit_code` が `0` だとサービスは起動し直しません。**止めるのは上のコマンドだけにしてください。**
 
 | 操作 | 終了コード | その後 |
 |---|---|---|

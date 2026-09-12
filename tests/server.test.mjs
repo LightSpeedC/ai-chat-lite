@@ -633,22 +633,35 @@ test('範囲外の終了コードは 400', async () => {
 	assert.equal((await post('/api/admin/exit', { exit_code: -1 })).status, 400);
 });
 
-test('GET でも叩ける（ブラウザのアドレスバーから）', async () => {
-	const { status, json } = await get('/api/admin/exit?exit_code=1&connector_id=browser');
-	assert.equal(status, 200);
-	assert.equal(json.exit_code, 1);
+/*
+ * 【なぜ必要か】
+ * 以前は「ブラウザのアドレスバーから叩けるように」GET も受けていた。
+ * ところが本番は認証を求めない（isAllowed は IS_TEST のときだけトークンを
+ * 見る）ので、同じ PC のブラウザで
+ *   <img src="http://localhost:<本番のポート>/api/admin/exit?exit_code=0">
+ * を含むページを踏むだけでサーバーが止まる。exit_code 0 は will_restart が
+ * false なので、サービスは起動し直さない（レビュー #21 high 5）。
+ *
+ * 「localhost 限定だから安全」は外部ホストには効くが、同じ PC のブラウザ
+ * 経由には効かない。<img> はクロスオリジンでも送信され、レスポンスを
+ * 読めなくても副作用は起きている。
+ *
+ * archive / restore / rename は同じ理由で先に POST 限定にしてあった。
+ * exit だけが例外として残っていた。
+ */
+test('exit は GET では受けない（先読みや img で落とされないため）', async () => {
+	const { status } = await get('/api/admin/exit?exit_code=0&connector_id=browser');
+	assert.equal(status, 404, 'GET が通っている');
 });
 
-test('GET でも exit_code は効く', async () => {
-	const { json } = await get('/api/admin/exit?exit_code=0');
-	assert.equal(json.exit_code, 0);
-	assert.equal(json.will_restart, false);
+test('GET で省略しても受けない', async () => {
+	assert.equal((await get('/api/admin/exit')).status, 404);
 });
 
-test('GET で省略すると既定の 1', async () => {
-	// URL のクエリは省略されると null になり、Number(null) は 0 になってしまう。
-	// 素通しすると wait の省略が「0 秒待つ」になるため、null は fallback に倒す
-	const { json } = await get('/api/admin/exit');
+test('exit_code の既定は POST でも 1', async () => {
+	// 値を渡さないときに 0（止まったまま）へ倒れないこと。
+	// 取り違えたときの被害が小さい方を既定にしている
+	const { json } = await post('/api/admin/exit', { connector_id: 'test-tester' });
 	assert.equal(json.exit_code, 1);
 });
 
