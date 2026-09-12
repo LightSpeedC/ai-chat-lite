@@ -279,6 +279,79 @@ pub fn archives(client: &Client) -> Result<(), CallError> {
 	Ok(())
 }
 
+/// 投稿する
+pub fn say(
+	client: &Client,
+	from: &str,
+	room: &str,
+	body: &str,
+	to: Option<&str>,
+	reply_to: Option<i64>,
+) -> Result<(), CallError> {
+	let mut fields = vec![
+		("from_connector_id".to_string(), Json::Str(from.to_string())),
+		("room_id".to_string(), Json::Str(room.to_string())),
+		(
+			"to_connector_id".to_string(),
+			match to {
+				Some(id) => Json::Str(id.to_string()),
+				None => Json::Null,
+			},
+		),
+		(
+			"reply_to_msg_seq".to_string(),
+			match reply_to {
+				Some(n) => Json::Num(n as f64),
+				None => Json::Null,
+			},
+		),
+	];
+	fields.push(("msg_body".to_string(), Json::Str(body.to_string())));
+
+	let message = client.call("POST", "/api/say", Some(&Json::Obj(fields).to_string()), None)?;
+	println!(
+		"送信しました（{}）",
+		message.get("msg_seq").and_then(|v| v.as_i64()).unwrap_or(0)
+	);
+	Ok(())
+}
+
+/// 参加登録する
+pub fn join(client: &Client, id: &str, room: &str, role: &str) -> Result<(), CallError> {
+	let body = Json::Obj(vec![
+		("connector_id".to_string(), Json::Str(id.to_string())),
+		("connector_role".to_string(), Json::Str(role.to_string())),
+		("room_id".to_string(), Json::Str(room.to_string())),
+	]);
+	let result = client.call("POST", "/api/join", Some(&body.to_string()), None)?;
+
+	let empty: Vec<Json> = Vec::new();
+	let connectors = result.get("connectors").and_then(|v| v.as_arr()).unwrap_or(&empty);
+	println!(
+		"{} として {} に参加しました（現在位置 {}）",
+		id,
+		result.get("room_id").and_then(|v| v.as_str()).unwrap_or(room),
+		result.get("msg_seq").and_then(|v| v.as_i64()).unwrap_or(0)
+	);
+	println!("参加者 {} 人:", connectors.len());
+	for c in connectors {
+		let get = |key: &str| c.get(key).and_then(|v| v.as_str()).unwrap_or("");
+		println!("  {} {} ({})", status_mark(get("status")), get("connector_id"), get("status_label"));
+	}
+	Ok(())
+}
+
+/// 離脱を知らせる
+pub fn leave(client: &Client, id: &str, room: &str) -> Result<(), CallError> {
+	let body = Json::Obj(vec![
+		("connector_id".to_string(), Json::Str(id.to_string())),
+		("room_id".to_string(), Json::Str(room.to_string())),
+	]);
+	client.call("POST", "/api/leave", Some(&body.to_string()), None)?;
+	println!("{} として離脱しました", id);
+	Ok(())
+}
+
 /// 全ルームの発言を JSONL に書き出す
 pub fn dump(client: &Client, out: &std::path::Path) -> Result<(), CallError> {
 	/*

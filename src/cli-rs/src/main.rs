@@ -130,7 +130,23 @@ fn run() -> i32 {
 		retry_interval_sec: def.retry_interval_sec,
 	};
 
-	// サーバーに繋ぐコマンドなら、どちらの環境かを先に出す
+	/*
+	 * 名乗る ID を先に確かめ、そのあとで環境を出す。順序は node 版に合わせる。
+	 *
+	 * 逆にすると、ID を書き忘れたときに「テスト（:NNNN）」が先に出る。
+	 * 案内の頭に別の行が挟まると、読み手は何を直せばよいか探すことになる。
+	 */
+	const READ_ONLY: [&str; 4] = ["recent", "who", "dump", "archives"];
+	let me = if READ_ONLY.contains(&command) {
+		String::new()
+	} else {
+		match require_id(&def, &connector_id, &positionals) {
+			Ok(id) => id,
+			Err(code) => return code,
+		}
+	};
+
+	// サーバーに繋ぐコマンドなら、どちらの環境かを出す
 	commands::announce_env(&cli);
 
 	let outcome = match command {
@@ -144,6 +160,42 @@ fn run() -> i32 {
 				}
 			};
 			commands::recent(&cli, &room, &opts)
+		}
+		"say" => {
+			// 名乗る ID を除いた次の位置引数が本文
+			let body = positionals.get(1).copied().unwrap_or("");
+			if body.is_empty() {
+				eprintln!(
+					"本文を指定してください: say {w}<自分のID>{w} \"本文\" [--to {w}<相手>{w}] [--reply-to <msg_seq>]",
+					w = def.id_wrap
+				);
+				// 書き忘れは使い方の誤りなので 2
+				return EXIT_USAGE;
+			}
+			let to = match a.option("to", None) {
+				Some(raw) => match id::unwrap(raw, &def.id_wrap, "--to") {
+					Ok(v) => Some(v),
+					Err(e) => {
+						eprintln!("{}", e);
+						return EXIT_USAGE;
+					}
+				},
+				None => None,
+			};
+			let reply_to = match reply_to_seq(&a) {
+				Ok(v) => v,
+				Err(e) => {
+					eprintln!("{}", e);
+					return EXIT_USAGE;
+				}
+			};
+			commands::say(&cli, &me, &room, body, to.as_deref(), reply_to)
+		}
+		"join" => {
+			commands::join(&cli, &me, &room, a.option("role", None).unwrap_or("ai"))
+		}
+		"leave" => {
+			commands::leave(&cli, &me, &room)
 		}
 		"archives" => commands::archives(&cli),
 		"dump" => {
@@ -242,4 +294,64 @@ fn recent_opts(def: &Definition, a: &Args) -> Result<commands::RecentOpts, Strin
 	};
 
 	Ok(commands::RecentOpts { limit, since, before, find, from, has_filter })
+}
+
+/// 名乗る ID を要る形で取り出す。無ければ案内を出して終了コードを返す。
+///
+/// **読むだけのコマンド（recent ・ who ・ dump ・ archives）は名乗らなくてよい。**
+/// ここを呼ぶのは書き込み系だけにする。
+fn require_id(def: &Definition, resolved: &Option<String>, positionals: &[&str]) -> Result<String, i32> {
+	if let Some(id) = resolved {
+		return Ok(id.clone());
+	}
+
+	let command = std::env::args().nth(1).unwrap_or_default();
+
+	match positionals.first() {
+		// 置かれてはいるが、囲みか文字が違う。unwrap の言葉をそのまま出す
+		Some(raw) => {
+			let where_ = format!("{} の直後", command);
+			match id::unwrap(raw, &def.id_wrap, &where_) {
+				Ok(id) => Ok(id),
+				Err(e) => {
+					eprintln!("{}", e);
+					Err(2)
+				}
+			}
+		}
+		None => {
+			// 自分の project フォルダ名を見本に出す
+			let here = std::env::current_dir()
+				.ok()
+				.and_then(|p| p.file_name().map(|s| s.to_string_lossy().into_owned()))
+				.unwrap_or_else(|| "project".to_string());
+
+			eprintln!("名乗る ID が指定されていません。");
+			eprintln!();
+			eprintln!("  {} の直後に、コロンで囲んで置いてください:", command);
+			eprintln!("    {} {}{}{}", command, def.id_wrap, here, def.id_wrap);
+			eprintln!();
+			eprintln!("  自分の project フォルダ名にしておくと、誰の発言か分かりやすくなります。");
+			// 2 = 使い方の誤り。囲みの誤り・本文の不足・接続先の不足と揃える
+			Err(2)
+		}
+	}
+}
+
+/// `--reply-to` を読む。先頭の # は付けても付けなくてもよい
+fn reply_to_seq(a: &Args) -> Result<Option<i64>, String> {
+	let raw = match a.option("reply-to", None) {
+		Some(v) => v,
+		None => return Ok(None),
+	};
+	let value = raw.strip_prefix('#').unwrap_or(raw);
+	let ok = !value.is_empty() && value.bytes().all(|b| b.is_ascii_digit());
+	let num = if ok { value.parse::<i64>().unwrap_or(0) } else { 0 };
+	if !ok || num < 1 {
+		return Err(format!(
+			"--reply-to には 1 以上の数を渡してください: {}\n  番号は出力の先頭に #474 の形で出ています。",
+			raw
+		));
+	}
+	Ok(Some(num))
 }
