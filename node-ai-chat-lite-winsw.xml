@@ -1,7 +1,7 @@
 <service>
   <id>node-ai-chat-lite</id>
-  <name>ai-chat-lite チャットサーバー</name>
-  <description>ローカル PC 内で AI セッションと人間が同席する簡易チャットのサーバー</description>
+  <name> ai-chat-lite チャットサーバ</name>
+  <description>ローカル PC 内で AI セッションと人間が同席する簡易チャットのサーバ</description>
 
   <!--
     パスは書かない。WinSW は相対パスを自分の実行ファイルがある場所から解決するため、
@@ -16,7 +16,7 @@
   <!-- 既定値のままで動く。ここで指定しているのは、外から見て分かるようにするため -->
   <env name="AICHAT_PORT" value="8787"/>
 
-  <!-- サービス経由で動いていることを、サーバー自身が知るための目印 -->
+  <!-- サービス経由で動いていることを、サーバ自身が知るための目印 -->
   <env name="AICHAT_MANAGED" value="winsw"/>
 
   <!--
@@ -54,6 +54,6 @@
 
   <startmode>Automatic</startmode>
 
-  <!-- 停止のときは Ctrl+C 相当を送る。サーバー側で待機中の接続を畳んでから終わる -->
+  <!-- 停止のときは Ctrl+C 相当を送る。サーバ側で待機中の接続を畳んでから終わる -->
   <stopparentprocessfirst>true</stopparentprocessfirst>
 </service>
