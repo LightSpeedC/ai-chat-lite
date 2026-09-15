@@ -19,9 +19,11 @@
  *   node tools/20_build/build-aichat-rs.mjs --test   テストだけ走らせる
  */
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, statSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { placeExe, reportPlaced } from './place-exe.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const crate = join(root, 'src', 'cli-rs');
@@ -41,12 +43,6 @@ function run(label, file, args, cwd) {
 		console.error(`${label} が失敗しました（終了コード ${res.status}）。`);
 		process.exit(res.status ?? 1);
 	}
-}
-
-/** 大きさを読みやすく */
-function humanSize(bytes) {
-	if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
-	return `${(bytes / 1024).toFixed(1)} KB`;
 }
 
 // --- 1. 定義を書き出す ---
@@ -82,27 +78,14 @@ if (!existsSync(built)) {
 	process.exit(1);
 }
 
-const dest = join(root, exeName);
-
 /*
- * 走っている待受けが掴んでいると置き換えられない。
+ * 置くのは aichat-rs だけ。既定の名前（aichat）への差し替えは
+ * tools/20_build/install-aichat.mjs が行う。
  *
- * Windows では走っている exe を消せないが、名前は変えられる。掴んでいる側は
- * 名前を変えたあとの実体を使い続けるので、退避しても落ちない（ローカルルール
- * 「exe を作り直すときは待受けを止めない」と同じ考え方）。
+ * 分けてあるのは、ビルドが走るたびに既定が入れ替わらないようにするため。
+ * 既定の aichat は他プロジェクトの待受けも掴んでいる。
  */
-try {
-	copyFileSync(built, dest);
-} catch (err) {
-	if (err.code !== 'EBUSY' && err.code !== 'EPERM') throw err;
-	const stamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
-	const parked = join(root, 'tmp', `aichat-rs-old-${stamp}${process.platform === 'win32' ? '.exe' : ''}`);
-	const { renameSync, mkdirSync } = await import('node:fs');
-	mkdirSync(join(root, 'tmp'), { recursive: true });
-	renameSync(dest, parked);
-	copyFileSync(built, dest);
-	process.stdout.write(`  待受けが掴んでいたので退避しました: ${parked.replace(root, '.')}\n`);
-	process.stdout.write('    走っている待受けは落ちません。退避先を使い続けます\n');
-}
+process.stdout.write('\n');
 
-process.stdout.write(`\n置きました: ./${exeName}（${humanSize(statSync(dest).size)}）\n`);
+const dest = join(root, exeName);
+reportPlaced(dest, placeExe(built, dest, join(root, 'tmp')), root);

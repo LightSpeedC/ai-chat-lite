@@ -1,10 +1,15 @@
 ﻿<#
-	C# 版 CLI（aichat.exe）を作る。
+	C# 版 CLI（aichat-cs.exe）を作る。
 
 	  1. 動いている待受けが掴んでいる古い exe を退避する
 	  2. options.mjs から定義を JSON に書き出す
 	  3. csc でコンパイルし、その JSON を埋め込む
-	  4. root に aichat.exe を置く
+	  4. root に aichat-cs.exe を置く
+
+	【aichat.exe には置かない】
+	  既定の aichat は Rust 版が受ける（tools/20_build/install-aichat.mjs が置く）。
+	  ここが aichat.exe を出力していたため、C# 版をビルドしただけで既定が
+	  入れ替わった。ビルドは「できました」と出るので気づけない。
 
 	csc は .NET Framework に同梱されているので、SDK の導入は要らない。
 	出力は Git 管理外（.gitignore に書いてある）。作り直せるものを履歴に入れない。
@@ -37,10 +42,10 @@ $ErrorActionPreference = 'Stop'
 
 $root = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 $srcDir = Join-Path $root 'src/cli-cs'
-$outExe = Join-Path $root 'aichat.exe'
+$outExe = Join-Path $root 'aichat-cs.exe'
 $optionsJson = Join-Path $root 'tmp/cli-options.json'
 
-Write-Host '=== aichat.exe をビルドします ==='
+Write-Host '=== aichat-cs.exe をビルドします ==='
 Write-Host ''
 
 # --- 1. 掴まれている古い exe を退避する ---
@@ -51,7 +56,7 @@ Write-Host '--- 古い exe を片付ける ---'
 	前のビルドで退避したものを消す。掴まれていれば消えないので、失敗は無視する。
 	消えなかったぶんは次のビルドでまた試す。
 #>
-$stale = @(Get-ChildItem -LiteralPath (Join-Path $root 'tmp') -Filter 'aichat-old-*.exe' -File -ErrorAction SilentlyContinue)
+$stale = @(Get-ChildItem -LiteralPath (Join-Path $root 'tmp') -Filter 'aichat-cs-old-*.exe' -File -ErrorAction SilentlyContinue)
 $removed = 0
 foreach ($old in $stale) {
 	try {
@@ -75,7 +80,7 @@ if (Test-Path -LiteralPath $outExe) {
 		Remove-Item -LiteralPath $outExe -ErrorAction Stop
 		Write-Host '  いまの exe を消しました（誰も掴んでいません）'
 	} catch {
-		$parked = Join-Path $root ('tmp/aichat-old-{0}.exe' -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
+		$parked = Join-Path $root ('tmp/aichat-cs-old-{0}.exe' -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
 		Move-Item -LiteralPath $outExe -Destination $parked
 		Write-Host "  待受けが掴んでいるので退避しました: $($parked.Replace($root, '.'))"
 		Write-Host '    走っている待受けは落ちません。退避先を使い続けます'

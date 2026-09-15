@@ -1,0 +1,16 @@
+#!/bin/sh
+# node 版の CLI を bun で呼ぶ。bun が無ければ node で動かす。Bash（Git Bash）用。
+#
+# 同じフォルダの aichat-bun.cmd と両立する。cmd.exe は PATHEXT に従って
+# .cmd を選び、Bash は拡張子なしのこちらを選ぶ。どちらも中身は同じで、
+# src/client/chat.mjs を動かす。
+#
+# aichat という名前は Rust 版（aichat.exe）が受ける。こちらは
+# 突き合わせの相手として、また bun ・ node の挙動を見るために残している。
+#
+# 例: aichat-bun wait :<自分の ID>: -p 8787 -r "public,ai-chat-lite"
+dir="$(dirname "$0")"
+if command -v bun >/dev/null 2>&1; then
+	exec bun run "$dir/src/client/chat.mjs" "$@"
+fi
+exec node "$dir/src/client/chat.mjs" "$@"
