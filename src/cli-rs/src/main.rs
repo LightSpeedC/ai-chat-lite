@@ -275,7 +275,15 @@ fn run() -> i32 {
 				eprintln!("{} は片付けられません（参加時の行き先です）", def.default_room);
 				return EXIT_USAGE;
 			}
-			match commands::archive(&cli, &me, kind, &target, a.has_flag("with-messages", None), a.option("description", None)) {
+			match commands::archive(
+				&cli,
+				&me,
+				kind,
+				&target,
+				a.has_flag("with-messages", None),
+				a.option("description", None),
+				a.has_flag("yes", None),
+			) {
 				Ok(0) => Ok(()),
 				Ok(code) => return code,
 				Err(e) => Err(e),
@@ -310,7 +318,7 @@ fn run() -> i32 {
 				eprintln!("同じ ID には付け替えられません: {}", from);
 				return EXIT_USAGE;
 			}
-			match commands::rename(&cli, &me, &from, &to) {
+			match commands::rename(&cli, &me, &from, &to, a.has_flag("yes", None)) {
 				Ok(0) => Ok(()),
 				Ok(code) => return code,
 				Err(e) => Err(e),

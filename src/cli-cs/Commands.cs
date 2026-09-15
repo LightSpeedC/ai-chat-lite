@@ -504,11 +504,8 @@ namespace AiChat
 
 			PrintPreview(kind, id, counts);
 
-			Console.Write("本当に片付ける場合は「" + id + "」と入力してください: ");
-			string answer = (Console.ReadLine() ?? "").Trim();
-			if (answer != id)
+			if (!ConfirmTarget(args, id, "本当に片付ける場合は「" + id + "」と入力してください: ", "archive"))
 			{
-				Console.WriteLine("中止しました。");
 				return 1;
 			}
 
@@ -568,11 +565,8 @@ namespace AiChat
 				(Json.Int(counts, "archives") + Json.Int(counts, "archive_targets")).ToString().PadLeft(4) + " 件");
 			Console.WriteLine("走っている待受けがあると断られます。先に止めてください。");
 
-			Console.Write("本当に付け替える場合は「" + from + "」と入力してください: ");
-			string answer = (Console.ReadLine() ?? "").Trim();
-			if (answer != from)
+			if (!ConfirmTarget(args, from, "本当に付け替える場合は「" + from + "」と入力してください: ", "rename"))
 			{
-				Console.WriteLine("中止しました。");
 				return 1;
 			}
 
@@ -595,6 +589,39 @@ namespace AiChat
 		}
 
 		/// <summary>何件片付くかを出す。0 件のものは出さない</summary>
+		/// <summary>
+		/// 取り返しのつかない操作の前に、対象の名前を打たせる。
+		///
+		/// --yes があれば聞かない。背面（run_in_background）から実行するときの唯一の手段で、
+		/// これが無いと AI は archive ・ rename を使えない。確認を省くので、
+		/// 打ち間違いは止まらない。渡した側の責任になる。
+		///
+		/// 打ち間違えたのか、入力が来なかったのかは、読み手にとって別の話である。
+		/// 本番では背面から 2 度試して 2 度とも止まり、原因が分からないままになった
+		/// （課題 i260913-02）。詰まったその場で渡し方が読めるようにする。
+		/// </summary>
+		private static bool ConfirmTarget(Args args, string target, string prompt, string command)
+		{
+			if (args.HasFlag("yes")) return true;
+
+			Console.Write(prompt);
+			string line = Console.ReadLine();
+			string answer = (line ?? "").Trim();
+			if (answer == target) return true;
+
+			// ReadLine が null を返すのが EOF。空行を打った場合と区別する
+			if (line == null)
+			{
+				Console.WriteLine("中止しました。標準入力が閉じているため、確認の答えを受け取れませんでした。");
+				Console.WriteLine("背面から実行するときは --yes を渡すか、printf '" + target + "\\n' | で答えを渡してください。");
+				Console.WriteLine("  例: printf '" + target + "\\n' | aichat " + command + " :<自分の ID>: ...");
+				return false;
+			}
+
+			Console.WriteLine("中止しました。");
+			return false;
+		}
+
 		private static void PrintPreview(string kind, string id, Dictionary<string, object> counts)
 		{
 			string label = kind == "message" ? "発言" : kind == "connector" ? "参加者" : "ルーム";

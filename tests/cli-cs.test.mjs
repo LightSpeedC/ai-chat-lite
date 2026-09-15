@@ -1,10 +1,15 @@
 /*
- * C# 版 CLI（aichat.exe）が node 版と同じことをするかを確かめる。
+ * C# 版 CLI（aichat-cs.exe）が node 版と同じことをするかを確かめる。
  *
  * 2 本を保守するので、必ず食い違う。食い違いを人が見つけるのではなく、
  * ここで機械的に落とす。
  *
- * aichat.exe が無ければ全部スキップする。ビルドは Windows でしかできず、
+ * 【名前を実体で書く理由】
+ * 既定の aichat は Rust 版が受ける。ここで aichat.exe を見ていると、
+ * C# 版を試しているつもりで Rust 版を叩くことになる。実際にそうなっていて、
+ * 通っていたはずの検査が静かに別の実装を見ていた。
+ *
+ * aichat-cs.exe が無ければ全部スキップする。ビルドは Windows でしかできず、
  * 作っていない環境でも他のテストは通したいため。
  */
 import { test, describe, before, after } from 'node:test';
@@ -24,7 +29,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(here, '..');
 const TEST_DATA = join(ROOT, 'tmp', '_data', 'unit-cli-cs');
 const NODE_CLI = join(ROOT, 'src', 'client', 'chat.mjs');
-const EXE = join(ROOT, 'aichat.exe');
+const EXE = join(ROOT, 'aichat-cs.exe');
 
 /** ビルドしていなければ何も試せない */
 const built = existsSync(EXE);
@@ -83,17 +88,17 @@ function shape(text) {
 }
 
 describe('C# 版と node 版で同じものが出る', () => {
-	test('aichat.exe があること', () => {
+	test('aichat-cs.exe があること', () => {
 		/*
 		 * 無ければ以降はスキップされる。ここで気づけるように 1 件だけ立てる。
 		 * ビルドは tools/20_build/build-aichat.cmd で行う。
 		 */
-		if (!built) console.log('  aichat.exe が無いのでスキップします（build-aichat.cmd で作れます）');
+		if (!built) console.log('  aichat-cs.exe が無いのでスキップします（build-aichat.cmd で作れます）');
 		assert.ok(true);
 	});
 
 	test('--help の中身が揃う', async (t) => {
-		if (!built) return t.skip('aichat.exe が無い');
+		if (!built) return t.skip('aichat-cs.exe が無い');
 
 		const { stdout: fromNode } = await viaNode(['--help']);
 		const { stdout: fromExe } = await viaExe(['--help']);
@@ -113,7 +118,7 @@ describe('C# 版と node 版で同じものが出る', () => {
 	});
 
 	test('join の出力が揃う', async (t) => {
-		if (!built) return t.skip('aichat.exe が無い');
+		if (!built) return t.skip('aichat-cs.exe が無い');
 
 		const { stdout: fromNode } = await viaNode(['join', '--role', 'ai'], 'test-cli-node');
 		const { stdout: fromExe } = await viaExe(['join', '--role', 'ai'], 'test-cli-exe');
@@ -131,7 +136,7 @@ describe('C# 版と node 版で同じものが出る', () => {
 	});
 
 	test('say して recent で読める', async (t) => {
-		if (!built) return t.skip('aichat.exe が無い');
+		if (!built) return t.skip('aichat-cs.exe が無い');
 
 		await viaExe(['say', 'C# 版からの発言']);
 		const { stdout } = await viaNode(['recent', '-n', '1']);
@@ -140,7 +145,7 @@ describe('C# 版と node 版で同じものが出る', () => {
 	});
 
 	test('recent の絞り込み（--find・--from・--since-day）の出力が node 版と一字一句揃う', async (t) => {
-		if (!built) return t.skip('aichat.exe が無い');
+		if (!built) return t.skip('aichat-cs.exe が無い');
 
 		const ROOM = 'sandbox-cli-cs-filter';
 		await viaExe(['say', 'ルールを更新しました', '--room', ROOM], 'test-cli-filter-a');
@@ -160,7 +165,7 @@ describe('C# 版と node 版で同じものが出る', () => {
 	});
 
 	test('recent の排他・書式エラーが node 版と同じ文言・終了コードになる', async (t) => {
-		if (!built) return t.skip('aichat.exe が無い');
+		if (!built) return t.skip('aichat-cs.exe が無い');
 
 		const cases = [
 			['recent', '--since', '1/1', '--since-day', '1'],
@@ -185,7 +190,7 @@ describe('C# 版と node 版で同じものが出る', () => {
 	 * 無かった（レビュー #19、i260908-05）
 	 */
 	test('--reply-to の受け方が node 版と揃う', async (t) => {
-		if (!built) return t.skip('aichat.exe が無い');
+		if (!built) return t.skip('aichat-cs.exe が無い');
 
 		const cases = [' 5', '+5', '5 ', '5.0', '999999999999'];
 		for (const value of cases) {
@@ -204,7 +209,7 @@ describe('C# 版と node 版で同じものが出る', () => {
 	 * mkdir するので同条件でも落ちない（レビュー #19、i260908-05）
 	 */
 	test('dump --out に階層なしの名前を渡しても落ちない', async (t) => {
-		if (!built) return t.skip('aichat.exe が無い');
+		if (!built) return t.skip('aichat-cs.exe が無い');
 
 		const cwd = join(ROOT, 'tmp');
 		const outName = 'cli-cs-dump-test.jsonl';
@@ -227,7 +232,7 @@ describe('C# 版と node 版で同じものが出る', () => {
 	 * （i260909-02）。実行はせず、下見と確認までを突き合わせる。
 	 */
 	test('rename の下見と確認の求め方が node 版と揃う', async (t) => {
-		if (!built) return t.skip('aichat.exe が無い');
+		if (!built) return t.skip('aichat-cs.exe が無い');
 
 		const target = 'test-cli-rename';
 		await viaNode(['say', '付け替えの下見'], target);
@@ -270,7 +275,7 @@ describe('C# 版と node 版で同じものが出る', () => {
 	});
 
 	test('who の出力が揃う', async (t) => {
-		if (!built) return t.skip('aichat.exe が無い');
+		if (!built) return t.skip('aichat-cs.exe が無い');
 
 		const { stdout: fromNode } = await viaNode(['who']);
 		const { stdout: fromExe } = await viaExe(['who']);
@@ -281,7 +286,7 @@ describe('C# 版と node 版で同じものが出る', () => {
 	});
 
 	test('初めての wait は案内を出してすぐ終わる（i260909-01）', async (t) => {
-		if (!built) return t.skip('aichat.exe が無い');
+		if (!built) return t.skip('aichat-cs.exe が無い');
 
 		const { stdout: fromNode } = await viaNode(['wait'], 'test-cli-first-node');
 		const { stdout: fromExe } = await viaExe(['wait'], 'test-cli-first-exe');
@@ -317,7 +322,7 @@ describe('C# 版と node 版で同じものが出る', () => {
 	 * 報告があった事故）
 	 */
 	test('初めてのルームと混ぜても、既存ルームの未読は消えない（両方で確認）', async (t) => {
-		if (!built) return t.skip('aichat.exe が無い');
+		if (!built) return t.skip('aichat-cs.exe が無い');
 
 		for (const [via, id] of [[viaNode, 'test-cli-mixed-node'], [viaExe, 'test-cli-mixed-exe']]) {
 			await via(['join'], id);
@@ -334,7 +339,7 @@ describe('C# 版と node 版で同じものが出る', () => {
 	});
 
 	test('wait が新着なしで正常に終わる', async (t) => {
-		if (!built) return t.skip('aichat.exe が無い');
+		if (!built) return t.skip('aichat-cs.exe が無い');
 
 		// 1 回目は初めての接続なので、案内を出してカーソルだけ立てて即終わる
 		// （i260909-01）。2 回目でようやく普通に待つので、そちらを見る
@@ -345,7 +350,7 @@ describe('C# 版と node 版で同じものが出る', () => {
 	});
 
 	test('waiters の出力が揃う', async (t) => {
-		if (!built) return t.skip('aichat.exe が無い');
+		if (!built) return t.skip('aichat-cs.exe が無い');
 
 		/*
 		 * waiters はサーバーに繋がない。手元のプロセスを見るだけなので、
@@ -406,7 +411,7 @@ describe('C# 版と node 版で同じものが出る', () => {
 	});
 
 	test('廃止したオプションは両方が同じように止める', async (t) => {
-		if (!built) return t.skip('aichat.exe が無い');
+		if (!built) return t.skip('aichat-cs.exe が無い');
 
 		const fail = async (fn) => {
 			try {
@@ -435,7 +440,7 @@ describe('C# 版と node 版で同じものが出る', () => {
 	 * 扱われていた（実際に指摘があった）。node 版・C# 版とも直した
 	 */
 	test('waiters の -r に不正な文字を含むと両方が同じように止める', async (t) => {
-		if (!built) return t.skip('aichat.exe が無い');
+		if (!built) return t.skip('aichat-cs.exe が無い');
 
 		const fail = async (fn) => {
 			try {
@@ -458,7 +463,7 @@ describe('C# 版と node 版で同じものが出る', () => {
 	});
 
 	test('使い方を誤ったときの終了コードが揃っている', async (t) => {
-		if (!built) return t.skip('aichat.exe が無い');
+		if (!built) return t.skip('aichat-cs.exe が無い');
 
 		/*
 		 * 終了コードは呼ぶ側の判断材料になる。2 は「自分の書き方が悪い」、
@@ -503,7 +508,7 @@ describe('C# 版と node 版で同じものが出る', () => {
 	});
 
 	test('接続先を渡さなければ両方が同じように止める', async (t) => {
-		if (!built) return t.skip('aichat.exe が無い');
+		if (!built) return t.skip('aichat-cs.exe が無い');
 
 		const fail = async (file, args) => {
 			try {
@@ -602,7 +607,7 @@ describe('TryGet は Environment.Exit を貫通させない（レビュー #20�
 	after(() => new Promise((resolve) => fakeServer.close(resolve)));
 
 	test('/api/version が 404 でも、本来のコマンドまで辿り着く', async (t) => {
-		if (!built) return t.skip('aichat.exe が無い');
+		if (!built) return t.skip('aichat-cs.exe が無い');
 
 		// 直る前は who まで辿り着かず exit 1 になるため、execFile が reject する。
 		// reject でも stdout/stderr は積まれているので、そこから中身を見る

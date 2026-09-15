@@ -277,9 +277,10 @@ mod tests {
 	}
 
 	#[test]
-	fn オプションが22件ある() {
+	fn オプションが24件ある() {
 		let def = Definition::load().unwrap();
-		assert_eq!(def.options.len(), 22);
+		// --yes は archive と rename の両方に出るので 2 件を数える
+		assert_eq!(def.options.len(), 24);
 	}
 
 	#[test]

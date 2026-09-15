@@ -122,6 +122,8 @@ export const OPTIONS = [
 	{ long: 'help', short: 'h', arg: '', cmd: null, desc: 'この使い方を出す。コマンドを付けなくても出る' },
 	{ long: 'with-messages', short: null, arg: '', cmd: 'archive', desc: '参加者を片付けるとき、その参加者の発言も含める' },
 	{ long: 'description', short: null, arg: '<説明>', cmd: 'archive', desc: '何をなぜ片付けたか。省略すると自動で組み立てる' },
+	{ long: 'yes', short: null, arg: '', cmd: 'archive', desc: '確認を省く。標準入力が無い背面から実行するとき用' },
+	{ long: 'yes', short: null, arg: '', cmd: 'rename', desc: '確認を省く。標準入力が無い背面から実行するとき用' },
 	{ long: 'port', short: 'p', arg: '<ポート>', cmd: null, desc: 'localhost のポートだけを変える' },
 	{ long: 'url', short: 'u', arg: '<URL>', cmd: null, desc: '接続先。ホストごと変える（--port とは併用できない）' },
 	{ long: 'room', short: 'r', arg: '<id[,id]>', cmd: null, desc: 'ルームを変える。カンマ区切りは wait と waiters だけ' },
@@ -158,10 +160,10 @@ export const COMMANDS = [
 	{ name: 'waiters', arg: ':<id>:', offline: true, desc: '待受けが何本走っているかを数える。サーバーには繋がない' },
 	{ name: 'dump', arg: '', desc: '全ルームの発言を JSONL に書き出す（片付けたものも含む）' },
 	{ name: 'leave', arg: ':<id>:', desc: '離脱を知らせる' },
-	{ name: 'archive', arg: ':<id>: <種別> <対象>', desc: '片付ける。種別は message / connector / room。先に件数を出し、対象名の入力を求める' },
+	{ name: 'archive', arg: ':<id>: <種別> <対象>', desc: '片付ける。種別は message / connector / room。先に件数を出し、対象名の入力を求める（背面からは --yes）' },
 	{ name: 'archives', arg: '', desc: '片付けたものの一覧を出す' },
 	{ name: 'restore', arg: ':<id>: <archived_seq>', desc: '片付けたものをまとめて戻す' },
-	{ name: 'rename', arg: ':<id>: connector :<旧>: :<新>:', desc: '参加者の ID を付け替える。先に件数を出し、旧 ID の入力を求める' },
+	{ name: 'rename', arg: ':<id>: connector :<旧>: :<新>:', desc: '参加者の ID を付け替える。先に件数を出し、旧 ID の入力を求める（背面からは --yes）' },
 ];
 
 /**

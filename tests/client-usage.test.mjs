@@ -62,12 +62,24 @@ describe('usage() とオプションの定義', () => {
 	});
 
 	test('コマンドだけのオプションは、そのコマンドの下に出る', () => {
+		/*
+		 * 同じ名前のオプションが複数のコマンドに付くことがある（--yes は
+		 * archive と rename の両方）。最初に見つかった 1 行だけを見ると、
+		 * 後ろのコマンドでは「前のコマンドの下にある」と読んで落ちる。
+		 * コマンドの行から次のコマンドの行までの区間で探す。
+		 */
 		const lines = HELP.split('\n');
 		for (const o of OPTIONS.filter((x) => x.cmd)) {
 			const cmdAt = lines.findIndex((l) => new RegExp(`^ {2}${o.cmd}(\\s|$)`).test(l));
-			const optAt = lines.findIndex((l) => l.includes(`--${o.long}`) && /^ {4,}/.test(l));
-
 			assert.ok(cmdAt >= 0, `${o.cmd} の行が見つからない`);
+
+			// 次にコマンド（字下げ 2）が現れるところまでが、このコマンドの区間
+			let endAt = lines.findIndex((l, i) => i > cmdAt && /^ {2}\S/.test(l));
+			if (endAt < 0) endAt = lines.length;
+
+			const optAt = lines.findIndex(
+				(l, i) => i > cmdAt && i < endAt && l.includes(`--${o.long}`) && /^ {4,}/.test(l)
+			);
 			assert.ok(optAt > cmdAt, `--${o.long} が ${o.cmd} の下に出ていない`);
 		}
 	});

@@ -649,16 +649,58 @@ fn format_stamp(digits: &str) -> String {
 ///
 /// **`y` では通さず、対象の名前を打たせる。**勢いで確定させないため。
 /// 打ち間違いや別の対象を指していたときに、そこで気づける。
-pub fn read_line(prompt: &str) -> String {
+///
+/// 【空行と EOF を分ける】
+/// どちらも「答えが空」だが、読み手にとっては別の話である。空行は打ち間違い、
+/// EOF は入力が来ていない。案内を出し分けるため、**どちらだったかを返す**。
+///
+/// 戻り値は `(答え, EOF だったか)`。
+pub fn read_line(prompt: &str) -> (String, bool) {
 	use std::io::Write;
 	print!("{}", prompt);
 	let _ = std::io::stdout().flush();
 
 	let mut line = String::new();
-	if std::io::stdin().read_line(&mut line).is_err() {
-		return String::new();
+	match std::io::stdin().read_line(&mut line) {
+		// 0 バイトは EOF。閉じていて 1 文字も来なかった
+		Ok(0) => (String::new(), true),
+		Ok(_) => (line.trim().to_string(), false),
+		Err(_) => (String::new(), true),
 	}
-	line.trim().to_string()
+}
+
+/// 取り返しのつかない操作の前に、対象の名前を打たせる。
+///
+/// `--yes` があれば聞かない。背面（run_in_background）から実行するときの唯一の手段で、
+/// これが無いと AI は archive ・ rename を使えない。確認を省くので、
+/// **打ち間違いは止まらない。**渡した側の責任になる。
+///
+/// 【中止の理由を書き分ける】
+/// 打ち間違えたのか、入力が来なかったのかは、読み手にとって別の話である。
+/// 本番では背面から 2 度試して 2 度とも止まり、原因が分からないままになった
+/// （課題 i260913-02）。**詰まったその場で渡し方が読めるようにする。**
+pub fn confirm_target(yes: bool, target: &str, prompt: &str, command: &str) -> bool {
+	if yes {
+		return true;
+	}
+
+	let (answer, eof) = read_line(prompt);
+	if answer == target {
+		return true;
+	}
+
+	if eof {
+		println!("中止しました。標準入力が閉じているため、確認の答えを受け取れませんでした。");
+		println!(
+			"背面から実行するときは --yes を渡すか、printf '{}\\n' | で答えを渡してください。",
+			target
+		);
+		println!("  例: printf '{}\\n' | aichat {} :<自分の ID>: ...", target, command);
+		return false;
+	}
+
+	println!("中止しました。");
+	false
 }
 
 /// 何件片付くかを先に出す。**件数が思っていたより多ければ、そこで気づける**
@@ -701,6 +743,7 @@ pub fn archive(
 	id: &str,
 	with_messages: bool,
 	description: Option<&str>,
+	yes: bool,
 ) -> Result<i32, CallError> {
 	let query = format!(
 		"/api/admin/archive-preview?kind={}&id={}{}",
@@ -720,9 +763,12 @@ pub fn archive(
 	}
 
 	print_preview(kind, id, &counts);
-	let answer = read_line(&format!("本当に片付ける場合は「{}」と入力してください: ", id));
-	if answer != id {
-		println!("中止しました。");
+	if !confirm_target(
+		yes,
+		id,
+		&format!("本当に片付ける場合は「{}」と入力してください: ", id),
+		"archive",
+	) {
 		return Ok(1);
 	}
 
@@ -767,7 +813,7 @@ pub fn restore(client: &Client, me: &str, seq: i64) -> Result<(), CallError> {
 /// `archive` と同じ形にする。先に件数を出し、旧 ID の入力を求めてから実行する。
 /// ID は参加者・読んだ位置・発言（差出人・宛先・本文の @旧ID）・片付けの記録に
 /// 散っており、手で書くと洗い出しから毎回やり直しになる。
-pub fn rename(client: &Client, me: &str, from: &str, to: &str) -> Result<i32, CallError> {
+pub fn rename(client: &Client, me: &str, from: &str, to: &str, yes: bool) -> Result<i32, CallError> {
 	let counts = client.call(
 		"GET",
 		&format!("/api/admin/rename-preview?from={}", encode_query(from)),
@@ -785,9 +831,12 @@ pub fn rename(client: &Client, me: &str, from: &str, to: &str) -> Result<i32, Ca
 	println!("  片付けの記録  {:>4} 件", num("archives") + num("archive_targets"));
 	println!("走っている待受けがあると断られます。先に止めてください。");
 
-	let answer = read_line(&format!("本当に付け替える場合は「{}」と入力してください: ", from));
-	if answer != from {
-		println!("中止しました。");
+	if !confirm_target(
+		yes,
+		from,
+		&format!("本当に付け替える場合は「{}」と入力してください: ", from),
+		"rename",
+	) {
 		return Ok(1);
 	}
 

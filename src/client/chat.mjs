@@ -1350,23 +1350,79 @@ function printPreview(kind, id, counts) {
  *
  * y では通さず、対象の名前を打たせる。勢いで確定させないため。
  * 前面で人が打つとき用。パイプで渡されていれば、その 1 行を使う。
+ *
+ * 【EOF を必ず拾う】
+ * 背面（run_in_background）で起こすと標準入力が閉じていて、data が 1 度も来ない。
+ * end を見ていないと Promise が解けず、bun は待ち続け、node は
+ * 「Detected unsettled top-level await」を出して終了コード 13 で落ちた。
+ * 実際に本番でシェルが 10 時間以上残った（課題 i260913-02）。
+ *
+ * 閉じていたら、そこまでに来ている分を返す。空なら確認に一致しないので中止になる。
+ * Rust 版（src/cli-rs）は EOF で中止 ・ 終了コード 1 になる。そこへ揃える。
+ *
+ * 【空行と EOF を分ける】
+ * どちらも「答えが空」だが、読み手にとっては別の話である。空行は打ち間違い、
+ * EOF は入力が来ていない。案内を出し分けるため、どちらだったかを返す。
+ *
+ * @returns {Promise<{ text: string, eof: boolean }>}
  */
 function readLine(prompt) {
 	process.stdout.write(prompt);
 	return new Promise((resolve) => {
 		let buf = '';
 		process.stdin.setEncoding('utf8');
+		const finish = (value) => {
+			process.stdin.off('data', onData);
+			process.stdin.off('end', onEnd);
+			process.stdin.pause();
+			resolve(value);
+		};
 		const onData = (chunk) => {
 			buf += chunk;
 			const nl = buf.indexOf('\n');
 			if (nl < 0) return;
-			process.stdin.off('data', onData);
-			process.stdin.pause();
-			resolve(buf.slice(0, nl).trim());
+			finish({ text: buf.slice(0, nl).trim(), eof: false });
 		};
+		// 改行が来ないまま閉じた分も拾う（`printf 'x' | aichat archive …` の形）
+		const onEnd = () => finish({ text: buf.trim(), eof: true });
 		process.stdin.on('data', onData);
+		process.stdin.on('end', onEnd);
 		process.stdin.resume();
 	});
+}
+
+/**
+ * 取り返しのつかない操作の前に、対象の名前を打たせる。
+ *
+ * --yes があれば聞かない。背面（run_in_background）から実行するときの唯一の手段で、
+ * これが無いと AI は archive ・ rename を使えない。確認を省くので、
+ * 打ち間違いは止まらない。渡した側の責任になる。
+ *
+ * 【中止の理由を書き分ける】
+ * 打ち間違えたのか、入力が来なかったのかは、読み手にとって別の話である。
+ * 本番では背面から 2 度試して 2 度とも止まり、原因が分からないままになった
+ * （課題 i260913-02）。詰まったその場で渡し方が読めるようにする。
+ *
+ * @param {string} target 打たせる名前
+ * @param {string} prompt 問いかけ
+ * @param {string} command 案内に出すコマンド名
+ * @returns {Promise<boolean>} 通ってよいか
+ */
+async function confirmTarget(target, prompt, command) {
+	if (hasFlag('yes')) return true;
+
+	const { text, eof } = await readLine(prompt);
+	if (text === target) return true;
+
+	if (eof) {
+		console.log('中止しました。標準入力が閉じているため、確認の答えを受け取れませんでした。');
+		console.log(`背面から実行するときは --yes を渡すか、printf '${target}\\n' | で答えを渡してください。`);
+		console.log(`  例: printf '${target}\\n' | aichat ${command} ${ID_WRAP}<自分の ID>${ID_WRAP} ...`);
+		return false;
+	}
+
+	console.log('中止しました。');
+	return false;
 }
 
 async function cmdArchive() {
@@ -1405,9 +1461,7 @@ async function cmdArchive() {
 	}
 
 	printPreview(kind, id, counts);
-	const answer = await readLine(`本当に片付ける場合は「${id}」と入力してください: `);
-	if (answer !== id) {
-		console.log('中止しました。');
+	if (!(await confirmTarget(id, `本当に片付ける場合は「${id}」と入力してください: `, 'archive'))) {
 		process.exit(1);
 	}
 
@@ -1459,9 +1513,7 @@ async function cmdRename() {
 	console.log(`  片付けの記録  ${String(counts.archives + counts.archive_targets).padStart(4)} 件`);
 	console.log('走っている待受けがあると断られます。先に止めてください。');
 
-	const answer = await readLine(`本当に付け替える場合は「${from}」と入力してください: `);
-	if (answer !== from) {
-		console.log('中止しました。');
+	if (!(await confirmTarget(from, `本当に付け替える場合は「${from}」と入力してください: `, 'rename'))) {
 		process.exit(1);
 	}
 
