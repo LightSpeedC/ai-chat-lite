@@ -581,7 +581,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 課題</h1>
 		<p class="lead">これから解決すること。片付いたら閉じて残す</p>
-		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-10</p>
+		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-13</p>
 	</div>
 </div>
 
@@ -1334,10 +1334,53 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">28 件 / 未 3 / 着手 7 / 済 18</span>
+		<span class="count">29 件 / 未 3 / 着手 8 / 済 18</span>
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue" id="i260916-01" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260916-01</span>
+				bun test が既存の状態と非決定的に落ちる（33 件）
+			</summary>
+			<div class="issuebody">
+				<p><strong>「テストのルール &gt; 書き方」に「bun がインストールされている環境では、<code>node --test</code> に加えて <code>bun test</code> でもグリーンであることを確認する」が追加された。</strong>このリポジトリで初めて走らせたところ、Rust 版への切り替え作業（<a href="#i260913-01">i260913-01</a>）とは無関係に、33 件が失敗した。</p>
+
+				<div class="callout callout-important">
+					<p><strong>切り分け済み。</strong>作業中の変更を <code>git stash</code> で退避し、直前コミット時点（変更なし）でも <code>bun test</code> を実行したところ、同種の失敗が同じ規模で再現した。<strong>今回の Rust 版切り替えが原因ではない。</strong></p>
+				</div>
+
+				<h3>実測</h3>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th>ランナー</th><th>結果</th></tr></thead>
+					<tbody>
+						<tr><td class="nowrap"><code>node --test</code></td><td>564 件中 562 件通過（残り 2 件は無関係な実行ポリシーの問題）</td></tr>
+						<tr><td class="nowrap"><code>bun test</code>（作業中の変更込み）</td><td>562 件中 541 件通過・21 件失敗・1 エラー</td></tr>
+						<tr><td class="nowrap"><code>bun test</code>（変更を退避したベースライン）</td><td>529 件中 496 件通過・<strong>33 件失敗・2 エラー</strong></td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<h3>見えている原因</h3>
+
+				<p><strong>複数のテストファイルが同じ DB を同時に触り、状態が混ざっている。</strong><code>store.test.mjs</code>「参加登録すると connectors に行ができる」は 2 件のはずが 79 件、<code>msg_seq</code> は <code>1,2,3</code> のはずが <code>2139,2140,2141</code> のような値になる。<strong>bun のテストランナーはファイル間の並列実行・分離の既定が <code>node:test</code> と異なる</strong>ため、<code>tmp/_data/unit-*</code> の置き場が競合していると見られる。</p>
+
+				<p>ほかに <code>wait-kinds.test.mjs</code> 等で、子プロセス（bun 経由の <code>chat.mjs</code>）が待受けのまま残って 5 秒タイムアウトする例も複数見えた。<code>tables.test.mjs</code> は DB ファイルを開けずに失敗（<code>unable to open database file</code>）。</p>
+
+				<h3>やること</h3>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> <strong>今回の変更が原因でないことを切り分けた</strong>（stash してベースラインで再現）</li>
+					<li><span class="badge b-todo">未</span> <strong>DB の置き場が bun 実行時にテストファイル間で競合していないか調べる。</strong>各テストの <code>TEST_DATA</code> が本当にファイルごとに一意か確認する</li>
+					<li><span class="badge b-todo">未</span> bun のテストランナーの並列度・分離の設定を調べ、<code>node:test</code> 相当に揃えられるか検討する</li>
+					<li><span class="badge b-todo">未</span> 子プロセスが待受けのまま残るケース（<code>wait-kinds.test.mjs</code> 等）を個別に切り分ける</li>
+				</ul>
+			</div>
+		</details>
 
 		<details class="issue doing" id="i260913-01" open>
 			<summary>
@@ -1397,9 +1440,9 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 				<table>
 				<thead><tr><th class="nowrap">状態</th><th>中身</th></tr></thead>
 				<tbody>
-					<tr><td class="nowrap"><span class="badge b-todo">未</span></td><td>計画書を立てる（<code>notes/10_plan/</code>）</td></tr>
-					<tr><td class="nowrap"><span class="badge b-todo">未</span></td><td>土台（JSON ・ JST ・ 引数 ・ 定義の読み取り）を TDD で作る</td></tr>
-					<tr><td class="nowrap"><span class="badge b-todo">未</span></td><td>日時の解析（<code>--since</code> ・ <code>--before</code>）と待受けの選別を移す</td></tr>
+					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>計画書を立てた。</strong><a class="doclink" href="../10_plan/p260913-01-CLIをRustで書く.html">CLI を Rust で書く</a></td></tr>
+					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>土台（JSON ・ JST ・ 引数 ・ 定義の読み取り）を TDD で作った。</strong>暦の計算も自前になった（<code>json.rs</code> 440 行 ・ <code>jst.rs</code> 221 行）</td></tr>
+					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>日時の解析（<code>--since</code> ・ <code>--before</code>）と待受けの選別を移した。</strong>正規表現を使わずに書いた</td></tr>
 					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>HTTP と 14 コマンドを実装した。</strong>Rust 側の単体テストは 182 件</td></tr>
 					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>node 版との突き合わせを通した。</strong><code>tests/cli-rs.test.mjs</code> が繋がない 16 通り、<code>tools/40_test/compare-cli.mjs</code> が実サーバーへ繋ぐ 54 通り</td></tr>
 					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>待受け中のメモリを測り直し、資料に反映した。</strong>全 14 コマンドで 6.41 MB（最小実装 4.89 MB から ＋1.5 MB）</td></tr>
@@ -3957,10 +4000,183 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">24 件 / 未 8 / 着手 1 / 済 15</span>
+		<span class="count">26 件 / 未 10 / 着手 1 / 済 15</span>
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue" id="i260913-03" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260913-03</span>
+				ルーム名を変える手段が無い
+			</summary>
+			<div class="issuebody">
+				<p><strong><code>rename</code> が相手にするのは参加者（connector）だけで、ルームは対象外である。</strong>2026-09-13 に <code>html2md</code> を <code>ai-agent-tools</code> へ改名したとき、<strong>ルーム名だけは手で SQL を書いて直した。</strong></p>
+
+				<h3>そのとき書いた SQL</h3>
+
+				<pre><code class="language-sql">UPDATE messages SET room_id='ai-agent-tools' WHERE room_id='html2md';
+UPDATE cursors  SET room_id='ai-agent-tools' WHERE room_id='html2md';</code></pre>
+
+				<p><strong>ルームを指す列はこの 2 つだけだった</strong>（<code>archives</code> は <code>archive_kind='room'</code> の行が 0 件だったため対象外）。</p>
+
+				<div class="callout callout-caution">
+					<p><strong>取りこぼしても例外は出ない。</strong>古い名前を指す行が残るだけで、静かに食い違う。<strong>列を 1 つ見落としても、その場では何も起きない。</strong></p>
+					<p><code>cursors</code> の主キーは <code>(connector_id, room_id)</code> なので、<strong>移した先に同じ参加者の行があると衝突する。</strong>今回は 0 件だったが、次もそうとは限らない。</p>
+				</div>
+
+				<h3>決めること</h3>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="nowrap">案</th><th>中身</th></tr></thead>
+					<tbody>
+						<tr>
+							<td class="nowrap">A</td>
+							<td><code>rename</code> に <code>room</code> の種別を足す（<code>rename :&lt;id&gt;: room :&lt;旧&gt;: :&lt;新&gt;:</code>）。<strong>connector と同じ形になり、下見と確認もそのまま使える</strong></td>
+						</tr>
+						<tr>
+							<td class="nowrap">B</td>
+							<td>別の道具にする。<strong>ルームは参加者と性質が違う</strong>（持ち主がいない）ため、混ぜない</td>
+						</tr>
+					</tbody>
+				</table>
+				</div>
+
+				<h3>やること</h3>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> <strong>A と B を決める</strong></li>
+					<li><span class="badge b-todo">未</span> <strong>ルームを指す列の洗い出しを、道具側に持たせる。</strong>手で数えると次に足した列を落とす</li>
+					<li><span class="badge b-todo">未</span> <strong>主キーの衝突を先に見る。</strong>移す前に断る</li>
+					<li><span class="badge b-todo">未</span> <strong>3 実装に入れる</strong>（ローカルルール 2）。定義の出どころは <code>src/client/options.mjs</code></li>
+					<li><span class="badge b-todo">未</span> 本文に出てくるルーム名は<strong>書き換えない</strong>という線引きを、資料に残す（今回 117 件が該当した）</li>
+				</ul>
+
+				<div class="callout callout-tip">
+					<p><strong>検証の道具は既にある。</strong><code>tools/40_test/rename-dryrun.mjs</code> が、本番の写しを作って付け替えを試し、<strong>古い ID を指す行が 0 件になることを数える。</strong>本番には書き込まない（読み取り専用の接続から <code>VACUUM INTO</code> で写す）。</p>
+					<p>ルーム側も同じ形にできる。<strong>作る前に、この道具で確かめられるようにしておく。</strong></p>
+				</div>
+			</div>
+		</details>
+
+		<details class="issue" id="i260913-02" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260913-02</span>
+				archive が終わったあともプロセスが残る
+			</summary>
+			<div class="issuebody">
+				<p><strong>片付けは成功しているのに、実行したシェルが終わらない。</strong>2026-09-13 に 2 本が 10 時間以上残っているのを見つけた。</p>
+
+				<h3>残っていたプロセス</h3>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="nowrap">pid</th><th class="nowrap">起きた時刻</th><th><code>archives</code> の記録</th><th>見立て</th></tr></thead>
+					<tbody>
+						<tr>
+							<td class="num">29820</td>
+							<td class="nowrap">2026-09-13 00:38:10</td>
+							<td><strong>無し</strong></td>
+							<td>確認待ちのまま止まっている。<code>archive</code> は標準入力で確認を求めるが、<strong>背面で起こすと入力が来ない</strong></td>
+						</tr>
+						<tr>
+							<td class="num">22532</td>
+							<td class="nowrap">2026-09-13 00:40:24</td>
+							<td>seq 7（00:40:55.537 ・ 発言 810 ・ 1 件）</td>
+							<td><strong>片付けを終えたのに終了していない。</strong>処理そのものは 31 秒後に済んでいる</td>
+						</tr>
+					</tbody>
+				</table>
+				</div>
+
+				<p>どちらも同じコマンドで、実行したのは <code>ai-chat-lite-reviewer</code> である。</p>
+
+				<pre><code class="language-shell">aichat archive :ai-chat-lite-reviewer: message 810 -p 8787 --description 文字化けしたため差し替え</code></pre>
+
+				<div class="callout callout-important">
+					<p><strong>残っているのは <code>sh.exe</code> だけで、子の <code>bun</code> ・ <code>aichat.exe</code> は既にいない。</strong>シェルだけが取り残されている。</p>
+					<p><strong>掴んでいるものが無いので気づけない。</strong>exe を掴んでいれば置き換えのときに分かるが、これは何も邪魔しないまま残り続ける。</p>
+				</div>
+
+				<h3>調べた結果</h3>
+
+				<p><strong>再現した。</strong>テスト用の DB とサーバーで、標準入力を閉じて <code>archive</code> を起こすと、<strong>実装ごとに終わり方が 3 通りに分かれる。</strong></p>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="nowrap">実装</th><th>標準入力を閉じたとき</th><th class="nowrap">終了コード</th><th>出た文字</th></tr></thead>
+					<tbody>
+						<tr>
+							<td class="nowrap"><strong>Rust 版</strong></td>
+							<td><strong>中止して終わる</strong></td>
+							<td class="num">1</td>
+							<td>中止しました。</td>
+						</tr>
+						<tr>
+							<td class="nowrap">node 版</td>
+							<td>Promise が解けないままイベントループが空になり、強制的に終わる</td>
+							<td class="num">13</td>
+							<td><code>Warning: Detected unsettled top-level await</code></td>
+						</tr>
+						<tr>
+							<td class="nowrap">bun 版</td>
+							<td><strong>終わらない</strong>（10 秒待っても返らない）</td>
+							<td class="num">—</td>
+							<td>確認の問いかけで止まる</td>
+						</tr>
+					</tbody>
+				</table>
+				</div>
+
+				<p><strong>Rust 版が正しい。</strong>本番で残っていたのは当時の <code>aichat</code>（bun 版）なので、症状が一致する。</p>
+
+				<div class="callout callout-caution">
+					<p><strong>原因は <code>readLine</code> が EOF を見ていないこと。</strong><code>src/client/chat.mjs</code> の <code>readLine</code> は <code>data</code> だけを待ち、<code>end</code> を扱っていない。入力が閉じていると <strong>resolve されない Promise が残る。</strong></p>
+					<p>node は待つものが無くなって落ち、bun は <code>resume()</code> したハンドルが生きているため待ち続ける。<strong>同じ書き方で挙動が分かれる。</strong></p>
+				</div>
+
+				<h3>止めるときは子まで見る</h3>
+
+				<p><strong>残っていた 2 本を止めたあと、子の <code>bun</code> が 2 本そのまま残った。</strong>確保量は 147.30 MB と 136.54 MB。実メモリは 1.2 MB ほどしかないので、<strong>実メモリだけを見ていると軽いものに見える。</strong></p>
+
+				<div class="tablewrap">
+				<table>
+					<thead><tr><th class="nowrap">段</th><th class="nowrap">pid</th><th>中身</th><th class="nowrap">止めたか</th></tr></thead>
+					<tbody>
+						<tr><td class="nowrap">親</td><td class="num">29820 / 22532</td><td><code>sh.exe</code>（<code>aichat</code> を呼ぶ）</td><td class="nowrap">止めた</td></tr>
+						<tr><td class="nowrap">子</td><td class="num">25048 / 4212</td><td><code>bun.exe run chat.mjs archive …</code></td><td class="nowrap"><strong>残った</strong></td></tr>
+					</tbody>
+				</table>
+				</div>
+
+				<div class="callout callout-caution">
+					<p><strong>数え直した式が <code>sh.exe</code> しか見ていなかったため、0 件と読んだ。</strong>実際には子が生きていた。<strong>「片付いた」と報告したあとに見つかった。</strong></p>
+					<p>親を止めても子は道連れにならない。<strong>起動パス（Rust ・ bun ・ node ・ bash ・ PowerShell）ごとに、どこまでが道連れになるかが違う。</strong></p>
+				</div>
+
+				<div class="callout callout-important">
+					<p><strong>突き合わせでは見つからなかった。</strong><code>tools/40_test/compare-cases.json</code> の <code>archive</code> は<strong>引数の誤りだけを試していて、確認入力の経路を 1 つも通っていない。</strong></p>
+					<p>切り分けに使ったものを <code>tests/archive-exit.test.mjs</code> に残した（3 実装 × 2 経路）。<strong>直す前は bun 版の 1 件が落ちていた。</strong></p>
+				</div>
+
+				<h3>やること</h3>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> <strong>再現条件を突き止めた。</strong>標準入力が閉じた状態で <code>archive</code> を起こすと、bun 版だけが終わらない</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>切り分けのテストを足した</strong>（<code>tests/archive-exit.test.mjs</code>）</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong><code>readLine</code> に <code>end</code> の処理を足した。</strong>EOF なら、そこまでに来ている分を返す。空なら確認に一致しないので中止になる。<strong>3 実装とも「中止しました。」＋終了コード 1 で揃った</strong>（bun 版は 10 秒待ちから 288 ms へ）</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong><code>rename</code> も確かめた。</strong>同じ <code>readLine</code> を使うが、直したので 3 実装とも終了コード 1 で終わる</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong><code>--yes</code> を足した</strong>（<code>archive</code> ・ <code>rename</code>）。背面から片付ける唯一の手段。<strong>これが無いと AI は使えない。</strong>3 実装に入れ、オプションは 22 件から 24 件になった</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>中止の理由を書き分けた。</strong>打ち間違いと「入力が来なかった」を分け、<strong>詰まったその場で渡し方が読める</strong>ようにした。<code>--help</code> と USAGE にも足した</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>残っていた 2 本を止めた。</strong>ただし<strong>シェルだけ止めて、子の <code>bun</code> が 2 本孤児として残った</strong>（確保量 147 MB と 137 MB）。あとで見つけて止めた</li>
+					<li><span class="badge b-todo">未</span> <strong>確認入力の経路を突き合わせに足す</strong>（<code>compare-cases.json</code> は標準入力を渡せないので、渡せる形にするか別の道具にするかを決める）</li>
+					<li><span class="badge b-todo">未</span> <code>ai-chat-lite-reviewer</code> からの返答を受ける（発言 836 で問い合わせ済み。<strong>返答を待たずに止めたので、その旨も伝える</strong>）</li>
+				</ul>
+			</div>
+		</details>
 
 		<details class="issue done" id="i260904-02">
 			<summary>

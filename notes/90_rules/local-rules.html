@@ -389,9 +389,10 @@ footer a {
 </style>
 <style>
 /* この資料だけのもの: 章のアクセント色（3章 / 色相 280→0 を 140 刻み）と目次の採番 */
-.ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
-.ch02 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); --soft: hsl(140, 28%, 95%); }
-.ch03 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
+.ch01 { --accent: hsl(280.0, 78%, 25%); --accent2: hsl(280.0, 58%, 55%); --soft: hsl(280.0, 28%, 95%); }
+.ch02 { --accent: hsl(186.7, 78%, 25%); --accent2: hsl(186.7, 58%, 55%); --soft: hsl(186.7, 28%, 95%); }
+.ch03 { --accent: hsl( 93.3, 78%, 25%); --accent2: hsl( 93.3, 58%, 55%); --soft: hsl( 93.3, 28%, 95%); }
+.ch04 { --accent: hsl(  0.0, 78%, 25%); --accent2: hsl(  0.0, 58%, 55%); --soft: hsl(  0.0, 28%, 95%); }
 .toc ol { counter-reset: tocnum; }
 </style>
 </head>
@@ -402,7 +403,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite のローカルルール</h1>
 		<p class="lead">このプロジェクトでだけ言えることを書く。全プロジェクト共通の決めごとは別にある</p>
-		<p class="date">📅 作成: 2026-09-04 / 更新: 2026-09-09</p>
+		<p class="date">📅 作成: 2026-09-04 / 更新: 2026-09-13</p>
 	</div>
 </div>
 
@@ -413,7 +414,7 @@ footer a {
 <p>ここに書くのは<strong>このプロジェクトでしか言えないこと</strong>だけである。全プロジェクトに通る決めごとは共通のルールにあり、同じ文を両方に書かない。</p>
 
 <div class="callout callout-important">
-	<p><strong>3 節とも、実際に踏んだ落とし穴である。</strong>次のセッションが同じ順路を辿らないようにするのが目的で、一般論を並べる場所ではない。</p>
+	<p><strong>4 節とも、実際に踏んだ落とし穴である。</strong>次のセッションが同じ順路を辿らないようにするのが目的で、一般論を並べる場所ではない。</p>
 	<p>root の <code>CLAUDE.md</code> はこの資料から生成した Markdown を 1 行で取り込んでいる。<strong>セッションを開くと本文が読み込まれる。</strong></p>
 </div>
 
@@ -421,8 +422,9 @@ footer a {
 	<h2>目次</h2>
 	<ol>
 		<li class="ch01"><a href="#ch01">設計書は常に最新に保つ</a></li>
-		<li class="ch02"><a href="#ch02">CLI を直したら 2 本とも直す</a></li>
+		<li class="ch02"><a href="#ch02">CLI を直したら 3 本とも直す</a></li>
 		<li class="ch03"><a href="#ch03">exe を作り直すときは待受けを止めない</a></li>
+		<li class="ch04"><a href="#ch04">プロセスを止めるときは子まで見る</a></li>
 	</ol>
 </section>
 
@@ -475,9 +477,9 @@ footer a {
 
 <!-- ================= 02 ================= -->
 <section class="ch02" id="ch02">
-	<h1>CLI を直したら 2 本とも直す</h1>
+	<h1>CLI を直したら 3 本とも直す</h1>
 
-	<p><strong>CLI は node 版（<code>src/client/chat.mjs</code>）と C# 版（<code>src/cli-cs/</code>）の 2 本ある。</strong>片方だけ直すと食い違う。</p>
+	<p><strong>CLI は node 版（<code>src/client/chat.mjs</code>）と C# 版（<code>src/cli-cs/</code>）と Rust 版（<code>src/cli-rs/</code>）の 3 本ある。</strong>既定の <code>aichat</code> を受けるのは Rust 版で、C# 版は<strong>対比実装として残している</strong>（後で消す）。</p>
 
 	<div class="tablewrap">
 	<table>
@@ -487,23 +489,27 @@ footer a {
 		<tbody>
 			<tr>
 				<td class="nowrap">定義は 1 か所</td>
-				<td>出どころは <code>src/client/options.mjs</code>。<code>tools/20_build/export-options.mjs</code> が JSON に書き出し、C# 版はそれを埋め込む。<strong>手で写さない</strong></td>
+				<td>出どころは <code>src/client/options.mjs</code>。<code>tools/20_build/export-options.mjs</code> が JSON に書き出し、C# 版と Rust 版はそれぞれ埋め込む。<strong>手で写さない</strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap">実体の名前で呼ぶ</td>
+				<td>突き合わせのテストは <code>aichat-cs.exe</code> ・ <code>aichat-rs.exe</code> を名指しする。<strong><code>aichat.exe</code> は既定の別名なので、そこを見ると別の実装を試すことになる</strong></td>
 			</tr>
 			<tr>
 				<td class="nowrap">形を変えたら版を上げる</td>
-				<td>JSON の形を変えたら <code>schema</code> を上げる。C# 版の <code>Definition.ExpectedSchema</code> と <code>tests/cli-cs.test.mjs</code> の期待値も合わせる</td>
+				<td>JSON の形を変えたら <code>schema</code> を上げる。C# 版の <code>Definition.ExpectedSchema</code>、Rust 版の <code>EXPECTED_SCHEMA</code>、テストの期待値も合わせる</td>
 			</tr>
 			<tr>
 				<td class="nowrap">食い違いはテストが落とす</td>
-				<td><code>tests/cli-cs.test.mjs</code> が出力・終了コード・埋め込んだ定義を突き合わせている</td>
+				<td><code>tests/cli-cs.test.mjs</code>（20 件） ・ <code>tests/cli-rs.test.mjs</code>（16 件） ・ <code>tools/40_test/compare-cli.mjs</code>（54 通り）</td>
 			</tr>
 		</tbody>
 	</table>
 	</div>
 
 	<div class="callout callout-tip">
-		<p><strong>2 本を保守する限り、食い違いは必ず出る。</strong>実際に、同じ秒に立った待受けの並び順が食い違った（C# 版はミリ秒まで持ち、node 版は秒に丸めていた）。<code>say</code> の本文なしの終了コードも片方だけ違っていた。</p>
-		<p><strong>どちらも突き合わせのテストがあって初めて見つかった。</strong>目で読んで気づける差ではない。</p>
+		<p><strong>保守する本数だけ、食い違いは必ず出る。</strong>実際に、同じ秒に立った待受けの並び順が食い違った（C# 版はミリ秒まで持ち、node 版は秒に丸めていた）。<code>say</code> の本文なしの終了コードも片方だけ違っていた。Rust 版では<strong>桁の詰め方が 2 種類あること</strong>に気づくまで 8 件ずれていた。</p>
+		<p><strong>どれも突き合わせのテストがあって初めて見つかった。</strong>目で読んで気づける差ではない。</p>
 	</div>
 </section>
 
@@ -527,6 +533,83 @@ footer a {
 	<div class="callout callout-important">
 		<p><strong>Windows では、走っている exe は削除できないが名前は変えられる。</strong>走っているプロセスは名前を変えたあとの実体を使い続けるため、退避しても落ちない。空いた名前に新しいものを置ける。</p>
 		<p>退避したものは次のビルドで消せるだけ消す。<strong>残っていても構わない。</strong></p>
+	</div>
+
+	<p>この前提は <code>tests/exe-swap.test.mjs</code> が実物の exe を走らせて 1 段ずつ確かめている。<strong>理屈だけで信じない。</strong></p>
+
+	<h2>ビルドの順序</h2>
+
+	<p><strong>それぞれ自分の名前へビルドし、既定はあとから写す。</strong>ビルドが既定を直接書かない形にしておく。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">順</th><th>すること</th><th class="nowrap">出力</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="num">1</td>
+				<td><code>node tools/20_build/build-aichat-rs.mjs</code></td>
+				<td class="nowrap"><code>aichat-rs.exe</code></td>
+			</tr>
+			<tr>
+				<td class="num">2</td>
+				<td><code>psh tools/20_build/build-aichat.ps1</code>（C# 版 ・ 対比用）</td>
+				<td class="nowrap"><code>aichat-cs.exe</code></td>
+			</tr>
+			<tr>
+				<td class="num">3</td>
+				<td><code>node tools/20_build/install-aichat.mjs</code></td>
+				<td class="nowrap"><code>aichat.exe</code>（Rust 版の写し）</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-caution">
+		<p><strong>ビルドが既定（<code>aichat.exe</code>）へ直接書かないようにする。</strong>C# 版のビルドが <code>aichat.exe</code> を出力していたため、<strong>C# 版を作っただけで既定が入れ替わった。</strong></p>
+		<p><strong>ビルドは「できました」と出るので気づけない。</strong>気づいたのは、その後で走らせたテストが落ちたからだった。</p>
+	</div>
+
+	<p><strong>3 は明示して行う。</strong>ビルドのたびに既定が入れ替わると、試しに作っただけのものが他プロジェクトの待受けにまで届く。</p>
+</section>
+
+<!-- ================= 04 ================= -->
+<section class="ch04" id="ch04">
+	<h1>プロセスを止めるときは子まで見る</h1>
+
+	<p><strong>親を止めても子は道連れにならない。</strong><code>archive</code> の残骸を片付けたとき、<code>sh.exe</code> を 2 本止めて「片付いた」と報告したが、<strong>子の <code>bun</code> が 2 本生きていた</strong>（確保量 147 MB と 137 MB）。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">起動パス</th><th>段</th></tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="nowrap"><code>run_in_background</code> の待受け</td>
+				<td><code>bash.exe</code> 3 段 → <code>aichat.exe</code></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>aichat-bun</code></td>
+				<td><code>sh.exe</code> → <code>bun.exe</code>（bun が無ければ <code>node.exe</code>）</td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>psh</code> 経由</td>
+				<td><code>sh.exe</code> → <code>bun.exe</code> → <code>powershell.exe</code></td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p><strong>実メモリだけを見ると軽く見える。</strong>残っていた <code>bun</code> は実メモリ 1.2 MB で、確保量は 140 MB 前後だった。<strong>確保量まで見ないと、残っていることの重さが分からない。</strong></p>
+
+	<div class="callout callout-caution">
+		<p><strong>数え直す式が親しか見ていないと、0 件と読む。</strong>実際にそれで「片付いた」と誤って報告した。<strong>プロセス名ではなくコマンド行で探し、親子の両方を見る。</strong></p>
+	</div>
+
+	<div class="callout callout-important">
+		<p><strong>探す式に、探したい語をそのまま書かない。</strong>書くと、その式を走らせているプロセス自身が条件に当たる。<code>'aich' + 'at'</code> のように割って繋ぐ。<strong>1 度これで 0 件を 5 件と読み違えた。</strong></p>
 	</div>
 </section>
 
