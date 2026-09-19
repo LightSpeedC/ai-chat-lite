@@ -11,7 +11,7 @@ import { nowJst } from './time.mjs';
 import {
 	addMessage, getSince, getLatest, getBefore, getFiltered, getMaxSeq,
 	joinConnector, touchConnector, addConnection, removeConnection, listRooms,
-	getCursor, setCursor, closeDb, getConnector,
+	getCursor, setCursor, getAckedSeq, setAcked, getRange, closeDb, getConnector,
 	previewArchive, archive, restore, listArchives, getAllMessages,
 	previewRename, renameConnector,
 } from './store.mjs';
@@ -295,6 +295,39 @@ async function handleSay(req, res) {
 	sendJson(res, 200, message);
 }
 
+/**
+ * msg_seq のバリデーション。reply_to_msg_seq とは別に持つ（あちらは省略可、
+ * こちらは必須で、メッセージ名も違う）。
+ */
+function requireMsgSeq(value) {
+	const n = Number(value);
+	if (!Number.isInteger(n) || n < 1) {
+		throw new BadRequest(`msg_seq は 1 以上の整数です: ${value}`);
+	}
+	return n;
+}
+
+/**
+ * 確定済み位置（acked_seq）を進める（i260917-01）。
+ *
+ * 配信済み位置（cursors.msg_seq）を超える値は受け付けない。まだ配信して
+ * いない分を確定させると、次の poll の pending 計算がずれる。
+ */
+async function handleAck(req, res) {
+	const input = await readJsonBody(req);
+	const connectorId = requireId(input.connector_id, 'connector_id');
+	const roomId = roomOf(input.room_id);
+	const msgSeq = requireMsgSeq(input.msg_seq);
+
+	const deliveredSeq = getCursor(connectorId, roomId);
+	if (deliveredSeq === null || msgSeq > deliveredSeq) {
+		throw new BadRequest(`msg_seq ${msgSeq} はまだ配信されていません`);
+	}
+
+	setAcked(connectorId, roomId, msgSeq);
+	sendJson(res, 200, { connector_id: connectorId, room_id: roomId, acked_seq: msgSeq });
+}
+
 async function handlePoll(req, res, url) {
 	const connectorId = optionalId(url.searchParams.get('connector_id'), 'connector_id');
 	const rooms = roomsOf(url.searchParams.get('room_id'));
@@ -392,8 +425,23 @@ async function handlePoll(req, res, url) {
 			return { room_id: roomId, since, msg_seq: msgSeq };
 		});
 
+		/*
+		 * pending（確定前の繰り越し）は messages とは別枠にする（i260917-01）。
+		 * messages の契約（一度返した内容は二度と出ない）は一切変えない。
+		 *
+		 * 確定済み位置（acked_seq）から、今回の poll が始まった時点の
+		 * 配信済み位置（since = 前回までの msg_seq）までの範囲を返す。
+		 * 未参加（connectorId が無い）なら常に空。
+		 */
+		const pending = connectorId
+			? rooms.flatMap((roomId) => {
+					const since = sinceByRoom.get(roomId);
+					return getRange(roomId, getAckedSeq(connectorId, roomId) ?? since, since);
+				})
+			: [];
+
 		// 1 つだけのときは、これまでと同じ形も添える。既存の呼び出しを壊さないため
-		const body = { rooms: roomsOut, messages };
+		const body = { rooms: roomsOut, messages, pending };
 		if (roomsOut.length === 1) {
 			body.room_id = roomsOut[0].room_id;
 			body.since = roomsOut[0].since;
@@ -971,6 +1019,7 @@ export async function handleRequest(req, res) {
 		if (req.method === 'POST') {
 			if (path === '/api/join') return await handleJoin(req, res);
 			if (path === '/api/say') return await handleSay(req, res);
+			if (path === '/api/ack') return await handleAck(req, res);
 			if (path === '/api/leave') return await handleLeave(req, res);
 			// 落とす。うっかり叩かないよう /api/admin/ に分け、GET では受けない
 			if (path === '/api/admin/exit') return await handleExit(req, res, url);

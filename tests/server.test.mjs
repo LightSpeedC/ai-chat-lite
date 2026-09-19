@@ -806,6 +806,72 @@ test('再び join しても位置は巻き戻らない', async () => {
 	assert.equal(json.messages[0].msg_body, '再 join の前', '未読が飛ばされている');
 });
 
+/*
+ * 配信済み位置（msg_seq）と確定済み位置（acked_seq）を分ける（i260917-01）。
+ *
+ * 読み飛ばしても発言が痕跡なく消えないよう、poll が応答した時点ではまだ
+ * 「確定」しない。確定は /api/ack を呼んで初めて進む。確定していない分は
+ * 次の poll で pending に出る。messages（新着）の契約は一切変えない。
+ */
+describe('確定（ack）の分離 — i260917-01', () => {
+	test('未確定の配信は、次の poll で pending に出る（messages には出ない）', async () => {
+		// 初参加は「参加した時点から」になる（既存仕様）ため、投稿より先に一度参加させておく
+		await get('/api/poll?connector_id=test-pending-a&wait=0');
+		await post('/api/say', { from_connector_id: 'test-connector1', msg_body: 'pending 確認 A' });
+
+		const first = await get('/api/poll?connector_id=test-pending-a&wait=0');
+		assert.equal(first.json.messages.length, 1);
+		assert.equal(first.json.messages[0].msg_body, 'pending 確認 A');
+		assert.deepEqual(first.json.pending, [], '1 回目はまだ前回配信が無い');
+
+		// 確定させずに 2 回目を呼ぶ
+		const second = await get('/api/poll?connector_id=test-pending-a&wait=0');
+		assert.deepEqual(second.json.messages, [], '新着が無ければ messages は空のまま');
+		assert.equal(second.json.pending.length, 1, '前回配信したが未確定の分が pending に出る');
+		assert.equal(second.json.pending[0].msg_body, 'pending 確認 A');
+	});
+
+	test('/api/ack で確定すると、以後は pending に出ない', async () => {
+		await get('/api/poll?connector_id=test-pending-b&wait=0');
+		await post('/api/say', { from_connector_id: 'test-connector1', msg_body: 'pending 確認 B' });
+		const first = await get('/api/poll?connector_id=test-pending-b&wait=0');
+		const msgSeq = first.json.msg_seq;
+
+		// ack しなければ pending に出ることを確認してから ack する
+		const before = await get('/api/poll?connector_id=test-pending-b&wait=0');
+		assert.equal(before.json.pending.length, 1, '確定前は pending に出る');
+
+		const acked = await post('/api/ack', { connector_id: 'test-pending-b', room_id: 'public', msg_seq: msgSeq });
+		assert.equal(acked.status, 200);
+
+		const second = await get('/api/poll?connector_id=test-pending-b&wait=0');
+		assert.deepEqual(second.json.pending, [], '確定済みなので pending は空');
+	});
+
+	test('pending と新着の messages が同時に返ることがある', async () => {
+		await get('/api/poll?connector_id=test-pending-d&wait=0');
+		await post('/api/say', { from_connector_id: 'test-connector1', msg_body: 'pending 確認 D-1' });
+		const first = await get('/api/poll?connector_id=test-pending-d&wait=0');
+		assert.equal(first.json.messages.length, 1);
+
+		await post('/api/say', { from_connector_id: 'test-connector1', msg_body: 'pending 確認 D-2' });
+		// 確定せずに 2 回目を呼ぶ。D-1 が pending、D-2 が messages に入るはず
+		const second = await get('/api/poll?connector_id=test-pending-d&wait=0');
+		assert.equal(second.json.pending.length, 1);
+		assert.equal(second.json.pending[0].msg_body, 'pending 確認 D-1');
+		assert.equal(second.json.messages.length, 1);
+		assert.equal(second.json.messages[0].msg_body, 'pending 確認 D-2');
+	});
+
+	test('参加した直後の 1 回目は pending が常に空', async () => {
+		await get('/api/poll?connector_id=test-pending-e&wait=0');
+		await post('/api/say', { from_connector_id: 'test-connector1', msg_body: 'pending 確認 E' });
+		const { json } = await get('/api/poll?connector_id=test-pending-e&wait=0');
+		assert.equal(json.messages.length, 1);
+		assert.deepEqual(json.pending, [], '1 回目の受信はまだ前回配信が無いので pending は空');
+	});
+});
+
 // --- オフラインへ落ちたことの通知 ---
 
 test('初めて見る相手には離脱を流さない', async () => {

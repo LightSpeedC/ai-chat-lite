@@ -138,23 +138,34 @@ const stmt = {
 	selectConnectors: db.prepare('SELECT * FROM connectors WHERE archived_seq IS NULL ORDER BY last_active_at DESC'),
 	selectConnector: db.prepare('SELECT * FROM connectors WHERE archived_seq IS NULL AND connector_id = ?'),
 	setLastActiveAt: db.prepare('UPDATE connectors SET last_active_at = ? WHERE connector_id = ?'),
-	selectCursor: db.prepare('SELECT msg_seq FROM cursors WHERE archived_seq IS NULL AND connector_id = ? AND room_id = ?'),
+	selectCursor: db.prepare('SELECT msg_seq, acked_seq FROM cursors WHERE archived_seq IS NULL AND connector_id = ? AND room_id = ?'),
 	/*
 	 * cursors も同じ。主キーは (connector_id, room_id) で、片付けた行が枠を占める。
 	 *
 	 * 戻さないと getCursor が毎回 null を返し、server.mjs の
 	 * getCursor(...) ?? getMaxSeq(...) が「いまの最大値」を起点にする。
 	 * 待受けを張っていない間の発言を黙って飛ばすことになる。
+	 *
+	 * acked_seq（確定済み位置）は ON CONFLICT では触らない。新規行だけ
+	 * VALUES の acked_seq をそのまま入れる（呼び出し側が msg_seq と同じ
+	 * 値を渡すため、初参加時点では「未確定の繰り越し」が無い状態になる）。
 	 */
 	upsertCursor: db.prepare(`
-		INSERT INTO cursors (connector_id, room_id, msg_seq, updated_at)
-		VALUES (?, ?, ?, ?)
+		INSERT INTO cursors (connector_id, room_id, msg_seq, acked_seq, updated_at)
+		VALUES (?, ?, ?, ?, ?)
 		ON CONFLICT(connector_id, room_id) DO UPDATE SET
 			msg_seq      = excluded.msg_seq,
 			updated_at   = excluded.updated_at,
 			archived_seq = NULL
 	`),
+	updateAcked: db.prepare(`
+		UPDATE cursors SET acked_seq = ?
+		WHERE archived_seq IS NULL AND connector_id = ? AND room_id = ? AND acked_seq < ?
+	`),
 	selectCursorsOf: db.prepare('SELECT * FROM cursors WHERE archived_seq IS NULL AND connector_id = ? ORDER BY room_id'),
+	selectRange: db.prepare(
+		'SELECT * FROM messages WHERE room_id = ? AND msg_seq > ? AND msg_seq <= ? AND archived_seq IS NULL ORDER BY msg_seq'
+	),
 };
 
 /** 取得件数を 1〜上限に収める */
@@ -311,7 +322,7 @@ export function listConnectors() {
 // --- どこまで読んだか ---
 
 /**
- * 記録されている位置。まだ一度も読んでいなければ null。
+ * 記録されている位置（配信済み）。まだ一度も読んでいなければ null。
  * 呼び出し側は null のときの既定（多くは「参加した時点」）を自分で決める。
  */
 export function getCursor(connectorId, roomId) {
@@ -319,9 +330,44 @@ export function getCursor(connectorId, roomId) {
 	return row ? row.msg_seq : null;
 }
 
-/** 読んだ位置を記録する */
+/**
+ * 配信済み位置を記録する。
+ *
+ * acked_seq（確定済み位置）は新規行のときだけ msg_seq と同じ値で入る
+ * （初参加時点では「未確定の繰り越し」が無い状態にするため）。
+ * 既存行では upsertCursor の ON CONFLICT が acked_seq に触れないので、
+ * 確定済み位置はここでは変わらない。
+ */
 export function setCursor(connectorId, roomId, msgSeq) {
-	stmt.upsertCursor.run(connectorId, roomId, msgSeq, nowJst());
+	stmt.upsertCursor.run(connectorId, roomId, msgSeq, msgSeq, nowJst());
+}
+
+/**
+ * 確定済み位置（acked_seq）。まだ一度も読んでいなければ null
+ * （getCursor と同じく、呼び出し側が既定を決める）。
+ */
+export function getAckedSeq(connectorId, roomId) {
+	const row = stmt.selectCursor.get(connectorId, roomId);
+	return row ? row.acked_seq : null;
+}
+
+/**
+ * 確定済み位置を進める（i260917-01 の /api/ack）。
+ * 後退はしない（acked_seq < msgSeq の行だけを更新する WHERE 句で守る）。
+ * @returns {boolean} 実際に進んだか
+ */
+export function setAcked(connectorId, roomId, msgSeq) {
+	const result = stmt.updateAcked.run(msgSeq, connectorId, roomId, msgSeq);
+	return result.changes > 0;
+}
+
+/**
+ * (sinceSeq, uptoSeq] の範囲のメッセージを古い順で返す。
+ * pending（配信済みだが未確定の分）を取り出すのに使う。
+ */
+export function getRange(roomId, sinceSeq, uptoSeq) {
+	if (sinceSeq >= uptoSeq) return [];
+	return stmt.selectRange.all(roomId, sinceSeq, uptoSeq);
 }
 
 /** その参加者の全ルーム分の位置。診断用 */
