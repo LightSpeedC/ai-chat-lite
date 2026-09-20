@@ -632,7 +632,18 @@ footer a {
 				<ul class="todos">
 					<li class="done"><span class="badge b-done">☑</span> <strong>検知する手立てがあるか調べる。</strong>案（<code>wait</code> の出力に「前回からの経過 msg_seq 数」を出す）を検討した結果、<strong>見送り。</strong><code>wait</code> はカーソルを進めた時点で「未読」という状態がサーバー側のどこにも残らないため、出力に手がかりを足しても、その出力自体を読まなかった今回の事故は防げない。実効性があるのは cursor の確定を分離する恒久対策のみ、という結論になった</li>
 					<li><span class="badge b-todo">未</span> ローカルルール「ai-chat-lite（AI 間チャット）の利用」に、<strong>張り直す前に出力を読み切ることを明記するか検討する</strong>（既に「出力に発言があれば読んで把握し、必要なら返信してから張り直す」とあるが、作業中の通知処理では読み飛ばしが起きた）。文言案: 「作業中に通知が届いたときも、他の作業を続ける前に出力を読み切る。読まずに次のツール呼び出しへ進まない」。<strong>反映は別途指示があってから</strong></li>
-					<li class="doing"><span class="badge b-doing">着手</span> <strong>恒久対策として、cursor の確定を wait から分離する案を検討する。</strong><code>wait</code>（<code>/api/poll</code>）は応答を返した時点でカーソルを走査末尾まで進めており（「配信＝既読」の前提）、これが痕跡なく消える直接の原因になっている。<code>wait</code> は配信だけを行いカーソル（確定位置）は進めず、未確定分があれば次回 <code>wait</code> の冒頭で再送する形にすれば、読み飛ばしても二度と出ない事態は無くなる。<strong>ack を忘れると重複表示は起きる</strong>が、消えるより気づける方を取るトレードオフ。<code>cursors</code> のスキーマ変更・サーバー API 追加・CLI 3 本（node・C#・Rust）への反映が要る規模の変更になるため、<a href="../10_plan/i260917-01-cursorの確定を分離する.html">計画書</a>を立てて詳細を詰める</li>
+					<li class="doing"><span class="badge b-doing">着手</span> <strong>恒久対策として、cursor の確定を wait から分離する。</strong><code>wait</code>（<code>/api/poll</code>）は応答を返した時点でカーソルを走査末尾まで進めており（「配信＝既読」の前提）、これが痕跡なく消える直接の原因になっている。<code>wait</code> は配信だけを行いカーソル（確定位置）は進めず、未確定分は <code>pending</code> として別枠で返し、次回 <code>wait</code> の冒頭で確認できる形にする。<strong>ack を忘れると重複表示は起きる</strong>が、消えるより気づける方を取るトレードオフ。<a href="../10_plan/i260917-01-cursorの確定を分離する.html">計画書</a>でサーバー側（フェーズ1）と CLI 側（フェーズ2）に分けた。
+					<div class="tablewrap">
+					<table>
+						<thead><tr><th class="nowrap">段</th><th>すること</th><th class="nowrap">状態</th></tr></thead>
+						<tbody>
+							<tr><td class="nowrap">フェーズ1</td><td>スキーマ移行（<code>acked_seq</code>）・<code>/api/ack</code>・<code>pending</code> の実装。<code>messages</code> の契約は無修正で維持</td><td class="nowrap"><span class="badge b-done">☑</span> 実装・コミット済み（<code>bf5325e</code>）</td></tr>
+							<tr><td class="nowrap">フェーズ1 リリース</td><td>本番サーバーの再起動（他プロジェクトの待受けが切断される）</td><td class="nowrap"><span class="badge b-todo">未</span></td></tr>
+							<tr><td class="nowrap">フェーズ2</td><td>CLI 側の対応（<code>/api/ack</code> の呼び出し・<code>pending</code> の表示）。C# 版削除（<a href="#i260918-01">i260918-01</a>）により対象は <strong>node ・ Rust の 2 本</strong></td><td class="nowrap"><span class="badge b-todo">未</span></td></tr>
+						</tbody>
+					</table>
+					</div>
+					</li>
 				</ul>
 			</div>
 		</details>
