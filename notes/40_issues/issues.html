@@ -597,7 +597,7 @@ footer a {
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（6 件 / 未 3 / 着手 1 / 済 2）</a></li>
 		<li class="g02"><a href="#g02">データ（7 件 / 未 1 / 着手 0 / 済 6）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（31 件 / 未 4 / 着手 8 / 済 19）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（31 件 / 未 4 / 着手 7 / 済 20）</a></li>
 		<li class="g04"><a href="#g04">チャットの機能（27 件 / 未 10 / 着手 1 / 済 16）</a></li>
 	</ol>
 </section>
@@ -1359,7 +1359,7 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">31 件 / 未 4 / 着手 8 / 済 19</span>
+		<span class="count">31 件 / 未 4 / 着手 7 / 済 20</span>
 	</summary>
 
 	<div class="groupbody">
@@ -1466,15 +1466,15 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 			</div>
 		</details>
 
-		<details class="issue doing md-flat" id="i260913-01" open>
+		<details class="issue done md-flat" id="i260913-01">
 			<summary>
-				<span class="badge b-doing">着手</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260913-01</span>
 				【最優先】CLI を Rust で書き直す（aichat-rs.exe）
 			</summary>
 			<div class="issuebody">
-				<div class="callout callout-important">
-					<p><strong>これが最優先の課題である。</strong>他の未着手より先に進める。</p>
+				<div class="callout callout-note">
+					<p><strong>当時、最優先の課題として他の未着手より先に進めた。</strong></p>
 				</div>
 
 				<p><strong>Mac ・ Linux へ展開すると決めたため、C# 版は土俵を降りた。</strong>残る選択肢は TypeScript（node ・ bun）と Rust の 2 系統になる。Rust 版を製品として立てる。</p>
@@ -1514,8 +1514,8 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 				</table>
 				</div>
 
-				<div class="callout callout-caution">
-					<p><strong>CLI が 3 本になると、食い違いは必ず出る。</strong>ローカルルール「CLI を直したら 2 本とも直す」は 2 本を前提にしている。<strong>Rust 版が動いたら、C# 版を落とすかどうかを決める必要がある。</strong>それまでは 3 本を保守することになる。</p>
+				<div class="callout callout-note">
+					<p><strong>当時、CLI は一時的に 3 本になった。</strong>Rust 版が動いた後、C# 版は <a href="#i260918-01">i260918-01</a> で削除し、現在は 2 本である。</p>
 				</div>
 
 				<h3>やること</h3>
@@ -1529,11 +1529,11 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>日時の解析（<code>--since</code> ・ <code>--before</code>）と待受けの選別を移した。</strong>正規表現を使わずに書いた</td></tr>
 					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>HTTP と 14 コマンドを実装した。</strong>Rust 側の単体テストは 182 件</td></tr>
 					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>node 版との突き合わせを通した。</strong><code>tests/cli-rs.test.mjs</code> が繋がない 16 通り、<code>tools/40_test/compare-cli.mjs</code> が実サーバーへ繋ぐ 54 通り</td></tr>
-					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>待受け中のメモリを測り直し、資料に反映した。</strong>全 14 コマンドで 6.41 MB（最小実装 4.89 MB から ＋1.5 MB）</td></tr>
+					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>待受け中のメモリを測り直し、資料に反映した。</strong>全 14 コマンドで 6.41 MB（最小実装 4.89 MB から ＋1.5 MB、node 版 54.20 MB の 1/8）。<strong>関連: <a href="#i260905-04">i260905-04</a></strong>（待受けが逼迫で刈られる）。この削減も、2026-09-13 のメモリ増設とあわせて発生条件を遠のかせた一因</td></tr>
 					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong><code>waiters</code> は Windows の API を直に呼ぶ形にした。</strong>PowerShell（523〜673 ms）から <strong>Rust 25 ms ・ bun 64 ms ・ node 112 ms</strong> になり、C# 版（229 ms）を下回った。<code>CreateToolhelp32Snapshot</code> で一覧を取り、<code>NtQueryInformationProcess</code> と <code>ReadProcessMemory</code> で PEB を辿ってコマンドラインを読む。仕組みは Rust が <code>std</code> の <code>extern</code>、bun が <code>bun:ffi</code>、node が <code>koffi</code>。<strong>PEB の並びは公開されていない</strong>ので、失敗したら黙って PowerShell へ落ちる。<strong>C# 版への依存は切れた</strong></td></tr>
 					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>PowerShell へ落ちたときの式から、<code>wait</code> という並びを外した。</strong>置くと、その PowerShell 自身のコマンドラインが条件に当たり、数えているプロセスが数に入る。<code>('* wa' + 'it *')</code> と割って繋ぐ。これまでは <code>WAITER_PATTERN</code> と除外 pid の二重の守りで表面化していなかった</td></tr>
-					<tr><td class="nowrap"><span class="badge b-moved">→</span></td><td>C# 版をどうするかは <a href="#i260918-01">i260918-01</a> へ切り出した</td></tr>
-					<tr><td class="nowrap"><span class="badge b-todo">未</span></td><td>既定の CLI（<code>aichat</code> ・ <code>aichat.cmd</code> が呼ぶ先）を Rust 版に変える<strong>実装は完了した</strong>（<code>8dc9af8</code>）。<strong>「変わったこと」資料への周知がまだ</strong></td></tr>
+					<tr><td class="nowrap"><span class="badge b-moved">→</span></td><td>C# 版をどうするかは <a href="#i260918-01">i260918-01</a> へ切り出し、削除した</td></tr>
+					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td>既定の CLI（<code>aichat</code> ・ <code>aichat.cmd</code> が呼ぶ先）を Rust 版に変える<strong>実装は完了した</strong>（<code>8dc9af8</code>）。<strong>「変わったこと」資料への周知は不要と判断した。</strong>CLI としての動き（コマンド・オプション・出力形式・終了コード）は node 版と一致するよう作られ、突き合わせテストで検証済みのため、利用者から見て挙動は変わらない。「変わったこと」資料の既定方針（動きが変わったものだけ書く。内側の改善は書かない）に従う</td></tr>
 				</tbody>
 				</table>
 				</div>
@@ -3424,6 +3424,11 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 					<li><span class="badge b-todo">未</span> 刈る閾値と判定の間隔を調べる</li>
 					<li><span class="badge b-todo">未</span> 終わったサブエージェントのプロセスが残る理由を調べる</li>
 				</ul>
+
+				<div class="callout callout-note">
+					<p><strong>2026-09-13、このマシンのメモリを 16 GB から 32 GB に物理増設した。</strong>以降は発生していない。<strong>あわせて <a href="#i260913-01">i260913-01</a> で CLI を Rust に書き直し、待受け中の実メモリも node 版 54.20 MB から 6.41 MB へ大きく減らした。</strong>この 2 つで発生条件（空きメモリの逼迫）自体が遠のいたため、いまは実害が無い。</p>
+					<p><strong>ただしこれは暫定対策である。</strong>メモリ増設は環境要因の解消であり、Claude Code がメモリ逼迫で背面コマンドを刈る挙動や、サブエージェント経由だと張り直しのたびに <code>claude</code> プロセスが増える挙動そのものは変わっていない。恒久対策（上の「やること」）は未決定のまま残るので、<strong>状態は「未」で維持する。</strong>別のマシンや、より多くのプロジェクトを同時に動かす状況では再発しうる。</p>
+				</div>
 			</div>
 		</details>
 
