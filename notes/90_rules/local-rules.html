@@ -403,7 +403,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite のローカルルール</h1>
 		<p class="lead">このプロジェクトでだけ言えることを書く。全プロジェクト共通の決めごとは別にある</p>
-		<p class="date">📅 作成: 2026-09-04 / 更新: 2026-09-13</p>
+		<p class="date">📅 作成: 2026-09-04 / 更新: 2026-09-20</p>
 	</div>
 </div>
 
@@ -422,7 +422,7 @@ footer a {
 	<h2>目次</h2>
 	<ol>
 		<li class="ch01"><a href="#ch01">設計書は常に最新に保つ</a></li>
-		<li class="ch02"><a href="#ch02">CLI を直したら 3 本とも直す</a></li>
+		<li class="ch02"><a href="#ch02">CLI を直したら 2 本とも直す</a></li>
 		<li class="ch03"><a href="#ch03">exe を作り直すときは待受けを止めない</a></li>
 		<li class="ch04"><a href="#ch04">プロセスを止めるときは子まで見る</a></li>
 	</ol>
@@ -477,9 +477,9 @@ footer a {
 
 <!-- ================= 02 ================= -->
 <section class="ch02" id="ch02">
-	<h1>CLI を直したら 3 本とも直す</h1>
+	<h1>CLI を直したら 2 本とも直す</h1>
 
-	<p><strong>CLI は node 版（<code>src/client/chat.mjs</code>）と C# 版（<code>src/cli-cs/</code>）と Rust 版（<code>src/cli-rs/</code>）の 3 本ある。</strong>既定の <code>aichat</code> を受けるのは Rust 版で、C# 版は<strong>対比実装として残している</strong>（後で消す）。</p>
+	<p><strong>CLI は node 版（<code>src/client/chat.mjs</code>）と Rust 版（<code>src/cli-rs/</code>）の 2 本ある。</strong>既定の <code>aichat</code> を受けるのは Rust 版。<strong>かつて C# 版（<code>src/cli-cs/</code>）も対比実装として持っていたが、<a class="doclink" href="../40_issues/issues.html#i260918-01">i260918-01</a> で削除した。</strong></p>
 
 	<div class="tablewrap">
 	<table>
@@ -489,26 +489,26 @@ footer a {
 		<tbody>
 			<tr>
 				<td class="nowrap">定義は 1 か所</td>
-				<td>出どころは <code>src/client/options.mjs</code>。<code>tools/20_build/export-options.mjs</code> が JSON に書き出し、C# 版と Rust 版はそれぞれ埋め込む。<strong>手で写さない</strong></td>
+				<td>出どころは <code>src/client/options.mjs</code>。<code>tools/20_build/export-options.mjs</code> が JSON に書き出し、Rust 版が埋め込む。<strong>手で写さない</strong></td>
 			</tr>
 			<tr>
 				<td class="nowrap">実体の名前で呼ぶ</td>
-				<td>突き合わせのテストは <code>aichat-cs.exe</code> ・ <code>aichat-rs.exe</code> を名指しする。<strong><code>aichat.exe</code> は既定の別名なので、そこを見ると別の実装を試すことになる</strong></td>
+				<td>突き合わせのテストは <code>aichat-rs.exe</code> を名指しする。<strong><code>aichat.exe</code> は既定の別名なので、そこを見ると別の実装を試すことになる</strong></td>
 			</tr>
 			<tr>
 				<td class="nowrap">形を変えたら版を上げる</td>
-				<td>JSON の形を変えたら <code>schema</code> を上げる。C# 版の <code>Definition.ExpectedSchema</code>、Rust 版の <code>EXPECTED_SCHEMA</code>、テストの期待値も合わせる</td>
+				<td>JSON の形を変えたら <code>schema</code> を上げる。Rust 版の <code>EXPECTED_SCHEMA</code>、テストの期待値も合わせる</td>
 			</tr>
 			<tr>
 				<td class="nowrap">食い違いはテストが落とす</td>
-				<td><code>tests/cli-cs.test.mjs</code>（20 件） ・ <code>tests/cli-rs.test.mjs</code>（16 件） ・ <code>tools/40_test/compare-cli.mjs</code>（54 通り）</td>
+				<td><code>tests/cli-rs.test.mjs</code>（16 件） ・ <code>tools/40_test/compare-cli.mjs</code>（54 通り）</td>
 			</tr>
 		</tbody>
 	</table>
 	</div>
 
 	<div class="callout callout-tip">
-		<p><strong>保守する本数だけ、食い違いは必ず出る。</strong>実際に、同じ秒に立った待受けの並び順が食い違った（C# 版はミリ秒まで持ち、node 版は秒に丸めていた）。<code>say</code> の本文なしの終了コードも片方だけ違っていた。Rust 版では<strong>桁の詰め方が 2 種類あること</strong>に気づくまで 8 件ずれていた。</p>
+		<p><strong>保守する本数だけ、食い違いは必ず出る。</strong>かつて C# 版があったときに、同じ秒に立った待受けの並び順が食い違った（C# 版はミリ秒まで持ち、node 版は秒に丸めていた）。<code>say</code> の本文なしの終了コードも片方だけ違っていた。Rust 版では<strong>桁の詰め方が 2 種類あること</strong>に気づくまで 8 件ずれていた。</p>
 		<p><strong>どれも突き合わせのテストがあって初めて見つかった。</strong>目で読んで気づける差ではない。</p>
 	</div>
 </section>
@@ -523,7 +523,7 @@ footer a {
 		<p><strong>掴んでいるのは自分の待受けだけではない。他プロジェクトの分も混ざる。</strong>止めれば相手は原因不明の <code>exit 255</code> で落ちる（<a class="doclink" href="../40_issues/issues.html">課題</a>の i260901-07）。</p>
 	</div>
 
-	<p><code>tools/20_build/build-aichat.ps1</code> が始めに片付ける。<strong>ふつうは消し、掴まれているときだけ <code>tmp/aichat-old-&lt;日時&gt;.exe</code> へ退避する。</strong></p>
+	<p><code>tools/20_build/place-exe.mjs</code> が始めに片付ける。<strong>ふつうは消し、掴まれているときだけ <code>tmp/aichat-old-&lt;日時&gt;.exe</code> へ退避する。</strong></p>
 
 	<pre><code class="language-text">--- 古い exe を片付ける ---
   退避済み 1 本のうち 1 本を消しました（残り 0 本は待受けが掴んでいます）
@@ -554,11 +554,6 @@ footer a {
 			</tr>
 			<tr>
 				<td class="num">2</td>
-				<td><code>psh tools/20_build/build-aichat.ps1</code>（C# 版 ・ 対比用）</td>
-				<td class="nowrap"><code>aichat-cs.exe</code></td>
-			</tr>
-			<tr>
-				<td class="num">3</td>
 				<td><code>node tools/20_build/install-aichat.mjs</code></td>
 				<td class="nowrap"><code>aichat.exe</code>（Rust 版の写し）</td>
 			</tr>
@@ -567,11 +562,11 @@ footer a {
 	</div>
 
 	<div class="callout callout-caution">
-		<p><strong>ビルドが既定（<code>aichat.exe</code>）へ直接書かないようにする。</strong>C# 版のビルドが <code>aichat.exe</code> を出力していたため、<strong>C# 版を作っただけで既定が入れ替わった。</strong></p>
+		<p><strong>ビルドが既定（<code>aichat.exe</code>）へ直接書かないようにする。</strong>かつて C# 版のビルドが <code>aichat.exe</code> を出力していたため、<strong>C# 版を作っただけで既定が入れ替わった。</strong></p>
 		<p><strong>ビルドは「できました」と出るので気づけない。</strong>気づいたのは、その後で走らせたテストが落ちたからだった。</p>
 	</div>
 
-	<p><strong>3 は明示して行う。</strong>ビルドのたびに既定が入れ替わると、試しに作っただけのものが他プロジェクトの待受けにまで届く。</p>
+	<p><strong>2 は明示して行う。</strong>ビルドのたびに既定が入れ替わると、試しに作っただけのものが他プロジェクトの待受けにまで届く。</p>
 </section>
 
 <!-- ================= 04 ================= -->

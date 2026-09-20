@@ -1825,7 +1825,7 @@ LIMIT ?;</code></pre>
 
 	<p>AI と人間で同じものを使う。<code>node &lt;ai-chat-lite&gt;/src/client/chat.mjs &lt;command&gt;</code> の形で呼ぶ。</p>
 
-	<h3>本数は 3 本</h3>
+	<h3>本数は 2 本</h3>
 
 	<div class="tablewrap">
 	<table>
@@ -1845,19 +1845,13 @@ LIMIT ?;</code></pre>
 				<td class="num">54.20 / 38.31 MB</td>
 				<td>どこでも</td>
 			</tr>
-			<tr>
-				<td class="nowrap">C# 版（<code>aichat-cs</code>）</td>
-				<td class="nowrap"><code>src/cli-cs/</code></td>
-				<td class="num">24.89 MB</td>
-				<td>Windows だけ</td>
-			</tr>
 		</tbody>
 	</table>
 	</div>
 
 	<div class="callout callout-caution">
-		<p><strong>直すときは 3 本とも直す。</strong>定義は <code>src/client/options.mjs</code> の 1 か所から配るが、振る舞いは写しになる。<strong>食い違いは目で読んで気づける差ではない。</strong><br>
-		守るのは 2 つのテスト。<code>tests/cli-cs.test.mjs</code> ・ <code>tests/cli-rs.test.mjs</code> がサーバーに繋がない分を、<code>tools/40_test/compare-cli.mjs</code> が実サーバーへ繋ぐ分を突き合わせる。</p>
+		<p><strong>直すときは 2 本とも直す。</strong>定義は <code>src/client/options.mjs</code> の 1 か所から配るが、振る舞いは写しになる。<strong>食い違いは目で読んで気づける差ではない。</strong><br>
+		守るのは <code>tests/cli-rs.test.mjs</code>（サーバーに繋がない分）と <code>tools/40_test/compare-cli.mjs</code>（実サーバーへ繋ぐ分）。<strong>かつて C# 版もあり（<a href="../40_issues/issues.html#i260918-01">i260918-01</a> で削除）、3 本の突き合わせだった。</strong></p>
 	</div>
 
 	<p>数字と測り方は <a href="../01_research/r260912-01-CLI実装のベンチマーク.html">CLI 実装のベンチマーク</a>、作った経緯は <a href="p260913-01-CLIをRustで書く.html">CLI を Rust で書く</a> にある。</p>
@@ -2071,7 +2065,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
   README.html                      … 概要・セットアップ・資料へのリンク
   USAGE-FOR-PROJECTS.html          … 他プロジェクトからの使い方（AI が読む）
   CLAUDE.md                        … ローカルルールを 1 行で取り込む
-  aichat.exe                       … C# 版 CLI（Git 管理外）。PATH に入れて使う
+  aichat.exe                       … Rust 版 CLI（Git 管理外）。PATH に入れて使う
   aichat-node.cmd                  … node 版 CLI のランチャー
   .gitignore
   node-ai-chat-lite-winsw.exe      … WinSW 本体（Git 管理外）
@@ -2098,7 +2092,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
     server/maintenance.mjs         … _data\MAINTENANCE を見張る
     server/maintenance-handler.mjs … メンテナンス中の受け口。DB を触らない
     client/chat.mjs                … CLI クライアント（AI・人間 共用）
-    client/options.mjs             … コマンドとオプションの定義。3 本の CLI の出どころ
+    client/options.mjs             … コマンドとオプションの定義。2 本の CLI の出どころ
     client/since-parse.mjs         … recent の --since / --before の日時を読む
     client/waiters-pick.mjs        … 走っている待受けの読み取りと、止めてよいものの分け方
     web/index.html                 … チャット画面
@@ -2107,7 +2101,6 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
     web/js/markdown.js             … 本文の変換。エスケープを先に済ませる
     web/js/stale.js                … 古くなった参加・離脱を画面から外す判定
     scripts/20_migrate/            … ver_NNNNNN/*.sql。DB の形の出どころ
-    cli-cs/                        … C# 版 CLI の原本（Args・Commands・Waiters ほか 10 本）
     cli-rs/                        … Rust 版 CLI の原本（Cargo プロジェクト。外部クレートを使わない）
   tests/
     helpers/prepare-db.mjs         … 置き場を作り直して版を当てる。store より先に呼ぶ
@@ -2136,7 +2129,6 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
     client-no-defaults.test.mjs
     client-unreachable.test.mjs
     client-usage.test.mjs
-    cli-cs.test.mjs
     rename.test.mjs
     since-parse.test.mjs
     purge-test-data.test.mjs

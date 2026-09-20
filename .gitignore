@@ -12,7 +12,7 @@ dist/
 node_modules/
 
 # 実行ファイルは追跡しない。置いてあるのはビルドで作り直せるもの
-# （aichat-cs ・ -rs ・ -go）と、外から持ってきたもの（node.exe のコピー・WinSW 本体）
+# （aichat-rs ・ -go）と、外から持ってきたもの（node.exe のコピー・WinSW 本体）
 # 配布したいものが出たら !name.exe で名指しして戻す
 *.exe
 *.pdb

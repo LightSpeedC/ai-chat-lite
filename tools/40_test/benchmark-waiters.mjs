@@ -29,7 +29,6 @@ function implementations() {
 
 	return [
 		{ label: 'Rust 版', file: exe('aichat-rs'), args: [], needs: exe('aichat-rs') },
-		{ label: 'C# 版', file: exe('aichat-cs'), args: [], needs: exe('aichat-cs') },
 		{ label: 'node 版', file: 'node', args: [client], needs: client },
 		{ label: 'bun 版', file: 'bun', args: ['run', client], needs: client },
 	].filter((impl) => existsSync(impl.needs));

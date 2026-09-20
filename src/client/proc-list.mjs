@@ -5,10 +5,9 @@
  * 取り方は 3 通りあり、どれが使えるかは走らせている処理系と OS で変わる。
  * chat.mjs に混ぜると、待受けを選ぶ規則と取り方が同じ場所に並んでしまう。
  *
- * 【Windows では 3 段】
+ * 【Windows では 2 段】
  *   1. Windows の API を直に呼ぶ（bun は bun:ffi、node は koffi。18〜24 ms）
- *   2. 隣の aichat-cs.exe に任せる（274 ms）
- *   3. PowerShell を起こす（523 ms）
+ *   2. PowerShell を起こす（523 ms）
  *
  * **1 は非公開の仕組みに乗っている。**PEB（プロセスの内部構造）の並びは
  * マイクロソフトが公開しておらず、Windows の版が変わると位置がずれうる。
@@ -365,6 +364,6 @@ export async function listProcesses() {
 	const direct = (await listByBunFfi()) ?? (await listByKoffi());
 	if (direct) return direct;
 
-	// 2. PowerShell（隣の C# 版へ任せる段は、呼ぶ側が先に判断する）
+	// 2. PowerShell
 	return listByPowerShell();
 }

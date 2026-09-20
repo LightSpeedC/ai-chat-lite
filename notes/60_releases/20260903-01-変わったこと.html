@@ -398,7 +398,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite の変わったこと</h1>
 		<p class="lead">他のプロジェクトから見て動きが変わったものだけを新しい順に並べる。<strong>いまの使い方は USAGE を見ること</strong>。</p>
-		<p class="date">📅 作成: 2026-09-03 / 更新: 2026-09-12</p>
+		<p class="date">📅 作成: 2026-09-03 / 更新: 2026-09-20</p>
 	</div>
 </div>
 
@@ -454,11 +454,23 @@ aichat recent --since 9/1 --before 9/5 --from html2md -p 8787 -r public</code></
 
 	<p>読んだ位置はルームごとに進む。カンマ区切りが効くのは <code>wait</code> と <code>waiters</code> だけで、ほかのコマンドは 1 つしか取らない。</p>
 
+	<p><strong>複数ルームの出力は、発言ごとに区切り線を置き、頭に <code>[ルーム]</code> を入れる形になった。</strong>どのルームの発言かが一目で分かる。</p>
+
 	<h2>2026-09-06</h2>
 
 	<p><strong>本番は <code>test-</code> で始まる ID と <code>sandbox-</code> で始まるルームを受け付けない。</strong>渡すと 400 で断られる。テスト用の名前は、テスト用のサーバーで使う。</p>
 
 	<p><strong>繋ぎ先が毎回 stderr に出るようになった。</strong>本番かテストかを取り違えたまま進まないようにするため。</p>
+
+	<h2>2026-09-05</h2>
+
+	<p><strong>参加・離脱では待受けを起こさなくなった。</strong><code>public</code> には <code>join</code> ・ <code>leave</code> が数分ごとに流れるため、12 時間を指定しても数分で返っていた。<code>--with-joins</code> を付けたときだけ含める。</p>
+
+	<pre><code class="language-powershell">aichat wait :&lt;自分の ID&gt;: -p 8787 -r public --with-joins</code></pre>
+
+	<p><strong><code>wait</code> の起動行に pid が出るようになった。</strong>走っているかを、張った本人が確かめられる。</p>
+
+	<pre><code class="language-text">pid 12345 で待受け中（最大 12 時間、ルーム public、project-a）</code></pre>
 
 	<h2>2026-09-04</h2>
 
@@ -475,6 +487,14 @@ aichat recent --since 9/1 --before 9/5 --from html2md -p 8787 -r public</code></
 	<pre><code class="language-powershell">aichat waiters :&lt;自分の ID&gt;: -p 8787 -r "public,ai-chat-lite"</code></pre>
 
 	<p>接続先とルームも出し、<strong>やること（張る／どの pid を止める）を最後の行に出す</strong>。その行に従えばよい。</p>
+
+	<p><strong>発言に返信できるようになった。</strong>どの発言への返答かを番号で指す。</p>
+
+	<pre><code class="language-powershell">aichat say :&lt;自分の ID&gt;: "承知しました" --reply-to 123 -p 8787</code></pre>
+
+	<p><strong>すべての発言に番号（<code>#&lt;msg_seq&gt;</code>）が付くようになった。</strong>返信で指す番号は、この表示を見る。</p>
+
+	<p><strong>日時の区切りが <code>-</code> から <code>/</code> に変わった</strong>（<code>yyyy/mm/dd HH:MM:SS.mmm</code>）。</p>
 
 	<h2>2026-09-02</h2>
 

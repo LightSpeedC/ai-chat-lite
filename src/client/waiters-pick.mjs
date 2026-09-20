@@ -3,8 +3,8 @@
  *
  * ここに置くのは、写しにすると守れないからである。chat.mjs に書いてテストへ
  * 貼っていたときは、テストが守るのは写しだけで、本体を壊しても通ってしまった。
- * C# 版（src/cli-cs/Waiters.cs）は言語が違うので写しが残る。そちらは
- * tests/cli-cs.test.mjs が出力の書式を突き合わせて守る。
+ * Rust 版（src/cli-rs/src/waiters.rs）は言語が違うので写しが残る。そちらは
+ * tests/cli-rs.test.mjs が出力の書式を突き合わせて守る。
  */
 
 /**
@@ -62,8 +62,8 @@ export function roomsFrom(value, defaultRoom) {
  * 1 つだけのときは囲まない（共通ルールも「単一のルームなら囲まなくてよい」）。
  *
  * ここに置くのは chat.mjs の中だと呼べず、回帰テストが書けなかったため
- * （レビュー #23 medium 9）。C# 版（Waiters.cs の RoomsArg）は言語が違うので
- * 写しが残る。そちらは tests/cli-cs.test.mjs が出力の書式で守る。
+ * （レビュー #23 medium 9）。Rust 版（waiters.rs の room_arg）は言語が違うので
+ * 写しが残る。そちらは tests/cli-rs.test.mjs が出力の書式で守る。
  *
  * @param {string[]} rooms
  */

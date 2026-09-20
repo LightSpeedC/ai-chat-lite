@@ -1,7 +1,6 @@
 ﻿<#
-	CLI 3 実装のベンチマーク。
+	CLI のベンチマーク。
 
-	  aichat-cs.exe                C# 版（.NET Framework）
 	  node src/client/chat.mjs     node 版
 	  bun run src/client/chat.mjs  bun 版（同じソースを bun で動かす）
 
@@ -42,15 +41,12 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$exe = Join-Path $root 'aichat-cs.exe'
 $rs = Join-Path $root 'aichat-rs.exe'
 $go = Join-Path $root 'aichat-go.exe'
 $client = Join-Path $root 'src/client/chat.mjs'
 $tmp = Join-Path $root 'tmp'
 $null = New-Item -ItemType Directory -Force $tmp
 $sink = Join-Path $tmp 'benchmark-sink.txt'
-
-if (-not (Test-Path $exe)) { throw "aichat-cs.exe がありません。tools/20_build/build-aichat.cmd で作ってください。" }
 
 <#
 	ネイティブコマンドを黙って走らせる。
@@ -92,10 +88,9 @@ Write-Host ''
 	比べる実装。起動の仕方だけが違う。
 
 	Rust 版と Go 版は wait だけを持つベンチマーク用の実装で、検証も表示も無い
-	（tools/40_test/wait-rs ・ wait-go）。ほかの 3 つは製品の CLI である。
+	（tools/40_test/wait-rs ・ wait-go）。ほかの 2 つは製品の CLI である。
 #>
 $impls = [ordered]@{
-	'C# 版（exe）' = @{ File = $exe; Args = @() }
 	'node 版'      = @{ File = 'node'; Args = @($client) }
 	'bun 版'       = @{ File = 'bun'; Args = @('run', $client) }
 	'Rust 版'      = @{ File = $rs; Args = @() }
@@ -292,7 +287,6 @@ Write-Host ''
 	引数を渡せず、-e だけが届いて即座に落ちる。0 は評価しても何も起きない式。
 #>
 $startupTargets = [ordered]@{
-	'C# 版（exe）'       = @{ File = $exe; Args = @('--help') }
 	'node 版'            = @{ File = 'node'; Args = @($client, '--help') }
 	'bun 版'             = @{ File = 'bun'; Args = @('run', $client, '--help') }
 	'Rust 版'            = @{ File = $rs; Args = @('--help') }

@@ -597,8 +597,8 @@ footer a {
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（6 件 / 未 3 / 着手 1 / 済 2）</a></li>
 		<li class="g02"><a href="#g02">データ（7 件 / 未 1 / 着手 0 / 済 6）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（31 件 / 未 5 / 着手 8 / 済 18）</a></li>
-		<li class="g04"><a href="#g04">チャットの機能（26 件 / 未 10 / 着手 1 / 済 15）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（31 件 / 未 4 / 着手 8 / 済 19）</a></li>
+		<li class="g04"><a href="#g04">チャットの機能（27 件 / 未 10 / 着手 1 / 済 16）</a></li>
 	</ol>
 </section>
 
@@ -1359,14 +1359,14 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">31 件 / 未 5 / 着手 8 / 済 18</span>
+		<span class="count">31 件 / 未 4 / 着手 8 / 済 19</span>
 	</summary>
 
 	<div class="groupbody">
 
-		<details class="issue md-flat" id="i260918-01" open>
+		<details class="issue done md-flat" id="i260918-01">
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260918-01</span>
 				aichat CLI の C# 実装を削除できないか検討する
 			</summary>
@@ -1377,27 +1377,25 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 					<p>node-Rust の突き合わせ（<code>tools/40_test/compare-cli.mjs</code>、54 通り）は<strong>C# 版を含んでいない</strong>。C# 版は独立したテスト（<code>tests/cli-cs.test.mjs</code>、20 件）でのみ検証されており、3 本の相互突き合わせという形にはなっていない。</p>
 				</div>
 
-				<h3>削除する場合に触る対象（調査済み）</h3>
-
-				<ul>
-					<li><code>src/cli-cs/</code> 本体一式</li>
-					<li><code>tests/cli-cs.test.mjs</code>（20 件）</li>
-					<li><code>tools/20_build/build-aichat.ps1</code>（C# 版のビルド）</li>
-					<li><code>tools/40_test/benchmark-cli.ps1</code>（C# 版・node 版・bun 版の 3 実装ベンチマーク。C# 版の行を外す必要がある）</li>
-					<li><code>.gitignore</code> の C# 版ビルド成果物の除外設定</li>
-					<li>ローカルルール「CLI を直したら 3 本とも直す」の書き換え（3 本 → 2 本の運用に）</li>
-					<li><code>notes/10_plan/p260829-01-設計.html</code> の CLI 本数・コマンド表の記載</li>
-					<li><code>notes/30_status/status.html</code> の記載</li>
-				</ul>
-
-				<p><strong>過去の計画書（<code>p260902-01-CLIを2本持つ.html</code> 等）とベンチマーク資料（<code>r260912-01-CLI実装のベンチマーク.html</code>）は、実装した経緯の記録としてそのまま残す</strong>（改変しない）。</p>
-
-				<h3>検討事項</h3>
+				<h3>削除した対象</h3>
 
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> <strong>3 本目（C# 版）を持っていたことで見つかった食い違いが過去に複数ある</strong>（待受け一覧のミリ秒精度、<code>say</code> の終了コード等）。node-Rust の 2 本比較だけで、今後も同種の食い違いを見つけられるか検討する</li>
-					<li><span class="badge b-todo">未</span> 削除する場合の実装計画（上記の対象一覧に沿った作業手順）を立てる</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>src/cli-cs/</code> 本体一式</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>tests/cli-cs.test.mjs</code>（20 件）</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>tools/20_build/build-aichat.ps1</code> ・ <code>build-aichat.cmd</code></li>
+					<li class="done"><span class="badge b-done">☑</span> <code>tools/40_test/benchmark-cli.ps1</code> ・ <code>benchmark-waiters.mjs</code> から C# 版の行を外した</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>.gitignore</code> のコメントから <code>aichat-cs</code> を外した</li>
+					<li class="done"><span class="badge b-done">☑</span> ローカルルールを「CLI を直したら 2 本とも直す」に書き換えた</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>notes/10_plan/p260829-01-設計.html</code> の CLI 本数（2 本）・ツリー・テスト表を直した</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>notes/30_status/status.html</code> に削除の記録を足した</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>src/client/proc-list.mjs</code> ・ <code>waiters-pick.mjs</code> ・ <code>tests/cli-rs.test.mjs</code> ・ <code>client-waiters.test.mjs</code> のコメント中の C# 版言及を、過去形または Rust 版の記述に直した</li>
 				</ul>
+
+				<p><strong>過去の計画書（<code>p260902-01-CLIを2本持つ.html</code> 等）とベンチマーク資料（<code>r260912-01-CLI実装のベンチマーク.html</code>）は、実装した経緯の記録としてそのまま残した</strong>（改変していない）。</p>
+
+				<div class="callout callout-important">
+					<p><strong>3 本目（C# 版）を持っていたことで見つかった食い違いが過去に複数あった</strong>（待受け一覧のミリ秒精度、<code>say</code> の終了コード等）。node-Rust の 2 本比較だけで、今後も同種の食い違いを見つけられるかは、実績が無いため未知数のまま残る。</p>
+				</div>
 			</div>
 		</details>
 
@@ -1534,8 +1532,8 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>待受け中のメモリを測り直し、資料に反映した。</strong>全 14 コマンドで 6.41 MB（最小実装 4.89 MB から ＋1.5 MB）</td></tr>
 					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong><code>waiters</code> は Windows の API を直に呼ぶ形にした。</strong>PowerShell（523〜673 ms）から <strong>Rust 25 ms ・ bun 64 ms ・ node 112 ms</strong> になり、C# 版（229 ms）を下回った。<code>CreateToolhelp32Snapshot</code> で一覧を取り、<code>NtQueryInformationProcess</code> と <code>ReadProcessMemory</code> で PEB を辿ってコマンドラインを読む。仕組みは Rust が <code>std</code> の <code>extern</code>、bun が <code>bun:ffi</code>、node が <code>koffi</code>。<strong>PEB の並びは公開されていない</strong>ので、失敗したら黙って PowerShell へ落ちる。<strong>C# 版への依存は切れた</strong></td></tr>
 					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>PowerShell へ落ちたときの式から、<code>wait</code> という並びを外した。</strong>置くと、その PowerShell 自身のコマンドラインが条件に当たり、数えているプロセスが数に入る。<code>('* wa' + 'it *')</code> と割って繋ぐ。これまでは <code>WAITER_PATTERN</code> と除外 pid の二重の守りで表面化していなかった</td></tr>
-					<tr><td class="nowrap"><span class="badge b-todo">未</span></td><td>C# 版をどうするかを決める</td></tr>
-					<tr><td class="nowrap"><span class="badge b-todo">未</span></td><td>既定の CLI（<code>aichat</code> ・ <code>aichat.cmd</code> が呼ぶ先）を変えるかを決める</td></tr>
+					<tr><td class="nowrap"><span class="badge b-moved">→</span></td><td>C# 版をどうするかは <a href="#i260918-01">i260918-01</a> へ切り出した</td></tr>
+					<tr><td class="nowrap"><span class="badge b-todo">未</span></td><td>既定の CLI（<code>aichat</code> ・ <code>aichat.cmd</code> が呼ぶ先）を Rust 版に変える<strong>実装は完了した</strong>（<code>8dc9af8</code>）。<strong>「変わったこと」資料への周知がまだ</strong></td></tr>
 				</tbody>
 				</table>
 				</div>
@@ -3558,9 +3556,9 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 			</div>
 		</details>
 
-		<details class="issue md-flat" id="i260907-03" open>
+		<details class="issue done md-flat" id="i260907-03">
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260907-03</span>
 				変わったことの記録が 09-02 で止まっている
 			</summary>
@@ -3584,7 +3582,7 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 				</div>
 
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> 09-04 以降を書き足す（<strong>1 本に続けるか、日ごとに分けるかを決める</strong>）</li>
+					<li class="done"><span class="badge b-done">☑</span> 09-04・09-05・09-07 の抜けを書き足した（09-06 は既に記載済みと確認）。<strong>1 本に続ける方針を維持</strong>（既に 09-04〜09-12 が 1 本に続けられていたため）。導入日は <code>git log</code> の実コミット日時で確認した</li>
 				</ul>
 			</div>
 		</details>
@@ -4086,10 +4084,40 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">26 件 / 未 10 / 着手 1 / 済 15</span>
+		<span class="count">27 件 / 未 10 / 着手 1 / 済 16</span>
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue md-flat" id="i260920-01" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260920-01</span>
+				初めての待受けは、その日の 0 時と 6 時間前の古い方を起点にする
+			</summary>
+			<div class="issuebody">
+				<p><strong>利用者からの提案。</strong>初めての接続（カーソルが無い状態）の起点を、現行の「参加した時点（<code>getMaxSeq</code>）」から、<strong>「その日の 0 時」と「6 時間前」のうち古い方</strong>に変える。</p>
+
+				<div class="callout callout-important">
+					<p>深夜早い時間帯（例: 0 時台）に初めて繋いだ場合、「その日の 0 時」だけだと直近 1 時間程度しか遡らない。<strong>6 時間前を下限として併記することで、日をまたいだ直後でも一定の幅を確保しつつ、日中は「その日の 0 時」で当日分をまとめて拾える</strong>形になる。</p>
+				</div>
+
+				<h3>関連する既存課題</h3>
+
+				<ul>
+					<li><a href="#i260909-01">i260909-01</a>（済）: 現行の「参加した時点＝<code>getMaxSeq</code>」という設計そのものを扱った課題。読んでいても初回は踏むという報告を受け、<code>wait</code> 起動時の案内（<code>recent</code> の見本を出す）を足す形で対応済み。<strong>今回の提案は、この設計自体を変える恒久対策の位置づけになる</strong></li>
+					<li><a href="#i260908-01">i260908-01</a>（済）: <code>getCursor(...) ?? getMaxSeq(...)</code>（<code>server.mjs</code>）という起点ロジックの実装箇所を扱ったバグ修正。今回変更するのは同じ箇所（<code>?? getMaxSeq(...)</code> の代わりに「0 時と 6 時間前の古い方」を使う）</li>
+				</ul>
+
+				<h3>やること</h3>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> 「6 時間前」「その日の 0 時」の判定に使う時刻（JST）と、境界（ちょうど 0 時・ちょうど 6 時間前）の扱いを決める</li>
+					<li><span class="badge b-todo">未</span> <code>server.mjs</code> の該当箇所（<code>handleJoin</code>・<code>handlePoll</code> の <code>getCursor(...) ?? getMaxSeq(...)</code>）を変更する実装計画を立てる</li>
+					<li><span class="badge b-todo">未</span> <a href="#i260909-01">i260909-01</a> の案内文（「参加より前の発言は待ちません」）も、新しい起点に合わせて見直すか検討する</li>
+				</ul>
+			</div>
+		</details>
 
 		<details class="issue md-flat" id="i260913-03" open>
 			<summary>

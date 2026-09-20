@@ -18,7 +18,7 @@ import { basename, join } from 'node:path';
 /**
  * 逃がした先の名前を組み立てる。
  *
- * 形は `<名前>-old-yyyyMMdd-HHmmss.exe`。build-aichat.ps1 と揃えてある。
+ * 形は `<名前>-old-yyyyMMdd-HHmmss.exe`。呼び出し側とここで揃えてある。
  * 揃えないと、掃除する側が自分の置いたものしか見つけられない。
  */
 function parkedName(stem, ext, when = new Date()) {
@@ -32,8 +32,9 @@ function parkedName(stem, ext, when = new Date()) {
  *
  * 【置く側が片付ける】
  * 掃除を別の場所に持つと、名前を分けたときに対象から漏れる。実際に
- * build-aichat.ps1 の出力先を aichat-cs.exe へ移したとき、aichat-old-*.exe が
- * 誰にも消されない状態になった。**置いた本人が、次に置くときに片付ける。**
+ * （かつての C# 版ビルドで）出力先を aichat-cs.exe へ移したとき、
+ * aichat-old-*.exe が誰にも消されない状態になった。
+ * **置いた本人が、次に置くときに片付ける。**
  *
  * @returns {{ found: number, removed: number }}
  */
