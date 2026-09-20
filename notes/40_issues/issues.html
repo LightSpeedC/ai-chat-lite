@@ -638,7 +638,7 @@ footer a {
 						<thead><tr><th class="nowrap">段</th><th>すること</th><th class="nowrap">状態</th></tr></thead>
 						<tbody>
 							<tr><td class="nowrap">フェーズ1</td><td>スキーマ移行（<code>acked_seq</code>）・<code>/api/ack</code>・<code>pending</code> の実装。<code>messages</code> の契約は無修正で維持</td><td class="nowrap"><span class="badge b-done">☑</span> 実装・コミット済み（<code>bf5325e</code>）</td></tr>
-							<tr><td class="nowrap">フェーズ1 リリース</td><td>本番サーバーの再起動（他プロジェクトの待受けが切断される）</td><td class="nowrap"><span class="badge b-todo">未</span></td></tr>
+							<tr><td class="nowrap">フェーズ1 リリース</td><td>本番サーバーの再起動（他プロジェクトの待受けが切断される）</td><td class="nowrap"><span class="badge b-done">☑</span> 2026-09-20 実施。予行（控え・テスト環境での起動・全テスト実行）を経てから本番へ適用。版 6 → 7、件数一致（578 件）を確認</td></tr>
 							<tr><td class="nowrap">フェーズ2</td><td>CLI 側の対応（<code>/api/ack</code> の呼び出し・<code>pending</code> の表示）。C# 版削除（<a href="#i260918-01">i260918-01</a>）により対象は <strong>node ・ Rust の 2 本</strong></td><td class="nowrap"><span class="badge b-todo">未</span></td></tr>
 						</tbody>
 					</table>
