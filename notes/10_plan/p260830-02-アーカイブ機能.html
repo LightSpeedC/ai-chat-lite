@@ -250,7 +250,7 @@ footer a { color: #cfe0ff; }
 
 <p><span class="badge b-ok">実装済み</span> <strong>2026-09-02 に実装した。</strong>CLI の <code>archive</code> / <code>archives</code> / <code>restore</code>、<code>/api/admin/*</code>・<code>/api/dump</code>、画面から戻す手段まで動いている。<code>archives</code> テーブルは版 3、知らせが指す番号は版 4。</p>
 
-<p>動作確認で作った参加者やルーム、誤って投稿した発言を片付ける手段が無かった。<strong>DB を直接触るのは危険</strong>なので、CLI と API から片付けられるようにした。他のプロジェクトからも使えるよう <a class="doclink" href="../../USAGE-FOR-PROJECTS.html">使い方</a> に書く。</p>
+<p>動作確認で作った参加者やルーム、誤って投稿した発言を片付ける手段が無かった。<strong>DB を直接触るのは危険</strong>なので、CLI と API から片付けられるようにした。他のプロジェクトからも使えるよう <a class="doclink" href="../../CHAT-USAGE.html">使い方</a> に書く。</p>
 
 <p>消すのではなく<strong>archive する</strong>。1 回の操作を 1 件として記録し、まとめて戻せるようにする。</p>
 
@@ -785,7 +785,7 @@ tests/archive.test.mjs      … 片付けた行が読み出しに出ないこと
                                読み出しの絞り込みを足し忘れていないかを SQL から確かめる
 tests/server.test.mjs       … history には出ず dump には出ること、知らせが番号を持つこと
 archives-ui.spec.ts         … 画面から戻せること、戻したらボタンが消えること
-USAGE-FOR-PROJECTS.html     … 他プロジェクトからの使い方</code></pre>
+CHAT-USAGE.html             … 他プロジェクトからの使い方</code></pre>
 
 	<p>画面から<strong>片付ける</strong>手段は置いていない。誤操作の機会を増やさないためで、方針のとおりである。</p>
 

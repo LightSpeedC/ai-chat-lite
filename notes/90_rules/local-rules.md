@@ -2,7 +2,7 @@
 
 このプロジェクトでだけ言えることを書く。全プロジェクト共通の決めごとは別にある
 
-> 📅 作成: 2026-09-04 / 更新: 2026-09-13
+> 📅 作成: 2026-09-04 / 更新: 2026-09-20
 
 [README へ戻る](../../README.md)
 
@@ -35,19 +35,19 @@
 > <strong>計画書は設計書の表から辿れるようにする。</strong>README には代表だけを載せる。
 > README の資料一覧は**色相を本数で割って振っている**（刻み＝280 ÷（本数 − 1））。1 本足すと `hsl()` の指定が 28 か所すべて変わるため、**計画書を足すたびに全部を振り直すことになる。**
 
-## 2. CLI を直したら 3 本とも直す
+## 2. CLI を直したら 2 本とも直す
 
-<strong>CLI は node 版（`src/client/chat.mjs`）と C# 版（`src/cli-cs/`）と Rust 版（`src/cli-rs/`）の 3 本ある。</strong>既定の `aichat` を受けるのは Rust 版で、C# 版は**対比実装として残している**（後で消す）。
+<strong>CLI は node 版（`src/client/chat.mjs`）と Rust 版（`src/cli-rs/`）の 2 本ある。</strong>既定の `aichat` を受けるのは Rust 版。**かつて C# 版（`src/cli-cs/`）も対比実装として持っていたが、[i260918-01](../40_issues/issues.md#i260918-01) で削除した。**
 
 | 守ること | 中身 |
 |---|---|
-| 定義は 1 か所 | 出どころは `src/client/options.mjs`。`tools/20_build/export-options.mjs` が JSON に書き出し、C# 版と Rust 版はそれぞれ埋め込む。**手で写さない** |
-| 実体の名前で呼ぶ | 突き合わせのテストは `aichat-cs.exe` ・ `aichat-rs.exe` を名指しする。**`aichat.exe` は既定の別名なので、そこを見ると別の実装を試すことになる** |
-| 形を変えたら版を上げる | JSON の形を変えたら `schema` を上げる。C# 版の `Definition.ExpectedSchema`、Rust 版の `EXPECTED_SCHEMA`、テストの期待値も合わせる |
-| 食い違いはテストが落とす | `tests/cli-cs.test.mjs`（20 件） ・ `tests/cli-rs.test.mjs`（16 件） ・ `tools/40_test/compare-cli.mjs`（54 通り） |
+| 定義は 1 か所 | 出どころは `src/client/options.mjs`。`tools/20_build/export-options.mjs` が JSON に書き出し、Rust 版が埋め込む。**手で写さない** |
+| 実体の名前で呼ぶ | 突き合わせのテストは `aichat-rs.exe` を名指しする。**`aichat.exe` は既定の別名なので、そこを見ると別の実装を試すことになる** |
+| 形を変えたら版を上げる | JSON の形を変えたら `schema` を上げる。Rust 版の `EXPECTED_SCHEMA`、テストの期待値も合わせる |
+| 食い違いはテストが落とす | `tests/cli-rs.test.mjs`（16 件） ・ `tools/40_test/compare-cli.mjs`（54 通り） |
 
 > [!TIP]
-> <strong>保守する本数だけ、食い違いは必ず出る。</strong>実際に、同じ秒に立った待受けの並び順が食い違った（C# 版はミリ秒まで持ち、node 版は秒に丸めていた）。`say` の本文なしの終了コードも片方だけ違っていた。Rust 版では**桁の詰め方が 2 種類あること**に気づくまで 8 件ずれていた。
+> <strong>保守する本数だけ、食い違いは必ず出る。</strong>かつて C# 版があったときに、同じ秒に立った待受けの並び順が食い違った（C# 版はミリ秒まで持ち、node 版は秒に丸めていた）。`say` の本文なしの終了コードも片方だけ違っていた。Rust 版では**桁の詰め方が 2 種類あること**に気づくまで 8 件ずれていた。
 > <strong>どれも突き合わせのテストがあって初めて見つかった。</strong>目で読んで気づける差ではない。
 
 ## 3. exe を作り直すときは待受けを止めない
@@ -55,9 +55,9 @@
 <strong>走っている待受けが `aichat.exe` を掴んでいる。</strong>待受けは 12 時間張りっぱなしになるので、その間ずっと掴まれたままである。
 
 > [!CAUTION]
-> <strong>掴んでいるのは自分の待受けだけではない。他プロジェクトの分も混ざる。</strong>止めれば相手は原因不明の `exit 255` で落ちる（[課題](../40_issues/issues.html)の i260901-07）。
+> <strong>掴んでいるのは自分の待受けだけではない。他プロジェクトの分も混ざる。</strong>止めれば相手は原因不明の `exit 255` で落ちる（[課題](../40_issues/issues.md)の i260901-07）。
 
-`tools/20_build/build-aichat.ps1` が始めに片付ける。**ふつうは消し、掴まれているときだけ `tmp/aichat-old-<日時>.exe` へ退避する。**
+`tools/20_build/place-exe.mjs` が始めに片付ける。**ふつうは消し、掴まれているときだけ `tmp/aichat-old-<日時>.exe` へ退避する。**
 
 ```text
 --- 古い exe を片付ける ---
@@ -79,14 +79,13 @@
 | 順 | すること | 出力 |
 |---:|---|---|
 | 1 | `node tools/20_build/build-aichat-rs.mjs` | `aichat-rs.exe` |
-| 2 | `psh tools/20_build/build-aichat.ps1`（C# 版 ・ 対比用） | `aichat-cs.exe` |
-| 3 | `node tools/20_build/install-aichat.mjs` | `aichat.exe`（Rust 版の写し） |
+| 2 | `node tools/20_build/install-aichat.mjs` | `aichat.exe`（Rust 版の写し） |
 
 > [!CAUTION]
-> <strong>ビルドが既定（`aichat.exe`）へ直接書かないようにする。</strong>C# 版のビルドが `aichat.exe` を出力していたため、**C# 版を作っただけで既定が入れ替わった。**
+> <strong>ビルドが既定（`aichat.exe`）へ直接書かないようにする。</strong>かつて C# 版のビルドが `aichat.exe` を出力していたため、**C# 版を作っただけで既定が入れ替わった。**
 > <strong>ビルドは「できました」と出るので気づけない。</strong>気づいたのは、その後で走らせたテストが落ちたからだった。
 
-<strong>3 は明示して行う。</strong>ビルドのたびに既定が入れ替わると、試しに作っただけのものが他プロジェクトの待受けにまで届く。
+<strong>2 は明示して行う。</strong>ビルドのたびに既定が入れ替わると、試しに作っただけのものが他プロジェクトの待受けにまで届く。
 
 ## 4. プロセスを止めるときは子まで見る
 

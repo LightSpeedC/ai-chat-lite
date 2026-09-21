@@ -740,6 +740,20 @@ async function cmdWait() {
 		waited += wait;
 
 		/*
+		 * 前回配信したが未確定の分（pending）を確認し、確定する（i260917-01）。
+		 *
+		 * wait が応答を返した時点でカーソル（配信済み位置）は進んでいるが、
+		 * 確定済み位置はまだ進んでいない。ここで表示して初めて「読んだ」ことに
+		 * する。読み飛ばしても、確定しなければ次の wait でまた pending に出る。
+		 */
+		if (last.pending.length > 0) {
+			console.log(`前回分（確認）${last.pending.length} 件:`);
+			printMessages(last.pending);
+			await ackPending(last);
+			writeWaitLog('INFO', `前回分 ${last.pending.length} 件を確認し、確定しました`);
+		}
+
+		/*
 		 * 1 回返るたびに書く。最後の行の時刻が「最後に生きていた時刻」になる。
 		 * 外から止められると終わりの行は書けないため、これが手がかりになる。
 		 */
@@ -758,6 +772,20 @@ async function cmdWait() {
 
 	console.log(`新着なし（${label}待機、現在位置 ${describePositions(last)}）`);
 	writeWaitLog('INFO', `新着なし。上限まで待ち切って終わります（${label}）`);
+}
+
+/**
+ * pending にあったルームだけ /api/ack を呼び、確定済み位置を進める。
+ *
+ * ルームごとに呼ぶのは、/api/ack が 1 ルーム分ずつしか受けないため。
+ * その回の poll で pending が無かったルームは呼ばない（無駄な呼び出しをしない）。
+ */
+async function ackPending(result) {
+	for (const room of result.rooms) {
+		const hasPending = result.pending.some((m) => m.room_id === room.room_id);
+		if (!hasPending) continue;
+		await postJson('/api/ack', { connector_id: CONNECTOR_ID, room_id: room.room_id, msg_seq: room.since });
+	}
 }
 
 /**

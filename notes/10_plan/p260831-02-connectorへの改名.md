@@ -35,8 +35,8 @@
 
 | 課題 | 足すもの |
 |---|---|
-| [i260830-09](../40_issues/issues.html#i260830-09) | アーカイブ機能。`archives` テーブルと `archived_user_id` |
-| [i260831-01](../40_issues/issues.html#i260831-01) | 返信・リアクション・投票。`messages` に列を足す |
+| [i260830-09](../40_issues/issues.md#i260830-09) | アーカイブ機能。`archives` テーブルと `archived_user_id` |
+| [i260831-01](../40_issues/issues.md#i260831-01) | 返信・リアクション・投票。`messages` に列を足す |
 
 <strong>あとから変えると、足した分も変えることになる。</strong>先に名前を決めてから、これらを作る。
 
@@ -130,7 +130,7 @@
 |---|---|
 | `userId` | `connectorId` |
 | `USER_ID`（CLI） | `CONNECTOR_ID` |
-| `AICHAT_ID` | **変えない**（[i260831-02](../40_issues/issues.html#i260831-02) で別途扱う） |
+| `AICHAT_ID` | **変えない**（[i260831-02](../40_issues/issues.md#i260831-02) で別途扱う） |
 | `joinUser` `touchUser` `getUser` | `joinConnector` `touchConnector` `getConnector` |
 | `userList` `userCount` `userIds`（画面） | `connectorList` `connectorCount` `connectorIds` |
 | `#user-list` `#user-count`（HTML の id） | `#connector-list` `#connector-count` |
@@ -320,7 +320,7 @@ PlayWright 側に `chat-users.png` がある。**これはテストが撮るス�
 | 3 | API のキー | **揃える。**`user_id` → `connector_id`。両方受ける形にすると名前が 2 つ残り、改名の目的に反する |
 | 4 | `/api/users` のパス | <strong>`/api/connectors` に変える。</strong>キーを変えるならパスも揃える |
 | 5 | `who` コマンド | <strong>変えない。</strong>他プロジェクトの手順を二度変えないため（`--connector-id` の周知を今日すでに 1 回出している） |
-| 6 | `notice` | <strong>いま足す。</strong>作り直す機会が今回なので、`msg_kind` の `CHECK` を `say` / `join` / `leave` / `archive` / `notice` の 5 つにする（[i260901-03](../40_issues/issues.html#i260901-03)） |
+| 6 | `notice` | <strong>いま足す。</strong>作り直す機会が今回なので、`msg_kind` の `CHECK` を `say` / `join` / `leave` / `archive` / `notice` の 5 つにする（[i260901-03](../40_issues/issues.md#i260901-03)） |
 | 7 | アーカイブの単位 | **ルームと参加者の両方** |
 | 8 | 作り直しの手順 | <strong>専用のスクリプトを作る。</strong>手作業だと再現できない。印を置く・止める・移す・印を消すまでを 1 本にする |
 
@@ -357,10 +357,10 @@ PlayWright 側に `chat-users.png` がある。**これはテストが撮るス�
 
 ### 他の課題との順序
 
-[アーカイブ機能](../40_issues/issues.html#i260830-09)と[返信・リアクション](../40_issues/issues.html#i260831-01)は、**この改名より後にする**。先に作ると、足した列も変えることになる。
+[アーカイブ機能](../40_issues/issues.md#i260830-09)と[返信・リアクション](../40_issues/issues.md#i260831-01)は、**この改名より後にする**。先に作ると、足した列も変えることになる。
 
 ただしアーカイブ機能は**着手中**である。止めてこちらを先にするか、アーカイブを終わらせてから改名するかを決める。
 
-[待受けの時間指定](../40_issues/issues.html#i260901-01)も**CLI のオプションを触る**。`--retry-count` を廃止して `--wait-min` / `--wait-hour` を足す課題なので、`--connector-id` と同じ行を書き換えることになる。**どちらを先にするかを決めてから始める。**
+[待受けの時間指定](../40_issues/issues.md#i260901-01)も**CLI のオプションを触る**。`--retry-count` を廃止して `--wait-min` / `--wait-hour` を足す課題なので、`--connector-id` と同じ行を書き換えることになる。**どちらを先にするかを決めてから始める。**
 
 [← README へ戻る](../../README.md)

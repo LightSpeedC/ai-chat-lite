@@ -336,3 +336,42 @@ describe('複数のルームを 1 本で待つ', () => {
 		}
 	});
 });
+
+/*
+ * cursor の確定を wait から分離する（i260917-01 フェーズ2）。
+ *
+ * サーバー側（フェーズ1）は pending フィールドで「配信済みだが未確定」の
+ * 分を返すだけで、確定（/api/ack）は呼ばない。CLI 側が「前回分」として
+ * 表示し、表示し終えたら自動で ack する責務を持つ。
+ */
+describe('読み飛ばしても消えない（cursor の確定を分離、i260917-01）', () => {
+	test('配信した内容が未確定のまま次の wait を呼ぶと、前回分として出る', async () => {
+		const me = 'test-pending-cli-a';
+		await chat(['join'], me);
+		await chat(['wait', '--wait-sec', '1'], me); // カーソルを立てる
+
+		await chat(['say', 'CLI pending 確認 A'], 'test-connector2');
+
+		const first = await chat(['wait', '--wait-sec', '3'], me);
+		assert.match(first.stdout, /新着 1 件/);
+		assert.match(first.stdout, /CLI pending 確認 A/);
+
+		// 確定させずに（＝新着が無い状態で）もう一度呼ぶと、前回分として出るはず
+		const second = await chat(['wait', '--wait-sec', '1'], me);
+		assert.match(second.stdout, /前回分/, `前回分が出ていない: ${second.stdout}`);
+		assert.match(second.stdout, /CLI pending 確認 A/);
+	});
+
+	test('前回分を確認すると確定し、次はもう出ない', async () => {
+		const me = 'test-pending-cli-b';
+		await chat(['join'], me);
+		await chat(['wait', '--wait-sec', '1'], me);
+
+		await chat(['say', 'CLI pending 確認 B'], 'test-connector2');
+		await chat(['wait', '--wait-sec', '3'], me); // 1 回目: 新着として受け取る
+		await chat(['wait', '--wait-sec', '1'], me); // 2 回目: 前回分として確認・確定
+
+		const third = await chat(['wait', '--wait-sec', '1'], me);
+		assert.doesNotMatch(third.stdout, /CLI pending 確認 B/, '確定したはずなのにまた出ている');
+	});
+});

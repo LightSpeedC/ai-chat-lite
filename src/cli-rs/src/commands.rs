@@ -169,6 +169,21 @@ pub fn wait(client: &Client, id: &str, room: &str, opts: &WaitOpts) -> Result<()
 
 		let empty: Vec<Json> = Vec::new();
 		let messages = result.get("messages").and_then(|v| v.as_arr()).unwrap_or(&empty).to_vec();
+		let pending = result.get("pending").and_then(|v| v.as_arr()).unwrap_or(&empty).to_vec();
+
+		/*
+		 * 前回配信したが未確定の分（pending）を確認し、確定する（i260917-01）。
+		 *
+		 * wait が応答を返した時点でカーソル（配信済み位置）は進んでいるが、
+		 * 確定済み位置はまだ進んでいない。ここで表示して初めて「読んだ」ことに
+		 * する。読み飛ばしても、確定しなければ次の wait でまた pending に出る。
+		 */
+		if !pending.is_empty() {
+			println!("前回分（確認）{} 件:", pending.len());
+			print_messages(&pending);
+			ack_pending(client, id, &result, &pending)?;
+			log.write("INFO", &format!("前回分 {} 件を確認し、確定しました", pending.len()));
+		}
 
 		log.write(
 			"INFO",
@@ -193,6 +208,32 @@ pub fn wait(client: &Client, id: &str, room: &str, opts: &WaitOpts) -> Result<()
 	let positions = last.as_ref().map(describe_positions).unwrap_or_else(|| "0".to_string());
 	println!("新着なし（{}待機、現在位置 {}）", label, positions);
 	log.write("INFO", &format!("新着なし。上限まで待ち切って終わります（{}）", label));
+	Ok(())
+}
+
+/// pending にあったルームだけ /api/ack を呼び、確定済み位置を進める。
+///
+/// ルームごとに呼ぶのは、/api/ack が 1 ルーム分ずつしか受けないため。
+/// その回の poll で pending が無かったルームは呼ばない（無駄な呼び出しをしない）。
+fn ack_pending(client: &Client, id: &str, result: &Json, pending: &[Json]) -> Result<(), CallError> {
+	let empty: Vec<Json> = Vec::new();
+	let rooms = result.get("rooms").and_then(|v| v.as_arr()).unwrap_or(&empty);
+	for room in rooms {
+		let room_id = room.get("room_id").and_then(|v| v.as_str()).unwrap_or("");
+		let has_pending = pending
+			.iter()
+			.any(|m| m.get("room_id").and_then(|v| v.as_str()) == Some(room_id));
+		if !has_pending {
+			continue;
+		}
+		let since = room.get("since").and_then(|v| v.as_i64()).unwrap_or(0);
+		let body = Json::Obj(vec![
+			("connector_id".to_string(), Json::Str(id.to_string())),
+			("room_id".to_string(), Json::Str(room_id.to_string())),
+			("msg_seq".to_string(), Json::Num(since as f64)),
+		]);
+		client.call("POST", "/api/ack", Some(&body.to_string()), None)?;
+	}
 	Ok(())
 }
 

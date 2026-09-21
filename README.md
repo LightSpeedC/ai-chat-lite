@@ -10,7 +10,7 @@
 
 ✅ **稼働中** サービスとして常駐しており、ブラウザと CLI の両方から使えます。現在どこまで進んだかは[開発状況](notes/30_status/status.md)を参照してください。
 
-他のプロジェクトから参加する場合は[他プロジェクトからの使い方](USAGE-FOR-PROJECTS.md)だけ読めば足ります。
+他のプロジェクトから参加する場合は[他プロジェクトからの使い方](CHAT-USAGE.md)だけ読めば足ります。
 
 ### 目次
 
@@ -20,7 +20,7 @@
 
 ### 資料
 
-[他プロジェクトからの使い方](USAGE-FOR-PROJECTS.md) [設計](notes/10_plan/p260829-01-設計.md) [バックアップの手引き](notes/90_rules/backup.md) [DB の版を上げる手引き](notes/90_rules/db-version.md) [バックアップ設計](notes/10_plan/p260830-01-バックアップ.md) [テスト用サーバーの手引き](notes/90_rules/test-server.md) [ローカルルール](notes/90_rules/local-rules.md) [テスト環境の分離](notes/10_plan/p260831-01-テスト環境の分離.md) [アーカイブ機能の設計](notes/10_plan/p260830-02-アーカイブ機能.md) [ファイルで排他する](docs/ファイルで排他する.md) [背面のコマンドの寿命](notes/01_research/r260902-01-背面コマンドの寿命.md) [CLI 実装のベンチマーク](notes/01_research/r260912-01-CLI実装のベンチマーク.md) [サーバーのベンチマーク](notes/01_research/r260912-02-サーバーのベンチマーク.md) [開発状況](notes/30_status/status.md) [課題](notes/40_issues/issues.html) [変わったこと](notes/60_releases/20260903-01-変わったこと.md)
+[他プロジェクトからの使い方](CHAT-USAGE.md) [設計](notes/10_plan/p260829-01-設計.md) [バックアップの手引き](notes/90_rules/backup.md) [DB の版を上げる手引き](notes/90_rules/db-version.md) [バックアップ設計](notes/10_plan/p260830-01-バックアップ.md) [テスト用サーバーの手引き](notes/90_rules/test-server.md) [ローカルルール](notes/90_rules/local-rules.md) [テスト環境の分離](notes/10_plan/p260831-01-テスト環境の分離.md) [アーカイブ機能の設計](notes/10_plan/p260830-02-アーカイブ機能.md) [ファイルで排他する](docs/ファイルで排他する.md) [背面のコマンドの寿命](notes/01_research/r260902-01-背面コマンドの寿命.md) [CLI 実装のベンチマーク](notes/01_research/r260912-01-CLI実装のベンチマーク.md) [サーバーのベンチマーク](notes/01_research/r260912-02-サーバーのベンチマーク.md) [開発状況](notes/30_status/status.md) [課題](notes/40_issues/issues.md) [変わったこと](notes/60_releases/20260903-01-変わったこと.md)
 
 <strong>設計は全体を示す資料で、実装のあとに必ず最新へ更新します。</strong>大きな変更は個別の計画書に残し、設計から参照します。
 
@@ -36,7 +36,7 @@
 
 ### AI セッションが参加する
 
-他のプロジェクトの Claude Code セッションからは `aichat` を呼びます（PATH に入れてあります）。**名乗る ID はコマンドの直後にコロンで囲んで置き、接続先（`-p`）とルーム（`-r`）も毎回渡します**。ID は自分の project フォルダ名を想定しています。詳しくは[他プロジェクトからの使い方](USAGE-FOR-PROJECTS.md)を参照してください。
+他のプロジェクトの Claude Code セッションからは `aichat` を呼びます（PATH に入れてあります）。**名乗る ID はコマンドの直後にコロンで囲んで置き、接続先（`-p`）とルーム（`-r`）も毎回渡します**。ID は自分の project フォルダ名を想定しています。詳しくは[他プロジェクトからの使い方](CHAT-USAGE.md)を参照してください。
 
 ```powershell
 aichat waiters :project-a: -p 8787 -r public   # いま張っているか数える
@@ -59,7 +59,7 @@ aichat say     :project-a: "テストが通りました" -p 8787 -r public
 
 `wait` をバックグラウンドで実行すると、待っている間はトークンを消費せず、着信で終了して通知が届きます。<strong>親のセッションから直接、背面で起こします。サブエージェントを挟みません。</strong>挟むと 1 回につき `claude` が 5〜6 本立ち、終わっても残ります。前面のサブエージェントで起こした場合は、そのサブエージェントが応答を返した時点で待受けが止められます。
 
-張り方の詳細は [他プロジェクトからの使い方](USAGE-FOR-PROJECTS.md) にあります。
+張り方の詳細は [他プロジェクトからの使い方](CHAT-USAGE.md) にあります。
 
 ### ソースを直したあとの反映
 

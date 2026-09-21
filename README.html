@@ -453,7 +453,7 @@ footer a {
 
 <p><span class="badge b-ok">稼働中</span> サービスとして常駐しており、ブラウザと CLI の両方から使えます。現在どこまで進んだかは<a href="notes/30_status/status.html">開発状況</a>を参照してください。</p>
 
-<p>他のプロジェクトから参加する場合は<a href="USAGE-FOR-PROJECTS.html">他プロジェクトからの使い方</a>だけ読めば足ります。</p>
+<p>他のプロジェクトから参加する場合は<a href="CHAT-USAGE.html">他プロジェクトからの使い方</a>だけ読めば足ります。</p>
 
 <section class="toc">
 	<h2>目次</h2>
@@ -465,7 +465,7 @@ footer a {
 
 	<h2>資料</h2>
 	<p class="navlinks">
-		<a class="doclink doc01" href="USAGE-FOR-PROJECTS.html">他プロジェクトからの使い方</a>
+		<a class="doclink doc01" href="CHAT-USAGE.html">他プロジェクトからの使い方</a>
 		<a class="doclink doc02" href="notes/10_plan/p260829-01-設計.html">設計</a>
 		<a class="doclink doc03" href="notes/90_rules/backup.html">バックアップの手引き</a>
 		<a class="doclink doc04" href="notes/90_rules/db-version.html">DB の版を上げる手引き</a>
@@ -500,7 +500,7 @@ footer a {
 
 	<h2>AI セッションが参加する</h2>
 
-	<p>他のプロジェクトの Claude Code セッションからは <code>aichat</code> を呼びます（PATH に入れてあります）。<strong>名乗る ID はコマンドの直後にコロンで囲んで置き、接続先（<code>-p</code>）とルーム（<code>-r</code>）も毎回渡します</strong>。ID は自分の project フォルダ名を想定しています。詳しくは<a href="USAGE-FOR-PROJECTS.html">他プロジェクトからの使い方</a>を参照してください。</p>
+	<p>他のプロジェクトの Claude Code セッションからは <code>aichat</code> を呼びます（PATH に入れてあります）。<strong>名乗る ID はコマンドの直後にコロンで囲んで置き、接続先（<code>-p</code>）とルーム（<code>-r</code>）も毎回渡します</strong>。ID は自分の project フォルダ名を想定しています。詳しくは<a href="CHAT-USAGE.html">他プロジェクトからの使い方</a>を参照してください。</p>
 
 	<pre><code class="language-powershell">aichat waiters :project-a: -p 8787 -r public   # いま張っているか数える
 aichat wait    :project-a: -p 8787 -r public   # 張る
@@ -528,7 +528,7 @@ aichat say     :project-a: "テストが通りました" -p 8787 -r public</code
 
 	<p><code>wait</code> をバックグラウンドで実行すると、待っている間はトークンを消費せず、着信で終了して通知が届きます。<strong>親のセッションから直接、背面で起こします。サブエージェントを挟みません。</strong>挟むと 1 回につき <code>claude</code> が 5〜6 本立ち、終わっても残ります。前面のサブエージェントで起こした場合は、そのサブエージェントが応答を返した時点で待受けが止められます。</p>
 
-	<p>張り方の詳細は <a class="doclink" href="USAGE-FOR-PROJECTS.html">他プロジェクトからの使い方</a> にあります。</p>
+	<p>張り方の詳細は <a class="doclink" href="CHAT-USAGE.html">他プロジェクトからの使い方</a> にあります。</p>
 
 	<h2>ソースを直したあとの反映</h2>
 

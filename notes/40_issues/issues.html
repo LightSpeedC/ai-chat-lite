@@ -581,7 +581,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 課題</h1>
 		<p class="lead">これから解決すること。片付いたら閉じて残す</p>
-		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-13</p>
+		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-21</p>
 	</div>
 </div>
 
@@ -632,14 +632,14 @@ footer a {
 				<ul class="todos">
 					<li class="done"><span class="badge b-done">☑</span> <strong>検知する手立てがあるか調べる。</strong>案（<code>wait</code> の出力に「前回からの経過 msg_seq 数」を出す）を検討した結果、<strong>見送り。</strong><code>wait</code> はカーソルを進めた時点で「未読」という状態がサーバー側のどこにも残らないため、出力に手がかりを足しても、その出力自体を読まなかった今回の事故は防げない。実効性があるのは cursor の確定を分離する恒久対策のみ、という結論になった</li>
 					<li><span class="badge b-todo">未</span> ローカルルール「ai-chat-lite（AI 間チャット）の利用」に、<strong>張り直す前に出力を読み切ることを明記するか検討する</strong>（既に「出力に発言があれば読んで把握し、必要なら返信してから張り直す」とあるが、作業中の通知処理では読み飛ばしが起きた）。文言案: 「作業中に通知が届いたときも、他の作業を続ける前に出力を読み切る。読まずに次のツール呼び出しへ進まない」。<strong>反映は別途指示があってから</strong></li>
-					<li class="doing"><span class="badge b-doing">着手</span> <strong>恒久対策として、cursor の確定を wait から分離する。</strong><code>wait</code>（<code>/api/poll</code>）は応答を返した時点でカーソルを走査末尾まで進めており（「配信＝既読」の前提）、これが痕跡なく消える直接の原因になっている。<code>wait</code> は配信だけを行いカーソル（確定位置）は進めず、未確定分は <code>pending</code> として別枠で返し、次回 <code>wait</code> の冒頭で確認できる形にする。<strong>ack を忘れると重複表示は起きる</strong>が、消えるより気づける方を取るトレードオフ。<a href="../10_plan/i260917-01-cursorの確定を分離する.html">計画書</a>でサーバー側（フェーズ1）と CLI 側（フェーズ2）に分けた。
+					<li class="done"><span class="badge b-done">☑</span> <strong>恒久対策として、cursor の確定を wait から分離する。</strong><code>wait</code>（<code>/api/poll</code>）は応答を返した時点でカーソルを走査末尾まで進めており（「配信＝既読」の前提）、これが痕跡なく消える直接の原因になっている。<code>wait</code> は配信だけを行いカーソル（確定位置）は進めず、未確定分は <code>pending</code> として別枠で返し、次回 <code>wait</code> の冒頭で確認できる形にする。<strong>ack を忘れると重複表示は起きる</strong>が、消えるより気づける方を取るトレードオフ。<a href="../10_plan/i260917-01-cursorの確定を分離する.html">計画書</a>でサーバー側（フェーズ1）と CLI 側（フェーズ2）に分けた。
 					<div class="tablewrap">
 					<table>
 						<thead><tr><th class="nowrap">段</th><th>すること</th><th class="nowrap">状態</th></tr></thead>
 						<tbody>
 							<tr><td class="nowrap">フェーズ1</td><td>スキーマ移行（<code>acked_seq</code>）・<code>/api/ack</code>・<code>pending</code> の実装。<code>messages</code> の契約は無修正で維持</td><td class="nowrap"><span class="badge b-done">☑</span> 実装・コミット済み（<code>bf5325e</code>）</td></tr>
 							<tr><td class="nowrap">フェーズ1 リリース</td><td>本番サーバーの再起動（他プロジェクトの待受けが切断される）</td><td class="nowrap"><span class="badge b-done">☑</span> 2026-09-20 実施。予行（控え・テスト環境での起動・全テスト実行）を経てから本番へ適用。版 6 → 7、件数一致（578 件）を確認</td></tr>
-							<tr><td class="nowrap">フェーズ2</td><td>CLI 側の対応（<code>/api/ack</code> の呼び出し・<code>pending</code> の表示）。C# 版削除（<a href="#i260918-01">i260918-01</a>）により対象は <strong>node ・ Rust の 2 本</strong></td><td class="nowrap"><span class="badge b-todo">未</span></td></tr>
+							<tr><td class="nowrap">フェーズ2</td><td>CLI 側の対応（<code>/api/ack</code> の呼び出し・<code>pending</code> の表示）。C# 版削除（<a href="#i260918-01">i260918-01</a>）により対象は <strong>node ・ Rust の 2 本</strong></td><td class="nowrap"><span class="badge b-done">☑</span> 実装・全テスト通過（115 件）。既定の <code>aichat.exe</code> も Rust 版へ差し替え済み</td></tr>
 						</tbody>
 					</table>
 					</div>
@@ -1428,7 +1428,7 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 				<h3>やること</h3>
 
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> <strong>ai-agent-tools（html2md の開発元）へ報告する。</strong>修正の方向性（例: <code>md-flat</code> で展開した見出しの直後に、元の <code>id</code> を指す明示アンカーを機械的に挿入する）は先方の判断を仰ぐ</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>ai-agent-tools（html2md の開発元）へ報告した。</strong>先方で <strong><code>i260921-01</code></strong>（ai-agent-tools 側の課題）として登録され、原因は先方でも確認済み（<code>convertDetails()</code> が <code>md-flat</code> 展開時に元の <code>&lt;details id="..."&gt;</code> を受け取らず、見出しテキストだけで <code>##</code> を作っているため）。直し方は2案（A: 見出し前に明示アンカーを差し込む／B: リンク側を GitHub のスラッグ規則に追随させる）あるが、<strong>生成物の形が変わる変更のため、先方も実装はせず案として記録するに留めている</strong></li>
 					<li><span class="badge b-todo">未</span> 対応方針が決まるまで、<code>issues.md</code> は生成し直さない（現状の <code>issues.md</code> は生成できておらず、リポジトリに含めていない）</li>
 				</ul>
 			</div>
@@ -3439,6 +3439,10 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 				<div class="callout callout-note">
 					<p><strong>2026-09-13、このマシンのメモリを 16 GB から 32 GB に物理増設した。</strong>以降は発生していない。<strong>あわせて <a href="#i260913-01">i260913-01</a> で CLI を Rust に書き直し、待受け中の実メモリも node 版 54.20 MB から 6.41 MB へ大きく減らした。</strong>この 2 つで発生条件（空きメモリの逼迫）自体が遠のいたため、いまは実害が無い。</p>
 					<p><strong>ただしこれは暫定対策である。</strong>メモリ増設は環境要因の解消であり、Claude Code がメモリ逼迫で背面コマンドを刈る挙動や、サブエージェント経由だと張り直しのたびに <code>claude</code> プロセスが増える挙動そのものは変わっていない。恒久対策（上の「やること」）は未決定のまま残るので、<strong>状態は「未」で維持する。</strong>別のマシンや、より多くのプロジェクトを同時に動かす状況では再発しうる。</p>
+				</div>
+
+				<div class="callout callout-tip">
+					<p><strong>参考: 他プロジェクトからの事故共有（<code>20260824-ai-pc-public</code>、2026-09-21）。</strong>PlayWright 実行が kill されても、子孫プロセス（<code>npm</code> → <code>cmd</code> → <code>playwright cli</code> → <code>Chromium</code>）が切り離されて 20 時間残り続けた事例。<strong>この課題の「終わったサブエージェントのプロセスが残る理由を調べる」と同種の問題</strong>（親を止めても子孫が道連れにならない）。確認は <code>psls</code>、停止は <code>taskkill /PID &lt;根の pid&gt; /T /F</code>（<code>/T</code> が無いと子が残る）とのこと。</p>
 				</div>
 			</div>
 		</details>

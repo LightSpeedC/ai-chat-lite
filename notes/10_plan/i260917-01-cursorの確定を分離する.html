@@ -526,7 +526,7 @@ footer a {
 	<h2>フェーズ 2: CLI 側</h2>
 
 	<div class="callout callout-caution">
-		<p><strong>フェーズ 1 のリリースが終わったことを確認してから着手する。</strong><code>aichat</code> は全プロジェクト共有の 1 実体なので、配置すれば即座に全プロジェクトへ及ぶ（次章「移行」）。<strong>CLI が 3 本ある間は、3 本とも直す。</strong>C# 版の扱いは <a href="../40_issues/issues.html#i260918-01">i260918-01</a> で別途検討中だが、結論が出るまではローカルルール「CLI を直したら 3 本とも直す」に従う。</p>
+		<p><strong>フェーズ 1 のリリースが終わったことを確認してから着手する。</strong><code>aichat</code> は全プロジェクト共有の 1 実体なので、配置すれば即座に全プロジェクトへ及ぶ（次章「移行」）。<strong>C# 版は <a href="../40_issues/issues.html#i260918-01">i260918-01</a> で既に削除済みのため、対象は node ・ Rust の 2 本になった。</strong>ローカルルールも「CLI を直したら 2 本とも直す」に更新済み。</p>
 	</div>
 
 	<div class="tablewrap">
@@ -535,9 +535,8 @@ footer a {
 			<tbody>
 				<tr><td class="num">1</td><td>node 版 CLI</td><td><code>src/client/chat.mjs</code> の <code>cmdWait</code></td></tr>
 				<tr><td class="num">2</td><td>Rust 版 CLI</td><td><code>src/cli-rs/src/commands.rs</code></td></tr>
-				<tr><td class="num">3</td><td>C# 版 CLI</td><td><code>src/cli-cs/Commands.cs</code>（<a href="../40_issues/issues.html#i260918-01">i260918-01</a> の結論が「残す」なら）</td></tr>
-				<tr><td class="num">4</td><td>突き合わせテスト</td><td><code>tests/client-wait.test.mjs</code>・<code>tests/cli-rs.test.mjs</code>・<code>tests/cli-cs.test.mjs</code>・<code>tools/40_test/compare-cli.mjs</code></td></tr>
-				<tr><td class="num">5</td><td><strong>リリース</strong>（3 本を再ビルド・配置）</td><td>ここで全プロジェクトが新しい挙動（前回分の再送あり）に切り替わる</td></tr>
+				<tr><td class="num">3</td><td>突き合わせテスト</td><td><code>tests/client-wait.test.mjs</code>・<code>tests/cli-rs.test.mjs</code>・<code>tools/40_test/compare-cli.mjs</code></td></tr>
+				<tr><td class="num">4</td><td><strong>リリース</strong>（2 本を再ビルド・配置）</td><td>ここで全プロジェクトが新しい挙動（前回分の再送あり）に切り替わる</td></tr>
 			</tbody>
 		</table>
 	</div>
@@ -550,7 +549,6 @@ footer a {
 			<tbody>
 				<tr><td class="nowrap">「前回分」の表示の見た目</td><td>実装時。新着と混同しないよう見出しを分ける必要がある</td></tr>
 				<tr><td class="nowrap">ローカルルールへの反映</td><td>実装が全テストを通ってから。「ai-chat-lite（AI 間チャット）の利用」に確定の仕組みを追記するか検討する</td></tr>
-				<tr><td class="nowrap">C# 版への実装要否</td><td><a href="../40_issues/issues.html#i260918-01">i260918-01</a>（C# 版削除の検討）の結論待ち</td></tr>
 			</tbody>
 		</table>
 	</div>
