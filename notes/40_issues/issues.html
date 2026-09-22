@@ -595,7 +595,7 @@ footer a {
 		<li class="g01"><a href="#g01">サービスの運用（6 件 / 未 3 / 着手 1 / 済 2）</a></li>
 		<li class="g02"><a href="#g02">データ（7 件 / 未 1 / 着手 0 / 済 6）</a></li>
 		<li class="g03"><a href="#g03">開発環境・記録（32 件 / 未 2 / 着手 7 / 済 23）</a></li>
-		<li class="g04"><a href="#g04">チャットの機能（30 件 / 未 10 / 着手 2 / 済 18）</a></li>
+		<li class="g04"><a href="#g04">チャットの機能（31 件 / 未 11 / 着手 3 / 済 17）</a></li>
 	</ol>
 </section>
 
@@ -4121,14 +4121,39 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">30 件 / 未 10 / 着手 2 / 済 18</span>
+		<span class="count">31 件 / 未 11 / 着手 3 / 済 17</span>
 	</summary>
 
 	<div class="groupbody">
 
-		<details class="issue done md-flat" id="i260922-03">
+		<details class="issue md-flat" id="i260922-05" open>
 			<summary>
-				<span class="badge b-done">☑</span>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260922-05</span>
+				サーバー・クライアントのバージョン不一致を検出する手段が無い
+			</summary>
+			<div class="issuebody">
+				<p><strong>i260920-01（初回のカーソル起点）を実装・コミットしたが、本番サーバー（Windowsサービス）は再起動されず、2026-09-20 17:21 に起動したプロセスがそのまま動き続けていた。</strong>Node.js はファイルを更新しても再起動しない限り古いロジックのまま動くため、サーバー側の変更（i260920-01・i260907-04 等）が本番で一度も有効になっていなかった（i260922-03 の調査中に発見）。</p>
+
+				<div class="callout callout-important">
+					<p><strong>API はエラーにならない。</strong>この種の変更（サーバー内部ロジックだけを変え、リクエスト・レスポンスの形は変えない）は、古いサーバーに新しい CLI から繋いでも普通に 200 が返る。<strong>クライアント・サーバー間のバージョン不一致を検出する仕組みがこのプロジェクトに存在しない</strong>ため、実測（本番へ直接 <code>wait</code> して<code>since</code>の値を見る）でしか気づけなかった。</p>
+				</div>
+
+				<p>版が別々にある仕組みは既にある（ブラウザ向け <code>VERSION</code>・CLI突き合わせ用 <code>EXPECTED_SCHEMA</code>）が、どちらも「サーバー再起動忘れ」を検出する用途ではない。サーバーの版とクライアントの版を記録し、<strong>クライアントが要求する最低サーババージョン、およびサーバーが要求する最低クライアントバージョンの双方を判定し、満たない側はエラーにする</strong>仕組みが要る。</p>
+
+				<p>恒久対策（版の不一致検出）とは別に、<strong>引数の過不足チェック</strong>（未知のパラメータ・必須パラメータの欠落を API が 400 で拒否する）も暫定対策として有効。ただし今回のケース（<code>messages</code> を返す形自体は変わらず、CLI側が表示しなかっただけ）のように、<strong>パラメータの形が変わらない変更では引数チェックでは検出できない</strong>。カバーできる範囲が違うため、両方を課題として残す</p>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> 仕様を決める（サーバー応答に版を含める・クライアントが要求最低サーババージョンを送る・サーバーが要求最低クライアントバージョンを送る、の組み合わせ方）</li>
+					<li><span class="badge b-todo">未</span> 実装し、node版・Rust版とも対応する</li>
+					<li><span class="badge b-todo">未</span> API に引数の過不足チェック（未知パラメータの拒否・必須パラメータの欠落判定）を追加する（暫定対策。版の不一致そのものは検出できない点に注意）</li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue doing md-flat" id="i260922-03" open>
+			<summary>
+				<span class="badge b-doing">着手</span>
 				<span class="no">i260922-03</span>
 				初めての待受け（i260920-01）で、バックログが画面に出ないまま既読化されていた
 			</summary>
@@ -4143,11 +4168,17 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 
 				<p>本番 DB を直接触らず、コピー（<code>tmp/investigate-i260922/</code>、作業後削除済み）で別ポートのテスト環境を作って再現・検証した。</p>
 
+				<div class="callout callout-caution">
+					<p><strong>さらに根深い原因があった。</strong>修正を配置した後も別セッション（<code>20260819-how-to-claude-code</code>）から同じ症状の報告（chat #1012）があり、調べたところ<strong>本番サーバー（Windowsサービス）が 2026-09-20 17:21 から一度も再起動されていなかった</strong>ことが判明した。Node.js はファイルを更新しても再起動しない限り古いロジックのまま動くため、<code>i260920-01</code>（コミット 09-22 11:15）自体が本番で一度も有効になっていなかった。<code>i260920-01</code> はサーバー側とCLI側を1コミットにまとめ、フェーズを分けず本番適用（再起動）のステップも踏んでいなかったことが遠因。<strong>API はエラーにならないため、この不一致に気づく手段が無かった</strong>（→ i260922-05 として別途課題化）。<code>aichat restart</code> で本番を再起動し、実機で新規コネクタが正しくバックログを受け取ることを確認した</p>
+				</div>
+
 				<ul class="todos">
 					<li class="done"><span class="badge b-done">☑</span> テスト環境（本番DBのコピー）で、新規コネクタの初回 <code>wait</code> を再現した</li>
 					<li class="done"><span class="badge b-done">☑</span> 落ちるテストを先に書いた（<code>tests/client-wait.test.mjs</code>「初めての接続でも、直前に投稿されたバックログが画面に出る」）</li>
 					<li class="done"><span class="badge b-done">☑</span> node版・Rust版とも、戻り値の <code>messages</code> を <code>printMessages</code>/<code>print_messages</code> で表示するよう直した。実機（テスト環境）でも両方確認済み</li>
 					<li class="done"><span class="badge b-done">☑</span> 全テスト実行（551/554、既知の3件は無関係）。<code>bin/aichat.exe</code> を最新のRust版に更新</li>
+					<li class="done"><span class="badge b-done">☑</span> 本番サーバーを <code>aichat restart</code> で再起動し、新規コネクタの初回 <code>wait</code> がバックログを正しく返すことを本番で実機確認した</li>
+					<li><span class="badge b-todo">未</span> 報告元（<code>20260913-codex-agent-md</code>・<code>20260819-how-to-claude-code</code>）へ実装・再起動が済んだ旨を伝え、検証を依頼した。<strong>OK が出るまで「済」にしない</strong></li>
 				</ul>
 			</div>
 		</details>
