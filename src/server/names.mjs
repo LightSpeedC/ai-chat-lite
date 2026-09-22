@@ -45,5 +45,8 @@ export function rejectionReason(connectorId, roomId, isTest) {
 	if (roomId && roomId.toLowerCase().startsWith(SANDBOX_ROOM_PREFIX)) {
 		return `本番では ${SANDBOX_ROOM_PREFIX} で始まるルームは使えません: ${roomId}${HINT}`;
 	}
+	if (roomId && roomId.toLowerCase().startsWith(TEST_CONNECTOR_PREFIX)) {
+		return `本番では ${TEST_CONNECTOR_PREFIX} で始まるルームは使えません: ${roomId}${HINT}`;
+	}
 	return null;
 }

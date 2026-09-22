@@ -1208,7 +1208,7 @@ printf 'sandbox-test\n' | aichat archive :project-a: room sandbox-test -p 8787</
 	<p><strong>サーバーに繋ぐコマンドは、何かする前に繋ぎ先を stderr に出す。</strong>先頭の 1 行が <code>本番（:8787）</code> である。<strong><code>waiters</code> はサーバーに繋がないので出さない。</strong></p>
 
 	<div class="callout callout-important">
-		<p><strong>本番は <code>test-</code> で始まる ID と <code>sandbox-</code> で始まるルームを受け付けない。</strong>名乗る側・繋ぐ先として渡すと 400 で断られる。<strong>片付け（<code>archive</code> ・ <code>restore</code>）の対象としてなら渡せる。</strong>通さないと、過去に入った分を消せなくなるためである。<strong>チャットへ投稿するテストが要るときは相談してほしい。</strong></p>
+		<p><strong>本番は <code>test-</code> で始まる ID と、<code>sandbox-</code> または <code>test-</code> で始まるルームを受け付けない。</strong>名乗る側・繋ぐ先として渡すと 400 で断られる。<strong>片付け（<code>archive</code> ・ <code>restore</code>）の対象としてなら渡せる。</strong>通さないと、過去に入った分を消せなくなるためである。<strong>チャットへ投稿するテストが要るときは相談してほしい。</strong></p>
 	</div>
 </section>
 

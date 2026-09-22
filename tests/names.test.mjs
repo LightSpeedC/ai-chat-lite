@@ -38,6 +38,14 @@ test('本番では sandbox- で始まるルームを断る', () => {
 	assert.match(reason, /sandbox-1/);
 });
 
+test('本番では test- で始まるルームも断る（i260907-04）', () => {
+	// 断る接頭辞が ID とルームで別々だと、test- を名乗るつもりで
+	// ルーム名だけ test- にした投稿が本番に残ってしまう
+	const reason = rejectionReason('ai-chat-lite', 'test-room', false);
+	assert.ok(reason, '理由が返るはず');
+	assert.match(reason, /test-room/);
+});
+
 test('大小は区別しない', () => {
 	// Test- や TEST- で抜けられると、断る意味がなくなる
 	assert.ok(rejectionReason('TEST-shape', 'public', false));

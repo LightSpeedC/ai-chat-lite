@@ -92,6 +92,31 @@ describe('置き場を明示しなければ止まる（i260906-02）', () => {
 	});
 });
 
+/*
+ * 【なぜ必要か】
+ * 断る接頭辞が本番（names.mjs）とここで別々だと、test- で始まるルームだけ
+ * 本番に残り続ける（i260907-04）。目印を揃えたことをここで確かめる。
+ */
+describe('room_id は sandbox- と test- の両方が目印になる（i260907-04）', () => {
+	test('test- で始まるルームへの発言も --dry-run で数えられる', async () => {
+		const { DatabaseSync } = await import('node:sqlite');
+		const dbPath = join(TEST_DATA, 'chat.db');
+
+		{
+			const db = new DatabaseSync(dbPath);
+			try {
+				db.prepare('INSERT INTO messages (room_id, sent_at, from_connector_id, msg_kind, msg_body) VALUES (?, ?, ?, ?, ?)')
+					.run('test-room-i260907-04', '2026/09/22 00:00:00.000', 'human', 'say', '本文');
+			} finally {
+				db.close();
+			}
+		}
+
+		const { stdout } = await purge(['--test', '--dry-run'], { AICHAT_DATA: TEST_DATA });
+		assert.match(stdout, /messages [1-9]/, '見つけた件数が 0 のまま');
+	});
+});
+
 describe('知らない引数は消さずに止まる', () => {
 	test('打ち間違いは終了コード 2', async () => {
 		// 既定の動作が削除なので、黙って無視すると打ち間違いがそのまま削除になる

@@ -595,7 +595,7 @@ footer a {
 		<li class="g01"><a href="#g01">サービスの運用（6 件 / 未 3 / 着手 1 / 済 2）</a></li>
 		<li class="g02"><a href="#g02">データ（7 件 / 未 1 / 着手 0 / 済 6）</a></li>
 		<li class="g03"><a href="#g03">開発環境・記録（31 件 / 未 4 / 着手 7 / 済 20）</a></li>
-		<li class="g04"><a href="#g04">チャットの機能（27 件 / 未 10 / 着手 1 / 済 16）</a></li>
+		<li class="g04"><a href="#g04">チャットの機能（27 件 / 未 9 / 着手 1 / 済 17）</a></li>
 	</ol>
 </section>
 
@@ -4101,7 +4101,7 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">27 件 / 未 10 / 着手 1 / 済 16</span>
+		<span class="count">27 件 / 未 9 / 着手 1 / 済 17</span>
 	</summary>
 
 	<div class="groupbody">
@@ -5234,34 +5234,34 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 			</div>
 		</details>
 
-		<details class="issue md-flat" id="i260907-04" open>
+		<details class="issue done md-flat" id="i260907-04">
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260907-04</span>
 				本番で断るルームの接頭辞に <code>test-</code> が入っていない
 			</summary>
 			<div class="issuebody">
-				<p><strong>断る接頭辞が、ID とルームで別々になっている。</strong><code>src/server/names.mjs</code> 18 ・ 21 行。</p>
+				<p><strong>断る接頭辞が、ID とルームで別々になっていた。</strong><code>src/server/names.mjs</code>。</p>
 
 				<div class="tablewrap">
 				<table>
-					<thead><tr><th class="nowrap">相手</th><th class="nowrap">いま断るもの</th><th>これから</th></tr></thead>
+					<thead><tr><th class="nowrap">相手</th><th class="nowrap">直す前</th><th>直したあと</th></tr></thead>
 					<tbody>
-						<tr><td class="nowrap">名乗る ID</td><td class="nowrap"><code>test-</code></td><td>変えない</td></tr>
+						<tr><td class="nowrap">名乗る ID</td><td class="nowrap"><code>test-</code></td><td>変えていない</td></tr>
 						<tr><td class="nowrap">ルーム</td><td class="nowrap"><code>sandbox-</code></td><td><strong><code>test-</code> と <code>sandbox-</code> の両方</strong></td></tr>
 					</tbody>
 				</table>
 				</div>
 
 				<div class="callout callout-warning">
-					<p><strong><code>-r test-なにか</code> は本番で通る。</strong>テスト用のつもりで付けた名前が本番に残り、<strong>後始末の道具（<code>tools/40_test/purge-test-data.mjs</code>）の目印にも当たらない</strong>。ID を <code>test-</code> で断っているのと揃わない。</p>
+					<p><strong><code>-r test-なにか</code> は本番で通っていた。</strong>テスト用のつもりで付けた名前が本番に残り、<strong>後始末の道具（<code>tools/40_test/purge-test-data.mjs</code>）の目印にも当たらなかった</strong>。ID を <code>test-</code> で断っているのと揃わない状態だった。</p>
 				</div>
 
-				<p>直すのは <code>names.mjs</code> の検査とエラーの文言。<strong>C# 版は関係ない</strong>（断るのはサーバーの側）。<code>purge-test-data.mjs</code> の目印と USAGE の記述も揃える。</p>
+				<p>直したのは <code>names.mjs</code> の検査とエラーの文言。<strong>C# 版は関係ない</strong>（断るのはサーバーの側）。<code>purge-test-data.mjs</code> の目印と USAGE の記述も揃えた。</p>
 
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> ルームの検査に <code>test-</code> を足す</li>
-					<li><span class="badge b-todo">未</span> 目印と資料を揃える（<code>purge-test-data.mjs</code> ・ USAGE）</li>
+					<li class="done"><span class="badge b-done">☑</span> ルームの検査に <code>test-</code> を足した（<code>rejectionReason</code>）。テストを先に書き、落ちることを確認してから直した（<code>tests/names.test.mjs</code>）</li>
+					<li class="done"><span class="badge b-done">☑</span> 目印と資料を揃えた。<code>purge-test-data.mjs</code> の対象条件に <code>room_id LIKE 'test-%'</code> を足し、<code>CHAT-USAGE.html</code> の断る条件の説明を更新（テストは <code>tests/purge-test-data.test.mjs</code>）</li>
 				</ul>
 			</div>
 		</details>

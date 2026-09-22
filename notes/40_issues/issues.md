@@ -1961,7 +1961,7 @@ USAGE が共通オプションを 2 か所で定義しており、**手書きの
 </details>
 
 <details>
-<summary><strong>未</strong> チャットの機能 27 件 / 未 10 / 着手 1 / 済 16</summary>
+<summary><strong>未</strong> チャットの機能 27 件 / 未 9 / 着手 1 / 済 17</summary>
 
 ## **☑** i260920-01 初めての待受けは、その日の 0 時と 6 時間前の古い方を起点にする
 
@@ -2671,22 +2671,22 @@ ai-chat で課題を扱えるようにし、番号を全プロジェクトで一
 - **未** 総合レビューの 3 を直す（`strayMine` のコメント。**直し方を決める**）
 - **未** 周知する
 
-## **未** i260907-04 本番で断るルームの接頭辞に `test-` が入っていない
+## **☑** i260907-04 本番で断るルームの接頭辞に `test-` が入っていない
 
-**断る接頭辞が、ID とルームで別々になっている。**`src/server/names.mjs` 18 ・ 21 行。
+**断る接頭辞が、ID とルームで別々になっていた。**`src/server/names.mjs`。
 
-| 相手 | いま断るもの | これから |
+| 相手 | 直す前 | 直したあと |
 |---|---|---|
-| 名乗る ID | `test-` | 変えない |
+| 名乗る ID | `test-` | 変えていない |
 | ルーム | `sandbox-` | **`test-` と `sandbox-` の両方** |
 
 > [!WARNING]
-> <strong>`-r test-なにか` は本番で通る。</strong>テスト用のつもりで付けた名前が本番に残り、**後始末の道具（`tools/40_test/purge-test-data.mjs`）の目印にも当たらない**。ID を `test-` で断っているのと揃わない。
+> <strong>`-r test-なにか` は本番で通っていた。</strong>テスト用のつもりで付けた名前が本番に残り、**後始末の道具（`tools/40_test/purge-test-data.mjs`）の目印にも当たらなかった**。ID を `test-` で断っているのと揃わない状態だった。
 
-直すのは `names.mjs` の検査とエラーの文言。**C# 版は関係ない**（断るのはサーバーの側）。`purge-test-data.mjs` の目印と USAGE の記述も揃える。
+直したのは `names.mjs` の検査とエラーの文言。**C# 版は関係ない**（断るのはサーバーの側）。`purge-test-data.mjs` の目印と USAGE の記述も揃えた。
 
-- **未** ルームの検査に `test-` を足す
-- **未** 目印と資料を揃える（`purge-test-data.mjs` ・ USAGE）
+- **☑** ルームの検査に `test-` を足した（`rejectionReason`）。テストを先に書き、落ちることを確認してから直した（`tests/names.test.mjs`）
+- **☑** 目印と資料を揃えた。`purge-test-data.mjs` の対象条件に `room_id LIKE 'test-%'` を足し、`CHAT-USAGE.html` の断る条件の説明を更新（テストは `tests/purge-test-data.test.mjs`）
 
 ## **☑** i260908-02 発言本文の自動リンクが `href` 属性から抜け出せる
 

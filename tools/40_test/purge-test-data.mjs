@@ -5,7 +5,7 @@
  * 増える。名前で見分けられるようにしておき、終わったらまとめて消す。
  *
  *   connector_id が test-  で始まるもの … connectors / cursors / messages（発言者・宛先） / archives
- *   room_id が sandbox- で始まるもの … messages / cursors / archives
+ *   room_id が sandbox- または test- で始まるもの … messages / cursors / archives（i260907-04）
  *
  * 片付け（archive）の記録と、それを指す知らせも消す。以前は 3 テーブルしか
  * 見ておらず、片付けた記録だけが本番に残り続けた（i260912-01）。
@@ -67,7 +67,7 @@ function usage(exitCode) {
 	console.log('');
 	for (const [name, desc] of OPTIONS) console.log(`  ${name.padEnd(width)}  ${desc}`);
 	console.log('');
-	console.log(`  目印: connector_id が ${CONNECTOR_PREFIX} で始まるもの / room_id が ${ROOM_PREFIX} で始まるもの`);
+	console.log(`  目印: connector_id が ${CONNECTOR_PREFIX} で始まるもの / room_id が ${ROOM_PREFIX} または ${CONNECTOR_PREFIX} で始まるもの`);
 	console.log('  --names を付けなければ、目印に当たるものを全部消す。');
 	console.log('  置き場は --test か --production で必ず明示する。');
 	process.exit(exitCode);
@@ -194,13 +194,14 @@ const build = () => {
 	if (names.length === 0) {
 		const u = `${CONNECTOR_PREFIX}%`;
 		const r = `${ROOM_PREFIX}%`;
+		// ルームの目印は sandbox- と test- の両方（i260907-04。本番が断る接頭辞に揃える）
 		const arcCond = 'archive_id LIKE ? OR archive_id LIKE ? OR archived_connector_id LIKE ?';
 		return {
 			messages: [
-				`from_connector_id LIKE ? OR to_connector_id LIKE ? OR room_id LIKE ? OR ${ARCHIVE_NOTICE.replace('%COND%', arcCond)}`,
-				[u, u, r, u, r, u],
+				`from_connector_id LIKE ? OR to_connector_id LIKE ? OR room_id LIKE ? OR room_id LIKE ? OR ${ARCHIVE_NOTICE.replace('%COND%', arcCond)}`,
+				[u, u, r, u, u, r, u],
 			],
-			cursors: ['connector_id LIKE ? OR room_id LIKE ?', [u, r]],
+			cursors: ['connector_id LIKE ? OR room_id LIKE ? OR room_id LIKE ?', [u, r, u]],
 			connectors: ['connector_id LIKE ?', [u]],
 			archives: [arcCond, [u, r, u]],
 		};
