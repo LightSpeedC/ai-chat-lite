@@ -25,12 +25,12 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $root = Resolve-Path (Join-Path $PSScriptRoot '..\..')
-$exe = Join-Path $root 'aichat.exe'
+$exe = Join-Path $root 'bin/aichat.exe'
 $client = Join-Path $root 'src/client/chat.mjs'
 $null = New-Item -ItemType Directory -Force (Join-Path $root 'tmp')
 $sink = Join-Path $root 'tmp/measure-sink.txt'
 
-if (-not (Test-Path $exe)) { throw "aichat.exe がありません。tools/20_build/build-aichat.cmd で作ってください。" }
+if (-not (Test-Path $exe)) { throw "bin/aichat.exe がありません。tools/20_build/install-aichat.mjs で作ってください。" }
 
 <#
 	1 つのコマンドを Times 回測り、ミリ秒の配列を返す。

@@ -595,7 +595,7 @@ footer a {
 		<li class="g01"><a href="#g01">サービスの運用（6 件 / 未 3 / 着手 1 / 済 2）</a></li>
 		<li class="g02"><a href="#g02">データ（7 件 / 未 1 / 着手 0 / 済 6）</a></li>
 		<li class="g03"><a href="#g03">開発環境・記録（31 件 / 未 4 / 着手 7 / 済 20）</a></li>
-		<li class="g04"><a href="#g04">チャットの機能（27 件 / 未 9 / 着手 1 / 済 17）</a></li>
+		<li class="g04"><a href="#g04">チャットの機能（29 件 / 未 10 / 着手 2 / 済 17）</a></li>
 	</ol>
 </section>
 
@@ -4101,10 +4101,51 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">27 件 / 未 9 / 着手 1 / 済 17</span>
+		<span class="count">29 件 / 未 10 / 着手 2 / 済 17</span>
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue doing md-flat" id="i260922-01" open>
+			<summary>
+				<span class="badge b-doing">着手</span>
+				<span class="no">i260922-01</span>
+				共通ルール「共有ツールの置き場とPATH」に合わせ、公開CLIを bin/ へ移す
+			</summary>
+			<div class="issuebody">
+				<p>共通ルールが新設され、<strong>他プロジェクトから名前で呼ばれる公開CLIは <code>&lt;project&gt;/bin/</code> に置き、PATHに追加するのも <code>bin/</code> だけにする</strong>ことになった。ai-chat-lite の <code>aichat</code> がこれに当たる。</p>
+
+				<p><strong>公開インターフェースは <code>aichat.exe</code>（既定。Rust版の写し）だけ</strong>。<code>aichat-rs.exe</code>・<code>aichat-cs.exe</code>・<code>aichat-go.exe</code>・<code>node-ai-chat-lite*.exe</code>・<code>aichat-*.cmd</code> は開発・突き合わせ用で、他プロジェクトのセッションが名前で呼ぶものではないため対象外。</p>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> <code>tools/20_build/install-aichat.mjs</code> の書き出し先を <code>bin/aichat.exe</code> に変えた。<code>tests/launchers.test.mjs</code>・<code>tools/40_test/measure-cli-startup.ps1</code> も追従</li>
+					<li class="done"><span class="badge b-done">☑</span> ルート直下に残っていた <code>aichat.exe</code> を消した</li>
+					<li class="done"><span class="badge b-done">☑</span> 設計書（<code>p260829-01-設計.html</code>）のフォルダ構成を <code>bin/aichat.exe</code> に更新した</li>
+					<li><span class="badge b-todo">未</span> PATH からプロジェクトルート自体を外す（利用者側の環境変数。<code>bin/</code> は既に追加済みと確認済み）</li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue md-flat" id="i260922-02" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260922-02</span>
+				バックアップタスクの登録スクリプトが「ログインしていなくても実行」を持っていない
+			</summary>
+			<div class="issuebody">
+				<p><strong>利用者がタスクスケジューラの GUI から、4 件のバックアップタスクを「ユーザーがログオンしているかどうかにかかわらず実行する」（<code>LogonType: Password</code>）に手動で変更した。</strong>実測で確認済み（2026-09-22）。</p>
+
+				<div class="callout callout-warning">
+					<p><code>tools/80_ops/register-backup-tasks.ps1</code> は <code>Register-ScheduledTask</code> 呼び出しで <code>Principal</code>（ログオン種別）を指定していない。<strong>既定は「ログオン時のみ実行」</strong>のため、このスクリプトを再実行すると、今回手動で変更した設定が黙って元に戻る。</p>
+				</div>
+
+				<p>直すなら、スクリプト側に <code>-LogonType Password</code>（または S4U）を明示する形になる。パスワードを保存する形の登録を無人スクリプトから行ってよいかは、利用者の判断が要る。</p>
+
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> 直すかどうかを決める</li>
+				</ul>
+			</div>
+		</details>
 
 		<details class="issue done md-flat" id="i260920-01">
 			<summary>

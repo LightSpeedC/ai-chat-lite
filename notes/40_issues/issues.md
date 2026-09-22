@@ -1961,7 +1961,29 @@ USAGE が共通オプションを 2 か所で定義しており、**手書きの
 </details>
 
 <details>
-<summary><strong>未</strong> チャットの機能 27 件 / 未 9 / 着手 1 / 済 17</summary>
+<summary><strong>未</strong> チャットの機能 29 件 / 未 10 / 着手 2 / 済 17</summary>
+
+## **着手** i260922-01 共通ルール「共有ツールの置き場とPATH」に合わせ、公開CLIを bin/ へ移す
+
+共通ルールが新設され、**他プロジェクトから名前で呼ばれる公開CLIは `<project>/bin/` に置き、PATHに追加するのも `bin/` だけにする**ことになった。ai-chat-lite の `aichat` がこれに当たる。
+
+**公開インターフェースは `aichat.exe`（既定。Rust版の写し）だけ**。`aichat-rs.exe`・`aichat-cs.exe`・`aichat-go.exe`・`node-ai-chat-lite*.exe`・`aichat-*.cmd` は開発・突き合わせ用で、他プロジェクトのセッションが名前で呼ぶものではないため対象外。
+
+- **☑** `tools/20_build/install-aichat.mjs` の書き出し先を `bin/aichat.exe` に変えた。`tests/launchers.test.mjs`・`tools/40_test/measure-cli-startup.ps1` も追従
+- **☑** ルート直下に残っていた `aichat.exe` を消した
+- **☑** 設計書（`p260829-01-設計.html`）のフォルダ構成を `bin/aichat.exe` に更新した
+- **未** PATH からプロジェクトルート自体を外す（利用者側の環境変数。`bin/` は既に追加済みと確認済み）
+
+## **未** i260922-02 バックアップタスクの登録スクリプトが「ログインしていなくても実行」を持っていない
+
+<strong>利用者がタスクスケジューラの GUI から、4 件のバックアップタスクを「ユーザーがログオンしているかどうかにかかわらず実行する」（`LogonType: Password`）に手動で変更した。</strong>実測で確認済み（2026-09-22）。
+
+> [!WARNING]
+> `tools/80_ops/register-backup-tasks.ps1` は `Register-ScheduledTask` 呼び出しで `Principal`（ログオン種別）を指定していない。<strong>既定は「ログオン時のみ実行」</strong>のため、このスクリプトを再実行すると、今回手動で変更した設定が黙って元に戻る。
+
+直すなら、スクリプト側に `-LogonType Password`（または S4U）を明示する形になる。パスワードを保存する形の登録を無人スクリプトから行ってよいかは、利用者の判断が要る。
+
+- **未** 直すかどうかを決める
 
 ## **☑** i260920-01 初めての待受けは、その日の 0 時と 6 時間前の古い方を起点にする
 

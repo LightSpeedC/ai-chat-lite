@@ -31,17 +31,18 @@ describe('既定の aichat は Rust 版が受ける', () => {
 		 * ビルドが両方に置く。片方だけ新しくなると、`aichat` と `aichat-rs` で
 		 * 違う版が動き、突き合わせのテストが通ったまま本番だけ古いことになる。
 		 */
-		const exe = join(root, 'aichat.exe');
+		// bin/ は公開インターフェースの置き場（i260922-01）
+		const exe = join(root, 'bin', 'aichat.exe');
 		const rs = join(root, 'aichat-rs.exe');
 		assert.ok(existsSync(rs), 'aichat-rs.exe が無い（先にビルドが要る）');
-		assert.ok(existsSync(exe), 'aichat.exe が無い');
-		assert.equal(digestOf(exe), digestOf(rs), 'aichat.exe と aichat-rs.exe の中身が違う');
+		assert.ok(existsSync(exe), 'bin/aichat.exe が無い');
+		assert.equal(digestOf(exe), digestOf(rs), 'bin/aichat.exe と aichat-rs.exe の中身が違う');
 	});
 
 	test('aichat という名前を exe 以外が持たない', { skip: win ? false : 'Windows 専用' }, () => {
 		// PATHEXT の順で選ばれるため、両方あるとシェルによって受け手が変わる
-		assert.ok(!existsSync(join(root, 'aichat.cmd')), 'aichat.cmd が残っている');
-		assert.ok(!existsSync(join(root, 'aichat')), '拡張子なしの aichat が残っている');
+		assert.ok(!existsSync(join(root, 'bin', 'aichat.cmd')), 'bin/aichat.cmd が残っている');
+		assert.ok(!existsSync(join(root, 'bin', 'aichat')), '拡張子なしの bin/aichat が残っている');
 	});
 });
 
