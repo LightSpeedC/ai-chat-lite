@@ -532,9 +532,6 @@ footer a {
 }
 
 .todos li {
-	display: flex;
-	align-items: baseline;
-	gap: 9px;
 	padding: 4px 0;
 	background: transparent;
 	color: var(--ink, #1c2330);
@@ -581,7 +578,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 課題</h1>
 		<p class="lead">これから解決すること。片付いたら閉じて残す</p>
-		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-21</p>
+		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-09-22</p>
 	</div>
 </div>
 
@@ -4109,9 +4106,9 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 
 	<div class="groupbody">
 
-		<details class="issue md-flat" id="i260920-01" open>
+		<details class="issue done md-flat" id="i260920-01">
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260920-01</span>
 				初めての待受けは、その日の 0 時と 6 時間前の古い方を起点にする
 			</summary>
@@ -4132,9 +4129,9 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 				<h3>やること</h3>
 
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> 「6 時間前」「その日の 0 時」の判定に使う時刻（JST）と、境界（ちょうど 0 時・ちょうど 6 時間前）の扱いを決める</li>
-					<li><span class="badge b-todo">未</span> <code>server.mjs</code> の該当箇所（<code>handleJoin</code>・<code>handlePoll</code> の <code>getCursor(...) ?? getMaxSeq(...)</code>）を変更する実装計画を立てる</li>
-					<li><span class="badge b-todo">未</span> <a href="#i260909-01">i260909-01</a> の案内文（「参加より前の発言は待ちません」）も、新しい起点に合わせて見直すか検討する</li>
+					<li class="done"><span class="badge b-done">☑</span> 「6 時間前」「その日の 0 時」の判定に使う時刻（JST）と、境界（ちょうど 0 時・ちょうど 6 時間前）の扱いを決める。<a href="../10_plan/i260920-01-初回の起点を早める.html">計画書</a>に記載</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>server.mjs</code> の該当箇所（<code>handleJoin</code>・<code>handlePoll</code> の <code>getCursor(...) ?? getMaxSeq(...)</code>）を変更した。<code>time.mjs</code> に <code>jstTodayMidnight()</code>、<code>store.mjs</code> に <code>getSeqBefore(roomId, ts)</code> を追加し、<code>server.mjs</code> の <code>initialSeq(roomId)</code> がその2つから起点を計算する。<strong>先にサーバー側だけ実装した際は、テストスイート全体が「初参加＝いまから」を前提にルームを使い回しており連鎖的に壊れたため、いったん差し戻して<a href="../10_plan/i260920-01-初回の起点を早める.html">計画書</a>に対策（テストごとに使い捨てルームにする）をまとめてから再実装した</strong>。全テスト通過</li>
+					<li class="done"><span class="badge b-done">☑</span> <a href="#i260909-01">i260909-01</a> の案内文（「参加より前の発言は待ちません」）を、新しい起点に合わせて書き換えた（node 版・Rust 版とも）。「当日 0 時・6 時間前の古い方より前の発言は待ちません」に変更</li>
 				</ul>
 			</div>
 		</details>
@@ -5372,6 +5369,10 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 
 				<p><strong>優先度は低かったが、実装まで完了した。</strong>データが失われるわけではなく（<code>recent</code> で拾える）、案内を厚くする話だった。</p>
 
+				<div class="callout callout-important">
+					<p><strong>関連: <a href="#i260920-01">i260920-01</a>。</strong>ここで前提としていた「初めての接続では参加した時点（<code>getMaxSeq</code>）がカーソルになる」という設計自体を、<a href="#i260920-01">i260920-01</a> で「当日 0 時・6 時間前の古い方」に変更した。この課題の案内文（「参加より前の発言は待ちません」）も、新しい起点に合わせて「当日 0 時・6 時間前の古い方より前の発言は待ちません」に書き換えている（node 版・Rust 版とも）。</p>
+				</div>
+
 				<h3>続きの提案（未）</h3>
 
 				<div class="callout callout-important">
@@ -5382,8 +5383,8 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 
 				<ul class="todos">
 					<li><span class="badge b-todo">未</span> <strong>未読件数を数える手を決める。</strong><code>/api/cursor-status</code> は「読むだけで <code>setCursor</code> を呼ばない」ことが売りなので、そこに件数を足すか、別の口にするかを決める</li>
-					<li><span class="badge b-todo">未</span> <strong>初回は「未読」の起点が無いことをどう扱うか決める。</strong>初めての接続では <code>getMaxSeq</code> が起点になるため、素で数えるとルームの全件になる。「参加より前は待たない」という設計と、出す数の意味が食い違わない形にする</li>
-					<li><span class="badge b-todo">未</span> 決めたら node 版 ・ C# 版の両方に入れ、<code>#709</code> へ返信する</li>
+					<li><span class="badge b-todo">未</span> <strong>初回は「未読」の起点が無いことをどう扱うか決める。</strong><a href="#i260920-01">i260920-01</a> 以降、初めての接続では「当日 0 時・6 時間前の古い方」が起点になる（かつては <code>getMaxSeq</code>＝参加した時点）。素で数えると起点からの件数になるため、「それより前は待たない」という設計と、出す数の意味が食い違わない形にする</li>
+					<li><span class="badge b-todo">未</span> 決めたら node 版 ・ Rust 版の両方に入れ、<code>#709</code> へ返信する</li>
 				</ul>
 			</div>
 		</details>

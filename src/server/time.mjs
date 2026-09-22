@@ -54,6 +54,17 @@ export function jstFromParts(year, month, day, hour, minute, second) {
 }
 
 /**
+ * JST の「その日の 0 時」を、nowJst と同じ書式で返す（i260920-01）。
+ *
+ * jstFromParts と同じ "偽装 UTC" の考え方で、現在時刻に 9 時間足した Date から
+ * 年月日だけを取り出し、時分秒を 0 にする。
+ */
+export function jstTodayMidnight() {
+	const jstNow = new Date(Date.now() + JST_OFFSET_MS);
+	return format(new Date(Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), jstNow.getUTCDate(), 0, 0, 0, 0)));
+}
+
+/**
  * nowJst と同じ書式の文字列を、指定ミリ秒だけずらして返す。
  *
  * recent --since / --before で「今日のその時刻がいまより未来なら 1 日前」

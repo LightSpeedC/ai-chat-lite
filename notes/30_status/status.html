@@ -401,7 +401,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 開発状況</h1>
 		<p class="lead">実装の進み具合と、次にやること</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-21</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-22</p>
 	</div>
 </div>
 
@@ -584,6 +584,11 @@ footer a {
 				<td class="num">30</td><td class="nowrap">CLI 側で確定（ack）を分離した</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
 				<td><strong>cursor の確定を wait から分離するフェーズ2（CLI 側）。</strong>node 版・Rust 版とも <code>wait</code> の応答に含まれる <code>pending</code>（未確定分）を受け取ったら内容を表示し、<code>/api/ack</code> で確定させてから次に進む。フェーズ1（サーバー側）は既にリリース済み。全テスト通過（115 件）。既定の <code>aichat.exe</code> も Rust 版へ差し替えた。<a class="doclink" href="../40_issues/issues.html#i260917-01">i260917-01</a></td>
+			</tr>
+			<tr>
+				<td class="num">31</td><td class="nowrap">初めての待受けの起点を早めた</td>
+				<td class="nowrap"><span class="badge b-ok">完了</span></td>
+				<td><strong>初めての接続の読み始め位置を「参加した時点」から「その日の 0 時と 6 時間前の古い方」に変えた。</strong><code>time.mjs</code> に <code>jstTodayMidnight()</code>、<code>store.mjs</code> に <code>getSeqBefore(roomId, ts)</code> を追加し、<code>server.mjs</code> の <code>initialSeq(roomId)</code> がそこから起点を計算する。<strong>影響を受けたテストは、専用の使い捨てルーム（<code>sandbox-cursor-*</code>）に分離した</strong>。<a href="../40_issues/issues.html#i260909-01">i260909-01</a> の案内文（「参加より前の発言は待ちません」）も新しい起点に合わせて書き換えた（node 版・Rust 版とも）。全テスト通過。<a class="doclink" href="../40_issues/issues.html#i260920-01">i260920-01</a></td>
 			</tr>
 		</tbody>
 	</table>

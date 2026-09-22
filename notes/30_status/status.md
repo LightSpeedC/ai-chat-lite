@@ -2,7 +2,7 @@
 
 実装の進み具合と、次にやること
 
-> 📅 作成: 2026-08-29 / 更新: 2026-09-21
+> 📅 作成: 2026-08-29 / 更新: 2026-09-22
 
 [README へ戻る](../../README.md)
 
@@ -49,6 +49,7 @@
 | 28 | CLI を Rust で書いた | ✅ **完了** | <strong>Mac ・ Linux へ展開すると決めたため C# 版が土俵を降り、Rust 版（`aichat-rs`）を製品として立てた。</strong>14 コマンドすべてを**外部クレートなし**で実装（JSON ・ HTTP ・ 暦の計算・正規表現の代わりを自前で持つ）。定義は `src/client/options.mjs` から出した JSON を `include_str!` で埋め込み、**手で写さない**。**待受け中の実メモリは 6.41 MB で node 版の 1/8**、確保量は 1.00 MB（bun 版の 162 分の 1）。待受けだけの最小実装（111 行）が 4.89 MB だったので、13 コマンドと検証を足して ＋1.5 MB に収まった。**プロセスの一覧だけ OS で分ける**（Windows は `Get-CimInstance`、他は `ps`）。node 版との突き合わせは、サーバーに繋がない 16 通りを `tests/cli-rs.test.mjs`、実サーバーへ繋ぐ 54 通りを `tools/40_test/compare-cli.mjs` で実測。**`waiters` は Windows の API を直に呼ぶ**（`CreateToolhelp32Snapshot` ＋ PEB。Rust 25 ms ・ bun 64 ms ・ node 112 ms で、C# 版 229 ms を下回った。仕組みは Rust が `std` の `extern`、bun が `bun:ffi`、node が `koffi`。失敗したら PowerShell へ落ちる）。[計画](../10_plan/p260913-01-CLIをRustで書く.md)・[i260913-01](../40_issues/issues.md#i260913-01)・[ベンチマーク](../01_research/r260912-01-CLI実装のベンチマーク.md) |
 | 29 | C# 版 CLI を削除した | ✅ **完了** | **node ・ Rust の 2 実装で突き合わせながら進められる状態になったため、対比実装として残していた C# 版を削除した。**`src/cli-cs/` ・ `tests/cli-cs.test.mjs` ・ `tools/20_build/build-aichat.ps1`（cmd 含む）を削除。`tools/40_test/benchmark-cli.ps1` ・ `benchmark-waiters.mjs` から C# 版の行を外し、**CLI は node ・ Rust の 2 本**に。ローカルルール「CLI を直したら 2 本とも直す」・設計書・`.gitignore` も追随させた。過去の計画書・ベンチマーク資料は経緯の記録としてそのまま残す。[i260918-01](../40_issues/issues.md#i260918-01) |
 | 30 | CLI 側で確定（ack）を分離した | ✅ **完了** | <strong>cursor の確定を wait から分離するフェーズ2（CLI 側）。</strong>node 版・Rust 版とも `wait` の応答に含まれる `pending`（未確定分）を受け取ったら内容を表示し、`/api/ack` で確定させてから次に進む。フェーズ1（サーバー側）は既にリリース済み。全テスト通過（115 件）。既定の `aichat.exe` も Rust 版へ差し替えた。[i260917-01](../40_issues/issues.md#i260917-01) |
+| 31 | 初めての待受けの起点を早めた | ✅ **完了** | **初めての接続の読み始め位置を「参加した時点」から「その日の 0 時と 6 時間前の古い方」に変えた。**`time.mjs` に `jstTodayMidnight()`、`store.mjs` に `getSeqBefore(roomId, ts)` を追加し、`server.mjs` の `initialSeq(roomId)` がそこから起点を計算する。**影響を受けたテストは、専用の使い捨てルーム（`sandbox-cursor-*`）に分離した**。[i260909-01](../40_issues/issues.md#i260909-01) の案内文（「参加より前の発言は待ちません」）も新しい起点に合わせて書き換えた（node 版・Rust 版とも）。全テスト通過。[i260920-01](../40_issues/issues.md#i260920-01) |
 
 各ファイルの役割は[設計](../10_plan/p260829-01-設計.md)のフォルダ構成にある。
 

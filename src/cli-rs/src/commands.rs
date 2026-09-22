@@ -68,7 +68,7 @@ pub fn wait(client: &Client, id: &str, room: &str, opts: &WaitOpts) -> Result<()
 			.collect();
 
 		println!(
-			"初めての接続です（{}）。参加より前の発言は待ちません。過去が必要なら recent で取ってください（例）:",
+			"初めての接続です（{}）。当日 0 時・6 時間前の古い方より前の発言は待ちません。それより古い過去が必要なら recent で取ってください（例）:",
 			first.join(", ")
 		);
 		/*

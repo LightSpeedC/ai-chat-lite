@@ -102,6 +102,9 @@ const stmt = {
 	maxSeq: db.prepare(
 		'SELECT COALESCE(MAX(msg_seq), 0) AS max_seq FROM messages WHERE archived_seq IS NULL AND room_id = ?'
 	),
+	seqBefore: db.prepare(
+		'SELECT COALESCE(MAX(msg_seq), 0) AS seq FROM messages WHERE archived_seq IS NULL AND room_id = ? AND sent_at < ?'
+	),
 	/*
 	 * 片付けた行は主キーの枠を占め続ける（connector_id が主キー）。INSERT は必ず
 	 * DO UPDATE に落ちるので、archived_seq = NULL に戻さないと、読み出し側の
@@ -274,6 +277,11 @@ export function getAllMessages() {
 /** そのルームの現在位置。1 件も無ければ 0 */
 export function getMaxSeq(roomId) {
 	return stmt.maxSeq.get(roomId).max_seq;
+}
+
+/** ts より前の最後の msg_seq。1 件も無ければ 0（i260920-01: 初回の起点計算に使う） */
+export function getSeqBefore(roomId, ts) {
+	return stmt.seqBefore.get(roomId, ts).seq;
 }
 
 /**

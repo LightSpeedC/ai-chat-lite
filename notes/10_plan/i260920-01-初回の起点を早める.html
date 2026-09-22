@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>初めての待受けの起点を早める</title>
+<style>
+/* 共通のスタイル。docs\css\style.css と同じ内容を持たせている */
+@charset "UTF-8";
+
+/* ===================================================================
+   ai-chat-lite 共通スタイル
+   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   =================================================================== */
+
+:root {
+	/* 章に依存しない共通色 */
+	--navy1: #12224d;
+	--navy2: #2f5fbf;
+	--ink: #1c2330;
+	--ink-soft: #4a5568;
+	--line: #d9dfe8;
+	--code-bg: #f4f6fa;
+	--link: #1a4fa0;
+
+	/* 章クラスの外に置いた要素が色を失わないための既定値 */
+	--accent: #12224d;
+	--accent2: #2f5fbf;
+	--soft: #f2f5fb;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: #fdfdfe;
+	color: var(--ink, #1c2330);
+	font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+	font-size: 15.5px;
+	line-height: 1.85;
+}
+
+a {
+	color: var(--link, #1a4fa0);
+}
+
+/* ---------- タイトルバー ---------- */
+
+.titlebar {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 34px 30px 30px;
+}
+
+.titlebar .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+}
+
+.titlebar h1 {
+	font-size: 1.85em;
+	margin: 0 0 8px;
+	color: #fff;
+}
+
+.titlebar .lead {
+	margin: 0;
+	color: #d7e2f7;
+	font-size: 0.95em;
+}
+
+.titlebar .date {
+	margin: 10px 0 0;
+	color: #b9caea;
+	font-size: 0.88em;
+}
+
+.titlebar a {
+	color: #cfe0ff;
+}
+
+.titlebar code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+/* ---------- 本文の器 ---------- */
+
+.wrap {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding: 0 30px;
+}
+
+section {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 10px;
+	padding: 4px 26px 26px;
+	margin: 34px 0;
+}
+
+/* ---------- 見出し ---------- */
+
+section h1 {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-size: 1.4em;
+	padding: 14px 20px;
+	margin: 26px 0 20px;
+	border-radius: 8px;
+	box-shadow: 0 3px 10px rgba(20, 34, 70, 0.22);
+}
+
+section h1 code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+h2 {
+	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
+	color: var(--accent, #12224d);
+	font-size: 1.16em;
+	padding: 6px 12px;
+	margin: 30px 0 12px;
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 6px 6px 0;
+}
+
+h3 {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	font-size: 1.02em;
+	display: inline-block;
+	padding-bottom: 3px;
+	margin: 20px 0 8px;
+	border-bottom: 2px dotted var(--accent2, #2f5fbf);
+}
+
+/* ---------- 表 ---------- */
+
+.tablewrap {
+	overflow-x: auto;
+	margin: 14px 0;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 5px rgba(20, 34, 70, 0.10);
+}
+
+th {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	text-align: left;
+	padding: 9px 12px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+th code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+td {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	padding: 9px 12px;
+	border-top: 1px solid var(--line, #d9dfe8);
+	vertical-align: top;
+}
+
+tr:nth-child(even) td {
+	background: #fafbfe;
+	color: var(--ink, #1c2330);
+}
+
+td.num,
+th.num {
+	text-align: right;
+}
+
+td.nowrap,
+th.nowrap {
+	white-space: nowrap;
+}
+
+/* ---------- コード ---------- */
+
+code {
+	background: var(--code-bg, #f4f6fa);
+	color: #17335f;
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 4px;
+	padding: 1px 5px;
+	font-family: "Consolas", "Cascadia Mono", monospace;
+	font-size: 0.92em;
+}
+
+pre {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 5px solid var(--accent2, #2f5fbf);
+	border-radius: 0 8px 8px 0;
+	padding: 13px 16px;
+	overflow-x: auto;
+	line-height: 1.65;
+}
+
+pre code {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	border: none;
+	padding: 0;
+	font-size: 0.92em;
+}
+
+/* ---------- バッジ ---------- */
+
+.badge {
+	display: inline-block;
+	padding: 1px 9px;
+	margin-right: 6px;
+	border-radius: 11px;
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+	font-size: 0.84em;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.badge.b-ok {
+	background: linear-gradient(100deg, #1d7a3c, #45b56c);
+	color: #fff;
+}
+
+.badge.b-ng {
+	background: linear-gradient(100deg, #a51f22, #e05a5c);
+	color: #fff;
+}
+
+.badge.b-warn {
+	background: linear-gradient(100deg, #b8620a, #f0a548);
+	color: #fff;
+}
+
+.badge.b-none {
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+}
+
+/* ---------- callout ---------- */
+
+.callout {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 8px 8px 0;
+	padding: 12px 18px;
+	margin: 16px 0;
+}
+
+.callout strong {
+	color: var(--accent, #12224d);
+	background: transparent;
+}
+
+.callout p {
+	margin: 6px 0;
+}
+
+/* ---------- 目次 ---------- */
+
+.toc ol {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 0;
+	margin: 12px 0 4px;
+}
+
+.toc ul a {
+	color: var(--link, #1a4fa0);
+	background: transparent;
+}
+
+.toc ol li {
+	counter-increment: tocnum;
+	margin: 0;
+}
+
+.toc ol a {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: normal;
+	width: 310px;
+	max-width: 100%;
+	padding: 7px 13px;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+	line-height: 1.45;
+}
+
+.toc ol a::before {
+	content: counter(tocnum) ". ";
+	font-weight: 700;
+}
+
+/* ---------- 資料リンク・戻るリンク ---------- */
+
+.navlinks {
+	margin: 20px 0 0;
+}
+
+a.doclink {
+	display: inline-block;
+	padding: 3px 12px;
+	margin: 0 8px 6px 0;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	font-size: 0.9em;
+	text-decoration: none;
+}
+
+/* ---------- フッター ---------- */
+
+footer {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 18px 30px 0;
+	margin-top: 40px;
+}
+
+footer .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding-bottom: 18px;
+}
+
+footer a {
+	color: #cfe0ff;
+}
+</style>
+<style>
+/* この資料だけのもの: 章のアクセント色（4章 / 色相 280→0 を 3 分割）と目次の採番 */
+.ch01 { --accent: hsl(280.0, 78%, 25%); --accent2: hsl(280.0, 58%, 55%); --soft: hsl(280.0, 28%, 95%); }
+.ch02 { --accent: hsl(186.7, 78%, 25%); --accent2: hsl(186.7, 58%, 55%); --soft: hsl(186.7, 28%, 95%); }
+.ch03 { --accent: hsl( 93.3, 78%, 25%); --accent2: hsl( 93.3, 58%, 55%); --soft: hsl( 93.3, 28%, 95%); }
+.ch04 { --accent: hsl(  0.0, 78%, 25%); --accent2: hsl(  0.0, 58%, 55%); --soft: hsl(  0.0, 28%, 95%); }
+.toc ol { counter-reset: tocnum; }
+</style>
+</head>
+
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>初めての待受けの起点を早める</h1>
+		<p class="lead">初参加の読み始め位置を「参加した時点」から「その日の 0 時と 6 時間前の古い方」に変える。テストへの影響を先に洗い出す</p>
+		<p class="date">📅 作成: 2026-09-21 / 更新: 2026-09-22</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+<p><a href="../40_issues/issues.html#i260920-01">i260920-01</a>（利用者からの提案）の実装計画。<strong>一度サーバー本体（<code>server.mjs</code>・<code>store.mjs</code>・<code>time.mjs</code>）だけ先に直して動作確認したところ、既存のテストが連鎖的に壊れることが分かった。</strong>その洗い出しと対策を先に固めてから、あらためて実装する。</p>
+
+<section class="toc md-skip">
+	<h2>目次</h2>
+	<ol>
+		<li class="ch01"><a href="#ch01">何を作るか</a></li>
+		<li class="ch02"><a href="#ch02">分かった問題（テストへの影響）</a></li>
+		<li class="ch03"><a href="#ch03">対策</a></li>
+		<li class="ch04"><a href="#ch04">作るものと確かめること</a></li>
+	</ol>
+</section>
+
+<!-- ================= 01 ================= -->
+<section class="ch01" id="ch01">
+	<h1>何を作るか</h1>
+
+	<p><strong>初めての接続（カーソルが無い状態）の起点を、現行の「参加した時点（<code>getMaxSeq</code>）」から、「その日の 0 時」と「6 時間前」のうち古い方に変える。</strong>深夜早い時間帯（例: 0 時台）に初めて繋いだ場合、「その日の 0 時」だけだと直近 1 時間程度しか遡らない。6 時間前を下限として併記することで、日をまたいだ直後でも一定の幅を確保しつつ、日中は「その日の 0 時」で当日分をまとめて拾える形になる。</p>
+
+	<h2>変える箇所</h2>
+
+	<p><code>server.mjs</code> の <code>getCursor(...) ?? getMaxSeq(...)</code> という起点ロジック（<code>handleJoin</code>・<code>handlePoll</code> の 2 か所）。<code>getMaxSeq(roomId)</code> の代わりに、新しい起点（「0 時」と「6 時間前」の古い方より前の最後の <code>msg_seq</code>）を返す関数に差し替える。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">関連する既存課題</th><th>内容</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap"><a href="../40_issues/issues.html#i260909-01">i260909-01</a>（済）</td><td>現行の「参加した時点＝<code>getMaxSeq</code>」という設計そのものを扱った課題。読んでいても初回は踏むという報告を受け、<code>wait</code> 起動時の案内（<code>recent</code> の見本を出す）を足す形で対応済み。<strong>今回の提案は、この設計自体を変える恒久対策の位置づけ</strong></td></tr>
+			<tr><td class="nowrap"><a href="../40_issues/issues.html#i260908-01">i260908-01</a>（済）</td><td><code>getCursor(...) ?? getMaxSeq(...)</code> という起点ロジックの実装箇所を扱ったバグ修正。今回変更するのは同じ箇所</td></tr>
+		</tbody>
+	</table>
+	</div>
+</section>
+
+<!-- ================= 02 ================= -->
+<section class="ch02" id="ch02">
+	<h1>分かった問題（テストへの影響）</h1>
+
+	<div class="callout callout-caution">
+		<p><strong>テストスイート全体が「初参加＝いまから（未来分のみ）」という前提でルームを使い回している。</strong>実装を入れた瞬間、既存テストが連鎖的に壊れた。<code>public</code> ルームだけでもテスト内で数百件の発言がすでに積まれており、新しい参加者が「6 時間前・当日 0 時のどちらか古い方」から読むと、他のテストが積んだ過去分をすべて未読として受け取ってしまう。</p>
+	</div>
+
+	<p>実際に確認できた壊れ方の例（<code>tests/server.test.mjs</code>）。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">テスト名</th><th>壊れ方</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap">since を省略すると、参加した時点から待つ</td><td>「過去のぶんは返らない」の前提が崩れ、それまでのテストが積んだ 27 件が pending/messages に出る</td></tr>
+			<tr><td class="nowrap">位置はルームごとに別々</td><td>同様に「dev は初めてなので今から」が崩れる</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p><strong>この 2 件以外にも波及する可能性が高い</strong>（未確認）。新規 <code>connector_id</code> で <code>join</code>／<code>poll</code> を呼び「空で返る」ことを前提にしているテストは、テストファイル全体でいくつあるか数え直す必要がある。</p>
+
+	<h2>なぜ気づかなかったか</h2>
+
+	<p>これまでの初回起点（<code>getMaxSeq</code>＝いま）は、<strong>時刻に依存しない値</strong>だったため、テスト同士が同じ <code>public</code> ルームを共有していても互いに干渉しなかった。今回の変更は<strong>時刻ベースの起点</strong>を持ち込むため、「同じルームを使い回すテスト設計」自体と相性が悪い。</p>
+</section>
+
+<!-- ================= 03 ================= -->
+<section class="ch03" id="ch03">
+	<h1>対策</h1>
+
+	<p>案を 2 つ比較する。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">案</th><th>内容</th><th>長所</th><th>短所</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap">A（推奨）<br>テストごとに専用ルーム</td><td>初回起点の影響を受けるテストは、<code>room_id</code> をテスト固有の使い捨て名にする（他のテストの発言と混ざらない）</td><td>本番のロジックには手を入れない。テストの独立性が上がる（本来望ましい設計）</td><td>該当テストの洗い出しと書き換えが要る（件数次第で作業量が増える）</td></tr>
+			<tr><td class="nowrap">B<br>テスト用に基準時刻を差し替え可能にする</td><td><code>initialSeq</code> が使う「いま」を注入可能にし、テストから「6 時間より前」を明示的に作る</td><td>ルームの使い回しを変えずに済む</td><td>本番コードにテスト専用の分岐が増える。「同期 API は〜」と同種の、プロダクションコードへのテスト都合の混入になりやすい</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-important">
+		<p><strong>A を採用（利用者の承認済み）。</strong>理由: 本番ロジックを単純に保てること、そして「テストが同じルームを共有して過去ログに依存する」設計自体が、今回の機能追加とは無関係にも脆さを抱えていたため（ついでに直す価値がある）。</p>
+	</div>
+
+	<h2>A の具体的な進め方</h2>
+
+	<ol>
+		<li><code>tests/server.test.mjs</code>を通しで読み、「新規 <code>connector_id</code> で参加 → 空を期待する」テストを洗い出す</li>
+		<li>該当テストのうち、<code>room_id</code> を明示していないもの（＝既定の <code>public</code> を使っているもの）に、そのテスト専用の <code>room_id</code> を明示する。<strong>命名は既存の使い捨てルームの慣習（<code>sandbox-other</code>・<code>sandbox-archived</code>）に合わせ、<code>sandbox-cursor-*</code> にした</strong>（<code>sandbox-cursor-empty</code>・<code>sandbox-cursor-recent</code>・<code>sandbox-cursor-room2</code>）</li>
+		<li><code>public</code>・<code>dev</code> など複数テストで共有されているルーム名は、よほど「共有されていることを検証したい」テスト（在席・複数ルーム待受け等）以外では使わない方針にする</li>
+	</ol>
+
+	<div class="callout callout-tip">
+		<p><strong>ルームを分けただけでは足りなかった。</strong>「初参加は空」と主張していた既存テストの前提自体が、今回の機能追加（直近分は初参加でも届く）と正面から矛盾する。ルームを分離したうえで、<strong>アサーションを新しい仕様（直近の投稿は初参加でも届く）に合わせて書き換えた</strong>。「空のルームでは、初めての参加でも何も届かない」（本当に何も無い場合）と、「直近に投稿された分は、初めての参加でも届く」（i260920-01 の本題）の 2 本に分けている。</p>
+	</div>
+</section>
+
+<!-- ================= 04 ================= -->
+<section class="ch04" id="ch04">
+	<h1>作るものと確かめること</h1>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">ファイル</th><th>変えること</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap"><code>src/server/time.mjs</code></td><td><code>jstTodayMidnight()</code> を追加（その日の 0 時を <code>nowJst</code> と同じ書式で返す）</td></tr>
+			<tr><td class="nowrap"><code>src/server/store.mjs</code></td><td><code>getSeqBefore(roomId, ts)</code> を追加（ts より前の最後の <code>msg_seq</code>。1 件も無ければ 0）</td></tr>
+			<tr><td class="nowrap"><code>src/server/server.mjs</code></td><td><code>initialSeq(roomId)</code> を追加し、<code>handleJoin</code>・<code>handlePoll</code> の <code>getMaxSeq(...)</code> フォールバックを置き換える</td></tr>
+			<tr><td class="nowrap"><code>tests/server.test.mjs</code>・<code>tests/client-wait.test.mjs</code></td><td>2 章の対策 A に沿って、影響を受けるテストのルームを使い捨て名にする</td></tr>
+			<tr><td class="nowrap"><code>notes/40_issues/issues.html</code></td><td>実装後、i260920-01 を完了に更新</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>確かめること</h2>
+
+	<ol>
+		<li>全テストが通ること（このセッションで確認した 2 件を含め、影響を受ける分すべて）</li>
+		<li><a href="../40_issues/issues.html#i260909-01">i260909-01</a> の案内文（「参加より前の発言は待ちません」）を、新しい起点に合わせて見直す</li>
+	</ol>
+
+	<div class="callout callout-important">
+		<p><strong>境界（ちょうど 0 時・ちょうど 6 時間前）専用の単体テストは見送った。</strong>時刻を差し替え可能にするテスト専用フックを本番コードに足すと、3 章で退けた「案 B」（テスト都合の分岐を本番に混入させる）に逆戻りするため。<code>getSeqBefore</code> 自体は <code>ts</code> を素直に受け取る関数なので、境界の正しさ（<code>sent_at &lt; ts</code>）はコード読解で確認できる。</p>
+	</div>
+</section>
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+</div>
+</body>
+</html>

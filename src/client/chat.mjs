@@ -652,9 +652,11 @@ async function cmdWait() {
 	/*
 	 * 初めての接続なら案内を出す（i260909-01）。
 	 *
-	 * 「参加より前の発言は待たない」（USAGE「どこまで読んだかは覚えている」）は
-	 * 資料に書いてあるが、読んでいても初回は踏むという報告があった。過去ログを
-	 * 自動で流し込むのではなく、recent で自分から取りに行く形を案内するだけにする。
+	 * かつては「参加より前の発言は待たない」だったが、i260920-01 で初回の起点を
+	 * 「当日 0 時・6 時間前の古い方」に変えたため、その起点より前だけが対象になった
+	 * （USAGE「どこまで読んだかは覚えている」）。資料に書いてあるが、読んでいても
+	 * 初回は踏むという報告があった。それより古い過去ログを自動で流し込むのではなく、
+	 * recent で自分から取りに行く形を案内するだけにする。
 	 */
 	const cursorStatus = await call(
 		`/api/cursor-status?connector_id=${encodeURIComponent(CONNECTOR_ID)}&room_id=${encodeURIComponent(ROOM)}`
@@ -667,7 +669,7 @@ async function cmdWait() {
 		 * （first_time はいずれか 1 つでも初めてなら true）。
 		 */
 		const firstRooms = cursorStatus.rooms.filter((r) => r.first_time).map((r) => r.room_id);
-		console.log(`初めての接続です（${firstRooms.join(', ')}）。参加より前の発言は待ちません。過去が必要なら recent で取ってください（例）:`);
+		console.log(`初めての接続です（${firstRooms.join(', ')}）。当日 0 時・6 時間前の古い方より前の発言は待ちません。それより古い過去が必要なら recent で取ってください（例）:`);
 		/*
 		 * 見本には -r を必ず付ける（レビュー #21 high 3）。
 		 *

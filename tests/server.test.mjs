@@ -713,41 +713,72 @@ test('serveStatic は生の .. パスを渡されても WEB_DIR の外に出さ�
 
 // --- どこまで読んだかをサーバーが覚える ---
 
-test('since を省略すると、参加した時点から待つ', async () => {
-	// 過去ログを流し込まないようにするため、初参加は「今から」になる
-	await post('/api/join', { connector_id: 'test-reader', connector_role: 'ai' });
-	const { json } = await get('/api/poll?connector_id=test-reader&wait=0');
-	assert.deepEqual(json.messages, [], '過去のぶんは返らない');
+/*
+ * このブロックのテストは、他のテストが積んだ過去ログの影響を受けないよう
+ * 専用のルーム（sandbox-cursor-*）を使う（i260920-01）。public・dev のような
+ * 使い回しのルームは、ファイル全体で数百件が積まれた状態になっており、
+ * 初回の起点が「6 時間前・当日 0 時の古い方」になった今は、他のテストの
+ * 発言まで未読として拾ってしまう。
+ */
+
+test('空のルームでは、初めての参加でも自分の参加通知しか届かない', async () => {
+	/*
+	 * join 自体が「○○ が参加しました」を積む。この投稿は初参加の直後（「今」）に
+	 * 起きるため、i260920-01 の起点（6 時間前・当日 0 時の古い方）より新しく、
+	 * 本人の最初の poll でも未読として届く。他人の過去ログが無いことを確かめる
+	 * のが目的なので、「自分の参加通知だけ」であることを見る
+	 */
+	await post('/api/join', { connector_id: 'test-reader', connector_role: 'ai', room_id: 'sandbox-cursor-empty' });
+	const { json } = await get('/api/poll?connector_id=test-reader&room_id=sandbox-cursor-empty&wait=0');
+	assert.equal(json.messages.length, 1);
+	assert.equal(json.messages[0].msg_kind, 'join');
+	assert.equal(json.messages[0].from_connector_id, 'test-reader');
+});
+
+test('直近に投稿された分は、初めての参加でも届く（i260920-01）', async () => {
+	// 参加より前に投稿されていても、6 時間前・当日 0 時より新しければ未読として届く
+	await post('/api/say', { room_id: 'sandbox-cursor-recent', from_connector_id: 'test-connector1', msg_body: '参加前の発言' });
+
+	const { json } = await get('/api/poll?connector_id=test-reader&room_id=sandbox-cursor-recent&wait=0');
+	assert.equal(json.messages.length, 1);
+	assert.equal(json.messages[0].msg_body, '参加前の発言');
 });
 
 test('受け取ったら位置が進み、次は続きから届く', async () => {
-	await post('/api/say', { from_connector_id: 'test-connector1', msg_body: 'カーソルの確認 1' });
+	await post('/api/say', { room_id: 'sandbox-cursor-recent', from_connector_id: 'test-connector1', msg_body: 'カーソルの確認 1' });
 
-	const first = await get('/api/poll?connector_id=test-reader&wait=0');
+	const first = await get('/api/poll?connector_id=test-reader&room_id=sandbox-cursor-recent&wait=0');
 	assert.equal(first.json.messages.length, 1);
 	assert.equal(first.json.messages[0].msg_body, 'カーソルの確認 1');
 
 	// 同じ呼び方でも、もう一度は返らない
-	const again = await get('/api/poll?connector_id=test-reader&wait=0');
+	const again = await get('/api/poll?connector_id=test-reader&room_id=sandbox-cursor-recent&wait=0');
 	assert.deepEqual(again.json.messages, [], '受け取った分が繰り返し返っている');
 
-	await post('/api/say', { from_connector_id: 'test-connector1', msg_body: 'カーソルの確認 2' });
-	const next = await get('/api/poll?connector_id=test-reader&wait=0');
+	await post('/api/say', { room_id: 'sandbox-cursor-recent', from_connector_id: 'test-connector1', msg_body: 'カーソルの確認 2' });
+	const next = await get('/api/poll?connector_id=test-reader&room_id=sandbox-cursor-recent&wait=0');
 	assert.equal(next.json.messages.length, 1);
 	assert.equal(next.json.messages[0].msg_body, 'カーソルの確認 2');
 });
 
 test('位置はルームごとに別々', async () => {
-	await post('/api/say', { room_id: 'dev', from_connector_id: 'test-connector1', msg_body: 'dev の発言' });
+	// sandbox-cursor-recent 側の位置は進んでいるが、別ルームは初めてなので参加時点相当から
+	await post('/api/say', { room_id: 'sandbox-cursor-room2', from_connector_id: 'test-connector1', msg_body: 'room2 の発言' });
 
-	// public 側の位置は進んでいるが、dev は初めてなので参加時点から
-	const dev = await get('/api/poll?connector_id=test-reader&room_id=dev&wait=0');
-	assert.deepEqual(dev.json.messages, [], 'dev は初めてなので今から');
+	// 新しいルームでも、直近の投稿は初参加で届く（上と同じ i260920-01 の仕様）
+	const room2 = await get('/api/poll?connector_id=test-reader&room_id=sandbox-cursor-room2&wait=0');
+	assert.equal(room2.json.messages.length, 1);
+	assert.equal(room2.json.messages[0].msg_body, 'room2 の発言');
 
-	await post('/api/say', { room_id: 'dev', from_connector_id: 'test-connector1', msg_body: 'dev の 2 つ目' });
-	const devNext = await get('/api/poll?connector_id=test-reader&room_id=dev&wait=0');
-	assert.equal(devNext.json.messages.length, 1);
-	assert.equal(devNext.json.messages[0].msg_body, 'dev の 2 つ目');
+	// 受け取った分はそれぞれのルームで独立して進む
+	await post('/api/say', { room_id: 'sandbox-cursor-room2', from_connector_id: 'test-connector1', msg_body: 'room2 の 2 つ目' });
+	const room2Next = await get('/api/poll?connector_id=test-reader&room_id=sandbox-cursor-room2&wait=0');
+	assert.equal(room2Next.json.messages.length, 1);
+	assert.equal(room2Next.json.messages[0].msg_body, 'room2 の 2 つ目');
+
+	// sandbox-cursor-recent 側は room2 の投稿の影響を受けない（このテスト時点で受け取り済みのため空のまま）
+	const recentAgain = await get('/api/poll?connector_id=test-reader&room_id=sandbox-cursor-recent&wait=0');
+	assert.deepEqual(recentAgain.json.messages, [], 'ルームをまたいで位置が混ざっていない');
 });
 
 /*

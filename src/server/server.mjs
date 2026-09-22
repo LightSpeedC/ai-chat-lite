@@ -7,9 +7,9 @@ import {
 	VERSION, STARTED_AT, IS_TEST, TEST_ACCESS_TOKEN,
 } from './config.mjs';
 import { log } from './log.mjs';
-import { nowJst } from './time.mjs';
+import { nowJst, jstTodayMidnight, jstBefore } from './time.mjs';
 import {
-	addMessage, getSince, getLatest, getBefore, getFiltered, getMaxSeq,
+	addMessage, getSince, getLatest, getBefore, getFiltered, getMaxSeq, getSeqBefore,
 	joinConnector, touchConnector, addConnection, removeConnection, listRooms,
 	getCursor, setCursor, getAckedSeq, setAcked, getRange, closeDb, getConnector,
 	previewArchive, archive, restore, listArchives, getAllMessages,
@@ -248,6 +248,21 @@ export function sweepOffline() {
 	return gone;
 }
 
+/**
+ * 初めて参加するルームの読み始め位置（i260920-01）。
+ *
+ * 「その日の 0 時」と「6 時間前」のうち古い方を起点にする。深夜早い時間帯に
+ * 初めて繋いだ場合、0 時だけだと直近 1 時間程度しか遡らないため、6 時間前を
+ * 下限として併記する。起点より前の最後の msg_seq を「既読」として cursor に
+ * 置き、それより新しい分（起点以降）を未読として届ける。
+ */
+function initialSeq(roomId) {
+	const midnight = jstTodayMidnight();
+	const sixHoursAgo = jstBefore(6 * 3600 * 1000);
+	const since = midnight < sixHoursAgo ? midnight : sixHoursAgo;
+	return getSeqBefore(roomId, since);
+}
+
 // --- 各エンドポイント ---
 
 async function handleJoin(req, res) {
@@ -266,7 +281,7 @@ async function handleJoin(req, res) {
 	}
 	// 初めてのときだけ、参加した時点を読み始めの位置にする。
 	// すでに読んでいる位置があれば触らない（未読を飛ばさないため）
-	if (getCursor(connectorId, roomId) === null) setCursor(connectorId, roomId, getMaxSeq(roomId));
+	if (getCursor(connectorId, roomId) === null) setCursor(connectorId, roomId, initialSeq(roomId));
 
 	broadcastPresence();
 
@@ -356,7 +371,7 @@ async function handlePoll(req, res, url) {
 			hasSince
 				? numberOf(sinceParam, 0)
 				: connectorId
-					? (getCursor(connectorId, roomId) ?? getMaxSeq(roomId))
+					? (getCursor(connectorId, roomId) ?? initialSeq(roomId))
 					: 0,
 		);
 	}
