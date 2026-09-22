@@ -144,7 +144,7 @@ DB の形が揃っていません（足りないテーブル: messages cursors c
 
 > [!IMPORTANT]
 > **かつては読み込むだけで DB ができていた。**`store.mjs` に `CREATE TABLE IF NOT EXISTS` があった頃、`AICHAT_DATA` を立てずに読み込むと本番の DB にテーブルが作られた。
-> 実際に起き、版 3 で足すはずの `archives` が先にできてしまい、**版 3 を当てると「already exists」で止まる**状態になった（[i260902-01](../40_issues/issues.md#i260902-01)）。いまは止まるので、同じことは起きない。
+> 実際に起き、版 3 で足すはずの `archives` が先にできてしまい、**版 3 を当てると「already exists」で止まる**状態になった（[i260902-01](../40_issues/issues.md#i260902-01-storemjs-を読み込むだけで本番の-db-を掴んでしまう)）。いまは止まるので、同じことは起きない。
 
 > [!CAUTION]
 > <strong>版の SQL を `IF NOT EXISTS` に書き換えて逃げない。</strong>指紋が変わるため、すでに当て済みの環境（テスト環境など）で「書き換えられています」と出て起動が止まる。

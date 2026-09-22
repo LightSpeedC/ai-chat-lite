@@ -37,7 +37,7 @@
 
 ## 2. CLI を直したら 2 本とも直す
 
-<strong>CLI は node 版（`src/client/chat.mjs`）と Rust 版（`src/cli-rs/`）の 2 本ある。</strong>既定の `aichat` を受けるのは Rust 版。**かつて C# 版（`src/cli-cs/`）も対比実装として持っていたが、[i260918-01](../40_issues/issues.md#i260918-01) で削除した。**
+<strong>CLI は node 版（`src/client/chat.mjs`）と Rust 版（`src/cli-rs/`）の 2 本ある。</strong>既定の `aichat` を受けるのは Rust 版。**かつて C# 版（`src/cli-cs/`）も対比実装として持っていたが、[i260918-01](../40_issues/issues.md#i260918-01-aichat-cli-の-c-実装を削除できないか検討する) で削除した。**
 
 | 守ること | 中身 |
 |---|---|

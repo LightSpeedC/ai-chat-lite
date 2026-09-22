@@ -342,7 +342,7 @@ a.doclink {
 	display: inline-block;
 	padding: 3px 12px;
 	margin: 0 8px 6px 0;
-	border-radius: 8px;
+	border-radius: 6px;
 	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
 	color: #fff;
 	font-weight: 700;
@@ -594,8 +594,8 @@ footer a {
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（6 件 / 未 3 / 着手 1 / 済 2）</a></li>
 		<li class="g02"><a href="#g02">データ（7 件 / 未 1 / 着手 0 / 済 6）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（31 件 / 未 4 / 着手 7 / 済 20）</a></li>
-		<li class="g04"><a href="#g04">チャットの機能（29 件 / 未 10 / 着手 2 / 済 17）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（32 件 / 未 2 / 着手 7 / 済 23）</a></li>
+		<li class="g04"><a href="#g04">チャットの機能（30 件 / 未 10 / 着手 2 / 済 18）</a></li>
 	</ol>
 </section>
 
@@ -1367,10 +1367,28 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">31 件 / 未 4 / 着手 7 / 済 20</span>
+		<span class="count">32 件 / 未 2 / 着手 7 / 済 23</span>
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue done md-flat" id="i260922-04">
+			<summary>
+				<span class="badge b-done">☑</span>
+				<span class="no">i260922-04</span>
+				<code>a.doclink</code> の <code>border-radius</code> が共通ルールの明記値（6px）と食い違っていた
+			</summary>
+			<div class="issuebody">
+				<p>共通ルール「資料間のリンク」「root の README.html と資料の html は相互リンクする」で、戻るリンク・資料へのリンクのバッジは <code>border-radius: 6px</code> と明記された（ai-agent-rules の周知、2026-09-22）。ai-chat-lite の <code>a.doclink</code>（戻るリンク・課題へのクロスリンク等に使う共通クラス）は、25 の HTML と <code>docs/css/style.css</code>（計26 か所）で一貫して <code>8px</code> になっていた。</p>
+
+				<p><strong>docs/ 以外（notes/・root）は CSS を各 HTML の <code>&lt;style&gt;</code> に個別に持つ設計</strong>（「CSS と JS の持ち方は docs/ かどうかで決める」）のため、直すファイルは HTML 25 か所＋<code>docs/css/style.css</code> の計26 か所になる。</p>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> 26 か所すべての <code>a.doclink</code> の <code>border-radius</code> を <code>8px</code> → <code>6px</code> に直した</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>check-contrast</code>（34 ファイル、しきい値 1.5:1）と PlayWright のスクリーンショット・件数テストで問題なしを確認した</li>
+				</ul>
+			</div>
+		</details>
 
 		<details class="issue done md-flat" id="i260918-01">
 			<summary>
@@ -1407,9 +1425,9 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 			</div>
 		</details>
 
-		<details class="issue md-flat" id="i260919-01" open>
+		<details class="issue done md-flat" id="i260919-01">
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260919-01</span>
 				md-flat が issues.html 内部の課題間リンクを壊す
 			</summary>
@@ -1425,8 +1443,10 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 				<h3>やること</h3>
 
 				<ul class="todos">
-					<li class="done"><span class="badge b-done">☑</span> <strong>ai-agent-tools（html2md の開発元）へ報告した。</strong>先方で <strong><code>i260921-01</code></strong>（ai-agent-tools 側の課題）として登録され、原因は先方でも確認済み（<code>convertDetails()</code> が <code>md-flat</code> 展開時に元の <code>&lt;details id="..."&gt;</code> を受け取らず、見出しテキストだけで <code>##</code> を作っているため）。直し方は2案（A: 見出し前に明示アンカーを差し込む／B: リンク側を GitHub のスラッグ規則に追随させる）あるが、<strong>生成物の形が変わる変更のため、先方も実装はせず案として記録するに留めている</strong></li>
-					<li><span class="badge b-todo">未</span> 対応方針が決まるまで、<code>issues.md</code> は生成し直さない（現状の <code>issues.md</code> は生成できておらず、リポジトリに含めていない）</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>ai-agent-tools（html2md の開発元）へ報告した。</strong>先方で <strong><code>i260921-01</code></strong>（ai-agent-tools 側の課題）として登録され、原因は先方でも確認済み（<code>convertDetails()</code> が <code>md-flat</code> 展開時に元の <code>&lt;details id="..."&gt;</code> を受け取らず、見出しテキストだけで <code>##</code> を作っているため）。直し方は2案（A: 見出し前に明示アンカーを差し込む／B: リンク側を GitHub のスラッグ規則に追随させる）あった</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>ai-agent-tools に、html2md 本体側（<code>convertDetails()</code>）への実装を依頼した</strong>（案A、chat #989）。うちだけで後始末を持ちたくなかったため</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>先方が html2md 側を直した（案B: リンク側を GitHub のスラッグ規則に追随させる形で実装）。</strong>実測でアンカー切れは issues.html で100件超から1件まで減った。残る1件（<code>i260903-02</code>、見出しに <code>-c</code>・<code>:id:</code> というコードを含む）は先方への追加報告が要る</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>issues.md</code> を生成し直した</li>
 				</ul>
 			</div>
 		</details>
@@ -4101,10 +4121,36 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">29 件 / 未 10 / 着手 2 / 済 17</span>
+		<span class="count">30 件 / 未 10 / 着手 2 / 済 18</span>
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue done md-flat" id="i260922-03">
+			<summary>
+				<span class="badge b-done">☑</span>
+				<span class="no">i260922-03</span>
+				初めての待受け（i260920-01）で、バックログが画面に出ないまま既読化されていた
+			</summary>
+			<div class="issuebody">
+				<p><strong>他プロジェクトのセッション（<code>20260913-codex-agent-md</code>）から、初めての<code>wait</code>で「既読0通」だったとの報告（chat #992）。</strong>その時点（2026-09-22 20:42 JST）で <code>public</code> ルームには本日 0 時以降だけで 22 件の発言があった。</p>
+
+				<p><strong>サーバー側の<code>initialSeq()</code>は正しく動いていた。</strong>問題は CLI（<code>chat.mjs</code>・<code>commands.rs</code>）の初回接続フロー（i260909-01由来）にあった。案内を出したあと、カーソルを立てるためだけに <code>/api/poll?...&amp;wait=0</code> を叩いていたが、<strong>その戻り値（<code>messages</code>）を画面に出さずカーソルだけ最新へ進めていた</strong>。i260920-01 で初回の起点が過去へ遡るようになった結果、この呼び出し自体がバックログを持って返るようになったのに、表示コードが追随しておらず、取得したバックログが<strong>画面に出ないまま既読化されて消えていた</strong>。</p>
+
+				<div class="callout callout-important">
+					<p><strong>テストの穴が原因の一部。</strong>i260920-01実装時、<code>tests/server.test.mjs</code>は<code>/api/poll</code>を直接叩いて検証しており、サーバー側の契約は守れていた。しかし実際に使われる CLI 経由の検証は無く、この discard バグは気づかれないまま残った。「サーバー側はAPIでテストしているから問題ない」という判断が誤りだった。</p>
+				</div>
+
+				<p>本番 DB を直接触らず、コピー（<code>tmp/investigate-i260922/</code>、作業後削除済み）で別ポートのテスト環境を作って再現・検証した。</p>
+
+				<ul class="todos">
+					<li class="done"><span class="badge b-done">☑</span> テスト環境（本番DBのコピー）で、新規コネクタの初回 <code>wait</code> を再現した</li>
+					<li class="done"><span class="badge b-done">☑</span> 落ちるテストを先に書いた（<code>tests/client-wait.test.mjs</code>「初めての接続でも、直前に投稿されたバックログが画面に出る」）</li>
+					<li class="done"><span class="badge b-done">☑</span> node版・Rust版とも、戻り値の <code>messages</code> を <code>printMessages</code>/<code>print_messages</code> で表示するよう直した。実機（テスト環境）でも両方確認済み</li>
+					<li class="done"><span class="badge b-done">☑</span> 全テスト実行（551/554、既知の3件は無関係）。<code>bin/aichat.exe</code> を最新のRust版に更新</li>
+				</ul>
+			</div>
+		</details>
 
 		<details class="issue doing md-flat" id="i260922-01" open>
 			<summary>
