@@ -90,17 +90,32 @@ pub fn wait(client: &Client, id: &str, room: &str, opts: &WaitOpts) -> Result<()
 		 * 対象は初めてのルームだけに絞る。全体に対して呼ぶと、既存カーソルを持つ
 		 * ルームの未読まで取得したうえで画面に出さず、カーソルだけ最新に進めてしまう。
 		 * 取りこぼしではなく「表示せずに既読化する」形のデータ消失になる（i260909-03）。
+		 *
+		 * 【i260920-01 との組み合わせで踏んだ事故（i260922-03）】
+		 * 初回の起点が「参加時点」だった間は、この呼び出しは常に空振りだった。
+		 * i260920-01 で起点が過去（0 時・6 時間前の古い方）まで遡るようになり、
+		 * この呼び出し自体がバックログを持って返ってくるようになったのに、
+		 * 戻り値を捨てたままカーソルだけ進めていたため、そのバックログは
+		 * 画面に一度も出ないまま既読化されて消えていた。捨てずに表示する。
 		 */
-		client.call(
+		let caught_up = client.call(
 			"GET",
 			&format!(
-				"/api/poll?connector_id={}&room_id={}&wait=0",
+				"/api/poll?connector_id={}&room_id={}&wait=0{}",
 				encode_query(id),
-				encode_query(&first.join(","))
+				encode_query(&first.join(",")),
+				exclude
 			),
 			None,
 			None,
 		)?;
+		let empty_messages: Vec<Json> = Vec::new();
+		let messages = caught_up.get("messages").and_then(|v| v.as_arr()).unwrap_or(&empty_messages);
+		if !messages.is_empty() {
+			println!("直近の {} 件が届きました:", messages.len());
+			print_messages(messages);
+			println!();
+		}
 		println!("カーソルを立てました。改めて wait を実行してください。");
 		return Ok(());
 	}

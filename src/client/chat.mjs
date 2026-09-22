@@ -700,8 +700,22 @@ async function cmdWait() {
 		 * 実際には取得したうえで、画面に出さないままカーソルだけ最新に
 		 * 進めてしまう。取りこぼしではなく「表示せずに既読化する」形の
 		 * データ消失になる（実際に他プロジェクトから報告があった事故。i260909-03）
+		 *
+		 * 【i260920-01 との組み合わせで踏んだ事故（i260922-03）】
+		 * 初回の起点が「参加時点」だった間は、この呼び出しは常に空振りだった。
+		 * i260920-01 で起点が過去（0 時・6 時間前の古い方）まで遡るようになり、
+		 * この呼び出し自体がバックログを持って返ってくるようになったのに、
+		 * 戻り値を捨てたままカーソルだけ進めていたため、そのバックログは
+		 * 画面に一度も出ないまま既読化されて消えていた。捨てずに表示する。
 		 */
-		await call(`/api/poll?connector_id=${encodeURIComponent(CONNECTOR_ID)}&room_id=${encodeURIComponent(firstRooms.join(','))}&wait=0`);
+		const caughtUp = await call(
+			`/api/poll?connector_id=${encodeURIComponent(CONNECTOR_ID)}&room_id=${encodeURIComponent(firstRooms.join(','))}&wait=0${excludeParam}`
+		);
+		if (caughtUp.messages.length > 0) {
+			console.log(`直近の ${caughtUp.messages.length} 件が届きました:`);
+			printMessages(caughtUp.messages);
+			console.log('');
+		}
 		console.log('カーソルを立てました。改めて wait を実行してください。');
 		return;
 	}
