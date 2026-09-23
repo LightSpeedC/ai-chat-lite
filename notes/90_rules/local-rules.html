@@ -390,9 +390,10 @@ footer a {
 <style>
 /* この資料だけのもの: 章のアクセント色（3章 / 色相 280→0 を 140 刻み）と目次の採番 */
 .ch01 { --accent: hsl(280.0, 78%, 25%); --accent2: hsl(280.0, 58%, 55%); --soft: hsl(280.0, 28%, 95%); }
-.ch02 { --accent: hsl(186.7, 78%, 25%); --accent2: hsl(186.7, 58%, 55%); --soft: hsl(186.7, 28%, 95%); }
-.ch03 { --accent: hsl( 93.3, 78%, 25%); --accent2: hsl( 93.3, 58%, 55%); --soft: hsl( 93.3, 28%, 95%); }
-.ch04 { --accent: hsl(  0.0, 78%, 25%); --accent2: hsl(  0.0, 58%, 55%); --soft: hsl(  0.0, 28%, 95%); }
+.ch02 { --accent: hsl(210.0, 78%, 25%); --accent2: hsl(210.0, 58%, 55%); --soft: hsl(210.0, 28%, 95%); }
+.ch03 { --accent: hsl(140.0, 78%, 25%); --accent2: hsl(140.0, 58%, 55%); --soft: hsl(140.0, 28%, 95%); }
+.ch04 { --accent: hsl( 70.0, 78%, 25%); --accent2: hsl( 70.0, 58%, 55%); --soft: hsl( 70.0, 28%, 95%); }
+.ch05 { --accent: hsl(  0.0, 78%, 25%); --accent2: hsl(  0.0, 58%, 55%); --soft: hsl(  0.0, 28%, 95%); }
 .toc ol { counter-reset: tocnum; }
 </style>
 </head>
@@ -403,7 +404,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite のローカルルール</h1>
 		<p class="lead">このプロジェクトでだけ言えることを書く。全プロジェクト共通の決めごとは別にある</p>
-		<p class="date">📅 作成: 2026-09-04 / 更新: 2026-09-20</p>
+		<p class="date">📅 作成: 2026-09-04 / 更新: 2026-09-23</p>
 	</div>
 </div>
 
@@ -414,7 +415,7 @@ footer a {
 <p>ここに書くのは<strong>このプロジェクトでしか言えないこと</strong>だけである。全プロジェクトに通る決めごとは共通のルールにあり、同じ文を両方に書かない。</p>
 
 <div class="callout callout-important">
-	<p><strong>4 節とも、実際に踏んだ落とし穴である。</strong>次のセッションが同じ順路を辿らないようにするのが目的で、一般論を並べる場所ではない。</p>
+	<p><strong>1〜4 節は、実際に踏んだ落とし穴である。</strong>次のセッションが同じ順路を辿らないようにするのが目的で、一般論を並べる場所ではない。<strong>5 節は、このプロジェクトだけで行う運用手順である。</strong></p>
 	<p>root の <code>CLAUDE.md</code> はこの資料から生成した Markdown を 1 行で取り込んでいる。<strong>セッションを開くと本文が読み込まれる。</strong></p>
 </div>
 
@@ -425,6 +426,7 @@ footer a {
 		<li class="ch02"><a href="#ch02">CLI を直したら 2 本とも直す</a></li>
 		<li class="ch03"><a href="#ch03">exe を作り直すときは待受けを止めない</a></li>
 		<li class="ch04"><a href="#ch04">プロセスを止めるときは子まで見る</a></li>
+		<li class="ch05"><a href="#ch05">chat 待受けの定期確認は cron で行う</a></li>
 	</ol>
 </section>
 
@@ -606,6 +608,20 @@ footer a {
 	<div class="callout callout-important">
 		<p><strong>探す式に、探したい語をそのまま書かない。</strong>書くと、その式を走らせているプロセス自身が条件に当たる。<code>'aich' + 'at'</code> のように割って繋ぐ。<strong>1 度これで 0 件を 5 件と読み違えた。</strong></p>
 	</div>
+</section>
+
+<section class="ch05" id="ch05">
+	<h1>chat 待受けの定期確認は cron で行う</h1>
+
+	<p>適用条件: このプロジェクトのセッションで作業しているとき。</p>
+
+	<p><strong>3 時間ごとに <code>CronCreate</code> で定期実行し、<code>aichat waiters</code> で自分の待受け本数を確認して、0 本なら張り直す。</strong>既存の待受けの出力に新着があれば全文を読み、必要な対応（課題への追加・返信等）を行う。共通ルール「ai-chat-lite（AI 間チャット）の利用」の本体（張り方・報告不要の原則等）はそのまま従う。</p>
+
+	<div class="callout callout-important">
+		<p><strong>この節は共通ルールを 1 点だけ上書きする。</strong>共通ルールは「張り直しの報告は要らない」とするが、<strong>この定期実行に限っては毎回報告する</strong>。応答の冒頭に現在時刻を「<code>MM/DD HH:MM</code>」（JST）で示し、続けて受信メッセージの概要を書く（新着が無ければ「新着なし」と書く）。<strong>理由</strong>: 3 時間おきの定期実行という形自体が、あとから「いつ何が来ていたか」を追う記録の役目も兼ねるため。</p>
+	</div>
+
+	<p>cron の式は <code>13 */3 * * *</code>（3 時間ごと、毎正時の 13 分）。<strong>cron はセッションの中だけで生きる</strong>（共通ルール「cron はセッションの中だけで生きる」）。セッションを開き直したときは、待受けと同様に指示を待たず張り直す。</p>
 </section>
 
 </div>
