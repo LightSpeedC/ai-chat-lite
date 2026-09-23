@@ -2,7 +2,7 @@
 
 これから解決すること。片付いたら閉じて残す
 
-> 📅 作成: 2026-08-30 / 更新: 2026-09-23
+> 📅 作成: 2026-08-30 / 更新: 2026-09-24
 
 [README へ戻る](../../README.md)
 
@@ -413,7 +413,34 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 </details>
 
 <details>
-<summary><strong>着手</strong> 開発環境・記録 32 件 / 未 2 / 着手 7 / 済 23</summary>
+<summary><strong>着手</strong> 開発環境・記録 36 件 / 未 6 / 着手 7 / 済 23</summary>
+
+## **未** i260924-01 資料の HTML が共通ルールの文字コード・改行に合っていない
+
+<strong>定期レビュー（chat #1088）で指摘され、実測で確認した。</strong>追跡している資料の HTML 30 本（`src/web/` を除く）のうち、BOM 付き UTF-8 ＋ LF になっているのは 3 本だけ。BOM 無しが 24 本、CRLF が混ざるものが 18 本ある。README.html・CHAT-USAGE.html・notes/ 配下のほぼ全部が該当する。
+
+背景として、root に `.editorconfig`・`.gitattributes`・`.vscode/settings.json` が 3 つとも無いことも確認した。
+
+- **未** `.editorconfig`・`.gitattributes`・`.vscode/settings.json` を共通ルールの雛形どおりに作る
+- **未** 既存の HTML 30 本を `convert-encoding --to html`（BOM 付き UTF-8＋LF）で揃える
+
+## **未** i260924-02 型検査の対象が CLI（`src/client`）だけになっている
+
+**定期レビュー（chat #1088）で指摘され、実測で確認した。**`tsconfig.json` の `include` が `src/client/*.mjs` だけで、`src/server/` の 16 本とテスト 38 本超が `tsc` に掛かっていない。`strict` も `false`。共通ルール「使用言語（Node / Bun）」は開発時に `tsc` で型チェックを行う旨を定めている。
+
+- **未** `include` を `src/server/`・`tests/` まで広げるか、広げない理由を決める
+
+## **未** i260924-03 ソース・テストが `.mjs` のまま TypeScript 化されていない
+
+<strong>定期レビュー（chat #1088）で指摘され、実測で確認した。</strong>共通ルール「使用言語（Node / Bun）」は `ts`・`mjs`・`cjs` の優先順位を定め、「テストのルール」もテストを TypeScript で書く旨を持つ。`status` の「動作確認の状況」に TypeScript 化していないという記述はあるが、これまで `issues.html` に項目として挙がっていなかった。
+
+- **未** `.mjs` → `.ts` 化の範囲・順序を決める（[i260924-02](#未-i260924-02-型検査の対象が-clisrcclientだけになっている) の型検査対象拡張とあわせて検討する）
+
+## **未** i260924-04 `issues.html` が 1 ファイル 76 件・426 KB に肥大化している
+
+<strong>定期レビュー（chat #1088）で指摘され、実測で確認した。</strong>済 49 件・着手 10 件・未 17 件が 1 つの `issues.html`（436,059 バイト）に入っており、`issues-archive.html` はまだ無い。共通ルール「課題の管理」は、片付いたグループを `issues-archive.html` へ移す運用を定めている。
+
+- **未** グループ単位で全件済になったものが無いか確認し、あれば `issues-archive.html` を新設して移す
 
 ## **☑** i260922-04 `a.doclink` の `border-radius` が共通ルールの明記値（6px）と食い違っていた
 
@@ -1972,7 +1999,40 @@ USAGE が共通オプションを 2 か所で定義しており、**手書きの
 </details>
 
 <details>
-<summary><strong>未</strong> チャットの機能 31 件 / 未 11 / 着手 2 / 済 18</summary>
+<summary><strong>未</strong> チャットの機能 36 件 / 未 16 / 着手 2 / 済 18</summary>
+
+## **未** i260924-05 `CHAT-USAGE.html` が実在しない `build-aichat.cmd` を案内している
+
+**定期レビュー（chat #1088）で指摘され、実測で確認した。**`CHAT-USAGE.html`「aichat が使えないとき」に `tools/20_build/build-aichat.cmd` を実行して `aichat.exe` を作る手順があり、`csc` は同梱なので追加の導入は要らないと書かれている。実際の `tools/20_build/` にあるのは `build-aichat-rs.mjs`・`export-options.mjs`・`install-aichat.mjs`・`place-exe.mjs` の 4 本で、`build-aichat.cmd` は無い。[i260918-01](#i260918-01-aichat-cli-の-c-実装を削除できないか検討する)（C# 版の削除）への追随漏れと見ている。
+
+- **未** ローカルルール 3 節「ビルドの順序」（`build-aichat-rs.mjs` → `install-aichat.mjs`）に合わせて案内を書き直す
+
+## **未** i260924-06 `CHAT-USAGE.html` の `aichat-node` 案内が [i260922-01](#着手-i260922-01-共通ルール共有ツールの置き場とpathに合わせ公開cliを-bin-へ移す) の判断と食い違う
+
+**定期レビュー（chat #1088）で指摘され、実測で確認した。**[i260922-01](#着手-i260922-01-共通ルール共有ツールの置き場とpathに合わせ公開cliを-bin-へ移す) は「公開インターフェースは `aichat.exe` だけ。`aichat-*.cmd` は開発・突き合わせ用で、他プロジェクトのセッションが名前で呼ぶものではないため対象外」としている。一方 `CHAT-USAGE.html` は他プロジェクト向けに `aichat-node` を名前で呼ぶよう案内し、これも PATH に入っているのでパスは書かない、としている。[i260922-01](#着手-i260922-01-共通ルール共有ツールの置き場とpathに合わせ公開cliを-bin-へ移す) に残る「未」の項目（PATH からプロジェクトルート自体を外す）を実施すると、この案内は動かなくなる。
+
+あわせて、ルート直下のランチャーは `aichat-bun`（拡張子なし）・`aichat-bun.cmd`・`aichat-node.cmd` の 3 本で、`aichat-node` には拡張子なしの版が無く、Bash からは解決できない（実測で確認済み）。
+
+- **未** [i260922-01](#着手-i260922-01-共通ルール共有ツールの置き場とpathに合わせ公開cliを-bin-へ移す) の「未」項目を実施する前に、`CHAT-USAGE.html` の案内をどうするか決める（`aichat-node` 案内を消す・`bin/` へ移す等）
+- **未** 残すなら `aichat-node` の拡張子なし版を用意する
+
+## **未** i260924-07 `README.html` のコマンド表が実物（14 コマンド）と食い違う
+
+**定期レビュー（chat #1088）で指摘され、実測で確認した。**`README.html` のコマンド表は 8 個で、`archive`・`archives`・`restore`・`rename`・`restart`・`stop` が無い。`aichat -h` の実物は 14 コマンドある。
+
+- **未** README.html のコマンド表に不足 6 個を足す
+
+## **未** i260924-08 `CHAT-USAGE.html`「読むだけのコマンド」の一覧が 2 か所で食い違う
+
+**定期レビュー（chat #1088）で指摘され、実測で確認した。**「読むだけのコマンドは ID を取らない」の節は `who`・`recent`・`dump`・`archives` の 4 つを挙げるが、別の節は `recent`・`who`・`dump` の 3 つしか挙げていない（`archives` が抜けている）。実測では `archives` は名乗る ID 無しで通った（終了コード 0）。
+
+- **未** 抜けている側に `archives` を足す
+
+## **未** i260924-09 `CHAT-USAGE.html` の `rename` 書式が 2 か所で違う
+
+**定期レビュー（chat #1088）で指摘され、実測で確認した。**`-h` と同じ形（`rename :<id>: connector :<旧>: :<新>:`）は片方の節だけにあり、もう片方は名乗る `:<id>:` が抜けた形（`rename connector :<旧>: :<新>:`）になっている。
+
+- **未** 抜けている側に `:<id>:` を足す
 
 ## **未** i260922-05 サーバー・クライアントのバージョン不一致を検出する手段が無い
 
