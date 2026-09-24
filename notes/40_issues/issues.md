@@ -413,16 +413,16 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 </details>
 
 <details>
-<summary><strong>着手</strong> 開発環境・記録 36 件 / 未 6 / 着手 7 / 済 23</summary>
+<summary><strong>着手</strong> 開発環境・記録 36 件 / 未 5 / 着手 7 / 済 24</summary>
 
-## **未** i260924-01 資料の HTML が共通ルールの文字コード・改行に合っていない
+## **☑** i260924-01 資料の HTML が共通ルールの文字コード・改行に合っていない
 
 <strong>定期レビュー（chat #1088）で指摘され、実測で確認した。</strong>追跡している資料の HTML 30 本（`src/web/` を除く）のうち、BOM 付き UTF-8 ＋ LF になっているのは 3 本だけ。BOM 無しが 24 本、CRLF が混ざるものが 18 本ある。README.html・CHAT-USAGE.html・notes/ 配下のほぼ全部が該当する。
 
 背景として、root に `.editorconfig`・`.gitattributes`・`.vscode/settings.json` が 3 つとも無いことも確認した。
 
-- **未** `.editorconfig`・`.gitattributes`・`.vscode/settings.json` を共通ルールの雛形どおりに作る
-- **未** 既存の HTML 30 本を `convert-encoding --to html`（BOM 付き UTF-8＋LF）で揃える
+- **☑** `.editorconfig`・`.gitattributes`・`.vscode/settings.json` を共通ルールの雛形どおりに作った
+- **☑** 既存の HTML 30 本を `convert-encoding --to html`（BOM 付き UTF-8＋LF）で揃えた
 
 ## **未** i260924-02 型検査の対象が CLI（`src/client`）だけになっている
 
@@ -1999,13 +1999,13 @@ USAGE が共通オプションを 2 か所で定義しており、**手書きの
 </details>
 
 <details>
-<summary><strong>未</strong> チャットの機能 36 件 / 未 16 / 着手 2 / 済 18</summary>
+<summary><strong>未</strong> チャットの機能 36 件 / 未 12 / 着手 2 / 済 22</summary>
 
-## **未** i260924-05 `CHAT-USAGE.html` が実在しない `build-aichat.cmd` を案内している
+## **☑** i260924-05 `CHAT-USAGE.html` が実在しない `build-aichat.cmd` を案内している
 
 **定期レビュー（chat #1088）で指摘され、実測で確認した。**`CHAT-USAGE.html`「aichat が使えないとき」に `tools/20_build/build-aichat.cmd` を実行して `aichat.exe` を作る手順があり、`csc` は同梱なので追加の導入は要らないと書かれている。実際の `tools/20_build/` にあるのは `build-aichat-rs.mjs`・`export-options.mjs`・`install-aichat.mjs`・`place-exe.mjs` の 4 本で、`build-aichat.cmd` は無い。[i260918-01](#i260918-01-aichat-cli-の-c-実装を削除できないか検討する)（C# 版の削除）への追随漏れと見ている。
 
-- **未** ローカルルール 3 節「ビルドの順序」（`build-aichat-rs.mjs` → `install-aichat.mjs`）に合わせて案内を書き直す
+- **☑** ローカルルール 3 節「ビルドの順序」（`build-aichat-rs.mjs` → `install-aichat.mjs`）に合わせて案内を書き直した
 
 ## **未** i260924-06 `CHAT-USAGE.html` の `aichat-node` 案内が [i260922-01](#着手-i260922-01-共通ルール共有ツールの置き場とpathに合わせ公開cliを-bin-へ移す) の判断と食い違う
 
@@ -2016,23 +2016,23 @@ USAGE が共通オプションを 2 か所で定義しており、**手書きの
 - **未** [i260922-01](#着手-i260922-01-共通ルール共有ツールの置き場とpathに合わせ公開cliを-bin-へ移す) の「未」項目を実施する前に、`CHAT-USAGE.html` の案内をどうするか決める（`aichat-node` 案内を消す・`bin/` へ移す等）
 - **未** 残すなら `aichat-node` の拡張子なし版を用意する
 
-## **未** i260924-07 `README.html` のコマンド表が実物（14 コマンド）と食い違う
+## **☑** i260924-07 `README.html` のコマンド表が実物（14 コマンド）と食い違う
 
 **定期レビュー（chat #1088）で指摘され、実測で確認した。**`README.html` のコマンド表は 8 個で、`archive`・`archives`・`restore`・`rename`・`restart`・`stop` が無い。`aichat -h` の実物は 14 コマンドある。
 
-- **未** README.html のコマンド表に不足 6 個を足す
+- **☑** README.html のコマンド表に不足 6 個を足した
 
-## **未** i260924-08 `CHAT-USAGE.html`「読むだけのコマンド」の一覧が 2 か所で食い違う
+## **☑** i260924-08 `CHAT-USAGE.html`「読むだけのコマンド」の一覧が 2 か所で食い違う
 
 **定期レビュー（chat #1088）で指摘され、実測で確認した。**「読むだけのコマンドは ID を取らない」の節は `who`・`recent`・`dump`・`archives` の 4 つを挙げるが、別の節は `recent`・`who`・`dump` の 3 つしか挙げていない（`archives` が抜けている）。実測では `archives` は名乗る ID 無しで通った（終了コード 0）。
 
-- **未** 抜けている側に `archives` を足す
+- **☑** 抜けている側に `archives` を足した
 
-## **未** i260924-09 `CHAT-USAGE.html` の `rename` 書式が 2 か所で違う
+## **☑** i260924-09 `CHAT-USAGE.html` の `rename` 書式が 2 か所で違う
 
 **定期レビュー（chat #1088）で指摘され、実測で確認した。**`-h` と同じ形（`rename :<id>: connector :<旧>: :<新>:`）は片方の節だけにあり、もう片方は名乗る `:<id>:` が抜けた形（`rename connector :<旧>: :<新>:`）になっている。
 
-- **未** 抜けている側に `:<id>:` を足す
+- **☑** 抜けている側に `:<id>:` を足した
 
 ## **未** i260922-05 サーバー・クライアントのバージョン不一致を検出する手段が無い
 

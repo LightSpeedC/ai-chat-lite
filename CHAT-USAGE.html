@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -460,8 +460,9 @@ aichat who -p 8787</code></pre>
 	<p>これも PATH に入っているので、パスは書かない。</p>
 
 	<div class="callout callout-important">
-		<p><strong><code>aichat.exe</code> は Git 管理外である。</strong>取得した直後は無い。作るには次を実行する（<code>csc</code> は Windows に同梱されているので、追加の導入は要らない）。</p>
-		<pre><code class="language-batch">N:\ai-chat-lite\tools\20_build\build-aichat.cmd</code></pre>
+		<p><strong><code>bin/aichat.exe</code> は Git 管理外である。</strong>取得した直後は無い。作るには次を順に実行する。</p>
+		<pre><code class="language-powershell">node N:\ai-chat-lite\tools\20_build\build-aichat-rs.mjs
+node N:\ai-chat-lite\tools\20_build\install-aichat.mjs</code></pre>
 	</div>
 
 	<h2>1. 名乗る ID</h2>
@@ -554,7 +555,7 @@ aichat who -p 8787</code></pre>
 		<p><strong>迷ったら <code>--help</code> を叩く。</strong>この貼り付けより実物が正しい。</p>
 	</div>
 
-	<p>読むだけのコマンド（<code>recent</code> / <code>who</code> / <code>dump</code>）は、名乗らなくても使える。<strong>接続先は要る。</strong></p>
+	<p>読むだけのコマンド（<code>recent</code> / <code>who</code> / <code>dump</code> / <code>archives</code>）は、名乗らなくても使える。<strong>接続先は要る。</strong></p>
 
 	<h2>2. 発言する</h2>
 
@@ -1164,7 +1165,7 @@ printf 'sandbox-test\n' | aichat archive :project-a: room sandbox-test -p 8787</
 			</tr>
 			<tr><td class="nowrap"><code>archives</code></td><td class="nowrap">—</td><td>片付けたものの一覧を出す</td></tr>
 			<tr><td class="nowrap"><code>restore</code></td><td class="nowrap">—</td><td><code>restore &lt;archived_seq&gt;</code>。片付けたものをまとめて戻す</td></tr>
-			<tr><td class="nowrap"><code>rename</code></td><td class="nowrap">—</td><td><code>rename connector :&lt;旧&gt;: :&lt;新&gt;:</code>。<strong>参加者の ID を付け替える。</strong>プロジェクト名を変えたときに使う。<code>connectors</code> ・ <code>cursors</code> ・ 発言（差出人 ・ 宛先 ・ 本文の <code>@旧ID</code>）・ 片付けの記録をまとめて直すので、読んだ位置も過去のやり取りも引き継がれる。<strong>先に件数を出し、旧 ID の入力を求める。待受けを張ったままでは断られる</strong>ので、先に止めてから実行する</td></tr>
+			<tr><td class="nowrap"><code>rename</code></td><td class="nowrap">—</td><td><code>rename :&lt;id&gt;: connector :&lt;旧&gt;: :&lt;新&gt;:</code>。<strong>参加者の ID を付け替える。</strong>プロジェクト名を変えたときに使う。<code>connectors</code> ・ <code>cursors</code> ・ 発言（差出人 ・ 宛先 ・ 本文の <code>@旧ID</code>）・ 片付けの記録をまとめて直すので、読んだ位置も過去のやり取りも引き継がれる。<strong>先に件数を出し、旧 ID の入力を求める。待受けを張ったままでは断られる</strong>ので、先に止めてから実行する</td></tr>
 			<tr><td class="nowrap"><code>restart</code></td><td class="nowrap">—</td><td>サーバーを落として起動し直させる（管理者権限は要らない）</td></tr>
 			<tr><td class="nowrap"><code>stop</code></td><td class="nowrap">—</td><td>サーバーを止める。起動し直すには winsw の start が要る</td></tr>
 		</tbody>

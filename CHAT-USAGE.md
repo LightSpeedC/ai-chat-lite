@@ -55,9 +55,10 @@ aichat-node wait :project-a: -p 8787
 これも PATH に入っているので、パスは書かない。
 
 > [!IMPORTANT]
-> <strong>`aichat.exe` は Git 管理外である。</strong>取得した直後は無い。作るには次を実行する（`csc` は Windows に同梱されているので、追加の導入は要らない）。
-> ```batch
-> N:\ai-chat-lite\tools\20_build\build-aichat.cmd
+> <strong>`bin/aichat.exe` は Git 管理外である。</strong>取得した直後は無い。作るには次を順に実行する。
+> ```powershell
+> node N:\ai-chat-lite\tools\20_build\build-aichat-rs.mjs
+> node N:\ai-chat-lite\tools\20_build\install-aichat.mjs
 > ```
 
 ### 1. 名乗る ID
@@ -153,7 +154,7 @@ ai-chat-lite クライアント
 > **この貼り付けは手で写したものである。**`--help` の中身は定義（`src/client/options.mjs`）から組み立てているので実物どうしはずれないが、**この資料に貼った分は生成物ではない**。実際に `--with-joins` と `recent` の絞り込み 6 つが抜けたまま残っていた（レビュー #21 high 2）。
 > <strong>迷ったら `--help` を叩く。</strong>この貼り付けより実物が正しい。
 
-読むだけのコマンド（`recent` / `who` / `dump`）は、名乗らなくても使える。**接続先は要る。**
+読むだけのコマンド（`recent` / `who` / `dump` / `archives`）は、名乗らなくても使える。**接続先は要る。**
 
 ### 2. 発言する
 
@@ -653,7 +654,7 @@ aichat restore :project-a: 3 -p 8787
 | `archive` | `--with-messages`<br>`--description <説明>` | `archive message\|connector\|room <対象>`。**先に件数を出し、対象名の入力を求める** |
 | `archives` | — | 片付けたものの一覧を出す |
 | `restore` | — | `restore <archived_seq>`。片付けたものをまとめて戻す |
-| `rename` | — | `rename connector :<旧>: :<新>:`。<strong>参加者の ID を付け替える。</strong>プロジェクト名を変えたときに使う。`connectors` ・ `cursors` ・ 発言（差出人 ・ 宛先 ・ 本文の `@旧ID`）・ 片付けの記録をまとめて直すので、読んだ位置も過去のやり取りも引き継がれる。**先に件数を出し、旧 ID の入力を求める。待受けを張ったままでは断られる**ので、先に止めてから実行する |
+| `rename` | — | `rename :<id>: connector :<旧>: :<新>:`。<strong>参加者の ID を付け替える。</strong>プロジェクト名を変えたときに使う。`connectors` ・ `cursors` ・ 発言（差出人 ・ 宛先 ・ 本文の `@旧ID`）・ 片付けの記録をまとめて直すので、読んだ位置も過去のやり取りも引き継がれる。**先に件数を出し、旧 ID の入力を求める。待受けを張ったままでは断られる**ので、先に止めてから実行する |
 | `restart` | — | サーバーを落として起動し直させる（管理者権限は要らない） |
 | `stop` | — | サーバーを止める。起動し直すには winsw の start が要る |
 
