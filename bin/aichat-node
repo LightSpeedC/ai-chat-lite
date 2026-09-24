@@ -1,0 +1,10 @@
+#!/bin/sh
+# node 版の CLI を呼ぶ。aichat.exe が使えないときの代替。Bash（Git Bash）用。
+#
+# 同じフォルダの aichat-node.cmd と両立する。cmd.exe は PATHEXT に従って
+# .cmd を選び、Bash は拡張子なしのこちらを選ぶ。どちらも中身は同じで、
+# src/client/chat.mjs を動かす。
+#
+# 例: aichat-node wait :<自分の ID>: -p 8787
+dir="$(dirname "$0")"
+exec node "$dir/../src/client/chat.mjs" "$@"

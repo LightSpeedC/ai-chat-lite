@@ -11,6 +11,6 @@
 # 例: aichat-bun wait :<自分の ID>: -p 8787 -r "public,ai-chat-lite"
 dir="$(dirname "$0")"
 if command -v bun >/dev/null 2>&1; then
-	exec bun run "$dir/src/client/chat.mjs" "$@"
+	exec bun run "$dir/../../src/client/chat.mjs" "$@"
 fi
-exec node "$dir/src/client/chat.mjs" "$@"
+exec node "$dir/../../src/client/chat.mjs" "$@"

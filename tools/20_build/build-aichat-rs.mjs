@@ -4,7 +4,7 @@
  * 手順は 3 つ。
  *   1. options.mjs から定義を JSON に書き出す（src/cli-rs/cli-options.json）
  *   2. cargo build --release
- *   3. できた実行ファイルを root に置く
+ *   3. できた実行ファイルを dist/ に置く
  *
  * 【なぜ node で書くか】
  * ps1 にすると Mac ・ Linux で動かない。Rust 版を作る動機がクロスプラットフォーム
@@ -19,7 +19,7 @@
  *   node tools/20_build/build-aichat-rs.mjs --test   テストだけ走らせる
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -84,8 +84,14 @@ if (!existsSync(built)) {
  *
  * 分けてあるのは、ビルドが走るたびに既定が入れ替わらないようにするため。
  * 既定の aichat は他プロジェクトの待受けも掴んでいる。
+ *
+ * 置き場は dist/（ビルド出力）。かつては root に置いていたが、PATH から
+ * 名前で呼べるようにするためだけの理由だったので、その前提が無くなった
+ * i260924-06 のタイミングでフォルダ構成の原則どおりに直した。
  */
 process.stdout.write('\n');
 
-const dest = join(root, exeName);
+const distDir = join(root, 'dist');
+mkdirSync(distDir, { recursive: true });
+const dest = join(distDir, exeName);
 reportPlaced(dest, placeExe(built, dest, join(root, 'tmp')), root);

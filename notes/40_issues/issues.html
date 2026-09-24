@@ -595,7 +595,7 @@ footer a {
 		<li class="g01"><a href="#g01">サービスの運用（6 件 / 未 3 / 着手 1 / 済 2）</a></li>
 		<li class="g02"><a href="#g02">データ（7 件 / 未 1 / 着手 0 / 済 6）</a></li>
 		<li class="g03"><a href="#g03">開発環境・記録（36 件 / 未 5 / 着手 7 / 済 24）</a></li>
-		<li class="g04"><a href="#g04">チャットの機能（36 件 / 未 12 / 着手 2 / 済 22）</a></li>
+		<li class="g04"><a href="#g04">チャットの機能（36 件 / 未 11 / 着手 2 / 済 23）</a></li>
 	</ol>
 </section>
 
@@ -1479,6 +1479,14 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 
 				<div class="callout callout-important">
 					<p><strong>3 本目（C# 版）を持っていたことで見つかった食い違いが過去に複数あった</strong>（待受け一覧のミリ秒精度、<code>say</code> の終了コード等）。node-Rust の 2 本比較だけで、今後も同種の食い違いを見つけられるかは、実績が無いため未知数のまま残る。</p>
+				</div>
+
+				<div class="callout callout-caution">
+					<p><strong>後始末忘れがあった（chat #1088 定期レビューの雑談で発覚）。</strong>ビルドスクリプト（<code>build-aichat.ps1</code>・<code>build-aichat.cmd</code>）は削除したが、<strong>既にビルド済みだった <code>aichat-cs.exe</code> 自体を消していなかった</strong>。<code>*.exe</code> は <code>.gitignore</code> 対象で <code>git status</code> に出ないため見落としやすい。「もう作れない」ようにしただけで、「既にある」ものへの後始末が抜けていた。</p>
+					<p>あわせて、同じく <code>.gitignore</code> 対象で残っていた <code>aichat-go.exe</code>（<code>r260912-01</code> ベンチマーク調査の副産物。調査は完了済みで、ソース（<code>tools/40_test/wait-go/main.go</code>）は資料として残す一方、ビルド済みのバイナリは再現可能なので不要と判断）もあわせて削除した。</p>
+					<ul class="todos">
+						<li class="done"><span class="badge b-done">☑</span> <code>aichat-cs.exe</code>・<code>aichat-go.exe</code> を削除した</li>
+					</ul>
 				</div>
 			</div>
 		</details>
@@ -4179,7 +4187,7 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 	<summary>
 		<span class="badge b-todo">未</span>
 		チャットの機能
-		<span class="count">36 件 / 未 12 / 着手 2 / 済 22</span>
+		<span class="count">36 件 / 未 11 / 着手 2 / 済 23</span>
 	</summary>
 
 	<div class="groupbody">
@@ -4198,18 +4206,20 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 			</div>
 		</details>
 
-		<details class="issue md-flat" id="i260924-06" open>
+		<details class="issue done md-flat" id="i260924-06">
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i260924-06</span>
 				<code>CHAT-USAGE.html</code> の <code>aichat-node</code> 案内が <a href="#i260922-01">i260922-01</a> の判断と食い違う
 			</summary>
 			<div class="issuebody">
 				<p><strong>定期レビュー（chat #1088）で指摘され、実測で確認した。</strong><a href="#i260922-01">i260922-01</a> は「公開インターフェースは <code>aichat.exe</code> だけ。<code>aichat-*.cmd</code> は開発・突き合わせ用で、他プロジェクトのセッションが名前で呼ぶものではないため対象外」としている。一方 <code>CHAT-USAGE.html</code> は他プロジェクト向けに <code>aichat-node</code> を名前で呼ぶよう案内し、これも PATH に入っているのでパスは書かない、としている。<a href="#i260922-01">i260922-01</a> に残る「未」の項目（PATH からプロジェクトルート自体を外す）を実施すると、この案内は動かなくなる。</p>
 				<p>あわせて、ルート直下のランチャーは <code>aichat-bun</code>（拡張子なし）・<code>aichat-bun.cmd</code>・<code>aichat-node.cmd</code> の 3 本で、<code>aichat-node</code> には拡張子なしの版が無く、Bash からは解決できない（実測で確認済み）。</p>
+				<p><strong>選んだ案（1-A）: <code>aichat-node</code> を <code>bin/</code> へ移す。</strong>フォールバック用の CLI という役割を残したまま、<a href="#i260922-01">i260922-01</a> の「公開インターフェースは <code>bin/</code> だけに置く」に揃えた。</p>
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> <a href="#i260922-01">i260922-01</a> の「未」項目を実施する前に、<code>CHAT-USAGE.html</code> の案内をどうするか決める（<code>aichat-node</code> 案内を消す・<code>bin/</code> へ移す等）</li>
-					<li><span class="badge b-todo">未</span> 残すなら <code>aichat-node</code> の拡張子なし版を用意する</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>bin/aichat-node</code>（拡張子なし・Bash 用）・<code>bin/aichat-node.cmd</code>（PowerShell/cmd 用）を新設し、両方とも実機で動作確認した</li>
+					<li class="done"><span class="badge b-done">☑</span> ルート直下の <code>aichat-node.cmd</code> を削除した</li>
+					<li class="done"><span class="badge b-done">☑</span> 設計書（<code>p260829-01-設計.html</code>）のフォルダ構成を更新した</li>
 				</ul>
 			</div>
 		</details>

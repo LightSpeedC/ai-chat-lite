@@ -28,7 +28,7 @@ import { placeExe, reportPlaced } from './place-exe.mjs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const win = process.platform === 'win32';
 
-const source = join(root, win ? 'aichat-rs.exe' : 'aichat-rs');
+const source = join(root, 'dist', win ? 'aichat-rs.exe' : 'aichat-rs');
 const dest = join(root, 'bin', win ? 'aichat.exe' : 'aichat');
 
 mkdirSync(join(root, 'bin'), { recursive: true });

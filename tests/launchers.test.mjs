@@ -1,5 +1,5 @@
 /*
- * root に置くランチャーのテスト。
+ * 公開CLI（bin/）と開発用ランチャー（tools/50_run/）のテスト。
  *
  * 【何を守るか】
  * `aichat` という名前をどの実装が受けるかは、他プロジェクトから見える動きそのものである。
@@ -31,12 +31,12 @@ describe('既定の aichat は Rust 版が受ける', () => {
 		 * ビルドが両方に置く。片方だけ新しくなると、`aichat` と `aichat-rs` で
 		 * 違う版が動き、突き合わせのテストが通ったまま本番だけ古いことになる。
 		 */
-		// bin/ は公開インターフェースの置き場（i260922-01）
+		// bin/ は公開インターフェースの置き場（i260922-01）。aichat-rs.exe はビルド出力（dist/）
 		const exe = join(root, 'bin', 'aichat.exe');
-		const rs = join(root, 'aichat-rs.exe');
-		assert.ok(existsSync(rs), 'aichat-rs.exe が無い（先にビルドが要る）');
+		const rs = join(root, 'dist', 'aichat-rs.exe');
+		assert.ok(existsSync(rs), 'dist/aichat-rs.exe が無い（先にビルドが要る）');
 		assert.ok(existsSync(exe), 'bin/aichat.exe が無い');
-		assert.equal(digestOf(exe), digestOf(rs), 'bin/aichat.exe と aichat-rs.exe の中身が違う');
+		assert.equal(digestOf(exe), digestOf(rs), 'bin/aichat.exe と dist/aichat-rs.exe の中身が違う');
 	});
 
 	test('aichat という名前を exe 以外が持たない', { skip: win ? false : 'Windows 専用' }, () => {
@@ -47,10 +47,13 @@ describe('既定の aichat は Rust 版が受ける', () => {
 });
 
 describe('bun 版のランチャー', () => {
+	// 開発時の実行なので tools/50_run/ に置く（i260924-06）
+	const runDir = join(root, 'tools', '50_run');
+
 	test('aichat-bun と aichat-bun.cmd が揃っている', () => {
 		// cmd.exe は .cmd を、Bash は拡張子なしを選ぶ。片方だけだと環境で動かない
-		assert.ok(existsSync(join(root, 'aichat-bun')), '拡張子なしの aichat-bun が無い');
-		if (win) assert.ok(existsSync(join(root, 'aichat-bun.cmd')), 'aichat-bun.cmd が無い');
+		assert.ok(existsSync(join(runDir, 'aichat-bun')), '拡張子なしの aichat-bun が無い');
+		if (win) assert.ok(existsSync(join(runDir, 'aichat-bun.cmd')), 'aichat-bun.cmd が無い');
 	});
 
 	test('bun が無ければ node で動く', { skip: win ? false : 'Windows 専用' }, () => {
@@ -71,7 +74,7 @@ describe('bun 版のランチャー', () => {
 			.filter((d) => !bunDirs.includes(d.replace(/\\+$/, '').toLowerCase()))
 			.join(';');
 
-		const res = spawnSync('cmd', ['/c', join(root, 'aichat-bun.cmd')], {
+		const res = spawnSync('cmd', ['/c', join(runDir, 'aichat-bun.cmd')], {
 			encoding: 'utf8',
 			env: { ...process.env, PATH: path, Path: path },
 		});

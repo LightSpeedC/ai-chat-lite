@@ -475,6 +475,11 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 > [!IMPORTANT]
 > **3 本目（C# 版）を持っていたことで見つかった食い違いが過去に複数あった**（待受け一覧のミリ秒精度、`say` の終了コード等）。node-Rust の 2 本比較だけで、今後も同種の食い違いを見つけられるかは、実績が無いため未知数のまま残る。
 
+> [!CAUTION]
+> <strong>後始末忘れがあった（chat #1088 定期レビューの雑談で発覚）。</strong>ビルドスクリプト（`build-aichat.ps1`・`build-aichat.cmd`）は削除したが、**既にビルド済みだった `aichat-cs.exe` 自体を消していなかった**。`*.exe` は `.gitignore` 対象で `git status` に出ないため見落としやすい。「もう作れない」ようにしただけで、「既にある」ものへの後始末が抜けていた。
+> あわせて、同じく `.gitignore` 対象で残っていた `aichat-go.exe`（`r260912-01` ベンチマーク調査の副産物。調査は完了済みで、ソース（`tools/40_test/wait-go/main.go`）は資料として残す一方、ビルド済みのバイナリは再現可能なので不要と判断）もあわせて削除した。
+> - **☑** `aichat-cs.exe`・`aichat-go.exe` を削除した
+
 ## **☑** i260919-01 md-flat が issues.html 内部の課題間リンクを壊す
 
 <strong>issues.html を html2md で変換すると、内部の課題間リンク（例: `href="#i260830-09"`）がことごとくアンカー切れになる。</strong>コミット準備で `issues.md` を再生成した際に発見した。
@@ -1999,7 +2004,7 @@ USAGE が共通オプションを 2 か所で定義しており、**手書きの
 </details>
 
 <details>
-<summary><strong>未</strong> チャットの機能 36 件 / 未 12 / 着手 2 / 済 22</summary>
+<summary><strong>未</strong> チャットの機能 36 件 / 未 11 / 着手 2 / 済 23</summary>
 
 ## **☑** i260924-05 `CHAT-USAGE.html` が実在しない `build-aichat.cmd` を案内している
 
@@ -2007,14 +2012,17 @@ USAGE が共通オプションを 2 か所で定義しており、**手書きの
 
 - **☑** ローカルルール 3 節「ビルドの順序」（`build-aichat-rs.mjs` → `install-aichat.mjs`）に合わせて案内を書き直した
 
-## **未** i260924-06 `CHAT-USAGE.html` の `aichat-node` 案内が [i260922-01](#着手-i260922-01-共通ルール共有ツールの置き場とpathに合わせ公開cliを-bin-へ移す) の判断と食い違う
+## **☑** i260924-06 `CHAT-USAGE.html` の `aichat-node` 案内が [i260922-01](#着手-i260922-01-共通ルール共有ツールの置き場とpathに合わせ公開cliを-bin-へ移す) の判断と食い違う
 
 **定期レビュー（chat #1088）で指摘され、実測で確認した。**[i260922-01](#着手-i260922-01-共通ルール共有ツールの置き場とpathに合わせ公開cliを-bin-へ移す) は「公開インターフェースは `aichat.exe` だけ。`aichat-*.cmd` は開発・突き合わせ用で、他プロジェクトのセッションが名前で呼ぶものではないため対象外」としている。一方 `CHAT-USAGE.html` は他プロジェクト向けに `aichat-node` を名前で呼ぶよう案内し、これも PATH に入っているのでパスは書かない、としている。[i260922-01](#着手-i260922-01-共通ルール共有ツールの置き場とpathに合わせ公開cliを-bin-へ移す) に残る「未」の項目（PATH からプロジェクトルート自体を外す）を実施すると、この案内は動かなくなる。
 
 あわせて、ルート直下のランチャーは `aichat-bun`（拡張子なし）・`aichat-bun.cmd`・`aichat-node.cmd` の 3 本で、`aichat-node` には拡張子なしの版が無く、Bash からは解決できない（実測で確認済み）。
 
-- **未** [i260922-01](#着手-i260922-01-共通ルール共有ツールの置き場とpathに合わせ公開cliを-bin-へ移す) の「未」項目を実施する前に、`CHAT-USAGE.html` の案内をどうするか決める（`aichat-node` 案内を消す・`bin/` へ移す等）
-- **未** 残すなら `aichat-node` の拡張子なし版を用意する
+<strong>選んだ案（1-A）: `aichat-node` を `bin/` へ移す。</strong>フォールバック用の CLI という役割を残したまま、[i260922-01](#着手-i260922-01-共通ルール共有ツールの置き場とpathに合わせ公開cliを-bin-へ移す) の「公開インターフェースは `bin/` だけに置く」に揃えた。
+
+- **☑** `bin/aichat-node`（拡張子なし・Bash 用）・`bin/aichat-node.cmd`（PowerShell/cmd 用）を新設し、両方とも実機で動作確認した
+- **☑** ルート直下の `aichat-node.cmd` を削除した
+- **☑** 設計書（`p260829-01-設計.html`）のフォルダ構成を更新した
 
 ## **☑** i260924-07 `README.html` のコマンド表が実物（14 コマンド）と食い違う
 
