@@ -24,7 +24,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 /** 測る相手。動かせるものだけを並べる */
 function implementations() {
-	const exe = (name) => join(root, 'dist', process.platform === 'win32' ? `${name}.exe` : name);
+	const exe = (name) => join(root, 'target', process.platform === 'win32' ? `${name}.exe` : name);
 	const client = join(root, 'src', 'client', 'chat.mjs');
 
 	return [

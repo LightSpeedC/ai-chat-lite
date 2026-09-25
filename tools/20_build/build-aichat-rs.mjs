@@ -4,7 +4,7 @@
  * 手順は 3 つ。
  *   1. options.mjs から定義を JSON に書き出す（src/cli-rs/cli-options.json）
  *   2. cargo build --release
- *   3. できた実行ファイルを dist/ に置く
+ *   3. できた実行ファイルを target/ に置く
  *
  * 【なぜ node で書くか】
  * ps1 にすると Mac ・ Linux で動かない。Rust 版を作る動機がクロスプラットフォーム
@@ -85,13 +85,15 @@ if (!existsSync(built)) {
  * 分けてあるのは、ビルドが走るたびに既定が入れ替わらないようにするため。
  * 既定の aichat は他プロジェクトの待受けも掴んでいる。
  *
- * 置き場は dist/（ビルド出力）。かつては root に置いていたが、PATH から
- * 名前で呼べるようにするためだけの理由だったので、その前提が無くなった
- * i260924-06 のタイミングでフォルダ構成の原則どおりに直した。
+ * 置き場は root の target/（ビルド出力。共通ルールは他言語では言語ごとの
+ * 既定出力先に読み替えるとし、Rust の例として target/ を挙げている）。
+ * かつては root 直下に置いていたが、PATH から名前で呼べるようにするため
+ * だけの理由だったので、その前提が無くなった i260924-06 のタイミングで
+ * フォルダ構成の原則どおりに直した。
  */
 process.stdout.write('\n');
 
-const distDir = join(root, 'dist');
-mkdirSync(distDir, { recursive: true });
-const dest = join(distDir, exeName);
+const targetDir = join(root, 'target');
+mkdirSync(targetDir, { recursive: true });
+const dest = join(targetDir, exeName);
 reportPlaced(dest, placeExe(built, dest, join(root, 'tmp')), root);

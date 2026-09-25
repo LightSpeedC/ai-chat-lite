@@ -31,12 +31,12 @@ describe('既定の aichat は Rust 版が受ける', () => {
 		 * ビルドが両方に置く。片方だけ新しくなると、`aichat` と `aichat-rs` で
 		 * 違う版が動き、突き合わせのテストが通ったまま本番だけ古いことになる。
 		 */
-		// bin/ は公開インターフェースの置き場（i260922-01）。aichat-rs.exe はビルド出力（dist/）
+		// bin/ は公開インターフェースの置き場（i260922-01）。aichat-rs.exe はビルド出力（target/）
 		const exe = join(root, 'bin', 'aichat.exe');
-		const rs = join(root, 'dist', 'aichat-rs.exe');
-		assert.ok(existsSync(rs), 'dist/aichat-rs.exe が無い（先にビルドが要る）');
+		const rs = join(root, 'target', 'aichat-rs.exe');
+		assert.ok(existsSync(rs), 'target/aichat-rs.exe が無い（先にビルドが要る）');
 		assert.ok(existsSync(exe), 'bin/aichat.exe が無い');
-		assert.equal(digestOf(exe), digestOf(rs), 'bin/aichat.exe と dist/aichat-rs.exe の中身が違う');
+		assert.equal(digestOf(exe), digestOf(rs), 'bin/aichat.exe と target/aichat-rs.exe の中身が違う');
 	});
 
 	test('aichat という名前を exe 以外が持たない', { skip: win ? false : 'Windows 専用' }, () => {

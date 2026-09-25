@@ -35,7 +35,7 @@ const TEST_DATA = join(root, 'tmp', '_data', 'unit-exe-swap');
 const WORK = join(root, 'tmp', 'exe-swap');
 
 /** 走らせる実物。ビルド済みの Rust 版を写して使う */
-const SOURCE = join(root, 'dist', win ? 'aichat-rs.exe' : 'aichat-rs');
+const SOURCE = join(root, 'target', win ? 'aichat-rs.exe' : 'aichat-rs');
 /** 走らせる側。ここを入れ替える */
 const PROBE = join(WORK, win ? 'probe.exe' : 'probe');
 /** 逃がす先 */

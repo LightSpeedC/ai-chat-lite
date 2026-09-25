@@ -25,7 +25,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const exe = join(root, 'dist', process.platform === 'win32' ? 'aichat-rs.exe' : 'aichat-rs');
+const exe = join(root, 'target', process.platform === 'win32' ? 'aichat-rs.exe' : 'aichat-rs');
 const nodeCli = join(root, 'src', 'client', 'chat.mjs');
 
 /** 立っているテスト用サーバーの接続先を読む */

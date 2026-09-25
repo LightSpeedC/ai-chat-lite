@@ -4220,6 +4220,7 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 					<li class="done"><span class="badge b-done">☑</span> <code>bin/aichat-node</code>（拡張子なし・Bash 用）・<code>bin/aichat-node.cmd</code>（PowerShell/cmd 用）を新設し、両方とも実機で動作確認した</li>
 					<li class="done"><span class="badge b-done">☑</span> ルート直下の <code>aichat-node.cmd</code> を削除した</li>
 					<li class="done"><span class="badge b-done">☑</span> 設計書（<code>p260829-01-設計.html</code>）のフォルダ構成を更新した</li>
+					<li class="done"><span class="badge b-done">☑</span> <code>aichat-rs.exe</code> のビルド出力先も root へ移した（当初は <code>dist/</code>）。その直後（chat #1136）に共通ルール「プロジェクトフォルダ構成」へ「<code>dist/</code> は Node/TypeScript 前提の値で、他言語では言語ごとの既定出力先に読み替える（Rust なら <code>target/</code> 等）」という注記が加わったため、<code>dist/</code> から <code>target/</code> へ置き直した。ビルド・配置・全テスト（launchers・exe-swap・cli-rs・archive-exit）で実機確認済み</li>
 				</ul>
 			</div>
 		</details>

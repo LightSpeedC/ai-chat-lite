@@ -31,7 +31,7 @@ const root = join(here, '..');
 const win = process.platform === 'win32';
 
 const TEST_DATA = join(root, 'tmp', '_data', 'unit-archive-exit');
-const EXE = join(root, 'dist', win ? 'aichat-rs.exe' : 'aichat-rs');
+const EXE = join(root, 'target', win ? 'aichat-rs.exe' : 'aichat-rs');
 const NODE_CLI = join(root, 'src', 'client', 'chat.mjs');
 
 /**

@@ -2023,6 +2023,7 @@ USAGE が共通オプションを 2 か所で定義しており、**手書きの
 - **☑** `bin/aichat-node`（拡張子なし・Bash 用）・`bin/aichat-node.cmd`（PowerShell/cmd 用）を新設し、両方とも実機で動作確認した
 - **☑** ルート直下の `aichat-node.cmd` を削除した
 - **☑** 設計書（`p260829-01-設計.html`）のフォルダ構成を更新した
+- **☑** `aichat-rs.exe` のビルド出力先も root へ移した（当初は `dist/`）。その直後（chat #1136）に共通ルール「プロジェクトフォルダ構成」へ「`dist/` は Node/TypeScript 前提の値で、他言語では言語ごとの既定出力先に読み替える（Rust なら `target/` 等）」という注記が加わったため、`dist/` から `target/` へ置き直した。ビルド・配置・全テスト（launchers・exe-swap・cli-rs・archive-exit）で実機確認済み
 
 ## **☑** i260924-07 `README.html` のコマンド表が実物（14 コマンド）と食い違う
 
