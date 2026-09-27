@@ -1328,7 +1328,7 @@ agent-rules から追報が届き、**パターン名が 2 つ列挙された例
 周知の本文に**エラーメッセージとフルパスを載せた**。分類器がこれを拾った可能性がある。
 
 ```text
-Cannot find module 'N:\2026\ai-chat-lite\2026ai-chat-litesrcclientchat.mjs'
+Cannot find module 'T:\2026\ai-chat-lite\2026ai-chat-litesrcclientchat.mjs'
 ```
 
 > [!WARNING]
@@ -1723,7 +1723,7 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 
 指摘は `ai-chat-lite-reviewer` のレビュー #19（`msg_seq` 648）。**いまのフォルダ名と 32 行の値が違うことを実物で確かめた。**
 
-- **☑** **パスから組み立てる形にした**（`N:\ai-chat-lite` → `N--ai-chat-lite`）。決め打ちは移すたびに壊れる。**前方一致では探さない**（`-reviewer` を巻き込むため）
+- **☑** **パスから組み立てる形にした**（`T:\ai-chat-lite` → `T--ai-chat-lite`）。決め打ちは移すたびに壊れる。**前方一致では探さない**（`-reviewer` を巻き込むため）
 - **☑** 本体が無ければ `exit 1` で止め、探した場所を出すようにした。**コピーだけ伏せて成功と出す形をやめた**
 - **☑** `-WhatIfOnly` で走らせ、**本体が実際に走査対象に入った**ことを確かめた（前は「対象がありません」で飛ばしていた）
 

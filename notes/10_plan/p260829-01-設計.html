@@ -2746,7 +2746,7 @@ logs\…-winsw.wrapper.log    … WinSW 自身。起動・停止・子プロセ�
 	<h3>登録は実体のフォルダで行う</h3>
 
 	<div class="callout">
-		<p><strong>N: から install してはいけない。</strong>WinSW は登録時、サービスの <code>ImagePath</code> に自分のフルパスを書き込む。<code>N:</code> は <code>subst</code> で作られた仮想ドライブで、割り当てはログオンセッション単位に閉じているため、<code>N:\…</code> が記録されるとサービス側からは解決できず起動に失敗する。<code>subst</code> コマンドで実体を確認し、<strong><code>C:\</code> 側の実際のフォルダへ移動してから登録する</strong>。</p>
+		<p><strong>X: のような subst ドライブから install してはいけない。</strong>WinSW は登録時、サービスの <code>ImagePath</code> に自分のフルパスを書き込む。割り当てはログオンセッション単位に閉じているため、<code>X:\…</code> が記録されるとサービス側からは解決できず起動に失敗する。<code>subst</code> コマンドで実体を確認し、<strong><code>C:\</code> 側の実際のフォルダへ移動してから登録する</strong>。</p>
 	</div>
 
 	<pre><code class="language-batch">:: 実体のフォルダへ移動してから実行する（管理者として）

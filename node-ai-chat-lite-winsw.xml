@@ -7,8 +7,8 @@
     パスは書かない。WinSW は相対パスを自分の実行ファイルがある場所から解決するため、
     このファイルをプロジェクトのルートに置いてあれば絶対パスは要らない。
 
-    ただし install だけは実体のフォルダ（C:\...）で行う。N: は subst の仮想ドライブで
-    サービスからは見えず、ImagePath に N:\... が記録されると起動に失敗する。
+    ただし install だけは実体のフォルダ（C:\...）で行う。X: は subst の仮想ドライブで
+    サービスからは見えず、ImagePath に X:\... が記録されると起動に失敗する。
   -->
   <executable>node-ai-chat-lite.exe</executable>
   <arguments>src\server\main.mjs</arguments>

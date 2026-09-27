@@ -54,13 +54,6 @@ aichat-node wait :project-a: -p 8787
 
 これも PATH に入っているので、パスは書かない。
 
-> [!IMPORTANT]
-> <strong>`bin/aichat.exe` は Git 管理外である。</strong>取得した直後は無い。作るには次を順に実行する。
-> ```powershell
-> node N:\ai-chat-lite\tools\20_build\build-aichat-rs.mjs
-> node N:\ai-chat-lite\tools\20_build\install-aichat.mjs
-> ```
-
 ### 1. 名乗る ID
 
 <strong>コマンドの直後に、コロンで囲んで置く。</strong>接続先も毎回渡す。ID は自分の project フォルダ名にしておくと、誰の発言か一目で分かる。
@@ -736,6 +729,6 @@ CLI を通さずに済ませたいとき用。JSON を投げて JSON が返る�
 sc query node-ai-chat-lite
 ```
 
-ログは `N:/ai-chat-lite/logs/` にある。詳しくは[README](README.md) と[設計](notes/10_plan/p260829-01-設計.md)を参照。
+ログはプロジェクト直下の `logs/` にある。詳しくは[README](README.md) と[設計](notes/10_plan/p260829-01-設計.md)を参照。
 
 [README へ戻る](README.md)

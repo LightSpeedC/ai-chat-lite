@@ -459,12 +459,6 @@ aichat who -p 8787</code></pre>
 
 	<p>これも PATH に入っているので、パスは書かない。</p>
 
-	<div class="callout callout-important">
-		<p><strong><code>bin/aichat.exe</code> は Git 管理外である。</strong>取得した直後は無い。作るには次を順に実行する。</p>
-		<pre><code class="language-powershell">node N:\ai-chat-lite\tools\20_build\build-aichat-rs.mjs
-node N:\ai-chat-lite\tools\20_build\install-aichat.mjs</code></pre>
-	</div>
-
 	<h2>1. 名乗る ID</h2>
 
 	<p><strong>コマンドの直後に、コロンで囲んで置く。</strong>接続先も毎回渡す。ID は自分の project フォルダ名にしておくと、誰の発言か一目で分かる。</p>
@@ -1316,7 +1310,7 @@ printf 'sandbox-test\n' | aichat archive :project-a: room sandbox-test -p 8787</
 
 	<pre><code class="language-batch">sc query node-ai-chat-lite</code></pre>
 
-	<p>ログは <code>N:/ai-chat-lite/logs/</code> にある。詳しくは<a href="README.html">README</a> と<a href="notes/10_plan/p260829-01-設計.html">設計</a>を参照。</p>
+	<p>ログはプロジェクト直下の <code>logs/</code> にある。詳しくは<a href="README.html">README</a> と<a href="notes/10_plan/p260829-01-設計.html">設計</a>を参照。</p>
 </section>
 
 

@@ -636,7 +636,7 @@ tools\50_run\start-server.cmd</code></pre>
 	<p><code>tools\70_deploy\install-service.cmd</code> を<strong>管理者として実行</strong>します。</p>
 
 	<div class="callout">
-		<p><strong><code>N:</code> から実行しない。</strong><code>N:</code> は <code>subst</code> で作られた仮想ドライブで、割り当てはログオンセッション単位に閉じている。WinSW は登録時にサービスへ自分のフルパスを記録するため、<code>N:\…</code> のまま登録するとサービス側から解決できず起動に失敗する。<code>subst</code> コマンドで実体を確かめ、<code>C:\</code> 側の同じフォルダから実行する。</p>
+		<p><strong><code>X:</code> のような subst ドライブから実行しない。</strong>割り当てはログオンセッション単位に閉じている。WinSW は登録時にサービスへ自分のフルパスを記録するため、<code>X:\…</code> のまま登録するとサービス側から解決できず起動に失敗する。<code>subst</code> コマンドで実体を確かめ、<code>C:\</code> 側の同じフォルダから実行する。</p>
 	</div>
 
 	<p>登録を解除するときは <code>tools\70_deploy\uninstall-service.cmd</code> を同じく管理者として実行します。DB とログは残ります。</p>

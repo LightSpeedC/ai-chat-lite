@@ -3098,7 +3098,7 @@ Review the subagent's actions carefully before acting on its output.</code></pre
 
 				<p>周知の本文に<strong>エラーメッセージとフルパスを載せた</strong>。分類器がこれを拾った可能性がある。</p>
 
-				<pre><code class="language-text">Cannot find module 'N:\2026\ai-chat-lite\2026ai-chat-litesrcclientchat.mjs'</code></pre>
+				<pre><code class="language-text">Cannot find module 'T:\2026\ai-chat-lite\2026ai-chat-litesrcclientchat.mjs'</code></pre>
 
 				<div class="callout callout-warning">
 					<p><strong>警告の理由が分からないままだと、対処もできない。</strong>「分類器がブロックした」以上の情報が出力に無い。同じ操作を繰り返して再現するか、出ない条件を探すかになる。</p>
@@ -3749,7 +3749,7 @@ purge-test-data.mjs                # 断る（どちらの置き場かが指定�
 				<p>指摘は <code>ai-chat-lite-reviewer</code> のレビュー #19（<code>msg_seq</code> 648）。<strong>いまのフォルダ名と 32 行の値が違うことを実物で確かめた。</strong></p>
 
 				<ul class="todos">
-					<li class="done"><span class="badge b-done">☑</span> <strong>パスから組み立てる形にした</strong>（<code>N:\ai-chat-lite</code> → <code>N--ai-chat-lite</code>）。決め打ちは移すたびに壊れる。<strong>前方一致では探さない</strong>（<code>-reviewer</code> を巻き込むため）</li>
+					<li class="done"><span class="badge b-done">☑</span> <strong>パスから組み立てる形にした</strong>（<code>T:\ai-chat-lite</code> → <code>T--ai-chat-lite</code>）。決め打ちは移すたびに壊れる。<strong>前方一致では探さない</strong>（<code>-reviewer</code> を巻き込むため）</li>
 					<li class="done"><span class="badge b-done">☑</span> 本体が無ければ <code>exit 1</code> で止め、探した場所を出すようにした。<strong>コピーだけ伏せて成功と出す形をやめた</strong></li>
 					<li class="done"><span class="badge b-done">☑</span> <code>-WhatIfOnly</code> で走らせ、<strong>本体が実際に走査対象に入った</strong>ことを確かめた（前は「対象がありません」で飛ばしていた）</li>
 				</ul>
