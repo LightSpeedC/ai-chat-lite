@@ -300,6 +300,17 @@ pub fn via_of(name: &str, parent_name: Option<&str>) -> String {
 	lower.trim_end_matches(".exe").to_string()
 }
 
+/// 待受けの実体になる実行体。拡張子と大小は見ない。
+///
+/// 新しい実行体が増えたらここへ足す。足し忘れても本数が少なく見えるだけで、
+/// 二重に数えて「張らなくてよい」と読み違える向きには外れない。
+/// node 版（waiters-pick.mjs の WAITER_RUNTIMES）と同じ並びにする。
+pub fn is_waiter_runtime(name: &str) -> bool {
+	let lower = name.to_ascii_lowercase();
+	let base = lower.strip_suffix(".exe").unwrap_or(&lower);
+	matches!(base, "aichat" | "aichat-rs" | "node" | "bun")
+}
+
 /// 一覧から待受けだけを選ぶ。
 ///
 /// **親を落とす。**`cmd.exe → node.exe` と連なるとき、途中の段はすべて同じ
@@ -312,10 +323,13 @@ pub fn pick_waiters(rows: &[Process], exclude_pids: &[i64]) -> Vec<(Process, Str
 		.filter_map(|r| waiter_id(&r.cmd).map(|id| (r.clone(), id)))
 		.collect();
 
+	// 末端に数えるのは待受けの実体だけ。bash ・ timeout ・ pwsh のようなラッパーは数えない。
+	// timeout 越しに起動すると外側の timeout.exe の親が先に終わり、bash から親子が切れて、
+	// bash が「子を持たない末端」として残っていた（i261004-01）
 	let parents: Vec<i64> = hits.iter().map(|(p, _)| p.ppid).collect();
 	let mut leaves: Vec<(Process, String)> = hits
 		.iter()
-		.filter(|(p, _)| !parents.contains(&p.pid))
+		.filter(|(p, _)| is_waiter_runtime(&p.name) && !parents.contains(&p.pid))
 		.cloned()
 		.collect();
 
@@ -690,6 +704,47 @@ mod tests {
 		let picked = pick_waiters(&rows, &[]);
 		assert_eq!(picked.len(), 1, "末端 1 つだけ");
 		assert_eq!(picked[0].0.pid, 20);
+	}
+
+	#[test]
+	fn 親子が切れたラッパーは数えない() {
+		// timeout 越しに起動すると外側の timeout.exe の親（8296）が先に終わっていて、
+		// 一覧に無い。bash（38572）から timeout へ親子がつながらず、bash が末端に残った（i261004-01）
+		let shell = "bash.exe -c \"eval 'timeout 7200 aichat wait :me: -p 8787 -r public' < /dev/null\"";
+		let rows = vec![
+			proc(22172, 37516, "bash.exe", shell, "2026-10-04 12:50:56"),
+			proc(38572, 22172, "bash.exe", shell, "2026-10-04 12:50:56"),
+			proc(26352, 8296, "timeout.exe", "timeout.exe 7200 aichat wait :me: -p 8787 -r public", "2026-10-04 12:50:56"),
+			proc(43092, 26352, "timeout.exe", "timeout.exe 7200 aichat wait :me: -p 8787 -r public", "2026-10-04 12:50:56"),
+			proc(4992, 43092, "aichat.exe", "aichat.exe wait :me: -p 8787 -r public", "2026-10-04 12:50:56"),
+		];
+		let picked = pick_waiters(&rows, &[]);
+		assert_eq!(picked.len(), 1, "1 本が 2 本に見えている");
+		assert_eq!(picked[0].0.pid, 4992, "実体ではなくラッパーを残している");
+	}
+
+	#[test]
+	fn ラッパーは親子がどうつながっていても末端に数えない() {
+		let rows = vec![
+			proc(100, 1, "bash.exe", "bash.exe -c \"aichat wait :me: -p 8787\"", "2026-10-04 12:00:00"),
+			proc(101, 1, "sh.exe", "sh.exe -c \"aichat wait :me: -p 8787\"", "2026-10-04 12:00:00"),
+			proc(102, 1, "timeout.exe", "timeout.exe 7200 aichat wait :me: -p 8787", "2026-10-04 12:00:00"),
+			proc(103, 1, "pwsh.exe", "pwsh.exe -Command \"aichat wait :me: -p 8787\"", "2026-10-04 12:00:00"),
+			proc(104, 1, "cmd.exe", "cmd.exe /c aichat wait :me: -p 8787", "2026-10-04 12:00:00"),
+		];
+		assert_eq!(pick_waiters(&rows, &[]).len(), 0, "ラッパーを待受けと数えている");
+	}
+
+	#[test]
+	fn aichat_rsとbunも実体として数える() {
+		// 実体の許可を狭くしすぎて、本物の待受けを落とさない
+		let rows = vec![
+			proc(100, 1, "aichat-rs.exe", "aichat-rs.exe wait :a: -p 8787", "2026-10-04 12:00:00"),
+			proc(200, 1, "sh.exe", "sh.exe aichat-bun wait :b: -p 8787", "2026-10-04 12:00:00"),
+			proc(201, 200, "bun.exe", "bun.exe chat.mjs wait :b: -p 8787", "2026-10-04 12:00:01"),
+		];
+		let picked = pick_waiters(&rows, &[]);
+		assert_eq!(picked.iter().map(|(p, _)| p.pid).collect::<Vec<_>>(), vec![100, 201]);
 	}
 
 	#[test]

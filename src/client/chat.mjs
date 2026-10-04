@@ -12,7 +12,6 @@ import {
 	DEFAULT_WAIT_SEC,
 	ID_WRAP,
 	ID_PATTERN,
-	WAITER_PATTERN,
 	OPTIONS,
 	COMMANDS,
 	ADMIN_COMMANDS,
@@ -22,7 +21,7 @@ import {
 	EXIT_UNREACHABLE,
 	FLAGS,
 } from './options.mjs';
-import { splitRedundant, readArg, roomsFrom as roomsFromShared, roomsArg } from './waiters-pick.mjs';
+import { splitRedundant, pickWaiters, roomsFrom as roomsFromShared, roomsArg } from './waiters-pick.mjs';
 import { listProcesses } from './proc-list.mjs';
 
 /**
@@ -1052,87 +1051,14 @@ async function listWaiters() {
 	 * API を直に呼ぶ経路では子プロセスを起こさない。PowerShell へ落ちたときも、
 	 * 式の中に wait という並びを置かないので、その子は条件に当たらない。
 	 */
-	return pickWaiters(rows, [process.pid]);
+	return pickWaiters(rows, [process.pid], DEFAULT_ROOM);
 }
 
-/**
- * 一覧から待受けだけを選ぶ。
- *
- * 引数で渡した pid（自分と、一覧を取るために起こした子）は最初に外す。
- * テストから直に呼べるよう、プロセスを触る部分と分けてある。
+/*
+ * 待受けの選び方（pickWaiters）・待っている先の読み取り（targetOf）・張り方の名前
+ * （viaOf）は waiters-pick.mjs にある。写しにするとテストが本体を守れない。
+ * どこを待っているかを出す理由（ルームは間違えても静かに動く）もそちらに書いた。
  */
-function pickWaiters(rows, excludePids) {
-	const skip = new Set(excludePids);
-	const re = new RegExp(WAITER_PATTERN);
-
-	const hits = [];
-	for (const r of rows) {
-		if (skip.has(r.pid)) continue;
-		const m = re.exec(r.cmd ?? '');
-		if (!m) continue;
-		hits.push({
-			pid: r.pid,
-			ppid: r.ppid,
-			name: r.name,
-			at: r.at,
-			id: m[1] ?? m[2],
-			...targetOf(r.cmd ?? ''),
-		});
-	}
-
-	/*
-	 * 親を落とす。pwsh → aichat.exe や pwsh → cmd.exe → node.exe と連なるとき、
-	 * 途中の段はすべて同じコマンドラインを抱えているため全部が当たってしまう。
-	 * 「当たったものの直親」を落とすと、連鎖でも末端 1 つだけが残る。
-	 */
-	const parents = new Set(hits.map((h) => h.ppid));
-	const leaves = hits.filter((h) => !parents.has(h.pid));
-
-	// 親の名前から張り方を決める。cmd.exe 越しの node は aichat-node である
-	const nameOf = new Map(hits.map((h) => [h.pid, h.name]));
-	for (const h of leaves) h.via = viaOf(h.name, nameOf.get(h.ppid));
-
-	return leaves.sort((a, b) => (a.at === b.at ? a.pid - b.pid : a.at < b.at ? -1 : 1));
-}
-
-// readArg は waiters-pick.mjs から使う（写しにするとテストが本体を守れない）
-
-/**
- * その待受けが「どこを待っているか」を読む。
- *
- * 【なぜ要るのか】
- * 本数だけ数えても、待っている場所が違えば意味がない。とくにルームは
- * 間違えても静かに動く。繋がっているので who は「接続中」と出し、waiters も
- * 1 本と数えるが、public の発言は 1 つも届かない。どこも異常に見えない。
- *
- * ポートは間違えれば繋がらないか別のサーバーに繋がるので、まだ気づける。
- * ルームはそれが無い。だから両方を出す。
- *
- * 値はすべて引数で渡す決まりなので、コマンドラインを読めば分かる。
- * 環境変数で渡せるようにしていないのは、まさにこのためである。
- */
-function targetOf(cmd) {
-	const port = readArg(cmd, 'port', 'p');
-	const url = readArg(cmd, 'url', 'u');
-
-	// 1 本が複数のルームを見られる。カンマで割って集合として持つ
-	const rooms = roomsFrom(readArg(cmd, 'room', 'r'));
-
-	let target = '(未指定)';
-	let portNum = 0;
-
-	if (port !== null) {
-		target = `:${port}`;
-		portNum = Number(port);
-	} else if (url !== null) {
-		// スキームは落として host:port だけ出す
-		target = url.replace(/^[a-z]+:\/\//i, '').replace(/\/+$/, '');
-		const m = /:(\d+)/.exec(target);
-		portNum = m ? Number(m[1]) : 0;
-	}
-
-	return { target, rooms, port: portNum };
-}
 
 /**
  * -r の値をルームの配列にする。省略なら既定のルーム 1 つ。重複は落とす。
@@ -1143,14 +1069,6 @@ function targetOf(cmd) {
  */
 function roomsFrom(value) {
 	return roomsFromShared(value, DEFAULT_ROOM);
-}
-
-/** 張り方の名前。出力に出るのは aichat / aichat-node / node の 3 つ */
-function viaOf(name, parentName) {
-	const lower = (name ?? '').toLowerCase();
-	if (lower === 'aichat.exe') return 'aichat';
-	if (lower === 'node.exe') return (parentName ?? '').toLowerCase() === 'cmd.exe' ? 'aichat-node' : 'node';
-	return lower.replace(/\.exe$/, '');
 }
 
 /** 経過を h:mm で返す。日をまたいでも時のまま増やす（2 日なら 48:00 になる） */

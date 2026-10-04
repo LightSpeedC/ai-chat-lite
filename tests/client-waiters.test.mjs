@@ -19,7 +19,8 @@ import assert from 'node:assert/strict';
 import { WAITER_PATTERN, ID_WRAP } from '../src/client/options.mjs';
 /*
  * 選び方は本体と同じものを使う。写しを検査すると、本体を壊しても通ってしまう。
- * ここで実物を落とせるのは、chat.mjs から純粋な関数として出したためである。
+ * ここで実物を落とせるのは、waiters-pick.mjs から純粋な関数として出したためである
+ * （i261004-01。それまでは chat.mjs とこのファイルに別々の写しがあった）。
  */
 /*
  * 読み取りも本体から取る。
@@ -29,7 +30,14 @@ import { WAITER_PATTERN, ID_WRAP } from '../src/client/options.mjs';
  * ダブルクォート付きの -r を読めない穴（#22 medium 7）は、写しを検査していた
  * 間ずっと見えていなかった。
  */
-import { splitRedundant, readArg, roomsFrom as roomsFromRaw, roomsArg } from '../src/client/waiters-pick.mjs';
+import {
+	splitRedundant,
+	readArg,
+	roomsFrom as roomsFromRaw,
+	roomsArg,
+	pickWaiters as pickWaitersRaw,
+	targetOf as targetOfRaw,
+} from '../src/client/waiters-pick.mjs';
 import { DEFAULT_ROOM, PORT } from '../src/server/config.mjs';
 
 /** 一覧の 1 行を作る */
@@ -42,24 +50,9 @@ function roomsFrom(value) {
 	return roomsFromRaw(value, DEFAULT_ROOM);
 }
 
+/** 本体の targetOf に既定のルームを渡して使う（chat.mjs も同じ渡し方をする） */
 function targetOf(cmd) {
-	const port = readArg(cmd, 'port', 'p');
-	const url = readArg(cmd, 'url', 'u');
-	const rooms = roomsFrom(readArg(cmd, 'room', 'r'));
-
-	let target = '(未指定)';
-	let portNum = 0;
-
-	if (port !== null) {
-		target = `:${port}`;
-		portNum = Number(port);
-	} else if (url !== null) {
-		target = url.replace(/^[a-z]+:\/\//i, '').replace(/\/+$/, '');
-		const m = /:(\d+)/.exec(target);
-		portNum = m ? Number(m[1]) : 0;
-	}
-
-	return { target, rooms, port: portNum };
+	return targetOfRaw(cmd, DEFAULT_ROOM);
 }
 
 /** 表に出すかどうか。接続先で見る。ルームは列に出すので絞りに使わない */
@@ -83,26 +76,11 @@ function waiter(pid, rooms, at) {
 const PROD = { port: PORT, rooms: [DEFAULT_ROOM] };
 
 /*
- * chat.mjs の pickWaiters と同じ選び方をここに置く。
- *
- * chat.mjs はトップレベルでコマンドを走らせる作りなので import できない。
- * 写しになるのは避けたいが、選び方は事故の核なので検査は外せない。
- * 出どころの式（WAITER_PATTERN）は import しているので、そこはずれない。
+ * 本体の pickWaiters をそのまま呼ぶ。chat.mjs はトップレベルでコマンドを走らせる
+ * 作りで import できないため、選び方は waiters-pick.mjs に置いて共有している。
  */
 function pickWaiters(rows, excludePids) {
-	const skip = new Set(excludePids);
-	const re = new RegExp(WAITER_PATTERN);
-
-	const hits = [];
-	for (const r of rows) {
-		if (skip.has(r.pid)) continue;
-		const m = re.exec(r.cmd ?? '');
-		if (!m) continue;
-		hits.push({ pid: r.pid, ppid: r.ppid, name: r.name, at: r.at, id: m[1] ?? m[2] });
-	}
-
-	const parents = new Set(hits.map((h) => h.ppid));
-	return hits.filter((h) => !parents.has(h.pid));
+	return pickWaitersRaw(rows, excludePids, DEFAULT_ROOM);
 }
 
 describe('待受けの見つけ方', () => {
@@ -201,6 +179,71 @@ describe('自分自身を数えない', () => {
 		];
 
 		assert.equal(pickWaiters(rows, []).length, 2, '二重を見逃している');
+	});
+});
+
+describe('親子が途中で切れていても 1 本に数える（i261004-01）', () => {
+	/*
+	 * timeout 越しに起動すると、外側の timeout.exe の親プロセスが先に終わっている。
+	 * ハーネスが起こした bash から timeout へ親子がつながらず、bash は「子を持たない末端」
+	 * として残り、同じ ID が 2 本に見えた。ルーム名も bash -c の引用符を拾って
+	 * public' に壊れる。親を落とす方式だけでは、つながらない親は落とせない。
+	 */
+	const SHELL_CMD = (id) =>
+		`"C:\\Program Files\\Git\\usr\\bin\\bash.exe" -c "source shell-snapshot.sh && eval 'timeout 7200 aichat wait :${id}: -p 8787 -r public' < /dev/null"`;
+
+	test('timeout 越しで親子が切れた bash を数えない', () => {
+		const rows = [
+			proc(22172, 37516, 'bash.exe', SHELL_CMD('project-a')),
+			proc(38572, 22172, 'bash.exe', SHELL_CMD('project-a')),
+			// 親（8296）はすでに終わっていて、一覧に無い。bash（38572）とつながらない
+			proc(26352, 8296, 'timeout.exe', 'timeout.exe 7200 aichat wait :project-a: -p 8787 -r public'),
+			proc(43092, 26352, 'timeout.exe', 'timeout.exe 7200 aichat wait :project-a: -p 8787 -r public'),
+			proc(4992, 43092, 'aichat.exe', 'C:\\work\\ai-chat-lite\\bin\\aichat.exe wait :project-a: -p 8787 -r public'),
+		];
+
+		const found = pickWaiters(rows, []);
+		assert.equal(found.length, 1, '1 本が 2 本に見えている');
+		assert.equal(found[0].pid, 4992, '実体（aichat.exe）ではなくラッパーを残している');
+		assert.deepEqual(found[0].rooms, ['public'], 'ルーム名が壊れている');
+	});
+
+	test('ラッパーは、親子がどうつながっていても末端に数えない', () => {
+		// 実体の名前だけを数える。ラッパーが何であっても（将来増えるものも）1 本にしない
+		const rows = [
+			proc(100, 1, 'bash.exe', 'bash.exe -c "aichat wait :project-a: -p 8787"'),
+			proc(101, 1, 'sh.exe', 'sh.exe -c "aichat wait :project-a: -p 8787"'),
+			proc(102, 1, 'timeout.exe', 'timeout.exe 7200 aichat wait :project-a: -p 8787'),
+			proc(103, 1, 'pwsh.exe', 'pwsh.exe -Command "aichat wait :project-a: -p 8787"'),
+			proc(104, 1, 'cmd.exe', 'cmd.exe /c aichat wait :project-a: -p 8787'),
+		];
+
+		assert.equal(pickWaiters(rows, []).length, 0, 'ラッパーを待受けと数えている');
+	});
+
+	test('aichat-rs・bun も実体として数える', () => {
+		// 実体の許可を狭くしすぎて、本物の待受けを落とさない
+		const rows = [
+			proc(100, 1, 'aichat-rs.exe', 'aichat-rs.exe wait :project-a: -p 8787'),
+			proc(200, 1, 'sh.exe', 'sh.exe /c/work/ai-chat-lite/tools/50_run/aichat-bun wait :project-b: -p 8787'),
+			proc(201, 200, 'bun.exe', 'bun.exe src/client/chat.mjs wait :project-b: -p 8787'),
+		];
+
+		const found = pickWaiters(rows, []);
+		assert.deepEqual(found.map((h) => h.pid), [100, 201]);
+		assert.deepEqual(found.map((h) => h.via), ['aichat-rs', 'bun']);
+	});
+
+	test('cmd.exe 越しの node は、ラッパーを末端にせず aichat-node と数える', () => {
+		// 親の名前は張り方の判定に使い続ける。末端から外すのは数えるときだけ
+		const rows = [
+			proc(200, 1, 'cmd.exe', 'cmd.exe /c aichat-node wait :project-a: -p 8787'),
+			proc(300, 200, 'node.exe', 'node.exe .../chat.mjs wait :project-a: -p 8787'),
+		];
+
+		const found = pickWaiters(rows, []);
+		assert.equal(found.length, 1);
+		assert.equal(found[0].via, 'aichat-node');
 	});
 });
 
