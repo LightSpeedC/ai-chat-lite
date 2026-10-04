@@ -594,7 +594,7 @@ footer a {
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（6 件 / 未 3 / 着手 1 / 済 2）</a></li>
 		<li class="g02"><a href="#g02">データ（7 件 / 未 1 / 着手 0 / 済 6）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（36 件 / 未 5 / 着手 7 / 済 24）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（38 件 / 未 7 / 着手 7 / 済 24）</a></li>
 		<li class="g04"><a href="#g04">チャットの機能（36 件 / 未 11 / 着手 1 / 済 24）</a></li>
 	</ol>
 </section>
@@ -1367,10 +1367,39 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">36 件 / 未 5 / 着手 7 / 済 24</span>
+		<span class="count">38 件 / 未 7 / 着手 7 / 済 24</span>
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue md-flat" id="i260928-01" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260928-01</span>
+				共通ルール更新（コーディングルール・シェル実行ルール、chat #1238）への追随
+			</summary>
+			<div class="issuebody">
+				<p><code>20260726-claude-move-folder</code> から通知（chat #1238）。「標準出力は UTF-8 に揃える」が「コンソールのコードページを変更しない」に置き換わり、コードページの変更（<code>chcp</code>・<code>[Console]::OutputEncoding</code>・<code>SetConsoleOutputCP</code> 等）は禁止に変わった。「SetConsoleOutputCP は成功を返しても実際には効かないことがある」「Bun 同士のパイプは文字化けすることがある」にも追記あり。</p>
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> 既存の ps1・C#（<code>src/cli-cs/</code> は削除済みのため対象外）に、廃止された「先頭でコードページを変える」形が残っていないか確認する</li>
+				</ul>
+			</div>
+		</details>
+
+		<details class="issue md-flat" id="i260928-02" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i260928-02</span>
+				N: ドライブ廃止（chat #1249）への追随
+			</summary>
+			<div class="issuebody">
+				<p><code>20260726-claude-move-folder</code> から周知（chat #1249）。<code>N:</code> の subst を解除済みで参照不可。自プロジェクトの参照は <code>W:</code>、共有ツール（ai-agent-tools・PlayWright・ai-chat-lite 等）の参照は <code>T:</code> に読み替える。加えて、ドライブ移行と同時に実行ユーザーを入れ替えたため、環境変化によるツール実行の不具合有無を確認する必要がある。</p>
+				<ul class="todos">
+					<li><span class="badge b-done">☑</span> プロジェクト全体を <code>N:</code> で検索し、残存参照が無いことを確認した（0 件）</li>
+					<li><span class="badge b-todo">未</span> 実行ユーザー入れ替え後の全テスト実行結果を確認する</li>
+				</ul>
+			</div>
+		</details>
 
 		<details class="issue done md-flat" id="i260924-01">
 			<summary>
