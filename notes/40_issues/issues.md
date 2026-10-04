@@ -2,7 +2,7 @@
 
 これから解決すること。片付いたら閉じて残す
 
-> 📅 作成: 2026-08-30 / 更新: 2026-09-25
+> 📅 作成: 2026-08-30 / 更新: 2026-10-05
 
 [README へ戻る](../../README.md)
 
@@ -426,7 +426,8 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 `20260726-claude-move-folder` から周知（chat #1249）。`N:` の subst を解除済みで参照不可。自プロジェクトの参照は `W:`、共有ツール（ai-agent-tools・PlayWright・ai-chat-lite 等）の参照は `T:` に読み替える。加えて、ドライブ移行と同時に実行ユーザーを入れ替えたため、環境変化によるツール実行の不具合有無を確認する必要がある。
 
 - **☑** プロジェクト全体を `N:` で検索し、残存参照が無いことを確認した（0 件）
-- **未** 実行ユーザー入れ替え後の全テスト実行結果を確認する
+- **☑** 実行ユーザー入れ替え後に全テストを実行した（2026-10-05 時点、node 558 件中 555 件合格）。実行ポリシーで落ちていた `restore.ps1` のテストは合格に変わった
+- **未** `tests/mask-log-input-ps1.test.mjs` の 3 件（「成功したら、本実行まで進む」「claude が走っていたら、下見の時点で止まり…」「本物の mask-log.ps1 は、claude が走っていれば…4 で止まる」）が落ちる。子の PowerShell が CP932 で出力し、テストが UTF-8 として読むため、文言（`claude が動いています`）が文字化けして一致しない。[i260928-01](#未-i260928-01-共通ルール更新コーディングルールシェル実行ルールchat-1238への追随)（コードページを変更しない）の「UTF-8 で渡すときは、リダイレクトされている分だけ自分の読み書きを差し替える」に沿って直す
 
 ## **☑** i260924-01 資料の HTML が共通ルールの文字コード・改行に合っていない
 
@@ -2017,7 +2018,29 @@ USAGE が共通オプションを 2 か所で定義しており、**手書きの
 </details>
 
 <details>
-<summary><strong>未</strong> チャットの機能 36 件 / 未 11 / 着手 1 / 済 24</summary>
+<summary><strong>未</strong> チャットの機能 37 件 / 未 11 / 着手 2 / 済 24</summary>
+
+## **着手** i261004-01 `aichat waiters` が `timeout` 越しの待受けを 2 本と数える（ルーム名が `public'` に壊れる）
+
+**ai-agent-support から報告があり（chat #1346）、実機で再現した。**`timeout 7200 aichat wait :id: -p 8787 -r public` を `run_in_background` で起動すると、同じ ID が `aichat` と `bash`（ルーム `public'`）の 2 行で出る。`timeout` を付けない他プロジェクトの待受けは 1 本のままで、報告の「自分の ID だけ」は当たっている。
+
+### 原因（実測）
+
+親子の連なりは `aichat.exe`（4992）→ `timeout.exe`（43092）→ `timeout.exe`（26352）で、**外側の `timeout.exe` の親（8296）がすでに終了している**。ハーネスが起こした `bash.exe`（38572、コマンドラインに `aichat wait :id: …` をそのまま持つ）から `timeout` へ親子がつながらない。`pickWaiters` は「当たったものの直親を落とす」ので、つながらない `bash` は直子を持たない末端として残り、2 本目になる。`public'` は `bash -c "…"` の引用符が `-r public` の直後に付いたもの。
+
+> [!IMPORTANT]
+> <strong>node 版（`chat.mjs` の `pickWaiters`）と Rust 版（`waiters.rs`）の両方に同じ作りがある。</strong>どちらかだけ直すと、突き合わせテスト（`tests/cli-rs.test.mjs`・`tools/40_test/compare-cli.mjs`）が食い違いを落とす。
+
+### 直し方（1-A で決定）
+
+**末端に数えるのを、待受けの実体（`aichat`・`aichat-rs`・`node`・`bun`）だけにした。**`bash`・`timeout`・`pwsh` 等のラッパーは、親子がどうつながっていても数えない。ラッパーは親の判定と張り方の判定（`cmd.exe` 越しの `node` は `aichat-node`）には使い続ける。実体の名前が増えたら `WAITER_RUNTIMES`（node 版）・`is_waiter_runtime`（Rust 版）へ足す。足し忘れても本数が少なく見えるだけで、二重に数えて「張らなくてよい」と読み違える向きには外れない。
+
+**テストの写しも解消した。**`tests/client-waiters.test.mjs` は `pickWaiters` と `targetOf` を自分の中に写して検査していた（本体を壊しても緑のまま）。選び方を `waiters-pick.mjs` へ出して、`chat.mjs` とテストが同じ実物を使う形にした。
+
+- **☑** 落ちるテストを先に書いた（node 版 2 件・Rust 版 2 件が「1 本が 2 本に見えている」「ラッパーを待受けと数えている」で落ちることを確かめた）
+- **☑** node 版・Rust 版の両方を直した。node の `client-waiters` 55 件・Rust 197 件が合格。`bin/aichat.exe` へ写し、実機の `aichat waiters` で `ai-agent-support` が 1 本になった（`bash`・`public'` の行が消えた）
+- **☑** ai-agent-support へ原因を返信した（chat #1348）。直したことの返信は、commit・push のあとに送る
+- **着手** ai-agent-support に、手元で `aichat waiters` が 1 本になるか確認してもらう（報告に基づく課題のため、確認が取れるまで「済」にしない）
 
 ## **☑** i260924-05 `CHAT-USAGE.html` が実在しない `build-aichat.cmd` を案内している
 
