@@ -461,7 +461,7 @@ async function call(path, init) {
 	console.error(`諦めました: ${lastReason}`);
 	if (retryTimes > 0) console.error(`  ${describeRetry()}繋がりませんでした`);
 	console.error('  サービスが動いているか確認してください');
-	console.error('  例: node-ai-chat-lite-winsw.exe status');
+	console.error('  例: deploy\\node-ai-chat-lite-winsw.exe status');
 	process.exit(EXIT_UNREACHABLE);
 }
 
@@ -1218,7 +1218,7 @@ async function cmdExit(exitCode) {
 	if (result.will_restart) {
 		console.log('  10 秒ほど待ってから接続してください');
 	} else if (result.managed_by) {
-		console.log('  もう一度動かすには: node-ai-chat-lite-winsw.exe start');
+		console.log('  もう一度動かすには: deploy\\node-ai-chat-lite-winsw.exe start');
 	}
 }
 

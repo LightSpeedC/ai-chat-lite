@@ -60,6 +60,16 @@ describe('繋がらないとき', () => {
 		assert.match(stderr, /繋がりません/);
 	});
 
+	test('サービスの確かめ方は、deploy/ の WinSW を指す（i260830-01）', async () => {
+		/*
+		 * WinSW 本体はルート直下から deploy/ へ移した。パスなしの名前だけで案内すると、
+		 * ルートでは見つからず、案内どおりに打っても動かない。
+		 */
+		const { stderr } = await failing(withId(['stop', '--port', '1'], 'test-connector1'));
+
+		assert.match(stderr, /deploy\\node-ai-chat-lite-winsw\.exe status/);
+	});
+
 	test('終了コードで「使い方の誤り」と区別できる', async () => {
 		// 2 は使い方の誤り、3 は向こうの都合。呼ぶ側がどちらか分かるようにしてある
 		const wrongUsage = await failing(

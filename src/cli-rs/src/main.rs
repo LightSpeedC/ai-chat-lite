@@ -4,7 +4,7 @@
 //! 出力も終了コードも 1 文字ずつ揃える。食い違いは `tests/cli-rs.test.mjs` が落とす。
 //!
 //! 外部クレートを使わない。JSON も HTTP も標準ライブラリだけで書く。
-//! 理由は計画書（notes/10_plan/p260913-01-CLIをRustで書く.html）にある。
+//! 理由は計画書 p260913-01 にある。
 
 mod args;
 mod client;
@@ -357,7 +357,7 @@ fn run() -> i32 {
 				eprintln!("  {}繋がりませんでした", cli.describe_retry());
 			}
 			eprintln!("  サービスが動いているか確認してください");
-			eprintln!("  例: node-ai-chat-lite-winsw.exe status");
+			eprintln!("  例: deploy\\node-ai-chat-lite-winsw.exe status");
 			def.exit_unreachable as i32
 		}
 	}

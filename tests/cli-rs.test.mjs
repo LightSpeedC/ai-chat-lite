@@ -77,6 +77,17 @@ describe('Rust 版と node 版の突き合わせ', { skip: ready ? false : 'aich
 		});
 	}
 
+	test('繋がらないときの案内が node 版と同じで、deploy/ の WinSW を指す（i260830-01）', () => {
+		// 誰も待ち受けていないポート。stop は粘らないので、すぐ終わる
+		const { node, rust } = runBoth(['stop', ':test-connector1:', '--port', '1']);
+
+		// 1 行目は OS のエラー名（ECONNREFUSED と connection refused）で違うので、案内の行だけを比べる
+		const guide = (out) => out.split(/\r?\n/).slice(1).join('\n');
+		assert.equal(guide(rust.out), guide(node.out), '案内の行が違う');
+		assert.equal(rust.code, node.code, '終了コードが違う');
+		assert.match(rust.out, /deploy\\node-ai-chat-lite-winsw\.exe status/);
+	});
+
 	test('埋め込んだ定義の版が node 版と揃っている', () => {
 		// 形が変わったら Rust 側の EXPECTED_SCHEMA も上げる。
 		// 上げ忘れたまま動くと、古い形を新しい形として読んでしまう

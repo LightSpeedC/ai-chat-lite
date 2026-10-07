@@ -1,7 +1,7 @@
 ﻿# 開発用にサーバーを起動する。
 #
 # サービスとして常駐させている場合は同じポートを使うため、先に停止すること。
-#   node-ai-chat-lite-winsw.exe stop
+#   deploy\node-ai-chat-lite-winsw.exe stop
 #
 # 終了は Ctrl+C。
 

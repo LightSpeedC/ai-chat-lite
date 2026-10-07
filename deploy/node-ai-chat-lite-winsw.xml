@@ -4,14 +4,17 @@
   <description>ローカル PC 内で AI セッションと人間が同席する簡易チャットのサーバ</description>
 
   <!--
-    パスは書かない。WinSW は相対パスを自分の実行ファイルがある場所から解決するため、
-    このファイルをプロジェクトのルートに置いてあれば絶対パスは要らない。
+    絶対パスは書かない。このファイルはプロジェクトの deploy フォルダに置く。
+    WinSW は相対パスを自分の実行ファイルがある場所（deploy）から解決するため、
+    executable は隣の exe を指し、arguments はルートの src を ..\ で指す。
+    arguments の基準になる子プロセスの作業フォルダが WinSW の置き場（deploy）であることを前提にしている。
+    外れると node が main.mjs を見つけられず、err.log に Cannot find module が出る。
 
     ただし install だけは実体のフォルダ（C:\...）で行う。X: は subst の仮想ドライブで
     サービスからは見えず、ImagePath に X:\... が記録されると起動に失敗する。
   -->
   <executable>node-ai-chat-lite.exe</executable>
-  <arguments>src\server\main.mjs</arguments>
+  <arguments>..\src\server\main.mjs</arguments>
 
   <!-- 既定値のままで動く。ここで指定しているのは、外から見て分かるようにするため -->
   <env name="AICHAT_PORT" value="8787"/>
@@ -23,9 +26,10 @@
     logpath の相対パスは、この XML の場所ではなく「サービスのカレントディレクトリ」
     を基準に解決される。サービスのカレントは C:\Windows\System32 なので、
     単に logs と書くと C:\Windows\System32\Logs に出てしまう。
-    %BASE% は WinSW の実行ファイルがあるフォルダを指すため、これを前に付ける。
+    %BASE% は WinSW の実行ファイルがあるフォルダ（deploy）を指すため、これを前に付け、
+    ..\ でルートの logs を指す。
   -->
-  <logpath>%BASE%\logs</logpath>
+  <logpath>%BASE%\..\logs</logpath>
   <log mode="roll-by-size">
     <sizeThreshold>10240</sizeThreshold>
     <keepFiles>8</keepFiles>

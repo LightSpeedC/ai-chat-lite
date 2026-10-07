@@ -951,7 +951,7 @@ pub fn exit_server(client: &Client, me: &str, exit_code: i64) -> Result<(), Call
 	if result.get("will_restart").and_then(|v| v.as_bool()).unwrap_or(false) {
 		println!("  10 秒ほど待ってから接続してください");
 	} else if result.get("managed_by").map(|v| !v.is_null()).unwrap_or(false) {
-		println!("  もう一度動かすには: node-ai-chat-lite-winsw.exe start");
+		println!("  もう一度動かすには: deploy\\node-ai-chat-lite-winsw.exe start");
 	}
 	Ok(())
 }
