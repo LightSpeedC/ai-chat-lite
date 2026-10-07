@@ -7,7 +7,7 @@
 [README へ戻る](../../README.md)
 
 <details>
-<summary><strong>未</strong> サービスの運用 6 件 / 未 3 / 着手 1 / 済 2</summary>
+<summary><strong>未</strong> サービスの運用 7 件 / 未 3 / 着手 0 / 済 4</summary>
 
 ## **☑** i260917-01 張り直すと、読み飛ばした発言が痕跡なく消える
 
@@ -109,17 +109,35 @@ const servers = await startServers();           // 待ち受けを開始
 - **☑** 停止と再開の案内を `restore.ps1` と印の手順に組み込む
 - **☑** 実際に止めて、待受けが何を出すかを確かめる
 
-## **未** i260830-01 WinSW 関係のファイルをルート直下から deploy/ へ移す
+## **☑** i260830-01 WinSW 関係のファイルをルート直下から deploy/ へ移す
+
+<strong>計画書: [WinSW のファイルを deploy/ へ移す](../10_plan/i260830-01-WinSWのファイルをdeployへ移す.md)（2026-10-07、実施済み）。</strong>影響範囲の調査と、決めた点 3 つ（1-B: スクリプトも `deploy/` へ移す、2-B: `arguments` に `..\` を足す、3-A: 時刻を決めて周知してから実施する）、登録スクリプトのガード、実施の結果を載せた。
 
 いま実行ファイルと XML がルート直下にある。フォルダ規約では `deploy/` が置き場。移すと XML に `..` が 2 箇所入るが、登録バッチはむしろ短くなる。
 
 <strong>移すならサービスの再登録が要る。</strong>登録時に記録された `ImagePath` が変わるため。**データの置き場は影響を受けない**（`config.mjs` がファイル自身の位置から解決し、`AICHAT_DATA` が指定されていればそちらを使う）。
 
-- **未** 3 ファイルを `deploy/` へ移す
-- **未** XML の `arguments` と `logpath` に `..` を足す
-- **未** 登録バッチのパスを `%~dp0` だけにする
-- **未** uninstall → install で再登録する（管理者）
-- **未** ログが `logs/` に出ることを確かめる
+- **☑** 事前準備（計画書 P1〜P4）を済ませた（2026-10-07）。`deploy/` に新しい XML（`arguments`・`logpath` に `..\`）と、ガード付きの `install-service.cmd`・`uninstall-service.cmd` を作った。ガードの 2 つ（C: 以外・必要ファイルが無い）を `tests/deploy-scripts.test.mjs` で検査（❌Red 6 件 → ✅Green 6 件）。登録済み・管理者のガードは、ダミーのファイルを置いた一時フォルダで、WinSW を呼ばずに終了コード 1 で止まることを実機で確かめた。控えは `_backup/daily` に取った。全テストは 564 件中 561 件合格（落ちる 3 件は既知の `mask-log` 系）
+- **☑** 3 ファイルを `deploy/` へ移した（`node-ai-chat-lite-winsw.exe`・`node-ai-chat-lite.exe` は `Move-Item`、XML は新しく作ってルートのものを `git rm`）
+- **☑** XML の `arguments` と `logpath` に `..\` を足した（2-B）
+- **☑** 登録バッチ 2 本を `deploy/` へ移し、パスを `%~dp0` だけにした（1-B）。ガード（C: ドライブ・必要ファイル・登録済み・管理者）と `nopause` を足した。登録のあと、登録された実行ファイルのパスを表示する（共通ルール「常駐サービスの置き場と、exe の置き替え」に沿う）
+- **☑** 実施の前に `public` ルームへ周知した（3-A、chat #1376）。**送信は予告した 06:40 の約 20 秒前になり、事前の知らせとしてはほぼ役に立たなかった**（現在時刻を確かめずに、数時間先だと思い込んだ）。他プロジェクトの待受けは、繋がらないあいだの粘り（約 10 分）で、張り直しなしで生き残った
+- **☑** uninstall → install で再登録した（管理者、06:40:37 停止 → 06:41:28 開始。止まっていたのは約 51 秒）
+- **☑** 実機で確かめた。登録先が `deploy\node-ai-chat-lite-winsw.exe`、`RUNNING`、ログがルート直下の `logs/` に出る（`err.log` は 0 バイト）。**2-B の前提（子プロセスの作業フォルダが `deploy/`）が当たっていた**。結果の全体は計画書の 5 章の末尾
+- **☑** 利用者に出す文言（node 版・Rust 版の 4 か所）を `deploy\node-ai-chat-lite-winsw.exe` に直した。落ちるテストを先に書いた（❌Red 2 件 → ✅Green）。突き合わせ 54 通りは全部一致。`bin/aichat.exe` へも写した
+
+**未実測:** PC を再起動したあとの自動起動。`startmode` は `Automatic` のままだが、再起動して確かめてはいない（計画書の 5 章の任意項目）。次に PC を再起動したときに見る。
+
+## **未** i261007-01 サービスのログの置き場を、共通ルール（`deploy/`）に合わせるか決める
+
+<strong>chat #1377 で周知された共通ルール「プロジェクトフォルダ構成 > 常駐サービスの置き場と、exe の置き替え（Windows）」は、「ビルドした exe・winsw の複製・サービスのログは、同じ `deploy/` に置くが、Git に入れない」と定めている。</strong>当プロジェクトは [i260830-01](#-i260830-01-winsw-関係のファイルをルート直下から-deploy-へ移す) で、サービスのログ（`node-ai-chat-lite-winsw.*.log`）をルート直下の `logs/` に置いたままにしている（バックアップのログと同居）。計画の段階では、このルールが無かった。
+
+| 案 | 内容 | 長所 | 短所 |
+|---|---|---|---|
+| A<br>ルールに合わせる（推奨） | XML の `logpath` を `%BASE%\logs`（`deploy/logs/`）に戻す。`.gitignore` の `logs/` は全階層に効くので、そのまま。XML は起動のたびに読み直されるため、再登録は要らず、サーバーを再起動する（`/api/admin/exit` の終了コード 1。管理者権限は要らない） | 共通ルールと同じ置き場になり、ローカルルールで上書きする理由を持たずに済む。`..\` が 1 つ減る | サービスのログとバックアップのログが別の場所になる。サービスのログを見る道具や手順があれば、置き場を直す。いま `logs/` にある古いサービスのログは、動いているファイルを動かせないので、そのまま残る |
+| B<br>いまのまま（ローカルルールで上書き） | ルート直下の `logs/` のまま。ローカルルールに、どの見出しと、どう違い、なぜかを書く | 変更が要らない。ログが 1 か所に集まる | 上書きの理由が要る。共通ルールと食い違う運用が 1 つ残る |
+
+- **未** A か B かを決める。A のときは、サービスのログを参照している箇所（`tools/80_ops/log.ps1` など）を確かめてから、`logpath` を直して再起動する。B のときは、ローカルルールに上書きを書く
 
 ## **未** i260830-02 サービス回復の段数と delay を運用に合わせる
 
@@ -162,7 +180,22 @@ const servers = await startServers();           // 待ち受けを開始
 </details>
 
 <details>
-<summary><strong>未</strong> データ 7 件 / 未 1 / 着手 0 / 済 6</summary>
+<summary><strong>未</strong> データ 8 件 / 未 2 / 着手 0 / 済 6</summary>
+
+## **未** i261007-02 共通ルールの新しい DB・SQLite の決まり（chat #1377）に追随する
+
+`20260905-windows-pc-memory-inspection` から周知（chat #1377）。共通ルール「SQLite の大原則」に**常駐プロセスの WAL の上限と掃除**が足され、「DB 定義のルール」が新設された。実測で、当プロジェクトに当たるものを分けた。
+
+### 1. 常駐サーバーの WAL（いま当たる）
+
+共通ルールは、開くときに `PRAGMA journal_size_limit` で統合のあとに残す大きさの上限を決め、毎日などの区切りで `PRAGMA wal_checkpoint(TRUNCATE)` を実行して `-wal` を 0 に縮め、**戻り値の先頭が 0 でなければ失敗として記録する**（本処理は止めない。掃除の待ちは短くする）と定める。`src/server/store.mjs` は `PRAGMA journal_mode = WAL` だけで、どちらも無い。<strong>いまの `chat.db-wal` は約 4 MB（2026-10-07 実測）で、自動の統合が効いている範囲。</strong>開いたままの読み取り（閲覧ツールの放置等）があると、統合が進まず大きくなり続ける恐れがある。
+
+### 2. DB 定義のルール（定義・変更するときに当たる）
+
+適用条件は「テーブル・列・索引を**定義・変更するとき**」で、既存の定義を遡って直すものではない。ただし次に版を足すときに従う。`src/scripts/20_migrate/ver_*` の SQL を見た（2026-10-07）ところ、<strong>日時は `_at` の列で `CHECK (length(…) = 23)` つき、連番は `_seq`、版ごとのフォルダと `versions` テーブル（指紋つき）もすでに沿っている。</strong>差として確かめたのは `STRICT` を付けていないことだけで、列名・NULL の扱い・索引名などの細かい点は洗い出していない。
+
+- **未** WAL の上限（`journal_size_limit`）と、日次の `wal_checkpoint(TRUNCATE)`（失敗の記録つき）を足す。落ちるテストを先に書く
+- **未** 「DB 定義のルール」と現行の定義（日時の形・列名・`STRICT`・NULL の扱い）の差を洗い出す（差は `STRICT` だけとは限らない）。`sqlite_master` から取り出して見る。直すかどうかは、版を足すときの判断とする
 
 ## **☑** i260902-01 `store.mjs` を読み込むだけで本番の DB を掴んでしまう
 
@@ -413,7 +446,23 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 </details>
 
 <details>
-<summary><strong>着手</strong> 開発環境・記録 38 件 / 未 7 / 着手 7 / 済 24</summary>
+<summary><strong>着手</strong> 開発環境・記録 39 件 / 未 8 / 着手 7 / 済 24</summary>
+
+## **未** i261005-01 PlayWright 共有環境の新しい使い方（chat #1359）へ追随する（画面テストが旧方式のまま）
+
+`PlayWright` から周知（chat #1359）。<strong>旧方式（`projects/` への事前配置、`PW_PROJECT`・`PW_TEST_DIR`・`PW_OUT_DIR`、`npm run test:projects`）は廃止され、動かない。</strong>新しくは `T:/PlayWright/bin` を PATH に通し、呼び出し元のプロジェクトルートから `playwright-test [--test-dir <パス>] [--out-dir <パス>]` で実行する。テストスクリプトは**呼び出し元自身の `tests/` に置く**。Firefox・WebKit も使えるようになった。
+
+### このプロジェクトの現状（実測）
+
+- 画面テストの spec 9 本（`chat-ui`・`archives-ui`・`leave-beacon`・`leave-methods`・`reload-leave`・`log-html`・`contrast`・`shot`・`issues-shot`）と `test-data.ts` は、**このリポジトリの外（PlayWright 側の `projects/ai-chat-lite/`）にある**。リポジトリ内に `.spec.ts` は 0 件。
+- `tools/40_test/run-ui-tests.ps1` が `npm run test:projects` を呼ぶ旧方式のままで、**いまは動かない**。
+- 旧方式の手順が `notes/30_status/status.html` と `notes/10_plan/p260831-01-テスト環境の分離.html` に書かれている。
+- **移行時に当たりうる既知の問題は、PlayWright 側で直った**（他プロジェクトから PlayWright への報告 chat #1360、修正の報告 chat #1363。当プロジェクトでは未確認）: `playwright-test` が空白・`|` を含む引数（`-g "…"`）を cmd で崩す問題と、`tests/` が共有環境の外にあると `@playwright/test` を読めない問題。`NODE_PATH` は要らない。
+
+- **未** spec の置き場を決める（`tests/` 直下は `node --test` の対象と混ざるため、`tests/ui/` 等の分け方と、`node --test` が `.spec.ts` を拾わないことの確認が要る）
+- **未** spec 9 本と `test-data.ts` をこのリポジトリへ移す（`contrast.spec.ts` は `check-contrast` と重なるため、要否も決める）
+- **未** `run-ui-tests.ps1` を `playwright-test --test-dir … --out-dir …` に書き換える（本番ではなくテスト用サーバーを立てる前後の手順は残す）
+- **未** status・計画書（p260831-01）の旧方式の記述を、実装したものに合わせる
 
 ## **未** i260928-01 共通ルール更新（コーディングルール・シェル実行ルール、chat #1238）への追随
 
@@ -2018,9 +2067,9 @@ USAGE が共通オプションを 2 か所で定義しており、**手書きの
 </details>
 
 <details>
-<summary><strong>未</strong> チャットの機能 37 件 / 未 11 / 着手 2 / 済 24</summary>
+<summary><strong>未</strong> チャットの機能 37 件 / 未 11 / 着手 1 / 済 25</summary>
 
-## **着手** i261004-01 `aichat waiters` が `timeout` 越しの待受けを 2 本と数える（ルーム名が `public'` に壊れる）
+## **☑** i261004-01 `aichat waiters` が `timeout` 越しの待受けを 2 本と数える（ルーム名が `public'` に壊れる）
 
 **ai-agent-support から報告があり（chat #1346）、実機で再現した。**`timeout 7200 aichat wait :id: -p 8787 -r public` を `run_in_background` で起動すると、同じ ID が `aichat` と `bash`（ルーム `public'`）の 2 行で出る。`timeout` を付けない他プロジェクトの待受けは 1 本のままで、報告の「自分の ID だけ」は当たっている。
 
@@ -2040,7 +2089,7 @@ USAGE が共通オプションを 2 か所で定義しており、**手書きの
 - **☑** 落ちるテストを先に書いた（node 版 2 件・Rust 版 2 件が「1 本が 2 本に見えている」「ラッパーを待受けと数えている」で落ちることを確かめた）
 - **☑** node 版・Rust 版の両方を直した。node の `client-waiters` 55 件・Rust 197 件が合格。`bin/aichat.exe` へ写し、実機の `aichat waiters` で `ai-agent-support` が 1 本になった（`bash`・`public'` の行が消えた）
 - **☑** ai-agent-support へ原因を返信した（chat #1348）。直したことの返信は、commit・push のあとに送る
-- **着手** ai-agent-support に、手元で `aichat waiters` が 1 本になるか確認してもらう（報告に基づく課題のため、確認が取れるまで「済」にしない）
+- **☑** ai-agent-support に、手元で `aichat waiters` が 1 本になるか確認してもらった。1 本（張り方 `aichat`）のみで、`bash`・`public'` の行は出なかった（chat #1355、2026-10-05）。確認が取れたので「済」にした
 
 ## **☑** i260924-05 `CHAT-USAGE.html` が実在しない `build-aichat.cmd` を案内している
 
