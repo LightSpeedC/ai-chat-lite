@@ -609,7 +609,7 @@ tools\50_run\start-server.cmd</code></pre>
 
 	<h2>実行ファイルを置く</h2>
 
-	<p>ルート直下に 2 つ置きます。どちらも Git 管理外です。</p>
+	<p><code>deploy/</code> に 2 つ置きます。どちらも Git 管理外です。同じ場所に、サービス定義の <code>node-ai-chat-lite-winsw.xml</code> と、登録・解除のスクリプトがあります。</p>
 
 	<div class="tablewrap">
 	<table>
@@ -629,21 +629,21 @@ tools\50_run\start-server.cmd</code></pre>
 	</table>
 	</div>
 
-	<pre><code class="language-powershell">Copy-Item (Get-Command node).Source .\node-ai-chat-lite.exe</code></pre>
+	<pre><code class="language-powershell">Copy-Item (Get-Command node).Source .\deploy\node-ai-chat-lite.exe</code></pre>
 
 	<h2>サービスとして登録する</h2>
 
-	<p><code>tools\70_deploy\install-service.cmd</code> を<strong>管理者として実行</strong>します。</p>
+	<p><code>deploy\install-service.cmd</code> を<strong>管理者として実行</strong>します。</p>
 
 	<div class="callout">
 		<p><strong><code>X:</code> のような subst ドライブから実行しない。</strong>割り当てはログオンセッション単位に閉じている。WinSW は登録時にサービスへ自分のフルパスを記録するため、<code>X:\…</code> のまま登録するとサービス側から解決できず起動に失敗する。<code>subst</code> コマンドで実体を確かめ、<code>C:\</code> 側の同じフォルダから実行する。</p>
 	</div>
 
-	<p>登録を解除するときは <code>tools\70_deploy\uninstall-service.cmd</code> を同じく管理者として実行します。DB とログは残ります。</p>
+	<p>登録を解除するときは <code>deploy\uninstall-service.cmd</code> を同じく管理者として実行します。DB とログは残ります。</p>
 
 	<h2>ポートを変える</h2>
 
-	<p>既定は 8787。<code>node-ai-chat-lite-winsw.xml</code> の <code>&lt;env name="AICHAT_PORT"&gt;</code> を書き換えてから <code>restart</code> すると、WinSW が XML を読み直して新しいポートで起動します。<strong>これも管理者権限は要りません。</strong></p>
+	<p>既定は 8787。<code>deploy/node-ai-chat-lite-winsw.xml</code> の <code>&lt;env name="AICHAT_PORT"&gt;</code> を書き換えてから <code>restart</code> すると、WinSW が XML を読み直して新しいポートで起動します。<strong>これも管理者権限は要りません。</strong></p>
 
 	<p>サービスを使わずに動かす場合は環境変数で指定します。</p>
 

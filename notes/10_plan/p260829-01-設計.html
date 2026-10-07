@@ -587,6 +587,12 @@ footer a {
 				<td class="nowrap"><a href="#ch03">データ設計</a> / <a href="#ch06">クライアントと待受け</a></td>
 			</tr>
 			<tr>
+				<td class="nowrap"><a href="i260830-01-WinSWのファイルをdeployへ移す.html">i260830-01 WinSW のファイルを deploy/ へ移す</a></td>
+				<td>ルート直下の WinSW 関係 3 ファイルを <code>deploy/</code> へ移す。<strong>サービスの再登録（管理者権限・本番の一時停止）が要る</strong>ため、影響範囲・決める点・手順を先にまとめた。<strong>計画の段階（3 つの決定が済み、実施の指示待ち）</strong></td>
+				<td class="nowrap"><span class="badge b-todo">未</span></td>
+				<td class="nowrap"><a href="#ch07">作るものと実装ステップ</a></td>
+			</tr>
+			<tr>
 				<td class="nowrap"><a href="i260920-01-初回の起点を早める.html">i260920-01 初回の起点を早める</a></td>
 				<td>初めての待受けの起点を「参加した時点」から「その日の 0 時と 6 時間前の古い方」に変えた。<strong>先行実装でテストスイートが連鎖的に壊れたため一度差し戻し、テストごとに専用ルームを使う対策をまとめてから再実装</strong>。<a href="../40_issues/issues.html#i260909-01">i260909-01</a> の案内文も新しい起点に合わせて書き換えた</td>
 				<td class="nowrap"><span class="badge b-ok">済</span></td>
@@ -2076,9 +2082,11 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
   target/aichat-rs.exe             … Rust 版 CLI のビルド出力（Git 管理外。install-aichat.mjs が bin/aichat.exe へ写す。共通ルールは他言語のビルド出力先を言語ごとの既定に読み替えるとし、Rust の例に target/ を挙げている）
   tools/50_run/aichat-bun・aichat-bun.cmd … bun 優先・node 代替の開発用ランチャー（突き合わせ用。i260924-06 で root から移した）
   .gitignore
-  node-ai-chat-lite-winsw.exe      … WinSW 本体（Git 管理外）
-  node-ai-chat-lite-winsw.xml      … サービス定義
-  node-ai-chat-lite.exe            … node.exe のコピー（Git 管理外・98.9 MB）
+  deploy/node-ai-chat-lite-winsw.exe   … WinSW 本体（Git 管理外）
+  deploy/node-ai-chat-lite-winsw.xml   … サービス定義
+  deploy/node-ai-chat-lite.exe         … node.exe のコピー（Git 管理外・98.9 MB）
+  deploy/install-service.cmd           … サービスの登録と開始
+  deploy/uninstall-service.cmd         … サービスの停止と登録解除
   etc/c.bat
   docs/css/style.css               … 共通 CSS（notes から相対参照する）
   docs/ファイルで排他する.html     … 公開資料
@@ -2142,10 +2150,10 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
     purge-test-data.test.mjs
     mask-log-input-ps1.test.mjs
     restore-ps1.test.mjs
+    deploy-scripts.test.mjs
   tools/20_build/                  … aichat.exe のビルド。オプション定義の書き出し
   tools/40_test/                   … テストの実行・テスト用サーバー・計測
   tools/50_run/                    … 開発用の起動と画面を開く
-  tools/70_deploy/                 … サービスの登録・解除
   tools/80_ops/                    … バックアップ・復旧・ログの加工
   notes/01_research/               … 調べたこと
   notes/10_plan/                   … 設計と個別の計画書
@@ -2157,7 +2165,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
   _data/                           … chat.db・MAINTENANCE（Git 管理外）
   tmp/  etc/                       … Git 管理外</code></pre>
 
-	<p>WinSW 関係の 3 つはルート直下に並べる。<code>node.exe</code> のコピーを隣に置くことで、XML から絶対パスを追い出せる。</p>
+	<p>WinSW 関係の 3 つと、登録・解除のスクリプト 2 本は <code>deploy/</code> に並べる。<code>node.exe</code> のコピーを隣に置くことで、XML から絶対パスを追い出せる。<code>arguments</code> と <code>logpath</code> は、<code>deploy/</code> から見てルートの <code>src</code> と <code>logs</code> を <code>..\</code> で指す。</p>
 
 	<h2>環境変数</h2>
 
@@ -2635,7 +2643,7 @@ logs\…-winsw.wrapper.log    … WinSW 自身。起動・停止・子プロセ�
 
 	<h3>ファイルの置き方と名前</h3>
 
-	<p>WinSW は<strong>自分と同じ名前の XML を隣から読む</strong>という約束で動く。関係するファイルを<strong>プロジェクトのルート直下に並べて置き</strong>、名前を <code>node-ai-chat-lite</code> で始まるものに揃える。</p>
+	<p>WinSW は<strong>自分と同じ名前の XML を隣から読む</strong>という約束で動く。関係するファイルを<strong>プロジェクトの <code>deploy/</code> に並べて置き</strong>、名前を <code>node-ai-chat-lite</code> で始まるものに揃える。</p>
 
 	<div class="tablewrap">
 	<table>
@@ -2662,7 +2670,7 @@ logs\…-winsw.wrapper.log    … WinSW 自身。起動・停止・子プロセ�
 				<td>98.9 MB。サーバーはこれで動く</td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>logs/</code></td>
+				<td class="nowrap">ルート直下の <code>logs/</code></td>
 				<td class="nowrap">サービスのログ</td>
 				<td class="nowrap"><span class="badge b-none">管理外</span></td>
 				<td>WinSW が出力する</td>
@@ -2718,7 +2726,7 @@ logs\…-winsw.wrapper.log    … WinSW 自身。起動・停止・子プロセ�
 
 	<h3>XML にパスを書かない</h3>
 
-	<p>WinSW は相対パスを<strong>自身の実行ファイルがあるフォルダを基準に</strong>解決する。ルート直下に置いてあるため、絶対パスは 1 つも書かずに済む。</p>
+	<p>WinSW は相対パスを<strong>自身の実行ファイルがあるフォルダ（<code>deploy/</code>）を基準に</strong>解決する。<code>executable</code> は隣の exe を指し、ルートの <code>src</code> は <code>..\</code> で指すため、絶対パスは 1 つも書かずに済む。</p>
 
 	<pre><code class="language-xml">&lt;service&gt;
   &lt;id&gt;node-ai-chat-lite&lt;/id&gt;
@@ -2727,11 +2735,11 @@ logs\…-winsw.wrapper.log    … WinSW 自身。起動・停止・子プロセ�
 
   &lt;!-- 隣に置いた node.exe のコピー --&gt;
   &lt;executable&gt;node-ai-chat-lite.exe&lt;/executable&gt;
-  &lt;arguments&gt;src\server\server.mjs&lt;/arguments&gt;
+  &lt;arguments&gt;..\src\server\main.mjs&lt;/arguments&gt;
 
   &lt;env name="AICHAT_PORT" value="8787"/&gt;
 
-  &lt;logpath&gt;logs&lt;/logpath&gt;
+  &lt;logpath&gt;%BASE%\..\logs&lt;/logpath&gt;
   &lt;log mode="roll-by-size"&gt;
     &lt;sizeThreshold&gt;10240&lt;/sizeThreshold&gt;
     &lt;keepFiles&gt;8&lt;/keepFiles&gt;
@@ -2741,7 +2749,9 @@ logs\…-winsw.wrapper.log    … WinSW 自身。起動・停止・子プロセ�
   &lt;startmode&gt;Automatic&lt;/startmode&gt;
 &lt;/service&gt;</code></pre>
 
-	<p><code>workingdirectory</code> も省略できる。指定しなければ実行ファイルのあるフォルダが使われるため、サーバーから見た相対パス（<code>_data/chat.db</code> など）もそのまま通る。</p>
+	<p><code>workingdirectory</code> は省略している。<strong>子プロセスの作業フォルダは WinSW の置き場（<code>deploy/</code>）になる</strong>（2026-10-07 に <code>deploy/</code> へ移して実測した。<code>arguments</code> の <code>..\src\server\main.mjs</code> が解決され、<code>err.log</code> は 0 バイトのまま）。サーバーは作業フォルダに依存しない（<code>ROOT</code> は <code>config.mjs</code> が自分のファイルの位置から決める）ため、データの置き場は動かない。</p>
+
+	<p><code>logpath</code> だけは、サービス（WinSW 本体）のカレントが <code>C:\Windows\System32</code> なので、<code>%BASE%</code>（WinSW の置き場）を前に付けて指す。</p>
 
 	<h3>登録は実体のフォルダで行う</h3>
 
@@ -2749,10 +2759,10 @@ logs\…-winsw.wrapper.log    … WinSW 自身。起動・停止・子プロセ�
 		<p><strong>X: のような subst ドライブから install してはいけない。</strong>WinSW は登録時、サービスの <code>ImagePath</code> に自分のフルパスを書き込む。割り当てはログオンセッション単位に閉じているため、<code>X:\…</code> が記録されるとサービス側からは解決できず起動に失敗する。<code>subst</code> コマンドで実体を確認し、<strong><code>C:\</code> 側の実際のフォルダへ移動してから登録する</strong>。</p>
 	</div>
 
-	<pre><code class="language-batch">:: 実体のフォルダへ移動してから実行する（管理者として）
-cd /d C:\（実体のパス）\2026\ai-chat-lite
-node-ai-chat-lite-winsw.exe install
-node-ai-chat-lite-winsw.exe start</code></pre>
+	<pre><code class="language-batch">:: 実体のフルパスで実行する（管理者のコンソールから）
+C:\（実体のパス）\ai-chat-lite\deploy\install-service.cmd</code></pre>
+
+	<p>スクリプトは、C: 以外から呼ばれたとき・必要なファイルが隣に無いとき・すでに登録されているとき・管理者でないときに、WinSW を呼ぶ前に終了コード 1 で止まる。登録のあと、登録された実行ファイルのパスを表示する（ドライブを目で確かめる）。</p>
 
 	<p>一度登録してしまえば、以降の <code>start</code> / <code>stop</code> はどこから呼んでも構わない。XML 側にパスを書いていないのは、この登録時のフルパスだけを正しくすれば済むようにするため。</p>
 
@@ -2773,7 +2783,7 @@ node-ai-chat-lite-winsw.exe start</code></pre>
 	</table>
 	</div>
 
-	<p>いずれも管理者権限が要る。<code>tools/70_deploy/</code> の <code>install-service.cmd</code> / <code>uninstall-service.cmd</code> がこれらを呼ぶ。</p>
+	<p>いずれも管理者権限が要る。<code>deploy/</code> の <code>install-service.cmd</code> / <code>uninstall-service.cmd</code> がこれらを呼ぶ。</p>
 
 	<h3>管理者権限なしで入れ替える</h3>
 

@@ -1,0 +1,643 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WinSW のファイルを deploy/ へ移す</title>
+<style>
+/* 共通のスタイル。docs\css\style.css と同じ内容を持たせている */
+@charset "UTF-8";
+
+/* ===================================================================
+   ai-chat-lite 共通スタイル
+   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   =================================================================== */
+
+:root {
+	/* 章に依存しない共通色 */
+	--navy1: #12224d;
+	--navy2: #2f5fbf;
+	--ink: #1c2330;
+	--ink-soft: #4a5568;
+	--line: #d9dfe8;
+	--code-bg: #f4f6fa;
+	--link: #1a4fa0;
+
+	/* 章クラスの外に置いた要素が色を失わないための既定値 */
+	--accent: #12224d;
+	--accent2: #2f5fbf;
+	--soft: #f2f5fb;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: #fdfdfe;
+	color: var(--ink, #1c2330);
+	font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+	font-size: 15.5px;
+	line-height: 1.85;
+}
+
+a {
+	color: var(--link, #1a4fa0);
+}
+
+/* ---------- タイトルバー ---------- */
+
+.titlebar {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 34px 30px 30px;
+}
+
+.titlebar .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+}
+
+.titlebar h1 {
+	font-size: 1.85em;
+	margin: 0 0 8px;
+	color: #fff;
+}
+
+.titlebar .lead {
+	margin: 0;
+	color: #d7e2f7;
+	font-size: 0.95em;
+}
+
+.titlebar .date {
+	margin: 10px 0 0;
+	color: #b9caea;
+	font-size: 0.88em;
+}
+
+.titlebar a {
+	color: #cfe0ff;
+}
+
+.titlebar code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+/* ---------- 本文の器 ---------- */
+
+.wrap {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding: 0 30px;
+}
+
+section {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 10px;
+	padding: 4px 26px 26px;
+	margin: 34px 0;
+}
+
+/* ---------- 見出し ---------- */
+
+section h1 {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-size: 1.4em;
+	padding: 14px 20px;
+	margin: 26px 0 20px;
+	border-radius: 8px;
+	box-shadow: 0 3px 10px rgba(20, 34, 70, 0.22);
+}
+
+section h1 code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+h2 {
+	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
+	color: var(--accent, #12224d);
+	font-size: 1.16em;
+	padding: 6px 12px;
+	margin: 30px 0 12px;
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 6px 6px 0;
+}
+
+h3 {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	font-size: 1.02em;
+	display: inline-block;
+	padding-bottom: 3px;
+	margin: 20px 0 8px;
+	border-bottom: 2px dotted var(--accent2, #2f5fbf);
+}
+
+/* ---------- 表 ---------- */
+
+.tablewrap {
+	overflow-x: auto;
+	margin: 14px 0;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 5px rgba(20, 34, 70, 0.10);
+}
+
+th {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	text-align: left;
+	padding: 9px 12px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+th code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+td {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	padding: 9px 12px;
+	border-top: 1px solid var(--line, #d9dfe8);
+	vertical-align: top;
+}
+
+tr:nth-child(even) td {
+	background: #fafbfe;
+	color: var(--ink, #1c2330);
+}
+
+td.num,
+th.num {
+	text-align: right;
+}
+
+td.nowrap,
+th.nowrap {
+	white-space: nowrap;
+}
+
+/* ---------- コード ---------- */
+
+code {
+	background: var(--code-bg, #f4f6fa);
+	color: #17335f;
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 4px;
+	padding: 1px 5px;
+	font-family: "Consolas", "Cascadia Mono", monospace;
+	font-size: 0.92em;
+}
+
+pre {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 5px solid var(--accent2, #2f5fbf);
+	border-radius: 0 8px 8px 0;
+	padding: 13px 16px;
+	overflow-x: auto;
+	line-height: 1.65;
+}
+
+pre code {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	border: none;
+	padding: 0;
+	font-size: 0.92em;
+}
+
+/* ---------- バッジ ---------- */
+
+.badge {
+	display: inline-block;
+	padding: 1px 9px;
+	margin-right: 6px;
+	border-radius: 11px;
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+	font-size: 0.84em;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.badge.b-ok {
+	background: linear-gradient(100deg, #1d7a3c, #45b56c);
+	color: #fff;
+}
+
+.badge.b-ng {
+	background: linear-gradient(100deg, #a51f22, #e05a5c);
+	color: #fff;
+}
+
+.badge.b-warn {
+	background: linear-gradient(100deg, #b8620a, #f0a548);
+	color: #fff;
+}
+
+.badge.b-none {
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+}
+
+/* ---------- callout ---------- */
+
+.callout {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 8px 8px 0;
+	padding: 12px 18px;
+	margin: 16px 0;
+}
+
+.callout strong {
+	color: var(--accent, #12224d);
+	background: transparent;
+}
+
+.callout p {
+	margin: 6px 0;
+}
+
+/* ---------- 目次 ---------- */
+
+.toc ol {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 0;
+	margin: 12px 0 4px;
+}
+
+.toc ul a {
+	color: var(--link, #1a4fa0);
+	background: transparent;
+}
+
+.toc ol li {
+	counter-increment: tocnum;
+	margin: 0;
+}
+
+.toc ol a {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: normal;
+	width: 310px;
+	max-width: 100%;
+	padding: 7px 13px;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+	line-height: 1.45;
+}
+
+.toc ol a::before {
+	content: counter(tocnum) ". ";
+	font-weight: 700;
+}
+
+/* ---------- 資料リンク・戻るリンク ---------- */
+
+.navlinks {
+	margin: 20px 0 0;
+}
+
+a.doclink {
+	display: inline-block;
+	padding: 3px 12px;
+	margin: 0 8px 6px 0;
+	border-radius: 6px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	font-size: 0.9em;
+	text-decoration: none;
+}
+
+/* ---------- フッター ---------- */
+
+footer {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 18px 30px 0;
+	margin-top: 40px;
+}
+
+footer .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding-bottom: 18px;
+}
+
+footer a {
+	color: #cfe0ff;
+}
+</style>
+<style>
+/* この資料だけのもの: 章のアクセント色（5章 / 色相 280→0 を 4 分割）と目次の採番 */
+.ch01 { --accent: hsl(280.0, 78%, 25%); --accent2: hsl(280.0, 58%, 55%); --soft: hsl(280.0, 28%, 95%); }
+.ch02 { --accent: hsl(210.0, 78%, 25%); --accent2: hsl(210.0, 58%, 55%); --soft: hsl(210.0, 28%, 95%); }
+.ch03 { --accent: hsl(140.0, 78%, 25%); --accent2: hsl(140.0, 58%, 55%); --soft: hsl(140.0, 28%, 95%); }
+.ch04 { --accent: hsl( 70.0, 78%, 25%); --accent2: hsl( 70.0, 58%, 55%); --soft: hsl( 70.0, 28%, 95%); }
+.ch05 { --accent: hsl(  0.0, 78%, 25%); --accent2: hsl(  0.0, 58%, 55%); --soft: hsl(  0.0, 28%, 95%); }
+.toc ol { counter-reset: tocnum; }
+</style>
+</head>
+
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>WinSW のファイルを deploy/ へ移す</h1>
+		<p class="lead">ルート直下に並ぶサービス関係の 3 ファイルと登録スクリプトを、フォルダ規約どおり <code>deploy/</code> へ移す。サービスの再登録が要るため、影響範囲と手順を先に固める</p>
+		<p class="date">📅 作成: 2026-10-06 / 更新: 2026-10-07</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+<p><a href="../40_issues/issues.html#i260830-01">i260830-01</a> の実装計画。<strong>移すこと自体は単純だが、本番のサービスを一度止めて登録し直す作業を含む。</strong>管理者権限が要り、止めている間は他プロジェクトの待受けが切れるため、実施の前に決めておく点と手順をここにまとめる。</p>
+
+<div class="callout callout-important">
+	<p><strong>決まったこと: 1-B（スクリプトも <code>deploy/</code> へ移す）・2-B（<code>arguments</code> に <code>..\</code> を足す）・3-A（時刻を決めて周知してから実施する）。ガードを足す。</strong><strong>実施済み（2026-10-07 06:40〜06:41）。</strong>結果は 5 章の末尾。</p>
+</div>
+
+<section class="toc md-skip">
+	<h2>目次</h2>
+	<ol>
+		<li class="ch01"><a href="#ch01">何を移すか</a></li>
+		<li class="ch02"><a href="#ch02">調べたこと（影響範囲）</a></li>
+		<li class="ch03"><a href="#ch03">決めること</a></li>
+		<li class="ch04"><a href="#ch04">実施の手順</a></li>
+		<li class="ch05"><a href="#ch05">確かめること</a></li>
+	</ol>
+</section>
+
+<!-- ================= 01 ================= -->
+<section class="ch01" id="ch01">
+	<h1>何を移すか</h1>
+
+	<p>共通ルール「プロジェクトフォルダ構成」は、デプロイ定義の置き場を <code>deploy/</code> と定めている。いまは WinSW 関係の 3 ファイルがルート直下に並び、登録・解除のスクリプト 2 本は <code>tools/70_deploy/</code> にある。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">ファイル</th><th>役目</th><th class="nowrap">Git</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap"><code>node-ai-chat-lite-winsw.exe</code></td><td>WinSW 本体。サービスとして登録される実行体</td><td class="nowrap">管理外</td></tr>
+			<tr><td class="nowrap"><code>node-ai-chat-lite-winsw.xml</code></td><td>サービス定義。WinSW が<strong>自分と同じ名前の XML を隣から読む</strong></td><td class="nowrap">管理</td></tr>
+			<tr><td class="nowrap"><code>node-ai-chat-lite.exe</code></td><td><code>node.exe</code> のコピー（約 99 MB）。プロセス名で他の Node と見分けるため</td><td class="nowrap">管理外</td></tr>
+			<tr><td class="nowrap"><code>tools/70_deploy/install-service.cmd</code><br><code>tools/70_deploy/uninstall-service.cmd</code></td><td>サービスの登録・解除（SJIS）</td><td class="nowrap">管理</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p><strong>5 つとも <code>deploy/</code> へ移す。</strong>名前は変えない。サービス名（<code>node-ai-chat-lite</code>）もプロセス名も変わらないため、<code>sc query node-ai-chat-lite</code> や <code>Stop-Process -Name node-ai-chat-lite</code> の書き方は今までどおり使える。移したあと <code>tools/70_deploy/</code> は空になり、なくなる。</p>
+
+	<h2>いまの稼働状況</h2>
+
+	<p>サービス <code>node-ai-chat-lite</code> は<strong>自動起動で稼働中</strong>。<code>sc qc</code> で確かめた登録先は、実体のフォルダ直下の <code>node-ai-chat-lite-winsw.exe</code>（<code>C:\（実体のパス）\ai-chat-lite\node-ai-chat-lite-winsw.exe</code>。2026-10-06 時点）。</p>
+
+	<div class="callout callout-important">
+		<p><strong>移すと登録先が変わるため、サービスの再登録（uninstall → install）が要る。</strong>登録時に記録された <code>ImagePath</code> は、あとから書き換えない限り古い場所を指したままになる。メンテナンスの印や <code>restart</code> では代わりにならない。</p>
+	</div>
+</section>
+
+<!-- ================= 02 ================= -->
+<section class="ch02" id="ch02">
+	<h1>調べたこと（影響範囲）</h1>
+
+	<p>名前を変えるのではなく置き場を変えるため、「古い場所を指している箇所」を全体から探した。</p>
+
+	<h2>影響を受けない</h2>
+
+	<ul>
+		<li><strong>サーバーのコードとデータの置き場。</strong><code>src/server</code> に <code>process.cwd()</code> や <code>chdir</code> は無く、<code>ROOT</code> は <code>config.mjs</code> が自分のファイルの位置から決めている。<code>AICHAT_DATA</code> を指定していなければ <code>ROOT/_data</code>。作業フォルダが変わってもデータは動かない。</li>
+		<li><strong>サービス名・プロセス名・ログの名前。</strong>名前を変えないので、<code>log.ps1</code> が名前の形でログを絞る処理もそのまま使える。</li>
+		<li><strong><code>.gitignore</code>。</strong><code>*.exe</code> を除外しているため、<code>deploy/</code> に置いた exe も管理外のまま。コメントの文言だけ実態に合わせる。</li>
+		<li><strong>USAGE の「winsw の start が要る」。</strong>一般的な言い方でパスを持たない。</li>
+	</ul>
+
+	<h2>直す必要がある</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">場所</th><th>いま</th><th>直すこと</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap"><code>node-ai-chat-lite-winsw.xml</code></td><td><code>arguments</code> が <code>src\server\main.mjs</code>、<code>logpath</code> が <code>%BASE%\logs</code>。コメントに「ルートに置いてあれば」とある</td><td><code>deploy/</code> へ移し、<code>arguments</code> を <code>..\src\server\main.mjs</code>、<code>logpath</code> を <code>%BASE%\..\logs</code> にする（2-B）。<code>executable</code> は変えない。コメントも直す</td></tr>
+			<tr><td class="nowrap"><code>tools/70_deploy/install-service.cmd</code><br><code>uninstall-service.cmd</code></td><td>呼び先が <code>%~dp0..\..\node-ai-chat-lite-winsw.exe</code>。コメントに<strong>廃止した <code>N:</code> ドライブ</strong>の記述が残っている</td><td><code>deploy/</code> へ <code>git mv</code> し、呼び先を <code>%~dp0node-ai-chat-lite-winsw.exe</code> にする（1-B）。コメントは <code>X:</code> のような subst ドライブという一般の言い方にする。<strong>ガードを足す（4 章）。</strong>SJIS なので <code>convert-encoding</code> で UTF-8 にしてから Edit し、すぐ戻す</td></tr>
+			<tr><td class="nowrap">利用者に出す文言<br>（node 版 2 か所・Rust 版 2 か所）</td><td><code>chat.mjs</code> の 464 行・1221 行、<code>main.rs</code> の 360 行、<code>commands.rs</code> の 954 行が <code>node-ai-chat-lite-winsw.exe status</code> / <code>start</code> を<strong>パスなしで案内</strong>している</td><td>移したあと、ルートからは見つからない。<code>deploy\node-ai-chat-lite-winsw.exe</code> と書く。<strong>2 本とも直し、突き合わせテストで食い違いを見る</strong></td></tr>
+			<tr><td class="nowrap"><code>tools/50_run/start-server.ps1</code></td><td>コメントに <code>node-ai-chat-lite-winsw.exe stop</code></td><td>コメントのパスを合わせる</td></tr>
+			<tr><td class="nowrap"><code>README.html</code></td><td>5 か所（exe の置き方の表と <code>Copy-Item … .\node-ai-chat-lite.exe</code>、登録・解除の <code>tools\70_deploy\…</code> の 2 か所、ポートを変える手順の XML 名）</td><td><code>deploy/</code> での置き方に直す</td></tr>
+			<tr><td class="nowrap"><code>p260829-01-設計.html</code></td><td>フォルダ構成の図（<code>tools/70_deploy/</code> の行を含む）、「サービスとして常駐させる」の節（関係ファイルを<strong>ルート直下に並べる</strong>理由・XML の例・<code>logpath</code> の注意）、スクリプトを指す文</td><td>実装したものが正になるよう、置き場と XML の例を最新にする</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-tip">
+		<p><strong>WinSW 本体と <code>node-ai-chat-lite.exe</code> は、サービスが走っている間は動かせない。</strong>先にサービスを止めて登録を解除してから移す。走っている exe は名前を変えられるが、サービスの登録先を書き換える手段が無いので、結局は再登録になる。</p>
+	</div>
+</section>
+
+<!-- ================= 03 ================= -->
+<section class="ch03" id="ch03">
+	<h1>決めること</h1>
+
+	<p>決める点が 3 つある。番号は以降の章でもそのまま使う。<strong>3 つとも決まった（1-B・2-B・3-A）。</strong></p>
+
+	<h2>1. 登録スクリプトの置き場（決定: 1-B）</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">案</th><th>内容</th><th>長所</th><th>短所</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap">1-A<br>tools/70_deploy のまま</td><td>呼び先だけ <code>%~dp0..\..\deploy\</code> に変える</td><td>共通ルールの番号付きフォルダ（<code>tools/70_deploy</code>）に沿う</td><td>課題にある「<code>%~dp0</code> だけにする」は実現しない</td></tr>
+			<tr><td class="nowrap">1-B（決定）<br>deploy/ へ一緒に移す</td><td>2 本のスクリプトも <code>deploy/</code> に置き、呼び先を <code>%~dp0</code> だけにする</td><td>3 ファイルとスクリプトが 1 か所にまとまり、登録・解除・定義が <code>deploy/</code> を開けば揃う。パスが最短になる</td><td>実行するものが <code>tools/</code> に無くなる。README・設計書の説明を直す</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>2. 作業フォルダの扱い（決定: 2-B）</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">案</th><th>内容</th><th>長所</th><th>短所</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap">2-A<br>作業フォルダを明示</td><td><code>executable</code> を <code>%BASE%\node-ai-chat-lite.exe</code>、<code>&lt;workingdirectory&gt;%BASE%\..&lt;/workingdirectory&gt;</code> を足し、<code>arguments</code> は変えない。<code>logpath</code> は <code>%BASE%\..\logs</code></td><td>子プロセスの作業フォルダを自分で決める</td><td><strong>未確認が 2 つ増える</strong>。<code>&lt;workingdirectory&gt;</code> が WinSW 2.12 で効くことと、<code>executable</code> で <code>%BASE%</code> が展開されること（<code>logpath</code> では展開されている実績がある）。作業フォルダをルートにすると、相対の <code>executable</code> がルート基準で探される恐れがあり、<code>executable</code> の変更が要る</td></tr>
+			<tr><td class="nowrap">2-B（決定）<br>課題どおり arguments に <code>..\</code> を足す</td><td><code>arguments</code> を <code>..\src\server\main.mjs</code>、<code>logpath</code> を <code>%BASE%\..\logs</code> にする。<code>executable</code> はそのまま</td><td>XML に足すのは 2 か所だけ。課題の記述どおり。前提は 1 つで、現状から裏付けがある</td><td><strong>子プロセスの既定の作業フォルダが WinSW の置き場であること</strong>に頼る。いま <code>src\server\main.mjs</code> が相対のまま動いていることから、作業フォルダは WinSW の置き場（ルート）と分かる。移したあとは <code>deploy/</code> になる。WinSW の既定の決まり方そのものは未確認</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-important">
+		<p><strong>2-B で外れたとき。</strong><code>node</code> が <code>main.mjs</code> を見つけられず、サービスは数秒で異常終了する。<code>onfailure</code> で 10 秒おきに再起動を繰り返し、<code>logs/</code> の <code>err.log</code> に <code>Cannot find module</code> が出る。すぐ分かるので、4 章の「うまくいかなかったとき」で戻す。</p>
+	</div>
+
+	<h2>3. 実施のしかた（決定: 3-A）</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">案</th><th>内容</th><th>長所</th><th>短所</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap">3-A（決定）<br>時刻を決めて周知してから</td><td>利用者が管理者として実行できる時刻を決め、実施の前に <code>public</code> ルームへ周知する。事前に控え（<code>backup.ps1</code>）を取る</td><td>止まる時間を相手が知っている。他プロジェクトの待受けは親が張り直す決まりなので、周知があれば原因不明の <code>exit 255</code> に見えない</td><td>周知の案を出して確認を取る手間が増える</td></tr>
+			<tr><td class="nowrap">3-B<br>周知なしで実施</td><td>控えだけ取って、すぐに実施する</td><td>手間が少ない</td><td>他プロジェクトの待受けが予告なく切れ、他の AI が「サーバーが落ちた」原因を自分で調べに行くことになる</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>3-A の周知案は次のとおり。送る前にこの案で確認を取る。</p>
+
+	<ul>
+		<li>ルーム: <code>public</code> ／ 名乗る ID: <code>ai-chat-lite</code> ／ 宛先: 指定しない</li>
+		<li>本文: 「ai-chat-lite サーバーを再登録します。MM/DD HH:MM ごろ数分止まります。待受けは繋がらないあいだ約 10 分粘ります。超えたら張り直してください。DB は変わりません。」（時刻は利用者が決める）</li>
+	</ul>
+
+	<div class="callout callout-important">
+		<p><strong>管理者権限での実行は利用者が行う。</strong>AI エージェントは UAC の確認を出せない。実施の前に、実行する 2 本のスクリプトと実行順を提示する。</p>
+	</div>
+</section>
+
+<!-- ================= 04 ================= -->
+<section class="ch04" id="ch04">
+	<h1>実施の手順</h1>
+
+	<p>1-B・2-B・3-A を前提にする。<strong>停止時間を短くするため、新しい XML とスクリプトは停止の前に <code>deploy/</code> へ用意する。</strong>ルートの XML は触らない。WinSW は起動のたびに XML を読み直すため、稼働中に書き換えると、異常終了後の自動再起動で新しい内容を読んでしまう。</p>
+
+	<h2>事前準備（サービス稼働中）</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="num">順</th><th>すること</th><th class="nowrap">実行する人</th></tr></thead>
+		<tbody>
+			<tr><td class="num">P1</td><td>全テストを実行する（既知の失敗は <a href="../40_issues/issues.html#i260928-02">i260928-02</a> の 3 件と、<code>bun test</code> の <a href="../40_issues/issues.html#i260916-01">i260916-01</a>）</td><td class="nowrap">AI</td></tr>
+			<tr><td class="num">P2</td><td><code>tools/80_ops/backup.ps1 -Kind daily</code> で控えを取る。サービスを止めずに実行でき、<code>_backup/daily/chat-yyyymmdd-hhmmss.db.zip</code> に出る</td><td class="nowrap">AI</td></tr>
+			<tr><td class="num">P3</td><td><code>deploy/node-ai-chat-lite-winsw.xml</code> を新規に作る（2-B の <code>arguments</code>・<code>logpath</code>・コメント）</td><td class="nowrap">AI</td></tr>
+			<tr><td class="num">P4</td><td><code>deploy/install-service.cmd</code> と <code>deploy/uninstall-service.cmd</code> を新規に作る（ガード付き。下の表）。<code>deploy/</code> に exe が無いあいだは、必要ファイルのガードで止まるので、間違えて動かしても何も起きない</td><td class="nowrap">AI</td></tr>
+			<tr><td class="num">P5</td><td>3-A の場合は、周知案で確認を得てから <code>public</code> ルームへ送る</td><td class="nowrap">AI</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>停止中</h2>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="num">順</th><th>すること</th><th class="nowrap">実行する人</th></tr></thead>
+		<tbody>
+			<tr><td class="num">1</td><td>管理者として、<strong>現行の</strong> <code>tools\70_deploy\uninstall-service.cmd</code> を実行する（<code>stop</code> → <code>uninstall</code>）。<strong>ここから他プロジェクトの待受けが切れる</strong></td><td class="nowrap">利用者</td></tr>
+			<tr><td class="num">2</td><td><code>node-ai-chat-lite-winsw.exe</code> と <code>node-ai-chat-lite.exe</code> を <code>deploy/</code> へ <code>Move-Item</code>（追跡外。同じドライブ内の移動なので 99 MB でもすぐ終わる）。ルートの XML と、<code>tools/70_deploy/</code> の旧スクリプト 2 本を <code>git rm</code></td><td class="nowrap">AI</td></tr>
+			<tr><td class="num">3</td><td>管理者として、<code>deploy\install-service.cmd</code> を実行する（<code>install</code> → <code>start</code>）。<strong>実体のフォルダ（<code>C:</code> 側）から実行する</strong></td><td class="nowrap">利用者</td></tr>
+			<tr><td class="num">4</td><td>5 章の確認を行う</td><td class="nowrap">AI</td></tr>
+			<tr><td class="num">5</td><td>利用者に出す文言（node 版・Rust 版）、README・設計書・status・課題を直す。node 版・Rust 版の両方を直し、突き合わせテストを通す。Rust 版は <code>install-aichat.mjs</code> まで行う</td><td class="nowrap">AI</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>停止時間は、1 の <code>stop</code> から 3 の <code>start</code> までで、実測していない。AI の作業は移動 2 件・削除 1 件・<code>git rm</code> 2 件だけなので、数十秒から数分と見込んでいる。<code>aichat wait</code> は繋がらないあいだ 10 秒おきに最大 60 回（約 10 分）粘る（<code>options.mjs</code> の <code>RETRY_TIMES.wait</code>）。10 分以内に戻れば他プロジェクトは気づかない見込みだが、<strong>停止の瞬間に待っていた接続の挙動は実測していない。</strong></p>
+
+	<h2>登録スクリプトのガード</h2>
+
+	<p>両方のスクリプトの頭で、次の順に確かめ、満たさなければメッセージを出して終了コード 1 で止める。<strong>実際の WinSW を呼ぶ前に必ず止まる</strong>順にしている。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="num">順</th><th class="nowrap">確かめること</th><th>書き方</th><th class="nowrap">対象</th></tr></thead>
+		<tbody>
+			<tr><td class="num">1</td><td class="nowrap">C: ドライブから実行している</td><td><code>if not "%~d0" == "C:" (echo C:ドライブで実行してください。&amp; …)</code>。<strong>いまのスクリプトにもある</strong>。subst のドライブはサービスから見えず、<code>ImagePath</code> に記録されると起動に失敗するため</td><td class="nowrap">install・uninstall</td></tr>
+			<tr><td class="num">2</td><td class="nowrap">必要なファイルが隣にある</td><td><code>if not exist "%~dp0node-ai-chat-lite-winsw.exe" (…)</code>。install は <code>node-ai-chat-lite-winsw.exe</code>・<code>node-ai-chat-lite-winsw.xml</code>・<code>node-ai-chat-lite.exe</code> の 3 つ、uninstall は WinSW 本体だけ。移す前に動かしても、実体を呼ばずに止まる</td><td class="nowrap">install・uninstall</td></tr>
+			<tr><td class="num">3</td><td class="nowrap">すでに登録されていない</td><td><code>sc query node-ai-chat-lite &gt;nul 2&gt;&amp;1</code> が成功したら「登録済みです。先に uninstall-service.cmd を実行してください。」。古い <code>ImagePath</code> のまま入れ直すのを防ぐ</td><td class="nowrap">install のみ</td></tr>
+			<tr><td class="num">4</td><td class="nowrap">管理者として実行している</td><td><code>fltmc &gt;nul 2&gt;&amp;1</code> が失敗したら「管理者として実行してください。」。この非管理者のシェルでは <code>fltmc</code> が終了コード 1、<code>net session</code> が 2 を返すことを実測した（管理者のときに 0 を返すかは、実機での実行で確かめる）</td><td class="nowrap">install・uninstall</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<ul>
+		<li><strong>引数に <code>nopause</code> があれば <code>pause</code> しない。</strong>共通ルール「昇格・タスクスケジューラから動かすとき」に沿う。AI がガードの動きを確かめるときも、入力待ちで固まらない。</li>
+		<li><strong>止めるときは <code>exit /b 1</code> にする</strong>（いまは <code>exit 1</code>）。呼び出し元に終了コードを返し、テストから読めるようにする。</li>
+		<li><strong>メッセージの中に <code>( )</code> を書かない。</strong>cmd のブロック（<code>if (…)</code>）の中では、閉じ括弧がブロックの終わりと読まれて壊れる。</li>
+		<li><strong>テスト。</strong>実際の登録・解除は管理者権限が要り、自動化できない。ガードの手前で必ず止まる 2 つだけを <code>tests/</code> で検査する（<strong>C: 以外から呼んだとき</strong>、<strong>必要なファイルが無い一時フォルダへ写して実体のパスで呼んだとき</strong>）。どちらも WinSW を呼ぶ前に終わるため、管理者のシェルで流しても登録・解除は起きない。3 と 4 は実機で確かめる。</li>
+	</ul>
+
+	<h2>うまくいかなかったとき</h2>
+
+	<p>サービスが上がらなければ、<strong>3 ファイルを <code>deploy/</code> からルート直下へ戻し、ルートの XML を <code>git restore</code> し、旧スクリプトを <code>tools/70_deploy/</code> へ戻して、登録し直す。</strong>データ（<code>_data</code>）は移動の対象ではないので、戻しても失われるものは無い。手順 1 から 3 の間は止まっているため、長引かせずに戻す。</p>
+</section>
+
+<!-- ================= 05 ================= -->
+<section class="ch05" id="ch05">
+	<h1>確かめること</h1>
+
+	<p>サービスの登録は自動で動く部分なので、<strong>手元での手動実行では確かめたことにならない。</strong>実機で再登録して、結果を見るまで課題を「済」にしない。</p>
+
+	<ol>
+		<li><code>sc qc node-ai-chat-lite</code> の <code>BINARY_PATH_NAME</code> が <code>…\ai-chat-lite\deploy\node-ai-chat-lite-winsw.exe</code> になっている</li>
+		<li><code>sc query node-ai-chat-lite</code> が <code>RUNNING</code> で、<code>aichat who</code> がサーバーから応答を返す</li>
+		<li><strong>ログがルート直下の <code>logs/</code> に出ている</strong>（<code>…-winsw.out.log</code>・<code>.err.log</code>・<code>.wrapper.log</code> の更新時刻が再登録のあと）。<code>deploy/logs/</code> や <code>C:\Windows\System32\Logs</code> に出ていない。<strong>2-B の前提（作業フォルダが <code>deploy/</code>）が当たっていれば、<code>err.log</code> に <code>Cannot find module</code> が出ない</strong></li>
+		<li>プロセスがタスクマネージャーに <code>node-ai-chat-lite.exe</code> として現れる（<code>psls node-ai-chat-lite</code>）。親は <code>node-ai-chat-lite-winsw.exe</code></li>
+		<li>他プロジェクトの待受けが張り直され、<code>aichat waiters</code> に並ぶ</li>
+		<li>ガードが動く（AI が<strong>非管理者のシェルで</strong>確かめる。<code>fltmc</code> が失敗することを先に確認してから呼ぶ）。C: 以外のパス（<code>W:</code> など）から <code>deploy\install-service.cmd nopause</code> を呼ぶと 1 のメッセージで止まる。<strong>手順 2 のあと</strong>（登録が解除され、3 つのファイルが揃った状態）に実体のパスから呼ぶと、管理者でないため 4 のメッセージで止まる。手順 3 のあと（登録済み）に呼ぶと 3 のメッセージで止まる</li>
+		<li>全テストが通る。利用者に出す文言を直した分は、<code>cli-rs.test.mjs</code> と <code>compare-cli.mjs</code> の突き合わせで食い違いが出ない</li>
+		<li>（任意）PC を再起動して、サービスが自動で上がる。<code>startmode</code> は <code>Automatic</code> のため、登録先が変わっても上がるはずだが、実測はしていない</li>
+	</ol>
+
+	<h2>実施の結果（2026-10-07）</h2>
+
+	<p>停止は 06:40:37、開始は 06:41:28 で、<strong>止まっていたのは約 51 秒</strong>。上の項目の順に、実測した結果を書く。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="num">項目</th><th class="nowrap">結果</th><th>実測した内容</th></tr></thead>
+		<tbody>
+			<tr><td class="num">1</td><td class="nowrap">✅ 合格</td><td><code>BINARY_PATH_NAME</code> が <code>…\ai-chat-lite\deploy\node-ai-chat-lite-winsw.exe</code>、<code>START_TYPE</code> は <code>AUTO_START</code></td></tr>
+			<tr><td class="num">2</td><td class="nowrap">✅ 合格</td><td><code>RUNNING</code>。<code>aichat who</code> が 9 人を返した</td></tr>
+			<tr><td class="num">3</td><td class="nowrap">✅ 合格</td><td><code>logs/</code> の <code>out.log</code>・<code>wrapper.log</code> が 06:41:29 に更新された。<code>err.log</code> は 0 バイトで <code>Cannot find module</code> は無く、<code>deploy/logs</code> は作られていない。<strong>2-B の前提（作業フォルダが <code>deploy/</code>）は当たっていた</strong></td></tr>
+			<tr><td class="num">4</td><td class="nowrap">✅ 合格</td><td><code>psls</code> で <code>node-ai-chat-lite-winsw.exe</code> の下に <code>node-ai-chat-lite.exe</code>（別のプロセス ID）が並ぶ</td></tr>
+			<tr><td class="num">5</td><td class="nowrap">✅ 合格</td><td>待受け 9 本が<strong>張り直しなしで</strong>生き残った（起動時刻が 06:39:46〜58 のまま）。繋がらないあいだの粘りで足りた</td></tr>
+			<tr><td class="num">6</td><td class="nowrap">✅ 合格</td><td>C: 以外・必要なファイルが無い、は <code>tests/deploy-scripts.test.mjs</code> で ❌Red 6 件 → ✅Green 6 件。登録済み・管理者は、ダミーのファイルを置いた一時フォルダで終了コード 1 で止まった。実機でも、再登録の途中（登録解除のあと）に非管理者のシェルから <code>deploy\install-service.cmd</code> を呼び、管理者のガードで止まった。<strong>管理者のコンソールでは、<code>install</code> と <code>start</code> が成功した</strong></td></tr>
+			<tr><td class="num">7</td><td class="nowrap">✅ 合格</td><td>突き合わせ 54 通りが全部一致、<code>cli-rs.test.mjs</code>・<code>client-unreachable.test.mjs</code> が合格</td></tr>
+			<tr><td class="num">8</td><td class="nowrap">⬜ 未実施</td><td>（任意）PC の再起動後の自動起動</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-tip">
+		<p><strong>突き合わせ（<code>compare-cli.mjs</code>）は、テスト用サーバーを先に立てないと止まる。</strong><code>start-test-server.mjs</code> で立て、<code>--file</code> は<strong>ルートからの相対パス</strong>で渡し、終わったら <code>--stop</code> で止める。</p>
+	</div>
+</section>
+
+<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+
+</div>
+</body>
+</html>

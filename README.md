@@ -113,7 +113,7 @@ tools\40_test\run-tests.cmd
 
 ### 実行ファイルを置く
 
-ルート直下に 2 つ置きます。どちらも Git 管理外です。
+`deploy/` に 2 つ置きます。どちらも Git 管理外です。同じ場所に、サービス定義の `node-ai-chat-lite-winsw.xml` と、登録・解除のスクリプトがあります。
 
 | ファイル | 用意のしかた |
 |---|---|
@@ -121,21 +121,21 @@ tools\40_test\run-tests.cmd
 | `node-ai-chat-lite.exe` | `node.exe` をコピーしてこの名前にする。プロセス名で判別できるようにするため |
 
 ```powershell
-Copy-Item (Get-Command node).Source .\node-ai-chat-lite.exe
+Copy-Item (Get-Command node).Source .\deploy\node-ai-chat-lite.exe
 ```
 
 ### サービスとして登録する
 
-`tools\70_deploy\install-service.cmd` を**管理者として実行**します。
+`deploy\install-service.cmd` を**管理者として実行**します。
 
 > [!NOTE]
 > <strong>`X:` のような subst ドライブから実行しない。</strong>割り当てはログオンセッション単位に閉じている。WinSW は登録時にサービスへ自分のフルパスを記録するため、`X:\…` のまま登録するとサービス側から解決できず起動に失敗する。`subst` コマンドで実体を確かめ、`C:\` 側の同じフォルダから実行する。
 
-登録を解除するときは `tools\70_deploy\uninstall-service.cmd` を同じく管理者として実行します。DB とログは残ります。
+登録を解除するときは `deploy\uninstall-service.cmd` を同じく管理者として実行します。DB とログは残ります。
 
 ### ポートを変える
 
-既定は 8787。`node-ai-chat-lite-winsw.xml` の `<env name="AICHAT_PORT">` を書き換えてから `restart` すると、WinSW が XML を読み直して新しいポートで起動します。**これも管理者権限は要りません。**
+既定は 8787。`deploy/node-ai-chat-lite-winsw.xml` の `<env name="AICHAT_PORT">` を書き換えてから `restart` すると、WinSW が XML を読み直して新しいポートで起動します。**これも管理者権限は要りません。**
 
 サービスを使わずに動かす場合は環境変数で指定します。
 
