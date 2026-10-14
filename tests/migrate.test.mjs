@@ -195,6 +195,28 @@ describe('控え', () => {
 		const backups = readdirSync(TEST_DATA).filter((f) => f.startsWith('pre-ver-'));
 		assert.ok(backups.length > 0, '控えが残っていない');
 	});
+
+	/*
+	 * 控えは、当てる DB と同じフォルダに書く。設定の置き場（DATA_DIR）には書かない。
+	 *
+	 * 置き場に書いていた頃、テストが作った使い捨ての DB の控え（pre-ver-000000-*）が
+	 * 本番の _data に 115 本溜まった（i261015-01）。置き場が何を指していても、
+	 * 当てた DB の隣にしか増えなければ、よその置き場は汚れない。
+	 */
+	test('置き場の外にある DB に当てると、控えはその DB の隣にでき、置き場には増えない', () => {
+		const dir = makeDir('backup-elsewhere', { ver_000001: 'CREATE TABLE a (x INTEGER);' });
+		const elsewhere = join(TEST_DATA, 'elsewhere');
+		mkdirSync(elsewhere, { recursive: true });
+		const dbPath = join(elsewhere, 'other.db');
+		const before = readdirSync(TEST_DATA).filter((f) => f.startsWith('pre-ver-')).length;
+
+		migrate({ dbPath, dir });
+
+		const after = readdirSync(TEST_DATA).filter((f) => f.startsWith('pre-ver-')).length;
+		assert.equal(after, before, '置き場（DATA_DIR）に控えが増えた');
+		const beside = readdirSync(elsewhere).filter((f) => f.startsWith('pre-ver-'));
+		assert.equal(beside.length, 1, '当てた DB の隣に控えが 1 本できていない');
+	});
 });
 
 describe('実際に置いてある版', () => {

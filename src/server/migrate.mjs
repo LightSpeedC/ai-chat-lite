@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, mkdirSync, existsSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 
-import { ROOT, DB_PATH, DATA_DIR } from './config.mjs';
+import { ROOT, DB_PATH } from './config.mjs';
 import { nowJst } from './time.mjs';
 import { log } from './log.mjs';
 
@@ -87,10 +87,13 @@ function hasAnyTable(db) {
  *
  * VACUUM INTO は稼働中でも 24 ミリ秒で終わることを実測している。chat.db だけを
  * 複製すると -wal 側の分が落ちるが、VACUUM INTO なら 1 つに揃う。
+ *
+ * 控えは当てる DB と同じフォルダに書く。設定の置き場（DATA_DIR）に書いていた頃、
+ * テストの使い捨ての DB の控えが本番の _data に溜まった（i261015-01）。
  */
-function takeBackup(db, fromSeq) {
+function takeBackup(db, dbPath, fromSeq) {
 	const at = nowJst().replace(/[^0-9]/g, '').slice(0, 14);
-	const path = join(DATA_DIR, `pre-ver-${String(fromSeq).padStart(6, '0')}-${at}.db`);
+	const path = join(dirname(dbPath), `pre-ver-${String(fromSeq).padStart(6, '0')}-${at}.db`);
 	if (existsSync(path)) rmSync(path);
 	db.exec(`VACUUM INTO '${path.replace(/'/g, "''")}'`);
 	log.info(`版を上げる前の控えを取りました: ${path.replace(ROOT, '.')}`);
@@ -176,7 +179,7 @@ export function migrate({ dbPath = DB_PATH, dir = MIGRATIONS_DIR } = {}) {
 		if (pending.length === 0) return { from, to: from, applied: [] };
 
 		log.info(`DB の版を上げます: ${from} → ${pending[pending.length - 1].seq}`);
-		takeBackup(db, from);
+		takeBackup(db, dbPath, from);
 
 		const applied = [];
 		for (const v of pending) {
