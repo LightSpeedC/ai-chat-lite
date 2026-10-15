@@ -337,6 +337,29 @@ pre code {
  * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
  * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
  */
+/* README へ戻るリンク。紺のバッジに ⌂ だけを置き、上下で同じ形にする */
+.backlink {
+	margin: 18px 0 0;
+}
+
+a.homelink {
+	display: inline-block;
+	padding: 4px 14px;
+	margin: 0 8px 6px 0;
+	border-radius: 6px;
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	background: linear-gradient(100deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	line-height: 1;
+	text-decoration: none;
+}
+
+a.homelink svg {
+	width: 16px;
+	height: 16px;
+	vertical-align: -3px;
+}
+
 a.doclink {
 	display: inline-block;
 	padding: 3px 12px;
@@ -406,13 +429,13 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 設計</h1>
 		<p class="lead">ローカルPC内で AI セッションと人間が同席する簡易チャットの設計</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-25</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-10-14</p>
 	</div>
 </div>
 
 <div class="wrap">
 
-<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+<p class="backlink"><a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
 
 <section class="toc">
 	<h2>目次</h2>
@@ -588,15 +611,27 @@ footer a {
 			</tr>
 			<tr>
 				<td class="nowrap"><a href="i260830-01-WinSWのファイルをdeployへ移す.html">i260830-01 WinSW のファイルを deploy/ へ移す</a></td>
-				<td>ルート直下の WinSW 関係 3 ファイルを <code>deploy/</code> へ移す。<strong>サービスの再登録（管理者権限・本番の一時停止）が要る</strong>ため、影響範囲・決める点・手順を先にまとめた。<strong>計画の段階（3 つの決定が済み、実施の指示待ち）</strong></td>
-				<td class="nowrap"><span class="badge b-todo">未</span></td>
+				<td>ルート直下の WinSW 関係 3 ファイルを <code>deploy/</code> へ移す。<strong>サービスの再登録（管理者権限・本番の一時停止）が要る</strong>ため、影響範囲・決める点・手順を先にまとめた。<strong>2026-10-07 に実施し、登録先・稼働・ログの出先を実機で確かめた</strong></td>
+				<td class="nowrap"><span class="badge b-ok">済</span></td>
 				<td class="nowrap"><a href="#ch07">作るものと実装ステップ</a></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><a href="i260917-01-cursorの確定を分離する.html">i260917-01 cursor の確定を分離する</a></td>
+				<td><code>wait</code> は配信だけを行い、読んだ位置（cursor）の確定を <code>/api/ack</code> に分けた。未確定の分は <code>pending</code> として次の <code>wait</code> の冒頭に出る。<strong>読み飛ばした発言が痕跡なく消えないようにするため</strong>。サーバー（フェーズ1）と CLI 2 本（フェーズ2）とも実施済み</td>
+				<td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td class="nowrap"><a href="#ch03">データ設計</a> / <a href="#ch04">API</a> / <a href="#ch06">クライアントと待受け</a></td>
 			</tr>
 			<tr>
 				<td class="nowrap"><a href="i260920-01-初回の起点を早める.html">i260920-01 初回の起点を早める</a></td>
 				<td>初めての待受けの起点を「参加した時点」から「その日の 0 時と 6 時間前の古い方」に変えた。<strong>先行実装でテストスイートが連鎖的に壊れたため一度差し戻し、テストごとに専用ルームを使う対策をまとめてから再実装</strong>。<a href="../40_issues/issues.html#i260909-01">i260909-01</a> の案内文も新しい起点に合わせて書き換えた</td>
 				<td class="nowrap"><span class="badge b-ok">済</span></td>
 				<td class="nowrap"><a href="#ch04">API</a> / <a href="#ch06">クライアントと待受け</a></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><a href="i261014-01-チャットをクラウドへ移す.html">i261014-01 チャットを DB ごとクラウドへ移し、テナントで分ける</a></td>
+				<td>サーバと DB を PC からクラウドへ移し、<strong>PC ごとに発行したアクセストークンをヘッダーで渡した相手にだけ応答する</strong>。それ以外には意味のないページだけを返す。ドメイン名でテナントを分け、置き場を <code>_data/&lt;テナント&gt;/</code> にする。<strong>計画の段階（9 つの決めることが未決）</strong></td>
+				<td class="nowrap"><span class="badge b-todo">未</span></td>
+				<td class="nowrap"><a href="#ch02">全体構成</a> / <a href="#ch04">API</a> / <a href="#ch07">作るものと実装ステップ</a></td>
 			</tr>
 		</tbody>
 	</table>
@@ -2889,7 +2924,7 @@ C:\（実体のパス）\ai-chat-lite\deploy\install-service.cmd</code></pre>
 
 <footer>
 	<div class="inner">
-		<a class="doclink" href="../../README.html">README へ戻る</a>
+		<a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a>
 	</div>
 </footer>
 
