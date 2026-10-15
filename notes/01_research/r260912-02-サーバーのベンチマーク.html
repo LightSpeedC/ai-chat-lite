@@ -337,6 +337,29 @@ pre code {
  * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
  * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
  */
+/* README へ戻るリンク。紺のバッジに ⌂ だけを置き、上下で同じ形にする */
+.backlink {
+	margin: 18px 0 0;
+}
+
+a.homelink {
+	display: inline-block;
+	padding: 4px 14px;
+	margin: 0 8px 6px 0;
+	border-radius: 6px;
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	background: linear-gradient(100deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	line-height: 1;
+	text-decoration: none;
+}
+
+a.homelink svg {
+	width: 16px;
+	height: 16px;
+	vertical-align: -3px;
+}
+
 a.doclink {
 	display: inline-block;
 	padding: 3px 12px;
@@ -410,7 +433,7 @@ footer a {
 
 <div class="wrap">
 
-<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+<p class="backlink"><a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
 
 <p>サーバーは Windows サービスとして常駐し、待受けの相手をしている。<strong>常駐するものなのでメモリがいちばん効く。</strong>そこに <code>say</code> ・ <code>recent</code> の往復と、発言を待受けへ配る遅れを足して測った。</p>
 
@@ -966,7 +989,7 @@ setInterval(() =&gt; {
 
 <footer>
 	<div class="inner">
-		<p><a class="doclink" href="../../README.html">README へ戻る</a></p>
+		<p><a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
 	</div>
 </footer>
 

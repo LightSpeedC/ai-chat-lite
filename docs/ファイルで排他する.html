@@ -6,7 +6,7 @@
 <title>ファイルで排他する</title>
 <style>
 /* css/style.css が読めなかったときの代替色 */
-.titlebar, section h1, th, a.doclink, .badge { background: #12224d; color: #fff; }
+.titlebar, section h1, th, a.doclink, a.homelink, .badge { background: #12224d; color: #fff; }
 </style>
 <link rel="stylesheet" href="css/style.css">
 <style>
@@ -31,7 +31,7 @@
 
 <div class="wrap">
 
-<p class="navlinks"><a class="doclink" href="../README.html">README へ戻る</a></p>
+<p class="backlink"><a class="homelink" href="../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
 
 <p>同じ処理が二重に走らないようにしたい。定期実行と手動実行が重なる、複数のタスクが同じ時刻に起きる、といった場面で必要になる。ファイルを 1 つ置いて「これがある間は他の人は入らない」と決めるのが手軽だが、<strong>置き方を間違えると 2 人とも「取れた」と思い込む</strong>。</p>
 
@@ -557,7 +557,10 @@ function isLockActive(file, staleMs) {
 
 </div>
 
-<p class="navlinks"><a class="doclink" href="../README.html">README へ戻る</a></p>
-
+<footer>
+	<div class="inner">
+		<p><a class="homelink" href="../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
+	</div>
+</footer>
 </body>
 </html>

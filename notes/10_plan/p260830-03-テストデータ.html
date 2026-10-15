@@ -194,6 +194,29 @@ td.num { text-align: right; }
 }
 .callout strong { color: var(--accent, #12224d); background: transparent; }
 
+/* README へ戻るリンク。紺のバッジに ⌂ だけを置き、上下で同じ形にする */
+.backlink {
+	margin: 18px 0 0;
+}
+
+a.homelink {
+	display: inline-block;
+	padding: 4px 14px;
+	margin: 0 8px 6px 0;
+	border-radius: 6px;
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	background: linear-gradient(100deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	line-height: 1;
+	text-decoration: none;
+}
+
+a.homelink svg {
+	width: 16px;
+	height: 16px;
+	vertical-align: -3px;
+}
+
 footer {
 	max-width: 1600px;
 	margin: 0 auto;
@@ -217,7 +240,7 @@ svg { max-width: 100%; height: auto; }
 
 <div class="wrap">
 
-<p><a href="../../README.html">← README へ戻る</a></p>
+<p class="backlink"><a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
 
 <nav class="toc">
 	<ol>
@@ -556,7 +579,7 @@ expect(connectors).toBeGreaterThan(0);         // 参加者がいる前提</code
 </div>
 
 <footer>
-	<a href="../../README.html">← README へ戻る</a>
+	<p><a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
 </footer>
 
 </body>
