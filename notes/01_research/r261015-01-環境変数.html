@@ -1,0 +1,599 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>環境変数の使い方</title>
+<style>
+/* 共通のスタイル。docs\css\style.css と同じ内容を持たせている */
+@charset "UTF-8";
+
+/* ===================================================================
+   ai-chat-lite 共通スタイル
+   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   =================================================================== */
+
+:root {
+	/* 章に依存しない共通色 */
+	--navy1: #12224d;
+	--navy2: #2f5fbf;
+	--ink: #1c2330;
+	--ink-soft: #4a5568;
+	--line: #d9dfe8;
+	--code-bg: #f4f6fa;
+	--link: #1a4fa0;
+
+	/* 章クラスの外に置いた要素が色を失わないための既定値 */
+	--accent: #12224d;
+	--accent2: #2f5fbf;
+	--soft: #f2f5fb;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: #fdfdfe;
+	color: var(--ink, #1c2330);
+	font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+	font-size: 15.5px;
+	line-height: 1.85;
+}
+
+a {
+	color: var(--link, #1a4fa0);
+}
+
+/* ---------- タイトルバー ---------- */
+
+.titlebar {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 34px 30px 30px;
+}
+
+.titlebar .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+}
+
+.titlebar h1 {
+	font-size: 1.85em;
+	margin: 0 0 8px;
+	color: #fff;
+}
+
+.titlebar .lead {
+	margin: 0;
+	color: #d7e2f7;
+	font-size: 0.95em;
+}
+
+.titlebar .date {
+	margin: 10px 0 0;
+	color: #b9caea;
+	font-size: 0.88em;
+}
+
+.titlebar a {
+	color: #cfe0ff;
+}
+
+.titlebar code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+/* ---------- 本文の器 ---------- */
+
+.wrap {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding: 0 30px;
+}
+
+section {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 10px;
+	padding: 4px 26px 26px;
+	margin: 34px 0;
+}
+
+/* ---------- 見出し ---------- */
+
+section h1 {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-size: 1.4em;
+	padding: 14px 20px;
+	margin: 26px 0 20px;
+	border-radius: 8px;
+	box-shadow: 0 3px 10px rgba(20, 34, 70, 0.22);
+}
+
+section h1 code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+h2 {
+	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
+	color: var(--accent, #12224d);
+	font-size: 1.16em;
+	padding: 6px 12px;
+	margin: 30px 0 12px;
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 6px 6px 0;
+}
+
+h3 {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	font-size: 1.02em;
+	display: inline-block;
+	padding-bottom: 3px;
+	margin: 20px 0 8px;
+	border-bottom: 2px dotted var(--accent2, #2f5fbf);
+}
+
+/* ---------- 表 ---------- */
+
+.tablewrap {
+	overflow-x: auto;
+	margin: 14px 0;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 5px rgba(20, 34, 70, 0.10);
+}
+
+th {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	text-align: left;
+	padding: 9px 12px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+th code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+td {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	padding: 9px 12px;
+	border-top: 1px solid var(--line, #d9dfe8);
+	vertical-align: top;
+}
+
+tr:nth-child(even) td {
+	background: #fafbfe;
+	color: var(--ink, #1c2330);
+}
+
+td.num,
+th.num {
+	text-align: right;
+}
+
+td.nowrap,
+th.nowrap {
+	white-space: nowrap;
+}
+
+/* 一覧の印。● と ○ と — を中央に揃え、読まない（—）は薄くして目立たせない */
+td.mark,
+th.mark {
+	text-align: center;
+	white-space: nowrap;
+}
+
+td.off {
+	color: #9aa3af;
+	background: transparent;
+}
+
+tr:nth-child(even) td.off {
+	color: #9aa3af;
+	background: #fafbfe;
+}
+
+/* ---------- コード ---------- */
+
+code {
+	background: var(--code-bg, #f4f6fa);
+	color: #17335f;
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 4px;
+	padding: 1px 5px;
+	font-family: "Consolas", "Cascadia Mono", monospace;
+	font-size: 0.92em;
+}
+
+pre {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 5px solid var(--accent2, #2f5fbf);
+	border-radius: 0 8px 8px 0;
+	padding: 13px 16px;
+	overflow-x: auto;
+	line-height: 1.65;
+}
+
+pre code {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	border: none;
+	padding: 0;
+	font-size: 0.92em;
+}
+
+/* ---------- バッジ ---------- */
+
+.badge {
+	display: inline-block;
+	padding: 1px 9px;
+	margin-right: 6px;
+	border-radius: 11px;
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+	font-size: 0.84em;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.badge.b-ok {
+	background: linear-gradient(100deg, #1d7a3c, #45b56c);
+	color: #fff;
+}
+
+.badge.b-ng {
+	background: linear-gradient(100deg, #a51f22, #e05a5c);
+	color: #fff;
+}
+
+.badge.b-warn {
+	background: linear-gradient(100deg, #b8620a, #f0a548);
+	color: #fff;
+}
+
+.badge.b-none {
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+}
+
+/* ---------- callout ---------- */
+
+.callout {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 8px 8px 0;
+	padding: 12px 18px;
+	margin: 16px 0;
+}
+
+.callout strong {
+	color: var(--accent, #12224d);
+	background: transparent;
+}
+
+.callout p {
+	margin: 6px 0;
+}
+
+/* ---------- 目次 ---------- */
+
+.toc ol {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 0;
+	margin: 12px 0 4px;
+}
+
+.toc ul a {
+	color: var(--link, #1a4fa0);
+	background: transparent;
+}
+
+.toc ol li {
+	counter-increment: tocnum;
+	margin: 0;
+}
+
+.toc ol a {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: normal;
+	width: 310px;
+	max-width: 100%;
+	padding: 7px 13px;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+	line-height: 1.45;
+}
+
+.toc ol a::before {
+	content: counter(tocnum) ". ";
+	font-weight: 700;
+}
+
+/* ---------- 資料リンク・戻るリンク ---------- */
+
+.navlinks {
+	margin: 20px 0 0;
+}
+
+/* ---------- フッター ---------- */
+
+footer {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 18px 30px 0;
+	margin-top: 40px;
+}
+
+footer .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding-bottom: 18px;
+}
+
+footer a {
+	color: #cfe0ff;
+}
+
+/* README へ戻るリンク。紺のバッジに ⌂ だけを置き、上下で同じ形にする */
+.backlink {
+	margin: 18px 0 0;
+}
+
+a.homelink {
+	display: inline-block;
+	padding: 4px 14px;
+	margin: 0 8px 6px 0;
+	border-radius: 6px;
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	background: linear-gradient(100deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	line-height: 1;
+	text-decoration: none;
+}
+
+a.homelink svg {
+	width: 16px;
+	height: 16px;
+	vertical-align: -3px;
+}
+
+a.doclink {
+	display: inline-block;
+	padding: 3px 12px;
+	margin: 0 8px 6px 0;
+	border-radius: 6px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	font-size: 0.9em;
+	text-decoration: none;
+}
+</style>
+<style>
+/* この資料だけのもの: 章のアクセント色（5章 / 色相 280→0 を 4 分割）と目次の採番 */
+.ch01 { --accent: hsl(280.0, 78%, 25%); --accent2: hsl(280.0, 58%, 55%); --soft: hsl(280.0, 28%, 95%); }
+.ch02 { --accent: hsl(210.0, 78%, 25%); --accent2: hsl(210.0, 58%, 55%); --soft: hsl(210.0, 28%, 95%); }
+.ch03 { --accent: hsl(140.0, 78%, 25%); --accent2: hsl(140.0, 58%, 55%); --soft: hsl(140.0, 28%, 95%); }
+.ch04 { --accent: hsl( 70.0, 78%, 25%); --accent2: hsl( 70.0, 58%, 55%); --soft: hsl( 70.0, 28%, 95%); }
+.ch05 { --accent: hsl(  0.0, 78%, 25%); --accent2: hsl(  0.0, 58%, 55%); --soft: hsl(  0.0, 28%, 95%); }
+.toc ol { counter-reset: tocnum; }
+</style>
+</head>
+
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>環境変数の使い方</h1>
+		<p class="lead">どの環境変数を、どこで（クライアント・サーバ・道具）、どの場面で（本番・試験）使っているか。<strong>使っていないことが一目でわかる形</strong>で持ち続ける</p>
+		<p class="date">📅 作成: 2026-10-15 / 更新: 2026-10-15</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p class="backlink"><a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
+
+<p>このプロジェクトのコード（<code>src/</code> ・ <code>tools/</code> ・ <code>tests/</code> ・ <code>deploy/</code> ・ <code>bin/</code>）が読む環境変数と、それを渡している所をまとめる。<strong>環境変数はプロセスの一覧に出ず、渡し損ねても既定値で静かに動く。</strong>どこで効いていて、どこで効いていないかを、ここで 1 か所に持つ。</p>
+
+<div class="callout callout-important">
+	<p><strong>変数を足す・消す・渡し方を変えたら、同じ作業の中でこの資料を直す。</strong>見直しの手順は 5 章。</p>
+</div>
+
+<section class="toc md-skip">
+	<h2>目次</h2>
+	<ol>
+		<li class="ch01"><a href="#ch01">ひと目でわかる一覧</a></li>
+		<li class="ch02"><a href="#ch02">変数ごとの中身</a></li>
+		<li class="ch03"><a href="#ch03">やめた変数</a></li>
+		<li class="ch04"><a href="#ch04">気づいた点</a></li>
+		<li class="ch05"><a href="#ch05">見直し方</a></li>
+	</ol>
+</section>
+
+<!-- ================= 01 ================= -->
+<section class="ch01" id="ch01">
+	<h1>ひと目でわかる一覧</h1>
+
+	<h2>読む側ごと</h2>
+	<p>その場面で<strong>値が渡されて効いている</strong>変数だけを書く。読むコードはあっても誰も渡していないものは、ここには入れない（次の表の ○）。</p>
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">読む側</th><th>本番</th><th>試験</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap">クライアント（node 版 <code>src/client/</code>）</td><td><span class="badge b-none">なし</span></td><td><span class="badge b-none">なし</span></td></tr>
+			<tr><td class="nowrap">クライアント（Rust 版 <code>src/cli-rs/</code>）</td><td><span class="badge b-none">なし</span></td><td><span class="badge b-none">なし</span></td></tr>
+			<tr><td class="nowrap">ブラウザ画面（<code>src/web/</code>）</td><td><span class="badge b-none">なし</span></td><td><span class="badge b-none">なし</span></td></tr>
+			<tr><td class="nowrap">サーバ（<code>src/server/</code>）</td><td><code>AICHAT_PORT</code>（中身は既定と同じ 8787）<br><code>AICHAT_MANAGED</code></td><td><code>AICHAT_DATA</code> ・ <code>AICHAT_PORT</code><br><code>AICHAT_NO_EXIT</code> ・ <code>AICHAT_LEAVE_GRACE_MS</code></td></tr>
+			<tr><td class="nowrap">運用の道具（<code>tools/80_ops/</code>）</td><td><code>USERPROFILE</code>（OS が渡す）</td><td><code>AICHAT_DATA</code> ・ <code>AICHAT_PORT</code><br><code>MASK_LOG_TEST_CALL_LOG</code>（テストの偽物が読む）</td></tr>
+			<tr><td class="nowrap">試験の道具（<code>tools/40_test/</code>）</td><td>（本番では使わない）</td><td><code>AICHAT_DATA</code> ・ <code>AICHAT_NO_EXIT</code><br><code>CONTRAST_TARGET_DIR</code>（外の道具へ渡す）</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>変数ごと</h2>
+	<p>印の意味: <strong>●</strong> 値が渡されて効いている ／ <strong>○</strong> 読むコードはあるが、誰も渡していない（既定値で動く） ／ <strong>—</strong> 読まない</p>
+	<div class="tablewrap">
+	<table>
+		<thead>
+			<tr><th class="nowrap">変数</th><th class="mark">クライアント<br>本番</th><th class="mark">クライアント<br>試験</th><th class="mark">サーバ<br>本番</th><th class="mark">サーバ<br>試験</th><th class="mark">道具<br>本番</th><th class="mark">道具<br>試験</th></tr>
+		</thead>
+		<tbody>
+			<tr><td class="nowrap"><code>AICHAT_DATA</code></td><td class="mark off">—</td><td class="mark off">—</td><td class="mark">○</td><td class="mark">●</td><td class="mark">○</td><td class="mark">●</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_PORT</code></td><td class="mark off">—</td><td class="mark off">—</td><td class="mark">●</td><td class="mark">●</td><td class="mark">○</td><td class="mark">●</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_MANAGED</code></td><td class="mark off">—</td><td class="mark off">—</td><td class="mark">●</td><td class="mark">○</td><td class="mark off">—</td><td class="mark off">—</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_NO_EXIT</code></td><td class="mark off">—</td><td class="mark off">—</td><td class="mark">○</td><td class="mark">●</td><td class="mark off">—</td><td class="mark">●</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_LEAVE_GRACE_MS</code></td><td class="mark off">—</td><td class="mark off">—</td><td class="mark">○</td><td class="mark">●</td><td class="mark off">—</td><td class="mark off">—</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_LOCK_POLL_MS</code></td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark">○</td><td class="mark">○</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_LOCK_MAX_TRIES</code></td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark">○</td><td class="mark">○</td></tr>
+			<tr><td class="nowrap"><code>MASK_LOG_TEST_CALL_LOG</code></td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark">●</td></tr>
+			<tr><td class="nowrap"><code>CONTRAST_TARGET_DIR</code></td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark">●</td></tr>
+			<tr><td class="nowrap"><code>USERPROFILE</code>（OS）</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark">●</td><td class="mark">●</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-important">
+		<p><strong>クライアントは、本番でも試験でも 1 つも読まない。</strong>接続先・名乗る ID・ルーム・アクセストークンは、すべて引数で渡す。<strong>本番のサーバで効いているのは、WinSW の XML が渡す 2 つだけ</strong>で、そのうち <code>AICHAT_PORT</code> は既定と同じ値である。</p>
+	</div>
+</section>
+
+<!-- ================= 02 ================= -->
+<section class="ch02" id="ch02">
+	<h1>変数ごとの中身</h1>
+
+	<p>読む所・既定値・渡している所。行番号は 2026-10-15 時点。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">変数</th><th>何を変えるか</th><th class="nowrap">読む所</th><th class="nowrap">既定値</th><th>渡している所</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap"><code>AICHAT_DATA</code></td><td>データの置き場（DB ・ バックアップの印 ・ メンテナンスの印）。<strong>本番かテストかも、これで決まる</strong>（置き場が <code>_data</code> そのものなら本番、それ以外はテスト）</td><td class="nowrap"><code>src/server/config.mjs:34</code>（<code>:112</code> で由来を記録）<br>試験の道具 5 本（<code>start-test-server.mjs</code> ・ <code>compare-cli.mjs</code> ・ <code>benchmark-waiters.mjs</code> ・ <code>purge-test-data.mjs</code> ・ <code>rename-dryrun.mjs</code>）</td><td class="nowrap"><code>_data</code></td><td>テスト（<code>tests/helpers/prepare-db.mjs</code> ほか多数）・ テスト用サーバ ・ <code>run-ui-tests.ps1</code> ・ <code>benchmark-server.mjs</code>。<strong>本番は誰も渡さない</strong>（サービスもバックアップのタスクも既定で動く）</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_PORT</code></td><td>サーバが受けるポート</td><td class="nowrap"><code>src/server/config.mjs:66</code>（<code>:111</code> で由来を記録）<br><code>tools/80_ops/restore.ps1:64</code></td><td class="nowrap">8787</td><td><strong>本番は <code>deploy/node-ai-chat-lite-winsw.xml:20</code> が 8787 を渡す。</strong>テスト用サーバ ・ テスト ・ <code>restore-ps1.test.mjs</code>（<code>restore.ps1</code> に渡す）。<code>restore.ps1</code> を本番で動かすときは誰も渡さず、既定の 8787 になる</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_MANAGED</code></td><td>WinSW から起動されたか。終了の要求を受けたとき、起動し直してもらえる前提で終わってよいかの判断に使う</td><td class="nowrap"><code>src/server/server.mjs:660</code></td><td class="nowrap">なし</td><td><strong>本番は <code>deploy/node-ai-chat-lite-winsw.xml:23</code> が <code>winsw</code> を渡す。</strong>テストは渡さない（直に起動するため。<code>tests/server.test.mjs:625</code>）</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_NO_EXIT</code></td><td><code>1</code> なら、終了の要求が来ても落ちない（テストのプロセスごと落ちないようにする）</td><td class="nowrap"><code>src/server/server.mjs:631</code></td><td class="nowrap">なし</td><td>テスト 9 本（<code>server.test.mjs</code> ・ <code>client-wait.test.mjs</code> など）・ <code>rename-dryrun.mjs</code>（自分のプロセスに立てる）。<code>restore-ps1.test.mjs</code> は、本当に落ちることを確かめるため、わざと渡さない</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_LEAVE_GRACE_MS</code></td><td>切断から離脱とみなすまでの猶予（ミリ秒）</td><td class="nowrap"><code>src/server/server.mjs:591</code></td><td class="nowrap">5000</td><td><code>tests/server.test.mjs:16</code>（150 に縮める）だけ</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_LOCK_POLL_MS</code></td><td>バックアップの印を見に行く間隔（ミリ秒）</td><td class="nowrap"><code>src/server/backup.mjs:119</code></td><td class="nowrap">30000</td><td><strong>誰も渡していない。</strong>テスト（<code>backup.test.mjs</code> ・ <code>maintenance.test.mjs</code>）は、関数の引数 <code>pollMs</code> で縮めている</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_LOCK_MAX_TRIES</code></td><td>バックアップの印を待って諦めるまでの回数</td><td class="nowrap"><code>src/server/backup.mjs:120</code></td><td class="nowrap">10</td><td><strong>誰も渡していない。</strong>テストは引数 <code>maxTries</code> で縮めている</td></tr>
+			<tr><td class="nowrap"><code>MASK_LOG_TEST_CALL_LOG</code></td><td>テスト用の偽物の <code>mask-log.ps1</code> が、呼ばれた回数を書くファイル</td><td class="nowrap"><code>tests/helpers/fake-mask-log*.ps1</code>（3 本）</td><td class="nowrap">なし</td><td><code>tests/mask-log-input-ps1.test.mjs</code>。本物の道具は読まない</td></tr>
+			<tr><td class="nowrap"><code>CONTRAST_TARGET_DIR</code></td><td>外の道具（<code>check-contrast</code>）に、調べるフォルダを伝える</td><td class="nowrap">このプロジェクトでは読まない</td><td class="nowrap">—</td><td><code>tools/40_test/run-ui-tests.ps1:64</code></td></tr>
+			<tr><td class="nowrap"><code>USERPROFILE</code></td><td>会話ログの置き場を組み立て、表示するパスのユーザ名を <code>~</code> に伏せる</td><td class="nowrap"><code>tools/80_ops/mask-log.ps1:45</code> ・ <code>:91</code></td><td class="nowrap">—</td><td>OS</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>この資料に入れないもの</h2>
+	<ul>
+		<li><strong>処理系や OS が自分で読む変数</strong>（<code>NODE_OPTIONS</code>、一時フォルダを決める <code>TEMP</code> など）。このプロジェクトのコードが名指しで読むものではない。Rust 版の単体テストが一時フォルダを使うのは、この類</li>
+		<li><strong>子プロセスへの素通し</strong>（<code>{ ...process.env, … }</code>）。親が持つものをそのまま渡すだけで、特定の変数を読んではいない。<strong>足している変数のほうは、上の表に入れてある</strong></li>
+	</ul>
+</section>
+
+<!-- ================= 03 ================= -->
+<section class="ch03" id="ch03">
+	<h1>やめた変数</h1>
+
+	<p><strong>やめた変数が戻ってこないよう、テストが見張っているものがある。</strong></p>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">変数</th><th class="nowrap">やめた時期</th><th>代わり</th><th>見張っているテスト</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap"><code>AICHAT_DB</code></td><td class="nowrap">2026-08-31</td><td><code>AICHAT_DATA</code>（DB だけでなく、印も含めて置き場ごと分ける）。<a href="../10_plan/p260831-01-テスト環境の分離.html">テスト環境の分離</a></td><td>なし</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_ID</code></td><td class="nowrap">2026-09-01</td><td>名乗る ID は、コマンドの直後にコロンで囲んで渡す（<code>:project-a:</code>）。<a href="../10_plan/p260901-01-CLIのオプションを整える.html">CLI のオプションを整える</a></td><td><code>tests/client-usage.test.mjs</code>（使い方の表示に出ない）</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_URL</code></td><td class="nowrap">2026-09-04</td><td>接続先は <code>-p</code>（ポート）か <code>-u</code>（URL）で毎回渡す</td><td><code>tests/client-usage.test.mjs</code>（使い方の表示に出ない）・ <code>tests/client-no-defaults.test.mjs</code>（定義そのものが無い）</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p><code>tests/client-no-defaults.test.mjs</code> は、ほかに「<code>AICHAT_PORT</code> を置いても、クライアントの接続先にはならない」ことも確かめている。サーバの変数を、クライアントが読み始めないようにするため。</p>
+</section>
+
+<!-- ================= 04 ================= -->
+<section class="ch04" id="ch04">
+	<h1>気づいた点</h1>
+
+	<p>調べている間に気づいたこと。<strong>どれもまだ直していない。</strong>直すかどうかは、別に決める。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="num">#</th><th>気づいた点</th><th>関係する所</th></tr></thead>
+		<tbody>
+			<tr><td class="num">1</td><td><strong><code>AICHAT_LOCK_POLL_MS</code> ・ <code>AICHAT_LOCK_MAX_TRIES</code> は、誰も渡していない。</strong>コメントには「既定のままでは動作を確かめるのに 5 分かかるため、短くできる」とあるが、テストは関数の引数で縮めている。入れた日（2026-08-30）から一度も渡されていない</td><td><code>src/server/backup.mjs:115-120</code></td></tr>
+			<tr><td class="num">2</td><td><strong>本番のポートを、環境変数で渡している。</strong>共通ルール「プロセスの識別性」は、本番とテストを見分けるための情報（ポート等）を<strong>コマンドライン引数で渡す</strong>としている。環境変数はプロセスの一覧に出ないため。テスト用サーバのポートと置き場も、環境変数で渡している。<strong>しかも本番で渡している 8787 は、既定と同じ値</strong></td><td><code>deploy/node-ai-chat-lite-winsw.xml:20</code><br><code>src/server/config.mjs:66</code></td></tr>
+			<tr><td class="num">3</td><td><strong>テナントごとにサーバを並べると（<a href="../10_plan/i261014-01-チャットをクラウドへ移す.html">i261014-01</a> の計画）、2 が強く効く。</strong>同じサーバが、置き場とポートだけを変えて何本も並ぶ。どれがどのテナントかは、引数で見分けられるようにする</td><td><a href="../40_issues/issues.html#i261014-01">i261014-01</a></td></tr>
+		</tbody>
+	</table>
+	</div>
+</section>
+
+<!-- ================= 05 ================= -->
+<section class="ch05" id="ch05">
+	<h1>見直し方</h1>
+
+	<p><strong>いつ見直すか:</strong> 環境変数を足す ・ 消す ・ 渡し方を変える作業をしたとき、<strong>その作業の中で</strong>この資料を直す。それとは別に、気になったときに下の検索で表と突き合わせる。</p>
+
+	<h2>読んでいる所を探す</h2>
+	<p>名指しで読んでいる所。表の「読む所」と突き合わせる。</p>
+	<pre><code class="language-powershell">git grep -n -E "process\.env\.[A-Z_]+|process\.env\[|\$env:[A-Za-z_]+|env::var" -- src tools tests deploy bin</code></pre>
+
+	<h2>渡している所を探す</h2>
+	<p>サービスの定義と、子プロセスへ足している所。表の「渡している所」と突き合わせる。</p>
+	<pre><code class="language-powershell">git grep -n -E "&lt;env |AICHAT_[A-Z_]+:" -- deploy tools tests</code></pre>
+
+	<div class="callout callout-warning">
+		<p><strong>cmd ・ bat は SJIS なので、<code>git grep</code> と Grep から漏れることがある。</strong>日本語を含まない変数名なら当たることが多いが、確実ではない。<code>text find</code> でも探す（2026-10-15 は、<code>AICHAT</code> を含む cmd ・ bat は 0 本だった。検索式が cmd を走査していることは、既知の語で確かめた）。</p>
+		<pre><code class="language-powershell">text find "AICHAT" --path . --recurse --include "*.cmd,*.bat,*.reg"</code></pre>
+	</div>
+
+	<h2>表の直し方</h2>
+	<ul>
+		<li>1 章の 2 つの表と、2 章の表を、<strong>同じ作業の中で揃えて直す</strong></li>
+		<li>消した変数は 3 章へ移す。<strong>表から黙って消さない</strong></li>
+		<li>読むが誰も渡さない（○）だけの変数が増えたら、4 章に書く</li>
+	</ul>
+</section>
+
+</div>
+
+<footer>
+	<div class="inner">
+		<p><a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
+	</div>
+</footer>
+</body>
+</html>

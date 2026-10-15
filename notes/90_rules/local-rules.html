@@ -337,6 +337,29 @@ pre code {
  * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
  * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
  */
+/* README へ戻るリンク。紺のバッジに ⌂ だけを置き、上下で同じ形にする */
+.backlink {
+	margin: 18px 0 0;
+}
+
+a.homelink {
+	display: inline-block;
+	padding: 4px 14px;
+	margin: 0 8px 6px 0;
+	border-radius: 6px;
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	background: linear-gradient(100deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	line-height: 1;
+	text-decoration: none;
+}
+
+a.homelink svg {
+	width: 16px;
+	height: 16px;
+	vertical-align: -3px;
+}
+
 a.doclink {
 	display: inline-block;
 	padding: 3px 12px;
@@ -390,10 +413,11 @@ footer a {
 <style>
 /* この資料だけのもの: 章のアクセント色（3章 / 色相 280→0 を 140 刻み）と目次の採番 */
 .ch01 { --accent: hsl(280.0, 78%, 25%); --accent2: hsl(280.0, 58%, 55%); --soft: hsl(280.0, 28%, 95%); }
-.ch02 { --accent: hsl(210.0, 78%, 25%); --accent2: hsl(210.0, 58%, 55%); --soft: hsl(210.0, 28%, 95%); }
-.ch03 { --accent: hsl(140.0, 78%, 25%); --accent2: hsl(140.0, 58%, 55%); --soft: hsl(140.0, 28%, 95%); }
-.ch04 { --accent: hsl( 70.0, 78%, 25%); --accent2: hsl( 70.0, 58%, 55%); --soft: hsl( 70.0, 28%, 95%); }
-.ch05 { --accent: hsl(  0.0, 78%, 25%); --accent2: hsl(  0.0, 58%, 55%); --soft: hsl(  0.0, 28%, 95%); }
+.ch02 { --accent: hsl(224.0, 78%, 25%); --accent2: hsl(224.0, 58%, 55%); --soft: hsl(224.0, 28%, 95%); }
+.ch03 { --accent: hsl(168.0, 78%, 25%); --accent2: hsl(168.0, 58%, 55%); --soft: hsl(168.0, 28%, 95%); }
+.ch04 { --accent: hsl(112.0, 78%, 25%); --accent2: hsl(112.0, 58%, 55%); --soft: hsl(112.0, 28%, 95%); }
+.ch05 { --accent: hsl( 56.0, 78%, 25%); --accent2: hsl( 56.0, 58%, 55%); --soft: hsl( 56.0, 28%, 95%); }
+.ch06 { --accent: hsl(  0.0, 78%, 25%); --accent2: hsl(  0.0, 58%, 55%); --soft: hsl(  0.0, 28%, 95%); }
 .toc ol { counter-reset: tocnum; }
 </style>
 </head>
@@ -404,18 +428,18 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite のローカルルール</h1>
 		<p class="lead">このプロジェクトでだけ言えることを書く。全プロジェクト共通の決めごとは別にある</p>
-		<p class="date">📅 作成: 2026-09-04 / 更新: 2026-10-07</p>
+		<p class="date">📅 作成: 2026-09-04 / 更新: 2026-10-15</p>
 	</div>
 </div>
 
 <div class="wrap">
 
-<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+<p class="backlink"><a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
 
 <p>ここに書くのは<strong>このプロジェクトでしか言えないこと</strong>だけである。全プロジェクトに通る決めごとは共通のルールにあり、同じ文を両方に書かない。</p>
 
 <div class="callout callout-important">
-	<p><strong>1〜4 節は、実際に踏んだ落とし穴である。</strong>次のセッションが同じ順路を辿らないようにするのが目的で、一般論を並べる場所ではない。<strong>5 節は、このプロジェクトだけで行う運用手順である。</strong></p>
+	<p><strong>1〜4 節は、実際に踏んだ落とし穴である。</strong>次のセッションが同じ順路を辿らないようにするのが目的で、一般論を並べる場所ではない。<strong>5・6 節は、このプロジェクトだけで行う運用手順である。</strong></p>
 	<p>root の <code>AGENTS.md</code> はこの資料から生成した Markdown を 1 行で取り込んでいる。<strong>セッションを開くと本文が読み込まれる。</strong></p>
 </div>
 
@@ -427,6 +451,7 @@ footer a {
 		<li class="ch03"><a href="#ch03">exe を作り直すときは待受けを止めない</a></li>
 		<li class="ch04"><a href="#ch04">プロセスを止めるときは子まで見る</a></li>
 		<li class="ch05"><a href="#ch05">chat 待受けの定期確認は cron で行う</a></li>
+		<li class="ch06"><a href="#ch06">環境変数の調査資料を最新に保つ</a></li>
 	</ol>
 </section>
 
@@ -624,11 +649,24 @@ footer a {
 	<p>cron の式は <code>13 */3 * * *</code>（3 時間ごと、毎正時の 13 分）。<strong>cron はセッションの中だけで生きる</strong>（共通ルール「cron はセッションの中だけで生きる」）。セッションを開き直したときは、待受けと同様に指示を待たず張り直す。</p>
 </section>
 
+<!-- ================= 06 ================= -->
+<section class="ch06" id="ch06">
+	<h1>環境変数の調査資料を最新に保つ</h1>
+
+	<p>適用条件: 環境変数を足す・消す・渡し方を変えるとき（読む側のコードも、渡す側の XML・テスト・道具も含む）。</p>
+
+	<p><strong>環境変数の一覧は <a href="../01_research/r261015-01-環境変数.html">環境変数の使い方</a> に 1 か所だけ持ち、その作業の中で直す。</strong>後回しにしない。直すのは 1 章の 2 つの表と 2 章の表で、3 つを揃える。消した変数は 3 章（やめた変数）へ移し、表から黙って消さない。</p>
+
+	<p><strong>理由:</strong> 環境変数はプロセスの一覧に出ず、渡し損ねても既定値で静かに動く。読むコードだけが残り、誰も渡していない口（2026-10-15 時点で 2 つ）にも気づけない。</p>
+
+	<p>探し方は資料の 5 章に置き、ここには写さない。</p>
+</section>
+
 </div>
 
 <footer>
 	<div class="inner">
-		<a class="doclink" href="../../README.html">README へ戻る</a>
+		<a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a>
 	</div>
 </footer>
 

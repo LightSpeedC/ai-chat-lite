@@ -353,11 +353,17 @@ a.doclink {
  * 親サイトへ戻るリンク。章のアクセントを継がず、常に紺にする。
  * 資料へのバッジ（doclink）と同じ形だと行き先を見分けられないため。
  */
+/* 親サイトへ戻るリンク。紺のバッジに ⌂ だけを置き、上下で同じ形にする */
+.backlink {
+	margin: 18px 0 0;
+}
+
 a.homelink {
 	display: inline-block;
 	padding: 4px 14px;
 	margin: 0 8px 6px 0;
-	border-radius: 8px;
+	border-radius: 6px;
+	border: 1px solid rgba(255, 255, 255, 0.35);
 	background: linear-gradient(100deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
 	color: #fff;
 	line-height: 1;
@@ -414,23 +420,24 @@ footer a {
 .ch02 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); --soft: hsl(140, 28%, 95%); }
 .ch03 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
 /* 資料リンクの通し色相（8 本 / 280 → 0 を 40 刻み）。章の色とは独立して振る */
-/* 資料 16 本。色相は 280 から 0 まで 18.667 刻み（280 ÷ 15） */
+/* 資料 17 本。色相は 280 から 0 まで 17.5 刻み（280 ÷ 16） */
 .doc01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); }
-.doc02 { --accent: hsl(261.3, 78%, 25%); --accent2: hsl(261.3, 58%, 55%); }
-.doc03 { --accent: hsl(242.7, 78%, 25%); --accent2: hsl(242.7, 58%, 55%); }
-.doc04 { --accent: hsl(224, 78%, 25%); --accent2: hsl(224, 58%, 55%); }
-.doc05 { --accent: hsl(205.3, 78%, 25%); --accent2: hsl(205.3, 58%, 55%); }
-.doc06 { --accent: hsl(186.7, 78%, 25%); --accent2: hsl(186.7, 58%, 55%); }
-.doc07 { --accent: hsl(168, 78%, 25%); --accent2: hsl(168, 58%, 55%); }
-.doc08 { --accent: hsl(149.3, 78%, 25%); --accent2: hsl(149.3, 58%, 55%); }
-.doc09 { --accent: hsl(130.7, 78%, 25%); --accent2: hsl(130.7, 58%, 55%); }
-.doc10 { --accent: hsl(112, 78%, 25%); --accent2: hsl(112, 58%, 55%); }
-.doc11 { --accent: hsl(93.3, 78%, 25%); --accent2: hsl(93.3, 58%, 55%); }
-.doc12 { --accent: hsl(74.7, 78%, 25%); --accent2: hsl(74.7, 58%, 55%); }
-.doc13 { --accent: hsl(56, 78%, 25%); --accent2: hsl(56, 58%, 55%); }
-.doc14 { --accent: hsl(37.3, 78%, 25%); --accent2: hsl(37.3, 58%, 55%); }
-.doc15 { --accent: hsl(18.7, 78%, 25%); --accent2: hsl(18.7, 58%, 55%); }
-.doc16 { --accent: hsl(0, 78%, 25%); --accent2: hsl(0, 58%, 55%); }
+.doc02 { --accent: hsl(262.5, 78%, 25%); --accent2: hsl(262.5, 58%, 55%); }
+.doc03 { --accent: hsl(245, 78%, 25%); --accent2: hsl(245, 58%, 55%); }
+.doc04 { --accent: hsl(227.5, 78%, 25%); --accent2: hsl(227.5, 58%, 55%); }
+.doc05 { --accent: hsl(210, 78%, 25%); --accent2: hsl(210, 58%, 55%); }
+.doc06 { --accent: hsl(192.5, 78%, 25%); --accent2: hsl(192.5, 58%, 55%); }
+.doc07 { --accent: hsl(175, 78%, 25%); --accent2: hsl(175, 58%, 55%); }
+.doc08 { --accent: hsl(157.5, 78%, 25%); --accent2: hsl(157.5, 58%, 55%); }
+.doc09 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); }
+.doc10 { --accent: hsl(122.5, 78%, 25%); --accent2: hsl(122.5, 58%, 55%); }
+.doc11 { --accent: hsl(105, 78%, 25%); --accent2: hsl(105, 58%, 55%); }
+.doc12 { --accent: hsl(87.5, 78%, 25%); --accent2: hsl(87.5, 58%, 55%); }
+.doc13 { --accent: hsl(70, 78%, 25%); --accent2: hsl(70, 58%, 55%); }
+.doc14 { --accent: hsl(52.5, 78%, 25%); --accent2: hsl(52.5, 58%, 55%); }
+.doc15 { --accent: hsl(35, 78%, 25%); --accent2: hsl(35, 58%, 55%); }
+.doc16 { --accent: hsl(17.5, 78%, 25%); --accent2: hsl(17.5, 58%, 55%); }
+.doc17 { --accent: hsl(0, 78%, 25%); --accent2: hsl(0, 58%, 55%); }
 
 .toc ol { counter-reset: tocnum; }
 </style>
@@ -441,13 +448,13 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite</h1>
 		<p class="lead">ローカル PC 内で AI セッションと人間が同席する簡易チャット</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-09-13</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-10-15</p>
 	</div>
 </div>
 
 <div class="wrap">
 
-<p class="navlinks"><a class="homelink" href="../" aria-label="親サイトへ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
+<p class="backlink"><a class="homelink" href="../" aria-label="親サイトへ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
 
 <p>プロジェクトごとに動いている複数の Claude Code セッションと人間が、一箇所に集まって会話するための仕組みです。ローカル PC 内だけで動き、外部には出ません。参加者は自分の project フォルダ名を ID として名乗ります。</p>
 
@@ -478,9 +485,10 @@ footer a {
 		<a class="doclink doc11" href="notes/01_research/r260902-01-背面コマンドの寿命.html">背面のコマンドの寿命</a>
 		<a class="doclink doc12" href="notes/01_research/r260912-01-CLI実装のベンチマーク.html">CLI 実装のベンチマーク</a>
 		<a class="doclink doc13" href="notes/01_research/r260912-02-サーバーのベンチマーク.html">サーバーのベンチマーク</a>
-		<a class="doclink doc14" href="notes/30_status/status.html">開発状況</a>
-		<a class="doclink doc15" href="notes/40_issues/issues.html">課題</a>
-		<a class="doclink doc16" href="notes/60_releases/20260903-01-変わったこと.html">変わったこと</a>
+		<a class="doclink doc14" href="notes/01_research/r261015-01-環境変数.html">環境変数の使い方</a>
+		<a class="doclink doc15" href="notes/30_status/status.html">開発状況</a>
+		<a class="doclink doc16" href="notes/40_issues/issues.html">課題</a>
+		<a class="doclink doc17" href="notes/60_releases/20260903-01-変わったこと.html">変わったこと</a>
 	</p>
 
 	<p><strong>設計は全体を示す資料で、実装のあとに必ず最新へ更新します。</strong>大きな変更は個別の計画書に残し、設計から参照します。</p>
