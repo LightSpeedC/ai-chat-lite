@@ -338,6 +338,29 @@ pre code {
  * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
  * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
  */
+/* README へ戻るリンク。紺のバッジに ⌂ だけを置き、上下で同じ形にする */
+.backlink {
+	margin: 18px 0 0;
+}
+
+a.homelink {
+	display: inline-block;
+	padding: 4px 14px;
+	margin: 0 8px 6px 0;
+	border-radius: 6px;
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	background: linear-gradient(100deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	line-height: 1;
+	text-decoration: none;
+}
+
+a.homelink svg {
+	width: 16px;
+	height: 16px;
+	vertical-align: -3px;
+}
+
 a.doclink {
 	display: inline-block;
 	padding: 3px 12px;
@@ -584,7 +607,7 @@ footer a {
 
 <div class="wrap">
 
-<p class="navlinks"><a class="doclink" href="../../README.html">README へ戻る</a></p>
+<p class="backlink"><a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
 
 <!--
 	目次は開閉と組みの機能で、飛び先は details。Markdown にすると見出しにならず
@@ -594,7 +617,7 @@ footer a {
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用（8 件 / 未 4 / 着手 0 / 済 4）</a></li>
 		<li class="g02"><a href="#g02">データ（9 件 / 未 3 / 着手 0 / 済 6）</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録（39 件 / 未 8 / 着手 7 / 済 24）</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録（40 件 / 未 9 / 着手 7 / 済 24）</a></li>
 		<li class="g04"><a href="#g04">チャットの機能（37 件 / 未 11 / 着手 2 / 済 24）</a></li>
 	</ol>
 </section>
@@ -873,7 +896,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 			<summary>
 				<span class="badge b-todo">未</span>
 				<span class="no">i261014-01</span>
-				チャットを DB ごとクラウドへ移し、PC ごとのアクセストークンで入口を絞る
+				チャットを DB ごとクラウドへ移し、PC ごとのアクセストークンで入口を絞る（ドメイン名でテナントを分ける）
 			</summary>
 			<div class="issuebody">
 				<p><strong>計画書: <a href="../10_plan/i261014-01-チャットをクラウドへ移す.html">チャットを DB ごとクラウドへ移す</a>（2026-10-14、計画の段階）。</strong>利用者からの依頼。サーバと DB を PC からクラウドへ移す。認証はややこしくしない。<strong>PC ごとにアクセストークンを発行し、HTTP のヘッダーで正しいトークンを渡したときだけ正常に応答し、それ以外には意味のないページだけを返す。</strong></p>
@@ -884,7 +907,7 @@ const servers = await startServers();           // 待ち受けを開始</code><
 				</div>
 
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> 計画書 3 章の 1〜7 を決める（置き場・PC 側の繋ぎ方・トークンの持ち方・断るときの応答・同じ ID を 2 台で使ったとき・管理の口・運用の道具）。推奨はすべて A</li>
+					<li><span class="badge b-todo">未</span> 計画書 3 章の 1〜10 を決める（置き場・PC 側の繋ぎ方・トークンの持ち方・断るときの応答・同じ ID を 2 台で使ったとき・管理の口・運用の道具・テナントの分け方・複数テナントへの繋ぎ方・控えを別の場所にも置く）。推奨はすべて A。あわせて、いまのチャットのテナント名とドメイン名を決める（2026-10-15 にマルチテナントを追加）。<strong>2026-10-15 に決まったもの: 1-A ・ 4-A ・ 7-A と、8 のうちテナントの決め方（<code>Host</code> の命名規約 <code>&lt;テナント ID&gt;.chat.ai.&lt;ドメイン&gt;</code>）</strong></li>
 					<li><span class="badge b-todo">未</span> 1-A のときは、置き場の前提（空きのメモリ・Node 26 の arm64 版・HTTPS の終端）を <code>20260917-oracle-cloud</code> に相談する。文面は送る前に提示する</li>
 					<li><span class="badge b-todo">未</span> 計画書 4 章の S1〜S6 を、段ごとに落ちるテストを先に書いて進める。本番に触るのは S5 だけ</li>
 				</ul>
@@ -1462,10 +1485,31 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">39 件 / 未 8 / 着手 7 / 済 24</span>
+		<span class="count">40 件 / 未 9 / 着手 7 / 済 24</span>
 	</summary>
 
 	<div class="groupbody">
+
+		<details class="issue md-flat" id="i261015-02" open>
+			<summary>
+				<span class="badge b-todo">未</span>
+				<span class="no">i261015-02</span>
+				やめた環境変数（<code>AICHAT_DB</code> ・ <code>AICHAT_ID</code> ・ <code>AICHAT_URL</code>）の名前を、テストからも消す
+			</summary>
+			<div class="issuebody">
+				<p>利用者の指示（2026-10-15）。<strong>この 3 つは、ソース（テストを含む）のどこにも残さない。名前を記録として残すのは、この課題だけにする。</strong></p>
+				<p>いま名前が残っているのはテストだけ（2026-10-15 時点）。<code>AICHAT_DB</code> はソースに 0 か所。<code>AICHAT_ID</code> ・ <code>AICHAT_URL</code> は、やめた変数が戻ってこないかを見張るテストに残っている。</p>
+				<ul>
+					<li><code>tests/client-usage.test.mjs</code>: 使い方の表示に <code>AICHAT_ID</code> ・ <code>AICHAT_URL</code> が出ないことを確かめる 2 行と、そのコメント</li>
+					<li><code>tests/client-no-defaults.test.mjs</code>: 「<code>AICHAT_URL</code> のような変数は定義そのものが無い」のテスト</li>
+				</ul>
+				<ul class="todos">
+					<li><span class="badge b-todo">未</span> 上の 2 本のテストから、3 つの名前を消す。<strong>見張りを消すか、名前を使わない形（例: 使い方の表示に <code>AICHAT_</code> で始まる語が 1 つも出ない）に書き換えるかを決める</strong></li>
+					<li><span class="badge b-todo">未</span> 消したあと、<code>text find</code> で 3 つの名前がソース（<code>src</code> ・ <code>tools</code> ・ <code>tests</code> ・ <code>deploy</code> ・ <code>bin</code>）に 0 件であることを確かめる</li>
+					<li><span class="badge b-todo">未</span> 資料（環境変数の調査資料の 3 章「やめた変数」・計画書・設計書など）に残る名前を、この課題へのリンクに置き換えるかを決める</li>
+				</ul>
+			</div>
+		</details>
 
 		<details class="issue md-flat" id="i261005-01" open>
 			<summary>
@@ -5924,7 +5968,7 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 
 <footer>
 	<div class="inner">
-		<a class="doclink" href="../../README.html">README へ戻る</a>
+		<a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a>
 	</div>
 </footer>
 
