@@ -186,7 +186,7 @@ describe('当て済みの SQL を書き換えたとき', () => {
 
 describe('控え', () => {
 	test('当てる前に控えを取る', () => {
-		// 下り（元に戻す SQL）は持たない。戻すならここから戻す
+		// 下り (元に戻す SQL)は持たない。戻すならここから戻す
 		const dir = makeDir('backup', { ver_000001: 'CREATE TABLE a (x INTEGER);' });
 		const dbPath = newDbPath();
 
@@ -197,10 +197,10 @@ describe('控え', () => {
 	});
 
 	/*
-	 * 控えは、当てる DB と同じフォルダに書く。設定の置き場（DATA_DIR）には書かない。
+	 * 控えは、当てる DB と同じフォルダに書く。設定の置き場 (DATA_DIR)には書かない。
 	 *
-	 * 置き場に書いていた頃、テストが作った使い捨ての DB の控え（pre-ver-000000-*）が
-	 * 本番の _data に 115 本溜まった（i261015-01）。置き場が何を指していても、
+	 * 置き場に書いていた頃、テストが作った使い捨ての DB の控え (pre-ver-000000-*)が
+	 * 本番の _data に 115 本溜まった (i261015-01)。置き場が何を指していても、
 	 * 当てた DB の隣にしか増えなければ、よその置き場は汚れない。
 	 */
 	test('置き場の外にある DB に当てると、控えはその DB の隣にでき、置き場には増えない', () => {
@@ -213,7 +213,7 @@ describe('控え', () => {
 		migrate({ dbPath, dir });
 
 		const after = readdirSync(TEST_DATA).filter((f) => f.startsWith('pre-ver-')).length;
-		assert.equal(after, before, '置き場（DATA_DIR）に控えが増えた');
+		assert.equal(after, before, '置き場 (DATA_DIR)に控えが増えた');
 		const beside = readdirSync(elsewhere).filter((f) => f.startsWith('pre-ver-'));
 		assert.equal(beside.length, 1, '当てた DB の隣に控えが 1 本できていない');
 	});
@@ -229,7 +229,7 @@ describe('実際に置いてある版', () => {
 		const dbPath = newDbPath();
 		const result = migrate({ dbPath, dir: REAL_DIR });
 
-		assert.ok(result.to >= 4, `版が上がっていない（${result.to}）`);
+		assert.ok(result.to >= 4, `版が上がっていない (${result.to})`);
 		assert.deepEqual(tables(dbPath), ['archives', 'connectors', 'cursors', 'messages', 'versions']);
 	});
 
@@ -302,7 +302,7 @@ describe('実際に置いてある版', () => {
 		}
 	});
 
-	test('版 6 で (room_id, sent_at) の索引が張られる（recent --since 系）', () => {
+	test('版 6 で (room_id, sent_at) の索引が張られる (recent --since 系)', () => {
 		const dbPath = newDbPath();
 		migrate({ dbPath, dir: REAL_DIR });
 
@@ -334,8 +334,8 @@ describe('実際に置いてある版', () => {
 		/*
 		 * これが効かないと、既存の参加者が全員オフライン扱いのまま戻らない。
 		 *
-		 * jstBefore() が作る文字列は DB の値と文字列のまま比較される（在席判定の
-		 * 90 秒）。'-'（0x2D）は '/'（0x2F）より小さいため、旧形式の行が残っていると
+		 * jstBefore() が作る文字列は DB の値と文字列のまま比較される (在席判定の
+		 * 90 秒)。'-'(0x2D)は '/'(0x2F)より小さいため、旧形式の行が残っていると
 		 * 「90 秒以内」の判定が常に偽になる。
 		 *
 		 * 版 4 までを当てて旧形式の行を入れ、そのあと版 5 を当てて確かめる。
@@ -385,11 +385,11 @@ describe('実際に置いてある版', () => {
 			before.close();
 		}
 
-		// 残り全部（版 5 以降）を当てる。件数は版フォルダの数から数える
-		// （版を足すたびにここを書き換えずに済むように）
+		// 残り全部 (版 5 以降)を当てる。件数は版フォルダの数から数える
+		// (版を足すたびにここを書き換えずに済むように)
 		const latest = listVersions(REAL_DIR).length;
 		const result = migrate({ dbPath, dir: REAL_DIR });
-		assert.equal(result.to, latest, `版が最新（${latest}）に上がっていない（${result.to}）`);
+		assert.equal(result.to, latest, `版が最新 (${latest})に上がっていない (${result.to})`);
 
 		const db = new DatabaseSync(dbPath);
 		try {
@@ -420,7 +420,7 @@ describe('実際に置いてある版', () => {
 		assert.equal(older.length, 23);
 		assert.ok(older < newer, '辞書順と時系列順が一致していない');
 
-		// 混ざると壊れることも押さえる（版 5 が要る理由）
+		// 混ざると壊れることも押さえる (版 5 が要る理由)
 		assert.ok(!('2026-09-04 06:00:00.000' >= newer), '旧形式が新形式の閾値を上回っている');
 	});
 

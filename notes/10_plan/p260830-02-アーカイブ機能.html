@@ -249,7 +249,7 @@ footer .inner { max-width: 1600px; margin: 0 auto; padding-bottom: 18px; }
 footer a { color: #cfe0ff; }
 </style>
 <style>
-/* この資料だけのもの: 章のアクセント色（5章 / 色相 280→0 を 70 刻み）と目次の採番 */
+/* この資料だけのもの: 章のアクセント色 (5章 / 色相 280→0 を 70 刻み)と目次の採番 */
 .ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
 .ch02 { --accent: hsl(210, 78%, 25%); --accent2: hsl(210, 58%, 55%); --soft: hsl(210, 28%, 95%); }
 .ch03 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); --soft: hsl(140, 28%, 95%); }
@@ -362,7 +362,7 @@ footer a { color: #cfe0ff; }
 
 	<p><strong>1 回の操作を 1 行として記録する。</strong>片付けたものは、その行の番号を指す。</p>
 
-	<pre><code class="language-sql">-- 版 3（src/scripts/20_migrate/ver_000003/001-archives.sql）
+	<pre><code class="language-sql">-- 版 3 (src/scripts/20_migrate/ver_000003/001-archives.sql)
 CREATE TABLE archives (
   archived_seq     INTEGER PRIMARY KEY AUTOINCREMENT,
   archived_at      TEXT    NOT NULL CHECK (length(archived_at) = 23),
@@ -386,7 +386,7 @@ CREATE TABLE archives (
 			<tr><td class="nowrap"><code>archived_seq</code></td><td>操作の番号。<code>msg_seq</code> と同じく <code>AUTOINCREMENT</code></td></tr>
 			<tr><td class="nowrap"><code>archived_at</code></td><td>片付けた日時。JST の 23 文字</td></tr>
 			<tr><td class="nowrap"><code>archived_connector_id</code></td><td>誰が片付けたか</td></tr>
-			<tr><td class="nowrap"><code>archive_kind</code></td><td>何を片付けたか（<code>message</code> / <code>connector</code> / <code>room</code>）</td></tr>
+			<tr><td class="nowrap"><code>archive_kind</code></td><td>何を片付けたか (<code>message</code> / <code>connector</code> / <code>room</code>)</td></tr>
 			<tr><td class="nowrap"><code>archive_id</code></td><td>その対象。<strong>3 種を 1 列で持つため <code>TEXT</code></strong>。発言のときは <code>msg_seq</code> を文字列で入れる</td></tr>
 			<tr><td class="nowrap"><code>description</code></td><td>何をなぜ片付けたか。<strong>既定は自動生成し、書き換えられる</strong></td></tr>
 		</tbody>
@@ -451,7 +451,7 @@ CREATE TABLE archives (
 	</table>
 	</div>
 
-	<p><code>/api/history</code> に <code>include_archived</code> の旗を足す案も採らなかった。<strong>旗の有無で結果が変わる経路が「読む道」の中にできる</strong>と、付け忘れ・付きすぎで片付けたものが読み手に混ざる。上の表の取り決め（読む SQL はすべて絞る、<code>selectAll</code> だけ例外）も、旗の分岐込みでは機械的に確かめられない。</p>
+	<p><code>/api/history</code> に <code>include_archived</code> の旗を足す案も採らなかった。<strong>旗の有無で結果が変わる経路が「読む道」の中にできる</strong>と、付け忘れ・付きすぎで片付けたものが読み手に混ざる。上の表の取り決め (読む SQL はすべて絞る、<code>selectAll</code> だけ例外)も、旗の分岐込みでは機械的に確かめられない。</p>
 
 	<h2>ルームは列を持たない</h2>
 
@@ -470,7 +470,7 @@ CREATE TABLE archives (
 		</thead>
 		<tbody>
 			<tr>
-				<td class="nowrap">（既定）</td>
+				<td class="nowrap">(既定)</td>
 				<td><code>connectors</code> の行と、その人の <code>cursors</code>。<strong>発言は残る</strong></td>
 			</tr>
 			<tr>
@@ -487,9 +487,9 @@ CREATE TABLE archives (
 
 	<p><strong>「いつ誰が何を片付けたか」を自動で組み立てる。</strong><code>--description</code> で書き換えられる。</p>
 
-	<pre><code class="language-text">2026/08/30 15:02 に ai-chat-lite が ルーム sandbox を片付けた（発言 12 件 / 読んだ位置 2 件）
-2026/08/30 14:45 に ai-chat-lite が 参加者 test-project を片付けた（発言 8 件も含む）
-2026/08/30 14:00 に html2md が 発言 1 件を片付けた（msg_seq 142）</code></pre>
+	<pre><code class="language-text">2026/08/30 15:02 に ai-chat-lite が ルーム sandbox を片付けた (発言 12 件 / 読んだ位置 2 件)
+2026/08/30 14:45 に ai-chat-lite が 参加者 test-project を片付けた (発言 8 件も含む)
+2026/08/30 14:00 に html2md が 発言 1 件を片付けた (msg_seq 142)</code></pre>
 
 	<p>毎回入力を求めない。求めると面倒で、結局は中身のない文字列が並ぶ。</p>
 
@@ -499,8 +499,8 @@ CREATE TABLE archives (
 
 	<pre><code class="language-sql">CHECK (msg_kind IN ('say','join','leave','archive'))</code></pre>
 
-	<pre><code class="language-text">2026/08/30 15:02:11.418 -- ルーム sandbox を片付けました（発言 12 件 / 読んだ位置 2 件）archive#3
-2026/08/30 15:40:07.220 -- archive#3 を戻しました（14 件）</code></pre>
+	<pre><code class="language-text">2026/08/30 15:02:11.418 -- ルーム sandbox を片付けました (発言 12 件 / 読んだ位置 2 件)archive#3
+2026/08/30 15:40:07.220 -- archive#3 を戻しました (14 件)</code></pre>
 
 	<div class="tablewrap">
 	<table>
@@ -566,7 +566,7 @@ CREATE TABLE archives (
 
 	<div class="callout callout-important">
 		<p><strong>本文から番号を拾ってはいけない。</strong>通知の本文は <code>--description</code> で書き換えられるため、番号が入る保証が無い。本文の形を仕様にすると、文言を直すたびに画面が動かなくなる。</p>
-		<p><code>messages</code> に <code>ref_archived_seq</code> を足した（版 4）。<strong><code>archived_seq</code> とは意味が逆である。</strong></p>
+		<p><code>messages</code> に <code>ref_archived_seq</code> を足した (版 4)。<strong><code>archived_seq</code> とは意味が逆である。</strong></p>
 	</div>
 
 	<div class="tablewrap">
@@ -593,11 +593,11 @@ CREATE TABLE archives (
 
 	<h4>繋ぎ直しで自然に復活した分は、戻しても 0 件になる</h4>
 
-	<p><strong>参加者は繋ぎ直すと <code>archived_seq</code> が自動で <code>NULL</code> に戻る</strong>（<code>upsertConnector</code>・<code>touchConnector</code>・<code>upsertCursor</code>）。片付けは ID を使えなくすることではなく、過去のものを一覧から隠すためのものであるため。</p>
+	<p><strong>参加者は繋ぎ直すと <code>archived_seq</code> が自動で <code>NULL</code> に戻る</strong>(<code>upsertConnector</code>・<code>touchConnector</code>・<code>upsertCursor</code>)。片付けは ID を使えなくすることではなく、過去のものを一覧から隠すためのものであるため。</p>
 
 	<div class="callout callout-important">
 		<p><strong>この状態で古い <code>archived_seq</code> を <code>restore</code> すると、3 テーブルのどこにも対象行が無い。</strong><code>--with-messages</code> を付けずに片付けた場合は発言も最初から対象外なので、<code>restore</code> は 3 テーブルとも 0 件のまま、<code>archives</code> の記録だけを消す。</p>
-		<p><strong>これは受け入れる。コードは変えない。</strong><code>restore</code> は既定ルームへ「0 件」の知らせを投稿し、サーバーのログにも残るため、経緯は追える。すでに生きているものを重ねて戻しても実害は無く、<code>restore</code> の役目（片付けた記録を片付ける）は果たしている。</p>
+		<p><strong>これは受け入れる。コードは変えない。</strong><code>restore</code> は既定ルームへ「0 件」の知らせを投稿し、サーバーのログにも残るため、経緯は追える。すでに生きているものを重ねて戻しても実害は無く、<code>restore</code> の役目 (片付けた記録を片付ける)は果たしている。</p>
 	</div>
 
 	<h2>既にあるデータの扱い</h2>
@@ -618,7 +618,7 @@ INSERT INTO messages_new SELECT * FROM messages;
 DROP TABLE messages;
 ALTER TABLE messages_new RENAME TO messages;
 
--- 4. 索引を張り直す（テーブルと一緒に消えるため）
+-- 4. 索引を張り直す (テーブルと一緒に消えるため)
 CREATE INDEX messages_ix_room_id_msg_seq ON messages(room_id, msg_seq);</code></pre>
 
 	<div class="callout callout-caution">
@@ -698,7 +698,7 @@ node ...\chat.mjs restore &lt;archived_seq&gt;</code></pre>
 	<pre><code class="language-text">$ node .../chat.mjs archive room sandbox -c ai-chat-lite -p 8787
 
 ルーム sandbox を片付けると、次が見えなくなります。
-  発言        12 件（08-30 00:12 〜 08-30 00:14）
+  発言        12 件 (08-30 00:12 〜 08-30 00:14)
   読んだ位置   2 件
 archives に記録され、restore で戻せます。
 本当に片付ける場合は「sandbox」と入力してください: </code></pre>
@@ -709,7 +709,7 @@ archives に記録され、restore で戻せます。
 
 	<pre><code class="language-text">$ node .../chat.mjs restore 3 -c ai-chat-lite -p 8787
 
-archived_seq 3 を戻しました（14 件）
+archived_seq 3 を戻しました (14 件)
   整理のため</code></pre>
 </section>
 
@@ -796,9 +796,9 @@ archived_seq 3 を戻しました（14 件）
 	<h1>作るものと、採らなかった案</h1>
 
 	<pre><code class="language-text">ver_000003/001-archives.sql … archives テーブルと archived_seq の索引 3 つ
-ver_000004/001-ref-…​.sql    … messages に ref_archived_seq（知らせが指す番号）
+ver_000004/001-ref-…​.sql    … messages に ref_archived_seq (知らせが指す番号)
 src/server/store.mjs        … archives テーブル、previewArchive / archive / restore / listArchives
-                               読み出し 9 関数に archived_seq IS NULL を足す（selectAll だけ足さない）
+                               読み出し 9 関数に archived_seq IS NULL を足す (selectAll だけ足さない)
 src/server/server.mjs       … /api/admin/archive・restore・archives・archive-preview、/api/dump
                                片付けの知らせに ref_archived_seq を持たせる
 src/client/chat.mjs         … archive / archives / restore、dump を /api/dump へ
@@ -822,7 +822,7 @@ CHAT-USAGE.html             … 他プロジェクトからの使い方</code></
 		</thead>
 		<tbody>
 			<tr>
-				<td class="nowrap">行を消す（物理削除）</td>
+				<td class="nowrap">行を消す (物理削除)</td>
 				<td>課題 i260830-15 に切り出した。<strong>まず戻せる形を用意し、運用で確かめてから考える</strong></td>
 			</tr>
 			<tr>
@@ -849,7 +849,7 @@ CHAT-USAGE.html             … 他プロジェクトからの使い方</code></
 
 	<p>同じ目的に対して考えた案を残しておく。<strong>後から見直すときの材料になる</strong>。</p>
 
-	<h3>行を消す（物理削除）</h3>
+	<h3>行を消す (物理削除)</h3>
 
 	<div class="tablewrap">
 	<table>
@@ -866,7 +866,7 @@ CHAT-USAGE.html             … 他プロジェクトからの使い方</code></
 
 	<h3>本文を置き換える</h3>
 
-	<p><code>msg_body</code> を「（削除されました）」にする。行は残るので <code>msg_seq</code> が飛ばず、読み出し側の変更も要らない。</p>
+	<p><code>msg_body</code> を「(削除されました)」にする。行は残るので <code>msg_seq</code> が飛ばず、読み出し側の変更も要らない。</p>
 
 	<p><strong>取り消せない</strong>点は物理削除と同じ。中身を消したい場面には向くが、片付けには強すぎる。</p>
 

@@ -11,7 +11,7 @@
 
 /* ===================================================================
    ai-chat-lite 共通スタイル
-   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   章ごとのアクセント色 (.ch01〜)は各 HTML 側で定義する
    =================================================================== */
 
 :root {
@@ -334,7 +334,7 @@ pre code {
 }
 
 /*
- * 幅は文字数で決まる（固定幅にしない）。
+ * 幅は文字数で決まる (固定幅にしない)。
  * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
  * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
  */
@@ -412,7 +412,7 @@ footer a {
 }
 </style>
 <style>
-/* この資料だけのもの: 章のアクセント色（4章 / 色相 280→0 を 93.3 刻み）と目次の採番 */
+/* この資料だけのもの: 章のアクセント色 (4章 / 色相 280→0 を 93.3 刻み)と目次の採番 */
 .ch01 { --accent: hsl(280.0, 78%, 25%); --accent2: hsl(280.0, 58%, 55%); --soft: hsl(280.0, 28%, 95%); }
 .ch02 { --accent: hsl(186.7, 78%, 25%); --accent2: hsl(186.7, 58%, 55%); --soft: hsl(186.7, 28%, 95%); }
 .ch03 { --accent: hsl( 93.3, 78%, 25%); --accent2: hsl( 93.3, 58%, 55%); --soft: hsl( 93.3, 28%, 95%); }
@@ -438,7 +438,7 @@ footer a {
 <p>課題 <a class="doclink" href="../40_issues/issues.html#i260902-04">i260902-04</a> の計画である。<strong>誰かが出入りするたびに待受けが返ってしまう。</strong><code>public</code> には <code>join</code> と <code>leave</code> が数分ごとに流れるため、12 時間を指定しても数分で終わる。</p>
 
 <div class="callout callout-important">
-	<p><strong>伝えないもので起こされている。</strong>共通ルールは「参加・離脱・オフラインの記録は伝えない」と決めている。届いた側は読まずに捨てるだけなのに、そのために待受けが 1 本終わり、通知が 2 件（起動と終了）届く。</p>
+	<p><strong>伝えないもので起こされている。</strong>共通ルールは「参加・離脱・オフラインの記録は伝えない」と決めている。届いた側は読まずに捨てるだけなのに、そのために待受けが 1 本終わり、通知が 2 件 (起動と終了)届く。</p>
 </div>
 
 <section class="toc md-skip">
@@ -465,7 +465,7 @@ footer a {
 		<tbody>
 			<tr>
 				<td class="nowrap">張り直しが増える</td>
-				<td>1 回ごとに通知が 2 件届く（起動と終了）。<strong>実測では 4 分で返った例がある</strong></td>
+				<td>1 回ごとに通知が 2 件届く (起動と終了)。<strong>実測では 4 分で返った例がある</strong></td>
 			</tr>
 			<tr>
 				<td class="nowrap">報告しない分で起きる</td>
@@ -525,7 +525,7 @@ while (unlimited || waited &lt; limitSec) {
 
 	<h2>除外の並びにする</h2>
 
-	<p><code>kinds=say,archive,notice</code>（許可の並び）ではなく <code>exclude=join,leave</code>（除外の並び）にする。</p>
+	<p><code>kinds=say,archive,notice</code>(許可の並び)ではなく <code>exclude=join,leave</code>(除外の並び)にする。</p>
 
 	<div class="callout callout-important">
 		<p><strong>あとで種別が増えたときの既定が違う。</strong>許可の並びだと、新しい種別は黙って起こさない側に落ちる。除外の並びなら起こす側に入る。</p>
@@ -550,7 +550,7 @@ while (unlimited || waited &lt; limitSec) {
 			<tr><td class="nowrap"><code>src/client/chat.mjs</code></td>
 				<td>既定で <code>exclude=join,leave</code>。<code>--with-joins</code> が付いたら付けない</td></tr>
 			<tr><td class="nowrap"><code>src/client/options.mjs</code></td>
-				<td>オプションを 1 つ足す。<strong><code>schema</code> は 3 のまま</strong>（並びが増えるだけで JSON の形は変わらない）</td></tr>
+				<td>オプションを 1 つ足す。<strong><code>schema</code> は 3 のまま</strong>(並びが増えるだけで JSON の形は変わらない)</td></tr>
 			<tr><td class="nowrap"><code>src/cli-cs/</code></td>
 				<td>C# 版も同じにする。定義は書き出した JSON から取るので、手で写さない</td></tr>
 		</tbody>
@@ -590,7 +590,7 @@ waiter.settle({ messages: kept, scannedSeq: scanned });</code></pre>
 
 	<h2>画面は変わらない</h2>
 
-	<p>ブラウザは SSE（<code>/api/events</code>）で受け取っており、<code>/api/poll</code> は使っていない。<strong><code>exclude</code> を省略したときの振る舞いを変えないので、画面には影響しない。</strong></p>
+	<p>ブラウザは SSE (<code>/api/events</code>)で受け取っており、<code>/api/poll</code> は使っていない。<strong><code>exclude</code> を省略したときの振る舞いを変えないので、画面には影響しない。</strong></p>
 </section>
 
 <!-- ================= 04 ================= -->
@@ -614,7 +614,7 @@ waiter.settle({ messages: kept, scannedSeq: scanned });</code></pre>
 			<tr><td class="nowrap">知らない種別は断る</td>
 				<td><code>exclude=nosuch</code> は 400。CLI を通さず直に叩かれても守る</td></tr>
 			<tr><td class="nowrap">省略したら全部</td>
-				<td><code>exclude</code> なしの <code>/api/poll</code> は <code>join</code> でも返る（画面と既存の呼び出しのため）</td></tr>
+				<td><code>exclude</code> なしの <code>/api/poll</code> は <code>join</code> でも返る (画面と既存の呼び出しのため)</td></tr>
 			<tr><td class="nowrap">CLI 2 本が揃う</td>
 				<td><code>cli-cs.test.mjs</code> が出力・終了コード・埋め込んだ定義を突き合わせる</td></tr>
 		</tbody>

@@ -15,7 +15,7 @@ import { prepareTestDb } from './helpers/prepare-db.mjs';
 const here = dirname(fileURLToPath(import.meta.url));
 const TEST_DATA = join(here, '..', 'tmp', '_data', 'unit-store');
 
-// 版を当ててから store を読み込む（store.mjs は形を作らない）
+// 版を当ててから store を読み込む (store.mjs は形を作らない)
 await prepareTestDb(TEST_DATA);
 
 const store = await import('../src/server/store.mjs');
@@ -26,7 +26,7 @@ store.joinConnector('test-human', 'human');
 
 const m1 = store.addMessage({ roomId: 'public', fromConnectorId: 'test-connector1', body: '1 件目' });
 const m2 = store.addMessage({ roomId: 'public', fromConnectorId: 'test-human', body: '2 件目' });
-const m3 = store.addMessage({ roomId: 'public', fromConnectorId: 'test-connector1', toConnectorId: 'test-human', body: '3 件目（名指し）' });
+const m3 = store.addMessage({ roomId: 'public', fromConnectorId: 'test-connector1', toConnectorId: 'test-human', body: '3 件目 (名指し)' });
 const other = store.addMessage({ roomId: 'test-other', fromConnectorId: 'test-connector1', body: '別ルーム' });
 
 test('参加登録すると connectors に行ができる', () => {
@@ -73,11 +73,11 @@ test('since より新しいものを古い順で返す', () => {
 	assert.deepEqual(store.getSince('public', 1).map((r) => r.msg_seq), [2, 3]);
 });
 
-test('直近 N 件を古い順で返す（画面の初期表示）', () => {
+test('直近 N 件を古い順で返す (画面の初期表示)', () => {
 	assert.deepEqual(store.getLatest('public', 2).map((r) => r.msg_seq), [2, 3]);
 });
 
-test('before より古いものを古い順で返す（遡り）', () => {
+test('before より古いものを古い順で返す (遡り)', () => {
 	assert.deepEqual(store.getBefore('public', 3, 10).map((r) => r.msg_seq), [1, 2]);
 });
 

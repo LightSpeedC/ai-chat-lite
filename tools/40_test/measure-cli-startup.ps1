@@ -11,11 +11,11 @@
 	  順序を入れ替えて 2 巡する  先に測った方が有利／不利にならないかを見る
 	  素の起動も測る            node -e 0 と比べて、module 読み込みの分を切り分ける
 
-	  measure-cli-startup.ps1              既定（20 回 / ウォームアップ 3 回）
+	  measure-cli-startup.ps1              既定 (20 回 / ウォームアップ 3 回)
 	  measure-cli-startup.ps1 -Times 50    回数を変える
 #>
 param(
-	# 測る回数（ウォームアップを除く）
+	# 測る回数 (ウォームアップを除く)
 	[int] $Times = 20,
 
 	# 捨てる回数
@@ -65,7 +65,7 @@ function Summarize {
 	}
 }
 
-Write-Host "=== 起動の速さを測る（$Times 回 / ウォームアップ $Warmup 回） ==="
+Write-Host "=== 起動の速さを測る ($Times 回 / ウォームアップ $Warmup 回) ==="
 Write-Host ''
 
 $targets = [ordered]@{
@@ -73,24 +73,24 @@ $targets = [ordered]@{
 	'node chat.mjs --help' = { & node $client --help }
 	<#
 		空文字列を渡さない。Windows PowerShell 5.1 はネイティブコマンドへ
-		空の引数を渡せず（pwsh 7 の PSNativeCommandArgumentPassing で直った）、
+		空の引数を渡せず (pwsh 7 の PSNativeCommandArgumentPassing で直った)、
 		node -e だけが渡って「-e requires an argument」で即座に落ちる。
 		エラー終了までの時間を「素の起動」として測ってしまう。
 		0 は評価しても何も起きない式なので、測る中身は変わらない
 	#>
-	'node -e 0（素の起動）' = { & node -e '0' }
+	'node -e 0 (素の起動)' = { & node -e '0' }
 }
 
 # 1 巡目
-Write-Host '--- 1 巡目（この順で測る） ---'
+Write-Host '--- 1 巡目 (この順で測る) ---'
 $first = foreach ($name in $targets.Keys) {
 	Write-Host "  $name"
 	Summarize $name (Measure-Startup $name $targets[$name])
 }
 $first | Format-Table -AutoSize
 
-# 2 巡目（順序を逆にする）
-Write-Host '--- 2 巡目（順序を逆にする） ---'
+# 2 巡目 (順序を逆にする)
+Write-Host '--- 2 巡目 (順序を逆にする) ---'
 $reversed = @($targets.Keys) | Sort-Object -Descending
 $second = foreach ($name in $reversed) {
 	Write-Host "  $name"
@@ -104,12 +104,12 @@ $exeMin = ($first + $second | Where-Object { $_.対象 -eq 'aichat.exe --help' }
 $nodeMin = ($first + $second | Where-Object { $_.対象 -eq 'node chat.mjs --help' } | Measure-Object -Property 最小 -Minimum).Minimum
 $bareMin = ($first + $second | Where-Object { $_.対象 -like 'node -e*' } | Measure-Object -Property 最小 -Minimum).Minimum
 
-Write-Host '=== まとめ（2 巡の最小値どうしを比べる） ==='
+Write-Host '=== まとめ (2 巡の最小値どうしを比べる) ==='
 Write-Host ("  aichat.exe          {0,7:N1} ms" -f $exeMin)
 Write-Host ("  node chat.mjs       {0,7:N1} ms" -f $nodeMin)
 Write-Host ("  node -e 0           {0,7:N1} ms  ← Node 自体の起動" -f $bareMin)
 Write-Host ''
-Write-Host ("  差（chat.mjs - exe） {0,7:N1} ms" -f ($nodeMin - $exeMin))
+Write-Host ("  差 (chat.mjs - exe) {0,7:N1} ms" -f ($nodeMin - $exeMin))
 Write-Host ("  うち module の読み込み {0,7:N1} ms" -f ($nodeMin - $bareMin))
 
 Remove-Item -LiteralPath $sink -ErrorAction SilentlyContinue

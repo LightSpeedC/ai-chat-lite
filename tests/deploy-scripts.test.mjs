@@ -1,5 +1,5 @@
 /*
- * deploy/ の登録スクリプト（install-service.cmd ・ uninstall-service.cmd）のガードを確かめる。
+ * deploy/ の登録スクリプト (install-service.cmd ・ uninstall-service.cmd)のガードを確かめる。
  *
  * 実際の登録・解除は管理者権限が要り、本番のサービスを止めるため、自動では流さない。
  * ここで見るのは「WinSW を呼ぶ前に必ず止まる」2 つのガードだけである。どちらも、
@@ -10,9 +10,9 @@
  *   必要なファイルが隣に無いとき     → 終了コード 1。移す前に間違えて動かしても、実体を呼ばない
  *
  * 管理者かどうか・登録済みかどうかのガードは、実機の状態に左右されるため、ここでは
- * 見ない（実機で確かめる。計画書 i260830-01 の 5 章）。
+ * 見ない (実機で確かめる。計画書 i260830-01 の 5 章)。
  *
- * 引数 nopause を渡して、入力待ち（pause）で固まらないようにする。
+ * 引数 nopause を渡して、入力待ち (pause)で固まらないようにする。
  */
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
@@ -27,11 +27,11 @@ const DEPLOY = join(ROOT, 'deploy');
 const SCRIPTS = ['install-service.cmd', 'uninstall-service.cmd'];
 
 /**
- * スクリプトを nopause で実行し、終了コードと出力（SJIS）を返す。
+ * スクリプトを nopause で実行し、終了コードと出力 (SJIS)を返す。
  *
- * windowsHide を付けるのは、子に専用のコンソールを持たせるため（CREATE_NO_WINDOW）。
+ * windowsHide を付けるのは、子に専用のコンソールを持たせるため (CREATE_NO_WINDOW)。
  * コンソールのコードページは同じ窓の全プロセスで共有される。node --test で並んで動く
- * ほかのテスト（bun など）が一時的に変えると、cmd の日本語の出力が文字化けして、
+ * ほかのテスト (bun など)が一時的に変えると、cmd の日本語の出力が文字化けして、
  * 単独では通るのに全件実行で落ちた。
  */
 function run(scriptPath) {
@@ -44,7 +44,7 @@ function isOnC(path) {
 	return parse(path).root.toUpperCase() === 'C:\\';
 }
 
-describe('登録スクリプトのガード（i260830-01）', () => {
+describe('登録スクリプトのガード (i260830-01)', () => {
 	for (const name of SCRIPTS) {
 		test(`${name} は deploy/ にある`, () => {
 			assert.ok(existsSync(join(DEPLOY, name)), `${name} が deploy/ に無い`);
@@ -62,7 +62,7 @@ describe('登録スクリプトのガード（i260830-01）', () => {
 
 		test(`${name}: 必要なファイルが隣に無いと、終了コード 1 で止まる`, () => {
 			/*
-			 * 実体のパス（C:）で呼ぶため、subst の別名ではなく realpath を使う。
+			 * 実体のパス (C:)で呼ぶため、subst の別名ではなく realpath を使う。
 			 * 空の一時フォルダへスクリプトだけを写して呼ぶので、WinSW には届かない。
 			 */
 			const real = realpathSync.native(join(ROOT, 'tmp'));

@@ -18,11 +18,11 @@
 
 ### 名前が実体を言い当てていない
 
-`user_role` が `ai` と `human` の 2 つを持っていること自体が、**「user」で括れていない**証拠である。人と AI を同じ土俵に載せているのに、名前は片方（人）だけを指している。
+`user_role` が `ai` と `human` の 2 つを持っていること自体が、**「user」で括れていない**証拠である。人と AI を同じ土俵に載せているのに、名前は片方 (人)だけを指している。
 
 | いまの名前 | 実際に入るもの |
 |---|---|
-| `user_id` | プロジェクトのフォルダ名（`ai-chat-lite` `html2md`）、または `human` |
+| `user_id` | プロジェクトのフォルダ名 (`ai-chat-lite` `html2md`)、または `human` |
 | `user_role` | `ai` か `human` |
 | `users` | 繋いできたものの一覧。人も AI も混ざる |
 
@@ -62,7 +62,7 @@
 |---|---:|---|---|
 | `client` | 74 | <strong>3 つの別物に使っている。</strong>下記 | 意味ごとに分ける |
 | `connection` | 68 | **1 本の接続**。`active_connection_count` は本数 | **変えない** |
-| `presence` | 73 | 在席の状態（online / grace / offline） | **変えない** |
+| `presence` | 73 | 在席の状態 (online / grace / offline) | **変えない** |
 | `waiter` | 24 | long-poll で待っている接続 | **変えない** |
 
 #### `client` の 3 つの意味
@@ -74,16 +74,16 @@
 | ③ ブラウザの API | `chat.js` | `clientHeight` | <strong>変えない。</strong>DOM の名前 |
 
 > [!IMPORTANT]
-> <strong>`client` はどれも「繋ぐ側の道具・1 本の接続」を指しており、`connector`（繋いでくる人か AI）とは別のものである。</strong>区別はついている。
+> <strong>`client` はどれも「繋ぐ側の道具・1 本の接続」を指しており、`connector`(繋いでくる人か AI)とは別のものである。</strong>区別はついている。
 > ただし**読み手には紛らわしい**。改名したあと、`connector` と `client` の違いを設計に 1 行書く。
 
 #### 日本語も似た語が並んでいる
 
 | 語 | 行 | 指しているもの | どうするか |
 |---|---:|---|---|
-| 参加者 | 125 | **繋いでくる人か AI**（= connector） | これを正とする |
+| 参加者 | 125 | **繋いでくる人か AI**(= connector) | これを正とする |
 | 接続 | 142 | 1 本の接続。`connection` の訳 | 変えない |
-| クライアント | 44 | **CLI そのもの**（= 上記①） | 変えない |
+| クライアント | 44 | **CLI そのもの**(= 上記①) | 変えない |
 | 相手 | 57 | 会話の相手。参加者と同じものを指す場面が多い | **読み直す** |
 | セッション | 60 | Claude Code のセッション | 変えない |
 | エージェント | 30 | AI エージェント | 変えない |
@@ -115,9 +115,9 @@
 | エンドポイント | 変わるもの |
 |---|---|
 | `/api/join` | 入力・応答の `user_id` `user_role`、応答の `users` |
-| `/api/say` | 入力の `from_user_id` `to_user_id`、応答（発言そのもの） |
+| `/api/say` | 入力の `from_user_id` `to_user_id`、応答 (発言そのもの) |
 | `/api/poll` | クエリの `user_id` |
-| `/api/users` | **パスも変える**（`/api/connectors`）。応答の `users` |
+| `/api/users` | **パスも変える**(`/api/connectors`)。応答の `users` |
 | `/api/events` | クエリの `user_id`、`presence` イベントの中身 |
 | `/api/leave` | 入力・応答の `user_id` |
 
@@ -129,21 +129,21 @@
 | いま | あと |
 |---|---|
 | `userId` | `connectorId` |
-| `USER_ID`（CLI） | `CONNECTOR_ID` |
-| `AICHAT_ID` | **変えない**（[i260831-02](../40_issues/issues.md#-i260831-02-名乗る-id-を---connector-id-で渡す) で別途扱う） |
+| `USER_ID`(CLI) | `CONNECTOR_ID` |
+| `AICHAT_ID` | **変えない**([i260831-02](../40_issues/issues.md#-i260831-02-名乗る-id-を---connector-id-で渡す) で別途扱う) |
 | `joinUser` `touchUser` `getUser` | `joinConnector` `touchConnector` `getConnector` |
-| `userList` `userCount` `userIds`（画面） | `connectorList` `connectorCount` `connectorIds` |
-| `#user-list` `#user-count`（HTML の id） | `#connector-list` `#connector-count` |
+| `userList` `userCount` `userIds`(画面) | `connectorList` `connectorCount` `connectorIds` |
+| `#user-list` `#user-count`(HTML の id) | `#connector-list` `#connector-count` |
 
 #### CLI のコマンドとオプション
 
 | いま | あと | 備考 |
 |---|---|---|
-| `who` | **変えない** | <strong>コマンド名は据え置く。</strong>他プロジェクトの手順を二度変えないため（`--connector-id` の周知を今日すでに 1 回出している）。`/api/connectors` とは揃わないが、`who` は「誰が」を尋ねる語として意味が通る |
+| `who` | **変えない** | <strong>コマンド名は据え置く。</strong>他プロジェクトの手順を二度変えないため (`--connector-id` の周知を今日すでに 1 回出している)。`/api/connectors` とは揃わないが、`who` は「誰が」を尋ねる語として意味が通る |
 | `--role ai\|human` | **変えない** | `role` に `user` は入っていない |
 | `--to <id>` | **変えない** | 同上 |
 | `join` `wait` `say` `recent` `dump` `leave` | **変えない** | 同上 |
-| `USER_ID`（内部の定数） | `CONNECTOR_ID` |  |
+| `USER_ID`(内部の定数) | `CONNECTOR_ID` |  |
 
 <strong>コマンド名は 1 つも変えない。</strong>どのコマンドにも `user` が入っておらず、触る理由がない。
 
@@ -184,14 +184,14 @@ node <ai-chat-lite>/src/client/chat.mjs wait --connector-id ai-chat-lite
 
 <strong>プロジェクト内に `user` を含むファイル名は無い。</strong>実測で 0 件だった。
 
-PlayWright 側に `chat-users.png` がある。**これはテストが撮るスクリーンショットで、出力なので Git 管理外**である。撮る側（`chat-ui.spec.ts`）の名前を `chat-connectors.png` に変える。
+PlayWright 側に `chat-users.png` がある。**これはテストが撮るスクリーンショットで、出力なので Git 管理外**である。撮る側 (`chat-ui.spec.ts`)の名前を `chat-connectors.png` に変える。
 
 #### 日本語の記述
 
 | 語 | 出現 | どうするか |
 |---|---:|---|
 | 参加者 | 125 | <strong>そのまま。</strong>日本語としてこれが自然で、画面の見出しでもある |
-| ユーザー / ユーザ | 21 | **読み直して個別に判断する**（下記） |
+| ユーザー / ユーザ | 21 | **読み直して個別に判断する**(下記) |
 | 接続者 | 1 | 読み直す |
 
 <strong>「ユーザ」の 21 行は 2 種類が混ざっている。</strong>一括では置き換えられない。
@@ -199,7 +199,7 @@ PlayWright 側に `chat-users.png` がある。**これはテストが撮るス�
 | 意味 | 例 | どうするか |
 |---|---|---|
 | 繋いでくるもの | 「ユーザが参加すると…」 | **「参加者」に直す** |
-| この道具を使う人 | 「ユーザが指示するまで実行しない」 | **そのまま**（意味が違う） |
+| この道具を使う人 | 「ユーザが指示するまで実行しない」 | **そのまま**(意味が違う) |
 
 > [!IMPORTANT]
 > <strong>「コネクタ」というカタカナは使わない。</strong>読み手にとって分かりにくくなるだけで、得るものがない。<strong>英語の識別子は `connector`、日本語は「参加者」</strong>で通す。
@@ -229,7 +229,7 @@ PlayWright 側に `chat-users.png` がある。**これはテストが撮るス�
 
 他プロジェクトとのやり取り 48 件。<strong>md-skip や callout の分類について交わした議論が入っている。</strong>資料には反映済みだが、経緯そのものは消える。
 
-各プロジェクトの**読み位置（`cursors`）も消える**。次に待受けを張ると、そこから読み始める。取りこぼしにはならないが、過去の分は流れない。
+各プロジェクトの**読み位置 (`cursors`)も消える**。次に待受けを張ると、そこから読み始める。取りこぼしにはならないが、過去の分は流れない。
 
 ## 4. 段取り
 
@@ -242,10 +242,10 @@ PlayWright 側に `chat-users.png` がある。**これはテストが撮るス�
 | 3 | `store.mjs` のスキーマと関数 | ここが源。他はこれに合わせる |
 | 4 | 単体テストを通す | <strong>3 の直後に通す。</strong>ここで止めれば影響が閉じている |
 | 5 | `presence.mjs` `server.mjs` | API のキーとパス |
-| 6 | 画面（`chat.js` `index.html` `chat.css`） | id とクラス名 |
-| 7 | CLI（`chat.mjs`） | `who` → `connectors`、`USER_ID` → `CONNECTOR_ID` |
-| 8 | 道具（`purge-test-data.mjs`） | 列名で絞っている |
-| 9 | 画面テスト（PlayWright の spec） | 別リポジトリ。スクショの名前も |
+| 6 | 画面 (`chat.js` `index.html` `chat.css`) | id とクラス名 |
+| 7 | CLI (`chat.mjs`) | `who` → `connectors`、`USER_ID` → `CONNECTOR_ID` |
+| 8 | 道具 (`purge-test-data.mjs`) | 列名で絞っている |
+| 9 | 画面テスト (PlayWright の spec) | 別リポジトリ。スクショの名前も |
 | 10 | 日本語の「ユーザ」21 行を読み直す | <strong>意味が 2 種類ある。</strong>一括では置き換えられない |
 | 11 | 設計・USAGE・手引き・課題 | すべて決まってから |
 
@@ -285,7 +285,7 @@ PlayWright 側に `chat-users.png` がある。**これはテストが撮るス�
 | 日本語の「ユーザー」 | 変えない方針 |
 | `test-project` 等のテスト用 ID | 値であって名前ではない |
 
-**語ごとに指定して置き換える。**`user_id` → `connector_id`、`users` → `connectors` のように、長いものから順に当てる（`from_user_id` を `user_id` より先に処理する）。
+**語ごとに指定して置き換える。**`user_id` → `connector_id`、`users` → `connectors` のように、長いものから順に当てる (`from_user_id` を `user_id` より先に処理する)。
 
 ### 確かめること
 
@@ -293,8 +293,8 @@ PlayWright 側に `chat-users.png` がある。**これはテストが撮るス�
 - 画面テストが全件通る
 - 画面を開いて参加者一覧が出る
 - CLI から `join` `say` `wait` `connectors` ができる
-- **`user` という語が識別子として残っていない**（日本語と `USAGE` と環境変数は除く）
-- DB のスキーマに `user` が残っていない（`sqlite_master` を全文で見る）
+- **`user` という語が識別子として残っていない**(日本語と `USAGE` と環境変数は除く)
+- DB のスキーマに `user` が残っていない (`sqlite_master` を全文で見る)
 - 他プロジェクトが繋いで会話できる
 - html2md の変換が通り、リンク切れが出ない
 
@@ -309,7 +309,7 @@ PlayWright 側に `chat-users.png` がある。**これはテストが撮るス�
 | `$env:USERPROFILE` `$env:USERNAME` | Windows の環境変数 |
 | `active_connection_count` | **接続の本数**。`connector` とは別のもの |
 | 「ユーザが指示するまで」等 | **この道具を使う人**を指す。意味が違う |
-| 参加者（125 行） | 日本語としてこれが自然 |
+| 参加者 (125 行) | 日本語としてこれが自然 |
 
 ## 5. 決めたこと
 
@@ -319,19 +319,19 @@ PlayWright 側に `chat-users.png` がある。**これはテストが撮るス�
 | 2 | 既にあるデータ | **移す。**`INSERT INTO … SELECT` で写す。捨てる案を書いていたが、読み返せなくなるのを避ける |
 | 3 | API のキー | **揃える。**`user_id` → `connector_id`。両方受ける形にすると名前が 2 つ残り、改名の目的に反する |
 | 4 | `/api/users` のパス | <strong>`/api/connectors` に変える。</strong>キーを変えるならパスも揃える |
-| 5 | `who` コマンド | <strong>変えない。</strong>他プロジェクトの手順を二度変えないため（`--connector-id` の周知を今日すでに 1 回出している） |
-| 6 | `notice` | <strong>いま足す。</strong>作り直す機会が今回なので、`msg_kind` の `CHECK` を `say` / `join` / `leave` / `archive` / `notice` の 5 つにする（[i260901-03](../40_issues/issues.md#-i260901-03-メンテナンスで止めると待受けは理由が分からないまま落ちる)） |
+| 5 | `who` コマンド | <strong>変えない。</strong>他プロジェクトの手順を二度変えないため (`--connector-id` の周知を今日すでに 1 回出している) |
+| 6 | `notice` | <strong>いま足す。</strong>作り直す機会が今回なので、`msg_kind` の `CHECK` を `say` / `join` / `leave` / `archive` / `notice` の 5 つにする ([i260901-03](../40_issues/issues.md#-i260901-03-メンテナンスで止めると待受けは理由が分からないまま落ちる)) |
 | 7 | アーカイブの単位 | **ルームと参加者の両方** |
 | 8 | 作り直しの手順 | <strong>専用のスクリプトを作る。</strong>手作業だと再現できない。印を置く・止める・移す・印を消すまでを 1 本にする |
 
 > [!CAUTION]
-> <strong>作り直しの前に控えを取る。</strong>途中で書き込まれると整合が崩れるため、メンテナンスの印を置いてから行う。`-wal` と `-shm` も 3 つ一組で退避する（本体の大きさから中身の量は判断できない）。
+> <strong>作り直しの前に控えを取る。</strong>途中で書き込まれると整合が崩れるため、メンテナンスの印を置いてから行う。`-wal` と `-shm` も 3 つ一組で退避する (本体の大きさから中身の量は判断できない)。
 
 ### 残っていること
 
 ### データを捨てるか移すか
 
-<strong>案 A（捨てる）を勧める。</strong>移す手数に見合うものが 48 件のやり取りの中に無い。資料には反映済みである。
+<strong>案 A (捨てる)を勧める。</strong>移す手数に見合うものが 48 件のやり取りの中に無い。資料には反映済みである。
 
 ただし**これは判断を要する**。捨てると読み返せない。
 

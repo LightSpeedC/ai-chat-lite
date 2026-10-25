@@ -1,5 +1,5 @@
 /*
- * 返信（--reply-to）と、出力に出す番号を確かめる。
+ * 返信 (--reply-to)と、出力に出す番号を確かめる。
  *
  * 【なぜ番号を出すのか】
  * 出さないと、受け取った発言に返信しようにも指す先を書けない。
@@ -64,7 +64,7 @@ async function failing(args) {
 /** say して、採番された msg_seq を返す */
 async function say(id, body, extra = []) {
 	const { stdout } = await cli(['say', wrapId(id), body, ...extra]);
-	const m = /送信しました（(\d+)）/.exec(stdout);
+	const m = /送信しました \((\d+)\)/.exec(stdout);
 	assert.ok(m, `msg_seq が読めない: ${stdout}`);
 	return Number(m[1]);
 }

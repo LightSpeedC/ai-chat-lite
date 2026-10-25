@@ -81,11 +81,11 @@ describe('PowerShell へ落ちたときの守り', () => {
 		 */
 		const source = readFileSync(join(root, 'src', 'client', 'proc-list.mjs'), 'utf8');
 
-		// 式を組み立てている行だけを見る（説明の文には出てよい）
+		// 式を組み立てている行だけを見る (説明の文には出てよい)
 		const line = source.split('\n').find((l) => l.includes('Where-Object') && l.includes('CommandLine -like'));
 		assert.ok(line, '絞り込みの行が見つからない');
 
-		// 割った形（' wa' + 'it ') になっていること
+		// 割った形 (' wa' + 'it ') になっていること
 		assert.ok(line.includes("'* wa' + 'it *'"), `割れていない: ${line.trim()}`);
 
 		// 割ったあとの式に、連続した並びが残っていないこと

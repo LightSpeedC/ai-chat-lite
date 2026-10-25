@@ -5,8 +5,8 @@
  * 設定は root の tsconfig.json にあり、対象は src/client/*.mjs。
  *
  * 【なぜテストに入れるか】
- * 目で読んでも見つからない型の食い違いが、実測で 5 件出た（JSON.parse の戻りを
- * object のまま辿っている・数値でない値を引き算している）。どれも今は落ちないが、
+ * 目で読んでも見つからない型の食い違いが、実測で 5 件出た (JSON.parse の戻りを
+ * object のまま辿っている・数値でない値を引き算している)。どれも今は落ちないが、
  * 落ちないことを誰も保証していない。検査は 320ms で終わるので、常時掛けておく。
  *
  * 【Mac ・ Linux でも動かすために】
@@ -29,7 +29,7 @@ test('src/client の .mjs が tsc の型検査を通る', () => {
 	 * 依存を入れていないと検査できない。黙って通すと穴になるので、
 	 * 何をすればよいかを書いて落とす。
 	 */
-	assert.ok(existsSync(tsc), `typescript が入っていません。プロジェクトの root で npm install を実行してください（探した場所: node_modules/typescript/bin/tsc）`);
+	assert.ok(existsSync(tsc), `typescript が入っていません。プロジェクトの root で npm install を実行してください (探した場所: node_modules/typescript/bin/tsc)`);
 
 	const res = spawnSync(process.execPath, [tsc, '--noEmit', '--pretty', 'false', '--project', root], {
 		cwd: root,

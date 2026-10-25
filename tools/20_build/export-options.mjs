@@ -1,7 +1,7 @@
 /*
  * CLI のオプションとコマンドの定義を JSON に書き出す。
  *
- * C# 版（aichat.exe）はこの JSON をビルド時に埋め込む。定義の出どころを
+ * C# 版 (aichat.exe)はこの JSON をビルド時に埋め込む。定義の出どころを
  * src/client/options.mjs 1 か所に保ち、2 本の CLI が食い違わないようにする。
  *
  * 手で 2 か所に書くと必ずずれる。実際に usage() と USAGE の一覧が食い違い、
@@ -9,7 +9,7 @@
  *
  * 使い方:
  *   node tools/20_build/export-options.mjs           tmp/ に書き出す
- *   node tools/20_build/export-options.mjs --stdout  画面に出す（確認用）
+ *   node tools/20_build/export-options.mjs --stdout  画面に出す (確認用)
  *   node tools/20_build/export-options.mjs --help     使い方を出す
  */
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -35,13 +35,13 @@ import { DEFAULT_ROOM, MAX_WAIT_SEC, PORT } from '../../src/server/config.mjs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 function usage(exitCode) {
-	console.log('CLI の定義を JSON に書き出す（C# 版が埋め込む元）。');
+	console.log('CLI の定義を JSON に書き出す (C# 版が埋め込む元)。');
 	console.log('');
 	console.log('  node tools/20_build/export-options.mjs [オプション]');
 	console.log('');
 	console.log('  --stdout   ファイルに書かず画面に出す');
-	console.log('  --out <p>  書き出し先を変える（既定 tmp/cli-options.json）');
-	console.log('  --help     この使い方を出す（短い形 -h）');
+	console.log('  --out <p>  書き出し先を変える (既定 tmp/cli-options.json)');
+	console.log('  --help     この使い方を出す (短い形 -h)');
 	process.exit(exitCode);
 }
 
@@ -68,9 +68,9 @@ const definition = {
 	 *
 	 *   1 … 最初の形
 	 *   2 … id_wrap / id_pattern を足し、removed に short を足した
-	 *       （--connector-id を廃止し、コマンドの直後に :id: を置く形へ）
-	 *   3 … waiter_pattern を足した（waiters コマンド）
-	 *   4 … commands に offline を足した（サーバーに繋がないコマンドの印）
+	 *       (--connector-id を廃止し、コマンドの直後に :id: を置く形へ)
+	 *   3 … waiter_pattern を足した (waiters コマンド)
+	 *   4 … commands に offline を足した (サーバーに繋がないコマンドの印)
 	 */
 	schema: 4,
 	generated_from: 'src/client/options.mjs',

@@ -33,11 +33,11 @@
 			<text x="127" y="125" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">AI セッション B</text>
 
 			<rect x="20" y="164" width="215" height="52" rx="8" fill="url(#i3)"/>
-			<text x="127" y="195" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">人間（ブラウザ）</text>
+			<text x="127" y="195" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">人間 (ブラウザ)</text>
 
 			<rect x="20" y="234" width="215" height="52" rx="8" fill="url(#i4)"/>
 			<text x="127" y="258" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">CLI</text>
-			<text x="127" y="276" text-anchor="middle" fill="#e8f0d8" font-size="12" font-family="sans-serif">（後から追加）</text>
+			<text x="127" y="276" text-anchor="middle" fill="#e8f0d8" font-size="12" font-family="sans-serif">(後から追加)</text>
 
 			<line x1="235" y1="50"  x2="425" y2="136" stroke="#4a5568" stroke-width="1.6" marker-end="url(#i7)"/>
 			<line x1="235" y1="120" x2="425" y2="158" stroke="#4a5568" stroke-width="1.6" marker-end="url(#i7)"/>
@@ -51,14 +51,14 @@
 
 			<rect x="430" y="110" width="250" height="120" rx="10" fill="url(#i5)"/>
 			<text x="555" y="152" text-anchor="middle" fill="#fff" font-size="16" font-family="sans-serif">ai-chat-lite サーバー</text>
-			<text x="555" y="177" text-anchor="middle" fill="#fdf0dc" font-size="13" font-family="sans-serif">node（依存パッケージなし）</text>
+			<text x="555" y="177" text-anchor="middle" fill="#fdf0dc" font-size="13" font-family="sans-serif">node (依存パッケージなし)</text>
 			<text x="555" y="199" text-anchor="middle" fill="#fdf0dc" font-size="13" font-family="sans-serif">localhost:8787</text>
 
 			<line x1="680" y1="170" x2="765" y2="170" stroke="#4a5568" stroke-width="1.6" marker-end="url(#i7)"/>
 
 			<rect x="770" y="132" width="210" height="76" rx="10" fill="url(#i6)"/>
 			<text x="875" y="163" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">_data/chat.db</text>
-			<text x="875" y="185" text-anchor="middle" fill="#fbe0e0" font-size="13" font-family="sans-serif">node:sqlite（WAL）</text>
+			<text x="875" y="185" text-anchor="middle" fill="#fbe0e0" font-size="13" font-family="sans-serif">node:sqlite (WAL)</text>
 
 			<text x="500" y="320" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">localhost のみで待ち受けるため、同じ PC 以外からは接続できない</text>
 		</svg>

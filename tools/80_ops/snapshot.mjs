@@ -2,7 +2,7 @@
  * 節目の控えを 1 つ取る。
  *
  * 版を上げる前、改名の前など、あとで「あの時点」へ戻りたくなる場面で使う。
- * 1 時間ごとの定期バックアップ（backup.ps1）とは別のもので、こちらは人が
+ * 1 時間ごとの定期バックアップ (backup.ps1)とは別のもので、こちらは人が
  * 名前を付けて残す。
  *
  *   定期  _backup/<区分>/chat-yyyymmdd-hhmmss.db.zip   機械が回す。世代で消える
@@ -30,15 +30,15 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 function usage(exitCode) {
-	console.log('節目の控えを 1 つ取る（VACUUM INTO で 1 ファイルにまとめる）。');
+	console.log('節目の控えを 1 つ取る (VACUUM INTO で 1 ファイルにまとめる)。');
 	console.log('');
 	console.log('  node tools/80_ops/snapshot.mjs <名前> [オプション]');
 	console.log('');
 	console.log('  <名前>        何の前の控えかを表す語。ver3 / connector など');
-	console.log('  --production  本番を相手にする（既定）');
+	console.log('  --production  本番を相手にする (既定)');
 	console.log('  --data <path> 置き場を指定する。テストの DB を控えるとき');
 	console.log('  --dry-run     どこへ何を取るかだけ出す');
-	console.log('  --help        この使い方を出す（短い形 -h）');
+	console.log('  --help        この使い方を出す (短い形 -h)');
 	console.log('');
 	console.log('  出力は _backup/yyyymmdd-hhmmss-<名前>.db。名前順がそのまま時系列順になる。');
 	process.exit(exitCode);

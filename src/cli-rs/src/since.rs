@@ -7,14 +7,14 @@
 //! 丸めると、去年 11 月から今年 11 月末までという意図しない範囲になる。
 //!
 //! **`--before` は `--since` が決めた値を引き継ぐ。**「未来なら 1 つ遡る」を
-//! `--before` にも独立に当てはめると、`--since 9/9 --before 9/10`（今日と明日）が
+//! `--before` にも独立に当てはめると、`--since 9/9 --before 9/10`(今日と明日)が
 //! 「今日から去年の 9/10 まで」になる。`anchor` を渡すと、省いた分はそこから採る。
 //!
 //! 書式は 3 段。上から順に試し、最初に形が合ったものを使う。
 //!
-//!   ① yyyy/m/d[区切り H:m[:s]]  年月日（＋任意で時刻）
-//!   ② m/d[区切り H:m[:s]]       月日（年を省く）
-//!   ③ H:m[:s]                   時刻のみ（日付を省く）
+//!   ① yyyy/m/d[区切り H:m[:s]]  年月日 (＋任意で時刻)
+//!   ② m/d[区切り H:m[:s]]       月日 (年を省く)
+//!   ③ H:m[:s]                   時刻のみ (日付を省く)
 //!
 //! 区切りは半角スペース・ハイフン・下線のどれでもよい。ハイフンと下線なら
 //! コマンドラインでダブルクォートが要らない。
@@ -25,7 +25,7 @@ use crate::jst;
 
 /// 読み手にも使い方にも出す、書式の説明
 pub const FORMAT_HELP: &str =
-	"日時は yyyy/m/d ・ m/d ・ H:m の 3 段のどれかです（時刻は任意で追加。区切りは半角スペース・ハイフン・下線）";
+	"日時は yyyy/m/d ・ m/d ・ H:m の 3 段のどれかです (時刻は任意で追加。区切りは半角スペース・ハイフン・下線)";
 
 const MS_PER_DAY: i64 = 24 * 60 * 60 * 1000;
 
@@ -49,7 +49,7 @@ pub fn resolve_with_now(raw: &str, anchor: Option<&str>, now: &str) -> Result<St
 	 * node 版は 3 段の正規表現でどれにも当たらなければ「形が違います」の 1 つだけを
 	 * 返す。桁や区切りの誤りをそこで細かく言い分けると、2 本の文言が食い違う。
 	 */
-	let shape = || format!("日時の形が違います: {}（{}）", raw, FORMAT_HELP);
+	let shape = || format!("日時の形が違います: {} ({})", raw, FORMAT_HELP);
 
 	let (date_text, time_text) = split_sep(raw);
 
@@ -83,7 +83,7 @@ pub fn resolve_with_now(raw: &str, anchor: Option<&str>, now: &str) -> Result<St
 			let month = parse_num(mo, "月", 1, 12)?;
 			let day = parse_num(d, "日", 1, 31)?;
 			check_day_of_month(year, month, day)?;
-			// 指定しきっているので丸めない（anchor も見ない）
+			// 指定しきっているので丸めない (anchor も見ない)
 			Ok(jst::from_parts(year, month, day, t.hour, t.minute, t.second))
 		}
 		// ② 月日
@@ -135,7 +135,7 @@ fn parse_time(text: &str) -> Result<Time, String> {
 	let (h, mi, s) = match parts.as_slice() {
 		[h, mi] => (*h, *mi, "0"),
 		[h, mi, s] => (*h, *mi, *s),
-		_ => return Err(format!("時刻の形が違います: {}（{}）", text, FORMAT_HELP)),
+		_ => return Err(format!("時刻の形が違います: {} ({})", text, FORMAT_HELP)),
 	};
 	Ok(Time {
 		hour: parse_num(h, "時", 0, 23)?,
@@ -156,7 +156,7 @@ fn parse_num(text: &str, name: &str, min: u32, max: u32) -> Result<u32, String> 
 	Ok(value)
 }
 
-/// 桁数を決めて数を読む（年は 4 桁に限る）
+/// 桁数を決めて数を読む (年は 4 桁に限る)
 fn parse_fixed(text: &str, digits: usize, name: &str) -> Result<i64, String> {
 	if text.len() != digits || !text.bytes().all(|b| b.is_ascii_digit()) {
 		return Err(format!("{}は {} 桁の数にしてください: {}", name, digits, text));
@@ -178,7 +178,7 @@ fn date_parts(jst_text: &str) -> Result<(i64, u32, u32), String> {
 	}
 }
 
-/// ② 月日（年を省く）を決める。
+/// ② 月日 (年を省く)を決める。
 ///
 /// 基準があればその年をそのまま使う。無ければ「いま」の年を使い、
 /// 組み立てた結果が未来なら 1 年遡る。
@@ -203,7 +203,7 @@ fn resolve_month_day(month: u32, day: u32, t: Time, anchor: Option<&str>, now: &
 	Ok(jst::from_parts(year - 1, month, day, t.hour, t.minute, t.second))
 }
 
-/// ③ 時刻のみ（日付を省く）を決める。
+/// ③ 時刻のみ (日付を省く)を決める。
 ///
 /// 基準があればその年月日をそのまま使う。無ければ「今日」を使い、
 /// 組み立てた結果が未来なら 1 日遡る。
@@ -243,7 +243,7 @@ fn is_leap(year: i64) -> bool {
 fn check_day_of_month(year: i64, month: u32, day: u32) -> Result<(), String> {
 	let last = days_in_month(year, month);
 	if day > last {
-		return Err(format!("{} 月は {} 日までです（{} 年）: {}/{}", month, last, year, month, day));
+		return Err(format!("{} 月は {} 日までです ({} 年): {}/{}", month, last, year, month, day));
 	}
 	Ok(())
 }
@@ -252,7 +252,7 @@ fn check_day_of_month(year: i64, month: u32, day: u32) -> Result<(), String> {
 mod tests {
 	use super::*;
 
-	/// テストの基準時刻。2026/09/13（日）12:00
+	/// テストの基準時刻。2026/09/13 (日)12:00
 	const NOW: &str = "2026/09/13 12:00:00.000";
 
 	fn at(raw: &str) -> String {
@@ -354,7 +354,7 @@ mod tests {
 	#[test]
 	fn 月日だけのときも年が決まってから日数を見る() {
 		// 2/29 は年によって有無が変わる。2026 年に無いので 1 つ遡って 2024 …
-		// ではなく、遡った先（2025）にも無いので断る
+		// ではなく、遡った先 (2025)にも無いので断る
 		assert!(resolve_with_now("2/29", None, NOW).is_err());
 		// 2024 年を基準にすれば通る
 		assert_eq!(

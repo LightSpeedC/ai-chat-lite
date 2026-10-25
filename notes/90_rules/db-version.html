@@ -11,7 +11,7 @@
 
 /* ===================================================================
    ai-chat-lite 共通スタイル
-   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   章ごとのアクセント色 (.ch01〜)は各 HTML 側で定義する
    =================================================================== */
 
 :root {
@@ -334,7 +334,7 @@ pre code {
 }
 
 /*
- * 幅は文字数で決まる（固定幅にしない）。
+ * 幅は文字数で決まる (固定幅にしない)。
  * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
  * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
  */
@@ -412,7 +412,7 @@ footer a {
 }
 </style>
 <style>
-/* この資料だけのもの: 章のアクセント色（3章 / 色相 280→0 を 140 刻み）と目次の採番 */
+/* この資料だけのもの: 章のアクセント色 (3章 / 色相 280→0 を 140 刻み)と目次の採番 */
 .ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
 .ch02 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); --soft: hsl(140, 28%, 95%); }
 .ch03 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
@@ -452,7 +452,7 @@ footer a {
 
 	<div class="callout callout-caution">
 		<p><strong>本番の写しで予行してから当てる。</strong>いきなり本番へ当てない。</p>
-		<p>版の SQL は<strong>当て済みの環境では二度と実行されない</strong>。失敗すれば巻き戻るが、当たったあとで間違いに気づいても、その版を書き換えることはできない（指紋が食い違って起動が止まる）。新しい版で打ち消すしかなくなる。</p>
+		<p>版の SQL は<strong>当て済みの環境では二度と実行されない</strong>。失敗すれば巻き戻るが、当たったあとで間違いに気づいても、その版を書き換えることはできない (指紋が食い違って起動が止まる)。新しい版で打ち消すしかなくなる。</p>
 	</div>
 
 	<h2>1. 控えを取る</h2>
@@ -539,7 +539,7 @@ DB の版を 2 から 3 へ上げました
 		<tbody>
 			<tr><td class="num">1</td><td><code>_data\MAINTENANCE</code> を作る。<strong>中身に理由を書くと <code>/api/version</code> に出る</strong></td></tr>
 			<tr><td class="num">2</td><td><code>chat.mjs restart</code> で落とす</td></tr>
-			<tr><td class="num">3</td><td>DB が離されたことを確かめる（ファイルが開けるか）</td></tr>
+			<tr><td class="num">3</td><td>DB が離されたことを確かめる (ファイルが開けるか)</td></tr>
 			<tr><td class="num">4</td><td>作業する</td></tr>
 			<tr><td class="num">5</td><td>印を消す。<strong>数秒で自分から起動し、版が当たる</strong></td></tr>
 		</tbody>
@@ -572,7 +572,7 @@ DB の版を 2 から 3 へ上げました
 
 	<h2>形が揃っていないと言われる</h2>
 
-	<pre><code class="language-text">DB の形が揃っていません（足りないテーブル: messages cursors connectors archives）。
+	<pre><code class="language-text">DB の形が揃っていません (足りないテーブル: messages cursors connectors archives)。
 版を当ててから開いてください。</code></pre>
 
 	<p><strong><code>store.mjs</code> は形を作らない。</strong>版の SQL だけが形の出どころで、<code>store.mjs</code> は開いたときに揃っているかを確かめるだけである。<strong>版を当てる前に読み込むと、ここで止まる。</strong></p>
@@ -583,7 +583,7 @@ DB の版を 2 から 3 へ上げました
 			<tr><th class="nowrap">どこから読んだか</th><th>やること</th></tr>
 		</thead>
 		<tbody>
-			<tr><td class="nowrap">サーバー（<code>main.mjs</code>）</td><td>起動時に <code>migrate()</code> が走るので、通常は出ない。<strong>出たら版の SQL を疑う</strong></td></tr>
+			<tr><td class="nowrap">サーバー (<code>main.mjs</code>)</td><td>起動時に <code>migrate()</code> が走るので、通常は出ない。<strong>出たら版の SQL を疑う</strong></td></tr>
 			<tr><td class="nowrap">テスト</td><td><code>tests/helpers/prepare-db.mjs</code> の <code>prepareTestDb()</code> を、<code>store.mjs</code> を読み込む前に呼ぶ</td></tr>
 			<tr><td class="nowrap">手元の確認</td><td><code>node -e "import(…)"</code> のような読み込みは<strong>止まるのが正しい</strong>。置き場を指定して版を当ててから読む</td></tr>
 		</tbody>
@@ -592,11 +592,11 @@ DB の版を 2 から 3 へ上げました
 
 	<div class="callout callout-important">
 		<p><strong>かつては読み込むだけで DB ができていた。</strong><code>store.mjs</code> に <code>CREATE TABLE IF NOT EXISTS</code> があった頃、<code>AICHAT_DATA</code> を立てずに読み込むと本番の DB にテーブルが作られた。</p>
-		<p>実際に起き、版 3 で足すはずの <code>archives</code> が先にできてしまい、<strong>版 3 を当てると「already exists」で止まる</strong>状態になった（<a href="../40_issues/issues.html#i260902-01">i260902-01</a>）。いまは止まるので、同じことは起きない。</p>
+		<p>実際に起き、版 3 で足すはずの <code>archives</code> が先にできてしまい、<strong>版 3 を当てると「already exists」で止まる</strong>状態になった (<a href="../40_issues/issues.html#i260902-01">i260902-01</a>)。いまは止まるので、同じことは起きない。</p>
 	</div>
 
 	<div class="callout callout-caution">
-		<p><strong>版の SQL を <code>IF NOT EXISTS</code> に書き換えて逃げない。</strong>指紋が変わるため、すでに当て済みの環境（テスト環境など）で「書き換えられています」と出て起動が止まる。</p>
+		<p><strong>版の SQL を <code>IF NOT EXISTS</code> に書き換えて逃げない。</strong>指紋が変わるため、すでに当て済みの環境 (テスト環境など)で「書き換えられています」と出て起動が止まる。</p>
 	</div>
 
 	<h2>当てたあとで間違いに気づいた</h2>
@@ -623,7 +623,7 @@ DB の版を 2 から 3 へ上げました
 	</table>
 	</div>
 
-	<p>下り（元に戻す SQL）は持たない。<strong>戻すなら控えから戻す。</strong>SQLite では列の削除もできず、下りを正しく書き続けるのは重い。</p>
+	<p>下り (元に戻す SQL)は持たない。<strong>戻すなら控えから戻す。</strong>SQLite では列の削除もできず、下りを正しく書き続けるのは重い。</p>
 </section>
 
 </div>

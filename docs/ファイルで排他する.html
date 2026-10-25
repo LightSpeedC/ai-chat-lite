@@ -11,7 +11,7 @@
 </style>
 <link rel="stylesheet" href="css/style.css">
 <style>
-/* この資料だけのもの: 章のアクセント色（5章 / 色相 280→0 を 70 刻み）と目次の採番 */
+/* この資料だけのもの: 章のアクセント色 (5章 / 色相 280→0 を 70 刻み)と目次の採番 */
 .ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
 .ch02 { --accent: hsl(210, 78%, 25%); --accent2: hsl(210, 58%, 55%); --soft: hsl(210, 28%, 95%); }
 .ch03 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); --soft: hsl(140, 28%, 95%); }
@@ -77,7 +77,7 @@
 	<pre><code class="language-shell">echo $$ &gt; lock.$$        # 自分の pid で作る
 mv lock.$$ lock          # 目的の名前へ移す</code></pre>
 
-	<p>POSIX の <code>rename(2)</code> は、既にあるものを原子的に置き換える。同時に走っても最後の 1 つが残り、それ以外は上書きされて消える……ように見えるが、<strong>全員が「成功した」と判断してしまう</strong>ため、この形は POSIX でもそのままでは排他にならない（ハードリンクの数を数えるなどの一手間が要る）。</p>
+	<p>POSIX の <code>rename(2)</code> は、既にあるものを原子的に置き換える。同時に走っても最後の 1 つが残り、それ以外は上書きされて消える……ように見えるが、<strong>全員が「成功した」と判断してしまう</strong>ため、この形は POSIX でもそのままでは排他にならない (ハードリンクの数を数えるなどの一手間が要る)。</p>
 
 	<p>そして <strong>Windows では処理系によって挙動が割れる</strong>。次章の実測が示すとおり、同じ「移動」でも失敗するものと黙って上書きするものがある。</p>
 </section>
@@ -86,7 +86,7 @@ mv lock.$$ lock          # 目的の名前へ移す</code></pre>
 <section class="ch02" id="ch02">
 	<h1>実測した結果</h1>
 
-	<p>先に <code>first</code> と書いたファイル（またはフォルダ）を置き、後から来た側が同じ名前を取ろうとしたときにどうなるかを測った。</p>
+	<p>先に <code>first</code> と書いたファイル (またはフォルダ)を置き、後から来た側が同じ名前を取ろうとしたときにどうなるかを測った。</p>
 
 	<div class="tablewrap">
 	<table>
@@ -112,22 +112,22 @@ mv lock.$$ lock          # 目的の名前へ移す</code></pre>
 		<tbody>
 			<tr>
 				<td class="nowrap"><code>writeFileSync(p, x, {flag:'wx'})</code></td>
-				<td class="nowrap">失敗（<code>EEXIST</code>）</td><td class="nowrap">残る</td>
+				<td class="nowrap">失敗 (<code>EEXIST</code>)</td><td class="nowrap">残る</td>
 				<td class="nowrap"><span class="badge b-ok">可</span></td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>openSync(p, 'wx')</code></td>
-				<td class="nowrap">失敗（<code>EEXIST</code>）</td><td class="nowrap">残る</td>
+				<td class="nowrap">失敗 (<code>EEXIST</code>)</td><td class="nowrap">残る</td>
 				<td class="nowrap"><span class="badge b-ok">可</span></td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>linkSync(src, p)</code></td>
-				<td class="nowrap">失敗（<code>EEXIST</code>）</td><td class="nowrap">残る</td>
+				<td class="nowrap">失敗 (<code>EEXIST</code>)</td><td class="nowrap">残る</td>
 				<td class="nowrap"><span class="badge b-ok">可</span></td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>mkdirSync(p)</code></td>
-				<td class="nowrap">失敗（<code>EEXIST</code>）</td><td class="nowrap">残る</td>
+				<td class="nowrap">失敗 (<code>EEXIST</code>)</td><td class="nowrap">残る</td>
 				<td class="nowrap"><span class="badge b-ok">可</span></td>
 			</tr>
 			<tr>
@@ -156,22 +156,22 @@ mv lock.$$ lock          # 目的の名前へ移す</code></pre>
 		<tbody>
 			<tr>
 				<td class="nowrap"><code>Deno.openSync(p, {createNew:true})</code></td>
-				<td class="nowrap">失敗（<code>AlreadyExists</code>）</td><td class="nowrap">残る</td>
+				<td class="nowrap">失敗 (<code>AlreadyExists</code>)</td><td class="nowrap">残る</td>
 				<td class="nowrap"><span class="badge b-ok">可</span></td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>Deno.writeFileSync(p, x, {createNew:true})</code></td>
-				<td class="nowrap">失敗（<code>AlreadyExists</code>）</td><td class="nowrap">残る</td>
+				<td class="nowrap">失敗 (<code>AlreadyExists</code>)</td><td class="nowrap">残る</td>
 				<td class="nowrap"><span class="badge b-ok">可</span></td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>Deno.linkSync(src, p)</code></td>
-				<td class="nowrap">失敗（<code>AlreadyExists</code>）</td><td class="nowrap">残る</td>
+				<td class="nowrap">失敗 (<code>AlreadyExists</code>)</td><td class="nowrap">残る</td>
 				<td class="nowrap"><span class="badge b-ok">可</span></td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>Deno.mkdirSync(p)</code></td>
-				<td class="nowrap">失敗（<code>AlreadyExists</code>）</td><td class="nowrap">残る</td>
+				<td class="nowrap">失敗 (<code>AlreadyExists</code>)</td><td class="nowrap">残る</td>
 				<td class="nowrap"><span class="badge b-ok">可</span></td>
 			</tr>
 			<tr>
@@ -198,27 +198,27 @@ mv lock.$$ lock          # 目的の名前へ移す</code></pre>
 		<tbody>
 			<tr>
 				<td class="nowrap"><code>New-Item -ItemType File</code></td>
-				<td class="nowrap">失敗（<code>IOException</code>）</td><td class="nowrap">残る</td>
+				<td class="nowrap">失敗 (<code>IOException</code>)</td><td class="nowrap">残る</td>
 				<td class="nowrap"><span class="badge b-ok">可</span></td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>New-Item -ItemType Directory</code></td>
-				<td class="nowrap">失敗（<code>IOException</code>）</td><td class="nowrap">残る</td>
+				<td class="nowrap">失敗 (<code>IOException</code>)</td><td class="nowrap">残る</td>
 				<td class="nowrap"><span class="badge b-ok">可</span></td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>Rename-Item</code></td>
-				<td class="nowrap">失敗（<code>IOException</code>）</td><td class="nowrap">残る</td>
+				<td class="nowrap">失敗 (<code>IOException</code>)</td><td class="nowrap">残る</td>
 				<td class="nowrap"><span class="badge b-ok">可</span></td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>Move-Item</code></td>
-				<td class="nowrap">失敗（<code>IOException</code>）</td><td class="nowrap">残る</td>
+				<td class="nowrap">失敗 (<code>IOException</code>)</td><td class="nowrap">残る</td>
 				<td class="nowrap"><span class="badge b-ok">可</span></td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>Out-File -NoClobber</code></td>
-				<td class="nowrap">失敗（<code>IOException</code>）</td><td class="nowrap">残る</td>
+				<td class="nowrap">失敗 (<code>IOException</code>)</td><td class="nowrap">残る</td>
 				<td class="nowrap"><span class="badge b-ok">可</span></td>
 			</tr>
 			<tr>
@@ -252,12 +252,12 @@ mv lock.$$ lock          # 目的の名前へ移す</code></pre>
 		<tbody>
 			<tr>
 				<td class="nowrap"><code>new FileStream(p, FileMode.CreateNew)</code></td>
-				<td class="nowrap">失敗（<code>IOException</code>）</td><td class="nowrap">残る</td>
+				<td class="nowrap">失敗 (<code>IOException</code>)</td><td class="nowrap">残る</td>
 				<td class="nowrap"><span class="badge b-ok">可</span></td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>File.Move(src, p)</code></td>
-				<td class="nowrap">失敗（<code>IOException</code>）</td><td class="nowrap">残る</td>
+				<td class="nowrap">失敗 (<code>IOException</code>)</td><td class="nowrap">残る</td>
 				<td class="nowrap"><span class="badge b-ok">可</span></td>
 			</tr>
 			<tr>
@@ -275,10 +275,10 @@ mv lock.$$ lock          # 目的の名前へ移す</code></pre>
 	</div>
 
 	<div class="callout callout-warning">
-		<p><strong>同じ「フォルダを作る」でも結果が逆になる。</strong>PowerShell の <code>New-Item -ItemType Directory</code> は既にあれば失敗するが、<code>Directory.CreateDirectory</code> は<strong>既にあっても黙って成功する</strong>（何もせずに返る仕様）。<code>File.Move</code> が失敗するのに <code>Directory.CreateDirectory</code> が成功するという食い違いは、名前からは読み取れない。</p>
+		<p><strong>同じ「フォルダを作る」でも結果が逆になる。</strong>PowerShell の <code>New-Item -ItemType Directory</code> は既にあれば失敗するが、<code>Directory.CreateDirectory</code> は<strong>既にあっても黙って成功する</strong>(何もせずに返る仕様)。<code>File.Move</code> が失敗するのに <code>Directory.CreateDirectory</code> が成功するという食い違いは、名前からは読み取れない。</p>
 	</div>
 
-	<h2>cmd（コマンドプロンプト）</h2>
+	<h2>cmd (コマンドプロンプト)</h2>
 
 	<div class="tablewrap">
 	<table>
@@ -288,12 +288,12 @@ mv lock.$$ lock          # 目的の名前へ移す</code></pre>
 		<tbody>
 			<tr>
 				<td class="nowrap"><code>ren</code></td>
-				<td class="nowrap">失敗（<code>ERRORLEVEL 1</code>）</td><td class="nowrap">残る</td>
+				<td class="nowrap">失敗 (<code>ERRORLEVEL 1</code>)</td><td class="nowrap">残る</td>
 				<td class="nowrap"><span class="badge b-ok">可</span></td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>mkdir</code></td>
-				<td class="nowrap">失敗（<code>ERRORLEVEL 1</code>）</td><td class="nowrap">残る</td>
+				<td class="nowrap">失敗 (<code>ERRORLEVEL 1</code>)</td><td class="nowrap">残る</td>
 				<td class="nowrap"><span class="badge b-ok">可</span></td>
 			</tr>
 			<tr>
@@ -421,31 +421,31 @@ rmdir "%LOCK_DIR%"</code></pre>
 		</thead>
 		<tbody>
 			<tr>
-				<td class="nowrap"><code>renameSync</code>（Node / Deno）</td>
+				<td class="nowrap"><code>renameSync</code>(Node / Deno)</td>
 				<td>既にある印を黙って上書きする。<strong>2 つとも「取れた」と思い込む</strong></td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>move</code>（cmd）</td>
+				<td class="nowrap"><code>move</code>(cmd)</td>
 				<td>同上。バッチの中では確認も出ない</td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>copy</code>・リダイレクト（cmd）</td>
+				<td class="nowrap"><code>copy</code>・リダイレクト (cmd)</td>
 				<td>同上。中身を丸ごと置き換える</td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>-Force</code> 付き（PowerShell）</td>
+				<td class="nowrap"><code>-Force</code> 付き (PowerShell)</td>
 				<td><code>-Force</code> は「あっても構わず実行する」という指定。排他とは逆の意味になる</td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>recursive: true</code>（mkdir）</td>
+				<td class="nowrap"><code>recursive: true</code>(mkdir)</td>
 				<td>「途中の階層が無ければ作る」という指定であり、<strong>既にある場合もエラーにしない</strong></td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>Directory.CreateDirectory</code>（.NET）</td>
+				<td class="nowrap"><code>Directory.CreateDirectory</code>(.NET)</td>
 				<td>既にあっても何もせず成功する仕様。例外は投げない</td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>FileMode.Create</code>（.NET）</td>
+				<td class="nowrap"><code>FileMode.Create</code>(.NET)</td>
 				<td>既にあれば中身を空にして開く。<code>CreateNew</code> と 1 語違いなので取り違えやすい</td>
 			</tr>
 		</tbody>
@@ -523,7 +523,7 @@ function isLockActive(file, staleMs) {
 	</table>
 	</div>
 
-	<pre><code class="language-text">hourly が 2026/08/30 10:03:12.481 に開始しました（pid 41244）</code></pre>
+	<pre><code class="language-text">hourly が 2026/08/30 10:03:12.481 に開始しました (pid 41244)</code></pre>
 
 	<h2>待つか、諦めるか</h2>
 

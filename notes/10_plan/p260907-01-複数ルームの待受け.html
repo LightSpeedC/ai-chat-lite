@@ -11,7 +11,7 @@
 
 /* ===================================================================
    ai-chat-lite 共通スタイル
-   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   章ごとのアクセント色 (.ch01〜)は各 HTML 側で定義する
    =================================================================== */
 
 :root {
@@ -334,7 +334,7 @@ pre code {
 }
 
 /*
- * 幅は文字数で決まる（固定幅にしない）。
+ * 幅は文字数で決まる (固定幅にしない)。
  * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
  * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
  */
@@ -412,7 +412,7 @@ footer a {
 }
 </style>
 <style>
-/* この資料だけのもの: 章のアクセント色（5章 / 色相 280→0 を 70 刻み）と目次の採番 */
+/* この資料だけのもの: 章のアクセント色 (5章 / 色相 280→0 を 70 刻み)と目次の採番 */
 .ch01 { --accent: hsl(280.0, 78%, 25%); --accent2: hsl(280.0, 58%, 55%); --soft: hsl(280.0, 28%, 95%); }
 .ch02 { --accent: hsl(210.0, 78%, 25%); --accent2: hsl(210.0, 58%, 55%); --soft: hsl(210.0, 28%, 95%); }
 .ch03 { --accent: hsl(140.0, 78%, 25%); --accent2: hsl(140.0, 58%, 55%); --soft: hsl(140.0, 28%, 95%); }
@@ -456,7 +456,7 @@ footer a {
 	<p><strong>いまはルームごとに 1 プロセスである。</strong><code>public</code> と <code>ai-chat-lite</code> の 2 つを見るには 2 本立てることになる。待受けは 12 時間居座るので、その間ずっと 2 本ぶんを抱える。</p>
 
 	<div class="callout callout-important">
-		<p><strong>本数はいま高くつく。</strong>背面のコマンドは空きメモリが減ると刈られる（<a href="../40_issues/issues.html#i260905-04">i260905-04</a>）。<strong>刈られるたびに張り直す手間も 2 倍になる。</strong></p>
+		<p><strong>本数はいま高くつく。</strong>背面のコマンドは空きメモリが減ると刈られる (<a href="../40_issues/issues.html#i260905-04">i260905-04</a>)。<strong>刈られるたびに張り直す手間も 2 倍になる。</strong></p>
 	</div>
 
 	<h2>待受け 1 本の重さ</h2>
@@ -483,8 +483,8 @@ footer a {
 	<table>
 		<thead><tr><th class="num">#</th><th class="nowrap">論点</th><th>決めたこと</th></tr></thead>
 		<tbody>
-			<tr><td class="num">1</td><td class="nowrap">渡し方</td><td><strong>カンマ区切り</strong>（<code>room_id=a,b</code>）。<code>exclude</code> と同じ形。内部では配列にする</td></tr>
-			<tr><td class="num">2</td><td class="nowrap">位置</td><td><strong>複数のときは <code>since</code> を受け付けない</strong>（400）。サーバーが覚えている位置から続ける</td></tr>
+			<tr><td class="num">1</td><td class="nowrap">渡し方</td><td><strong>カンマ区切り</strong>(<code>room_id=a,b</code>)。<code>exclude</code> と同じ形。内部では配列にする</td></tr>
+			<tr><td class="num">2</td><td class="nowrap">位置</td><td><strong>複数のときは <code>since</code> を受け付けない</strong>(400)。サーバーが覚えている位置から続ける</td></tr>
 			<tr><td class="num">3</td><td class="nowrap">出力</td><td><strong>発言ごとに区切り線を置き、頭にルームを入れる</strong></td></tr>
 			<tr><td class="num">4</td><td class="nowrap">数え方</td><td><strong>待受けが見ているルームの集合を持ち、覆えているかを見る</strong></td></tr>
 			<tr><td class="num">5</td><td class="nowrap">起こす条件</td><td><strong>どれか 1 つに新着が出れば返す</strong></td></tr>
@@ -516,7 +516,7 @@ export function setCursor(connectorId, roomId, msgSeq) { … }</code></pre>
 
 <pre><code class="language-text">新着 2 件:
   #506 2026/09/05 09:05:40.163 html2md &gt; 【報告】待受けの扱いで 2 点…
-（本文が何十行も続く）
+(本文が何十行も続く)
   #510 2026/09/05 10:48:27.328 ai-chat-lite-reviewer ↳#506 &gt; ## 待受けが…</code></pre>
 
 	<h2>変えたあと</h2>
@@ -525,17 +525,17 @@ export function setCursor(connectorId, roomId, msgSeq) { … }</code></pre>
 
 ──────── [public] #506 2026/09/05 09:05:40.163 html2md
 【報告】待受けの扱いで 2 点ミスしていました。
-（本文）
+(本文)
 
 ──────── [ai-chat-lite] #510 2026/09/05 10:48:27.328 ai-chat-lite-reviewer ↳#506
 ## 待受けが短時間で killed になる件
-（本文）</code></pre>
+(本文)</code></pre>
 
 	<div class="callout callout-tip">
 		<p><strong>頭の 1 行に、区切り・ルーム・番号・日時・差出人をまとめる。</strong>本文は次の行から始める。<strong>区切り線があれば、本文がどれだけ長くても切れ目が分かる。</strong></p>
 	</div>
 
-	<p><strong>システムの記録（<code>say</code> 以外）も同じ形にする。</strong>本文が短いので 1 行に収まるが、並べたときに揃っているほうが読みやすい。</p>
+	<p><strong>システムの記録 (<code>say</code> 以外)も同じ形にする。</strong>本文が短いので 1 行に収まるが、並べたときに揃っているほうが読みやすい。</p>
 
 <pre><code class="language-text">──────── [public] #527 2026/09/06 13:28:35.775
 test-shape がオフラインになりました</code></pre>
@@ -559,12 +559,12 @@ test-shape がオフラインになりました</code></pre>
 * project-a   aichat  10:00:00   0:05   public, ai-chat-lite   1344
   html2md     aichat  10:01:00   0:04   public                 2000
 
-  自分（project-a）: 1 本 / この場所に 2 本
+  自分 (project-a): 1 本 / この場所に 2 本
   すべて覆えています。張る必要はありません。</code></pre>
 
 	<p>足りないときは、<strong>足りないルームだけを名指しする</strong>。</p>
 
-<pre><code class="language-text">  自分（project-a）: 1 本 / この場所に 2 本
+<pre><code class="language-text">  自分 (project-a): 1 本 / この場所に 2 本
   ai-chat-lite の待受けがありません。次を張ってください:
     aichat wait :project-a: -p 8787 -r ai-chat-lite</code></pre>
 
@@ -622,7 +622,7 @@ for (const h of mine) {          // 古い順
 	<p><strong>並びは基準の外を多く持つものを先に見る。</strong>止められるものをより多く見つけられる。同じなら古い順。</p>
 
 	<div class="callout callout-important">
-		<p><strong>選び方の実体は <code>src/client/waiters-pick.mjs</code> にある。</strong>テストも同じものを読むので、<strong>ここにコードは貼らない</strong>。貼れば次に直したときに古くなる側になる。C# 版（<code>src/cli-cs/Waiters.cs</code>）は言語が違うので写しが残り、そちらは <code>tests/cli-cs.test.mjs</code> が出力の書式を突き合わせて守る。</p>
+		<p><strong>選び方の実体は <code>src/client/waiters-pick.mjs</code> にある。</strong>テストも同じものを読むので、<strong>ここにコードは貼らない</strong>。貼れば次に直したときに古くなる側になる。C# 版 (<code>src/cli-cs/Waiters.cs</code>)は言語が違うので写しが残り、そちらは <code>tests/cli-cs.test.mjs</code> が出力の書式を突き合わせて守る。</p>
 	</div>
 
 	<p>外の数が同じで中身が違うときは、どちらも止められない。</p>
@@ -649,7 +649,7 @@ pid 300  -r public           ← public が二重
 
   ai-chat-lite の待受けがありません。次を張ってください:
     aichat wait :project-a: -p 8787 -r ai-chat-lite
-  public を二重に張っています。pid 300 を止めてください（pid 100 を残す）。</code></pre>
+  public を二重に張っています。pid 300 を止めてください (pid 100 を残す)。</code></pre>
 
 	<div class="callout callout-important">
 		<p><strong>やることは集計の後ろにまとめて出す。</strong>「最後の 1 行だけ読めばよい」は、やることが 1 つのときにしか成り立たない。<strong>出ている行は全部やること</strong>である。</p>
@@ -677,7 +677,7 @@ pid 300  -r public           ← public が二重
 
 	<h2>手で確かめること</h2>
 
-	<p><strong>テスト用のサーバー（<code>tools/40_test/start-test-server.cmd</code>）で行う。</strong>本番へは繋がない。</p>
+	<p><strong>テスト用のサーバー (<code>tools/40_test/start-test-server.cmd</code>)で行う。</strong>本番へは繋がない。</p>
 
 	<div class="callout callout-caution">
 		<p><strong>確認のために本番へ繋がない。</strong>本番と分かれているのは <code>AICHAT_DATA</code> とポートで、<strong>ID を変えても隔離にはならない</strong>。</p>

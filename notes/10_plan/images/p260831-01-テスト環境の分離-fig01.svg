@@ -31,15 +31,15 @@
 	<text x="24" y="182" font-size="12" fill="#fff">人が画面で取り違える</text>
 
 	<rect x="272" y="36" width="230" height="26" rx="5" fill="url(#i3)"/>
-	<text x="284" y="54" font-size="12" fill="#fff">既定がテスト DB（2 章）</text>
+	<text x="284" y="54" font-size="12" fill="#fff">既定がテスト DB (2 章)</text>
 	<rect x="272" y="68" width="230" height="26" rx="5" fill="url(#i3)"/>
-	<text x="284" y="86" font-size="12" fill="#fff">繋がずに止まる（2 章）</text>
+	<text x="284" y="86" font-size="12" fill="#fff">繋がずに止まる (2 章)</text>
 	<rect x="272" y="100" width="230" height="26" rx="5" fill="url(#i3)"/>
-	<text x="284" y="118" font-size="12" fill="#fff">環境を確かめる（3 章）</text>
+	<text x="284" y="118" font-size="12" fill="#fff">環境を確かめる (3 章)</text>
 	<rect x="272" y="132" width="230" height="26" rx="5" fill="url(#i3)"/>
-	<text x="284" y="150" font-size="12" fill="#fff">トークンを要る（5 章）</text>
+	<text x="284" y="150" font-size="12" fill="#fff">トークンを要る (5 章)</text>
 	<rect x="272" y="164" width="230" height="26" rx="5" fill="url(#i3)"/>
-	<text x="284" y="182" font-size="12" fill="#fff">色が違う（4 章）</text>
+	<text x="284" y="182" font-size="12" fill="#fff">色が違う (4 章)</text>
 
 	<g stroke="#97a1ae" stroke-width="1.5" fill="none">
 		<path d="M212 49 L268 49"/><path d="M212 81 L268 81"/><path d="M212 113 L268 113"/>
@@ -50,5 +50,5 @@
 
 	<rect x="562" y="80" width="146" height="66" rx="6" fill="url(#i2)"/>
 	<text x="584" y="106" font-size="13" fill="#fff">本番に届かない</text>
-	<text x="596" y="128" font-size="11" fill="#fff">（手前で止まる）</text>
+	<text x="596" y="128" font-size="11" fill="#fff">(手前で止まる)</text>
 </svg>

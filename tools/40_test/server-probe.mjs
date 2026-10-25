@@ -2,21 +2,21 @@
  * ベンチマーク用に、サーバーを「同じプロセスの中で」立てる。
  *
  * 【なぜ外から測らないか】
- * 別プロセスのメモリを測る方法は OS ごとに違う（Windows は tasklist ・ WMI、
- * Mac ・ Linux は ps）。Mac ・ Linux にも展開する以上、測り方が OS で分かれる形は
+ * 別プロセスのメモリを測る方法は OS ごとに違う (Windows は tasklist ・ WMI、
+ * Mac ・ Linux は ps)。Mac ・ Linux にも展開する以上、測り方が OS で分かれる形は
  * 持ちたくない。同じプロセスの中から process.memoryUsage() を呼べば、
  * node でも bun でも、どの OS でも同じ 1 本のコードで済む。
  *
- * rss が OS から見た実メモリ（Windows の Working Set に当たる）。
+ * rss が OS から見た実メモリ (Windows の Working Set に当たる)。
  *
- * 親（benchmark-server.mjs）とは標準出力の印つきの行でやり取りする。
+ * 親 (benchmark-server.mjs)とは標準出力の印つきの行でやり取りする。
  * サーバー自身のログも同じ出力に混ざるので、印で見分ける。
  *
  *   node tools/40_test/server-probe.mjs
  *   bun  tools/40_test/server-probe.mjs
  *
  * 環境変数 AICHAT_PORT ・ AICHAT_DATA は親が渡す。置き場が既定でなければ
- * テスト用として立つ（config.mjs の IS_TEST）。
+ * テスト用として立つ (config.mjs の IS_TEST)。
  */
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -24,7 +24,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..', '..');
 
-/** メモリを報告する間隔（ミリ秒） */
+/** メモリを報告する間隔 \(ミリ秒\) */
 const REPORT_MS = 250;
 
 // 入口は main.mjs。ここが返った時点で待ち受けまで済んでいる

@@ -1,8 +1,8 @@
 /*
- * Rust 版 CLI（aichat-rs）を作る。
+ * Rust 版 CLI (aichat-rs)を作る。
  *
  * 手順は 3 つ。
- *   1. options.mjs から定義を JSON に書き出す（src/cli-rs/cli-options.json）
+ *   1. options.mjs から定義を JSON に書き出す (src/cli-rs/cli-options.json)
  *   2. cargo build --release
  *   3. できた実行ファイルを target/ に置く
  *
@@ -15,7 +15,7 @@
  * 無いままだと include_str! が通らないので、写し忘れには必ず気づける。
  *
  *   node tools/20_build/build-aichat-rs.mjs          作る
- *   node tools/20_build/build-aichat-rs.mjs --debug  最適化せずに作る（速い）
+ *   node tools/20_build/build-aichat-rs.mjs --debug  最適化せずに作る (速い)
  *   node tools/20_build/build-aichat-rs.mjs --test   テストだけ走らせる
  */
 import { spawnSync } from 'node:child_process';
@@ -40,7 +40,7 @@ function run(label, file, args, cwd) {
 		process.exit(1);
 	}
 	if (res.status !== 0) {
-		console.error(`${label} が失敗しました（終了コード ${res.status}）。`);
+		console.error(`${label} が失敗しました (終了コード ${res.status})。`);
 		process.exit(res.status ?? 1);
 	}
 }
@@ -67,7 +67,7 @@ if (testOnly) {
 run('テスト', 'cargo', ['test'], crate);
 
 const profile = debug ? [] : ['--release'];
-run(debug ? 'ビルド（最適化なし）' : 'ビルド', 'cargo', ['build', ...profile], crate);
+run(debug ? 'ビルド (最適化なし)' : 'ビルド', 'cargo', ['build', ...profile], crate);
 
 // --- 3. root に置く ---
 
@@ -79,14 +79,14 @@ if (!existsSync(built)) {
 }
 
 /*
- * 置くのは aichat-rs だけ。既定の名前（aichat）への差し替えは
+ * 置くのは aichat-rs だけ。既定の名前 (aichat)への差し替えは
  * tools/20_build/install-aichat.mjs が行う。
  *
  * 分けてあるのは、ビルドが走るたびに既定が入れ替わらないようにするため。
  * 既定の aichat は他プロジェクトの待受けも掴んでいる。
  *
- * 置き場は root の target/（ビルド出力。共通ルールは他言語では言語ごとの
- * 既定出力先に読み替えるとし、Rust の例として target/ を挙げている）。
+ * 置き場は root の target/ (ビルド出力。共通ルールは他言語では言語ごとの
+ * 既定出力先に読み替えるとし、Rust の例として target/ を挙げている)。
  * かつては root 直下に置いていたが、PATH から名前で呼べるようにするため
  * だけの理由だったので、その前提が無くなった i260924-06 のタイミングで
  * フォルダ構成の原則どおりに直した。

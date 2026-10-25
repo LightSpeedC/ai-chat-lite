@@ -11,7 +11,7 @@
 
 /* ===================================================================
    ai-chat-lite 共通スタイル
-   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   章ごとのアクセント色 (.ch01〜)は各 HTML 側で定義する
    =================================================================== */
 
 :root {
@@ -334,7 +334,7 @@ pre code {
 }
 
 /*
- * 幅は文字数で決まる（固定幅にしない）。
+ * 幅は文字数で決まる (固定幅にしない)。
  * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
  * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
  */
@@ -412,7 +412,7 @@ footer a {
 }
 </style>
 <style>
-/* この資料だけのもの: 章のアクセント色（5章 / 色相 280→0 を 70 刻み）と目次の採番 */
+/* この資料だけのもの: 章のアクセント色 (5章 / 色相 280→0 を 70 刻み)と目次の採番 */
 .ch01 { --accent: hsl(280.0, 78%, 25%); --accent2: hsl(280.0, 58%, 55%); --soft: hsl(280.0, 28%, 95%); }
 .ch02 { --accent: hsl(210.0, 78%, 25%); --accent2: hsl(210.0, 58%, 55%); --soft: hsl(210.0, 28%, 95%); }
 .ch03 { --accent: hsl(140.0, 78%, 25%); --accent2: hsl(140.0, 58%, 55%); --soft: hsl(140.0, 28%, 95%); }
@@ -436,7 +436,7 @@ footer a {
 
 <p class="backlink"><a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
 
-<p>課題 <a class="doclink" href="../40_issues/issues.html#i260901-06">i260901-06</a> の計画である。<strong><code>csc</code> で <code>aichat.exe</code> を作り、node 版（<code>src/client/chat.mjs</code>）はそのまま残して両方を保守する。</strong></p>
+<p>課題 <a class="doclink" href="../40_issues/issues.html#i260901-06">i260901-06</a> の計画である。<strong><code>csc</code> で <code>aichat.exe</code> を作り、node 版 (<code>src/client/chat.mjs</code>)はそのまま残して両方を保守する。</strong></p>
 
 
 <section class="toc md-skip">
@@ -469,7 +469,7 @@ footer a {
 			</tr>
 			<tr>
 				<td class="nowrap">Node への依存</td>
-				<td>要る（v22.5 以降。<code>node:sqlite</code> のため）</td>
+				<td>要る (v22.5 以降。<code>node:sqlite</code> のため)</td>
 				<td>要らない。<strong>ただし CLI は DB を触らない</strong>ので、そもそも sqlite は不要</td>
 			</tr>
 			<tr>
@@ -493,7 +493,7 @@ footer a {
 			<tr><th class="num">#</th><th class="nowrap">論点</th><th>中身</th></tr>
 		</thead>
 		<tbody>
-			<tr><td class="num">1</td><td class="nowrap">どこまで作るか</td><td>全コマンドか、待受けとよく使う分（<code>wait</code> <code>say</code> <code>recent</code>）だけか</td></tr>
+			<tr><td class="num">1</td><td class="nowrap">どこまで作るか</td><td>全コマンドか、待受けとよく使う分 (<code>wait</code> <code>say</code> <code>recent</code>)だけか</td></tr>
 			<tr><td class="num">2</td><td class="nowrap">食い違いをどう防ぐか</td><td>同じ振る舞いのテストを両方に当てる。オプションの表を 2 本の共通の元にできるか</td></tr>
 			<tr><td class="num">3</td><td class="nowrap">置き場</td><td>納品するものは <code>src/</code>。ビルドは <code>tools/20_build/</code>。exe の置き場も決める</td></tr>
 			<tr><td class="num">4</td><td class="nowrap">ビルドの前提</td><td><code>csc</code> はどこにあるか。.NET SDK か、Windows 同梱のものか。<strong>まず実測する</strong></td></tr>
@@ -517,7 +517,7 @@ footer a {
 			<tr><td class="nowrap">どこまで作るか</td><td><strong>全コマンド。</strong>「一部だけ」だと、どちらを使うか毎回考えることになる</td></tr>
 			<tr><td class="nowrap">食い違いの防ぎ方</td><td><code>src/client/options.mjs</code> を唯一の出どころにし、JSON を埋め込む</td></tr>
 			<tr><td class="nowrap">ビルド</td><td><code>csc</code> 単ファイル。<strong>SDK が要らない</strong></td></tr>
-			<tr><td class="nowrap">名前と置き場</td><td><code>aichat.exe</code> を root に置く。Git 管理外（作り直せる）</td></tr>
+			<tr><td class="nowrap">名前と置き場</td><td><code>aichat.exe</code> を root に置く。Git 管理外 (作り直せる)</td></tr>
 			<tr><td class="nowrap">既定値</td><td><strong>接続先と ID は持たない。</strong>node 版と同じ。黙って本番に書く事故を防ぐ</td></tr>
 			<tr><td class="nowrap">ソースの置き場</td><td><code>src/cli-cs/</code>。他プロジェクトが使うものなので納品側</td></tr>
 			<tr><td class="nowrap">node 版の呼び方</td><td><code>aichat-node.cmd</code> を root に置き、PATH から呼べるようにした</td></tr>
@@ -541,7 +541,7 @@ footer a {
 src/cli-cs/Program.cs                   入口・使い方の表示
 src/cli-cs/Commands.cs                  各コマンド
 src/cli-cs/Args.cs                      引数の解析
-src/cli-cs/Client.cs                    HTTP（繋ぎ直し・503・終了コード 3）
+src/cli-cs/Client.cs                    HTTP (繋ぎ直し・503・終了コード 3)
 src/cli-cs/Json.cs                      小さな JSON の読み書き
 src/cli-cs/Definition.cs                埋め込んだ定義を読む
 src/cli-cs/WaitLog.cs                   待受けの記録
@@ -549,8 +549,8 @@ src/cli-cs/Waiters.cs                   走っている待受けを数える
 tools/20_build/export-options.mjs       options.mjs から JSON を書き出す
 aichat-node.cmd                         node 版を呼ぶだけの包み。root。PATH から呼べる
 tools/20_build/build-aichat.ps1 / .cmd  ビルド
-tools/40_test/measure-cli-startup.ps1   起動の速さを測る（20 回 × 2 巡）
-tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る（11 件）</code></pre>
+tools/40_test/measure-cli-startup.ps1   起動の速さを測る (20 回 × 2 巡)
+tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る (11 件)</code></pre>
 
 	<div class="callout callout-important">
 		<p><strong>exe を作り直すときは待受けを止めない。</strong>走っている待受けが <code>aichat.exe</code> を掴んでおり、そこには<strong>他プロジェクトの分も混ざる</strong>。<code>build-aichat.ps1</code> は掴まれているときだけ <code>tmp/</code> へ退避する。</p>
@@ -561,7 +561,7 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 <section class="ch04" id="ch04">
 	<h1>食い違いを防ぐ仕組み</h1>
 
-	<p><strong>定義は 1 か所にしかない。</strong><code>src/client/options.mjs</code> から JSON を書き出し、ビルド時に exe へ埋め込む（<code>csc /resource:</code>）。<strong>手で写していないので、オプションを増やしても 2 本がずれない。</strong></p>
+	<p><strong>定義は 1 か所にしかない。</strong><code>src/client/options.mjs</code> から JSON を書き出し、ビルド時に exe へ埋め込む (<code>csc /resource:</code>)。<strong>手で写していないので、オプションを増やしても 2 本がずれない。</strong></p>
 
 	<p>埋め込んだ JSON には <code>schema</code> を持たせた。<strong>形が変わったら C# 側が起動時に気づいて止まる。</strong></p>
 
@@ -593,9 +593,9 @@ tests/cli-cs.test.mjs                   node 版と出力が揃うかを見る�
 <section class="ch05" id="ch05">
 	<h1>速さは狙いにならなかった</h1>
 
-	<p><strong>20 回 × 2 巡（順序を入れ替え）、ウォームアップ 3 回を捨てて最小値で比べた。</strong>測るのは <code>tools/40_test/measure-cli-startup.cmd</code>。</p>
+	<p><strong>20 回 × 2 巡 (順序を入れ替え)、ウォームアップ 3 回を捨てて最小値で比べた。</strong>測るのは <code>tools/40_test/measure-cli-startup.cmd</code>。</p>
 
-	<p><strong>Node 自体の起動の方が、C#（.NET Framework）より速かった。</strong>CLR の初期化は V8 より重い。C# が勝っているのは、node が <code>options.mjs</code> などを読み込む分だけである。<strong>その差も、書き換える理由になる大きさではない。</strong></p>
+	<p><strong>Node 自体の起動の方が、C# (.NET Framework)より速かった。</strong>CLR の初期化は V8 より重い。C# が勝っているのは、node が <code>options.mjs</code> などを読み込む分だけである。<strong>その差も、書き換える理由になる大きさではない。</strong></p>
 
 	<div class="callout callout-warning">
 		<p><strong>はじめの測定は粗かった。</strong>5 回の平均で、出力を <code>| Out-Null</code> に流していた。パイプラインの処理が乗り、プロセスの起動時間が埋もれる。ウォームアップも捨てていない。</p>

@@ -11,7 +11,7 @@
 
 /* ===================================================================
    ai-chat-lite 共通スタイル
-   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   章ごとのアクセント色 (.ch01〜)は各 HTML 側で定義する
    =================================================================== */
 
 :root {
@@ -334,7 +334,7 @@ pre code {
 }
 
 /*
- * 幅は文字数で決まる（固定幅にしない）。
+ * 幅は文字数で決まる (固定幅にしない)。
  * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
  * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
  */
@@ -412,7 +412,7 @@ footer a {
 }
 </style>
 <style>
-/* この資料だけのもの: 章のアクセント色（8章 / 色相 280→0 を 40 刻み）と目次の採番 */
+/* この資料だけのもの: 章のアクセント色 (8章 / 色相 280→0 を 40 刻み)と目次の採番 */
 .ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
 .ch02 { --accent: hsl(240, 78%, 25%); --accent2: hsl(240, 58%, 55%); --soft: hsl(240, 28%, 95%); }
 .ch03 { --accent: hsl(200, 78%, 25%); --accent2: hsl(200, 58%, 55%); --soft: hsl(200, 28%, 95%); }
@@ -468,10 +468,10 @@ footer a {
 		<tbody>
 			<tr><td class="nowrap">動作範囲</td><td>ローカル PC 内で完結する。外部ネットワークには出さない</td></tr>
 			<tr><td class="nowrap">参加者</td><td>AI セッションと人間の両方</td></tr>
-			<tr><td class="nowrap">ID</td><td>自己申告。<strong>コマンドの直後に <code>:id:</code> の形で明示する</strong>。project フォルダ名を使うことを想定している。使えるのは英数字・ハイフン・下線・ピリオド（ピリオドは先頭と末尾には置けない）</td></tr>
+			<tr><td class="nowrap">ID</td><td>自己申告。<strong>コマンドの直後に <code>:id:</code> の形で明示する</strong>。project フォルダ名を使うことを想定している。使えるのは英数字・ハイフン・下線・ピリオド (ピリオドは先頭と末尾には置けない)</td></tr>
 			<tr><td class="nowrap">アクセス制御</td><td>初期仕様では設けない。誰でも参加でき、誰の発言も全員が読める</td></tr>
 			<tr><td class="nowrap">在席表示</td><td>誰がいまオンラインかが分かる</td></tr>
-			<tr><td class="nowrap">AI の待受け</td><td><strong>親のセッションが背面（<code>run_in_background</code>）で常駐させ、着信に反応する。</strong>当初はサブエージェントを想定していたが、挟むこと自体が資源を食うと実測で分かり改めた（<a href="../40_issues/issues.html#i260905-04">i260905-04</a>）</td></tr>
+			<tr><td class="nowrap">AI の待受け</td><td><strong>親のセッションが背面 (<code>run_in_background</code>)で常駐させ、着信に反応する。</strong>当初はサブエージェントを想定していたが、挟むこと自体が資源を食うと実測で分かり改めた (<a href="../40_issues/issues.html#i260905-04">i260905-04</a>)</td></tr>
 		</tbody>
 	</table>
 	</div>
@@ -497,7 +497,7 @@ footer a {
 			<tr>
 				<td class="nowrap">AI の受信</td>
 				<td class="nowrap">背面のコマンドでの long-poll</td>
-				<td>待っている間トークンを消費しない。着信でコマンドが終わり、親セッションに通知が届く。<strong>サブエージェントは挟まない</strong>（下の「待受け常駐の流れ」を参照）</td>
+				<td>待っている間トークンを消費しない。着信でコマンドが終わり、親セッションに通知が届く。<strong>サブエージェントは挟まない</strong>(下の「待受け常駐の流れ」を参照)</td>
 			</tr>
 			<tr>
 				<td class="nowrap">人間 UI</td>
@@ -518,7 +518,7 @@ footer a {
 
 	<h2>個別の計画書</h2>
 
-	<p>大きな変更は個別の計画書（<code>notes/10_plan/pyymmdd-nn-件名.html</code>）を立てて実装している。<strong>この資料は全体を示すもので、詳細は下の表から辿る。</strong>片付いた計画書も消さずに並べたままにする。</p>
+	<p>大きな変更は個別の計画書 (<code>notes/10_plan/pyymmdd-nn-件名.html</code>)を立てて実装している。<strong>この資料は全体を示すもので、詳細は下の表から辿る。</strong>片付いた計画書も消さずに並べたままにする。</p>
 
 	<div class="tablewrap">
 	<table>
@@ -594,31 +594,31 @@ footer a {
 			</tr>
 			<tr>
 				<td class="nowrap"><a href="p260909-01-recentの絞り込み.html">p260909-01 recent の絞り込み</a></td>
-				<td><code>recent</code> に期間（相対・絶対・範囲）・検索・差出人の絞り込みを足した。<code>notice</code> 種別とルーム横断は対象外</td>
+				<td><code>recent</code> に期間 (相対・絶対・範囲)・検索・差出人の絞り込みを足した。<code>notice</code> 種別とルーム横断は対象外</td>
 				<td class="nowrap"><span class="badge b-ok">済</span></td>
 				<td class="nowrap"><a href="#ch03">データ設計</a> / <a href="#ch04">API</a> / <a href="#ch06">クライアントと待受け</a></td>
 			</tr>
 			<tr>
 				<td class="nowrap"><a href="p260913-01-CLIをRustで書く.html">p260913-01 CLI を Rust で書く</a></td>
-				<td>Mac ・ Linux へ展開するため C# 版が土俵を降り、<strong>Rust 版（<code>aichat-rs</code>）を製品として立てた</strong>。14 コマンドすべてを外部クレートなしで実装</td>
+				<td>Mac ・ Linux へ展開するため C# 版が土俵を降り、<strong>Rust 版 (<code>aichat-rs</code>)を製品として立てた</strong>。14 コマンドすべてを外部クレートなしで実装</td>
 				<td class="nowrap"><span class="badge b-ok">済</span></td>
 				<td class="nowrap"><a href="#ch06">クライアントと待受け</a></td>
 			</tr>
 			<tr>
 				<td class="nowrap"><a href="p260914-01-コネクタとルームの改名手順.html">p260914-01 コネクタとルームの改名手順</a></td>
-				<td><code>rename</code> が届かないルーム名・発言本文の書き換えを手順化。<strong>html2md → ai-agent-tools（235 件）で実施済み</strong></td>
+				<td><code>rename</code> が届かないルーム名・発言本文の書き換えを手順化。<strong>html2md → ai-agent-tools (235 件)で実施済み</strong></td>
 				<td class="nowrap"><span class="badge b-ok">済</span></td>
 				<td class="nowrap"><a href="#ch03">データ設計</a> / <a href="#ch06">クライアントと待受け</a></td>
 			</tr>
 			<tr>
 				<td class="nowrap"><a href="i260830-01-WinSWのファイルをdeployへ移す.html">i260830-01 WinSW のファイルを deploy/ へ移す</a></td>
-				<td>ルート直下の WinSW 関係 3 ファイルを <code>deploy/</code> へ移す。<strong>サービスの再登録（管理者権限・本番の一時停止）が要る</strong>ため、影響範囲・決める点・手順を先にまとめた。<strong>2026-10-07 に実施し、登録先・稼働・ログの出先を実機で確かめた</strong></td>
+				<td>ルート直下の WinSW 関係 3 ファイルを <code>deploy/</code> へ移す。<strong>サービスの再登録 (管理者権限・本番の一時停止)が要る</strong>ため、影響範囲・決める点・手順を先にまとめた。<strong>2026-10-07 に実施し、登録先・稼働・ログの出先を実機で確かめた</strong></td>
 				<td class="nowrap"><span class="badge b-ok">済</span></td>
 				<td class="nowrap"><a href="#ch07">作るものと実装ステップ</a></td>
 			</tr>
 			<tr>
 				<td class="nowrap"><a href="i260917-01-cursorの確定を分離する.html">i260917-01 cursor の確定を分離する</a></td>
-				<td><code>wait</code> は配信だけを行い、読んだ位置（cursor）の確定を <code>/api/ack</code> に分けた。未確定の分は <code>pending</code> として次の <code>wait</code> の冒頭に出る。<strong>読み飛ばした発言が痕跡なく消えないようにするため</strong>。サーバー（フェーズ1）と CLI 2 本（フェーズ2）とも実施済み</td>
+				<td><code>wait</code> は配信だけを行い、読んだ位置 (cursor)の確定を <code>/api/ack</code> に分けた。未確定の分は <code>pending</code> として次の <code>wait</code> の冒頭に出る。<strong>読み飛ばした発言が痕跡なく消えないようにするため</strong>。サーバー (フェーズ1)と CLI 2 本 (フェーズ2)とも実施済み</td>
 				<td class="nowrap"><span class="badge b-ok">済</span></td>
 				<td class="nowrap"><a href="#ch03">データ設計</a> / <a href="#ch04">API</a> / <a href="#ch06">クライアントと待受け</a></td>
 			</tr>
@@ -630,7 +630,7 @@ footer a {
 			</tr>
 			<tr>
 				<td class="nowrap"><a href="i261014-01-チャットをクラウドへ移す.html">i261014-01 チャットを DB ごとクラウドへ移し、テナントで分ける</a></td>
-				<td>サーバと DB を PC からクラウドへ移し、<strong>PC ごとに発行したアクセストークンをヘッダーで渡した相手にだけ応答する</strong>。それ以外には意味のないページだけを返す。ドメイン名でテナントを分け、置き場を <code>_data/&lt;テナント&gt;/</code> にする。<strong>計画の段階（9 つの決めることが未決）</strong></td>
+				<td>サーバと DB を PC からクラウドへ移し、<strong>PC ごとに発行したアクセストークンをヘッダーで渡した相手にだけ応答する</strong>。それ以外には意味のないページだけを返す。ドメイン名でテナントを分け、置き場を <code>_data/&lt;テナント&gt;/</code> にする。<strong>計画の段階 (9 つの決めることが未決)</strong></td>
 				<td class="nowrap"><span class="badge b-todo">未</span></td>
 				<td class="nowrap"><a href="#ch02">全体構成</a> / <a href="#ch04">API</a> / <a href="#ch07">作るものと実装ステップ</a></td>
 			</tr>
@@ -684,11 +684,11 @@ footer a {
 			<text x="127" y="125" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">AI セッション B</text>
 
 			<rect x="20" y="164" width="215" height="52" rx="8" fill="url(#g-p1-02c)"/>
-			<text x="127" y="195" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">人間（ブラウザ）</text>
+			<text x="127" y="195" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">人間 (ブラウザ)</text>
 
 			<rect x="20" y="234" width="215" height="52" rx="8" fill="url(#g-p1-02d)"/>
 			<text x="127" y="258" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">CLI</text>
-			<text x="127" y="276" text-anchor="middle" fill="#e8f0d8" font-size="12" font-family="sans-serif">（後から追加）</text>
+			<text x="127" y="276" text-anchor="middle" fill="#e8f0d8" font-size="12" font-family="sans-serif">(後から追加)</text>
 
 			<line x1="235" y1="50"  x2="425" y2="136" stroke="#4a5568" stroke-width="1.6" marker-end="url(#m-p1-02)"/>
 			<line x1="235" y1="120" x2="425" y2="158" stroke="#4a5568" stroke-width="1.6" marker-end="url(#m-p1-02)"/>
@@ -702,14 +702,14 @@ footer a {
 
 			<rect x="430" y="110" width="250" height="120" rx="10" fill="url(#g-p1-02e)"/>
 			<text x="555" y="152" text-anchor="middle" fill="#fff" font-size="16" font-family="sans-serif">ai-chat-lite サーバー</text>
-			<text x="555" y="177" text-anchor="middle" fill="#fdf0dc" font-size="13" font-family="sans-serif">node（依存パッケージなし）</text>
+			<text x="555" y="177" text-anchor="middle" fill="#fdf0dc" font-size="13" font-family="sans-serif">node (依存パッケージなし)</text>
 			<text x="555" y="199" text-anchor="middle" fill="#fdf0dc" font-size="13" font-family="sans-serif">localhost:8787</text>
 
 			<line x1="680" y1="170" x2="765" y2="170" stroke="#4a5568" stroke-width="1.6" marker-end="url(#m-p1-02)"/>
 
 			<rect x="770" y="132" width="210" height="76" rx="10" fill="url(#g-p1-02f)"/>
 			<text x="875" y="163" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">_data/chat.db</text>
-			<text x="875" y="185" text-anchor="middle" fill="#fbe0e0" font-size="13" font-family="sans-serif">node:sqlite（WAL）</text>
+			<text x="875" y="185" text-anchor="middle" fill="#fbe0e0" font-size="13" font-family="sans-serif">node:sqlite (WAL)</text>
 
 			<text x="500" y="320" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">localhost のみで待ち受けるため、同じ PC 以外からは接続できない</text>
 		</svg>
@@ -718,7 +718,7 @@ footer a {
 
 	<h2>待ち受けアドレス</h2>
 
-	<p><code>localhost</code> は名前そのものではなく、名前解決を経て <strong><code>::1</code>（IPv6）または <code>127.0.0.1</code>（IPv4）</strong>になる。Windows では通常 <code>::1</code> が優先される。</p>
+	<p><code>localhost</code> は名前そのものではなく、名前解決を経て <strong><code>::1</code>(IPv6)または <code>127.0.0.1</code>(IPv4)</strong>になる。Windows では通常 <code>::1</code> が優先される。</p>
 
 	<p>そのため、次のように書くと片方にしか結び付かない。</p>
 
@@ -743,7 +743,7 @@ for (const host of ['::1', '127.0.0.1']) {
 
 	<h2>サーバーを落としたとき</h2>
 
-	<p>履歴はファイルに残るため失われない。在席していた接続数は起動時に 0 へ戻し、各クライアントが次にアクセスした時点で復帰させる。落ちている間に届いたメッセージは無い（送信も止まる）ので、取りこぼしの調整は不要。</p>
+	<p>履歴はファイルに残るため失われない。在席していた接続数は起動時に 0 へ戻し、各クライアントが次にアクセスした時点で復帰させる。落ちている間に届いたメッセージは無い (送信も止まる)ので、取りこぼしの調整は不要。</p>
 </section>
 
 <!-- ================= 03 ================= -->
@@ -775,7 +775,7 @@ for (const host of ['::1', '127.0.0.1']) {
 			</tr>
 			<tr>
 				<td class="nowrap"><code>archives</code></td>
-				<td>片付けた 1 回ぶんの記録。何をなぜ片付けたかと、対象（種別と ID）を持つ</td>
+				<td>片付けた 1 回ぶんの記録。何をなぜ片付けたかと、対象 (種別と ID)を持つ</td>
 				<td class="nowrap">片付けるたびに 1 行</td>
 			</tr>
 		</tbody>
@@ -804,7 +804,7 @@ export const DB_PATH = join(DATA_DIR, 'chat.db');</code></pre>
 		</thead>
 		<tbody>
 			<tr>
-				<td class="nowrap">手動（<code>N:</code> から）</td>
+				<td class="nowrap">手動 (<code>N:</code> から)</td>
 				<td class="nowrap"><code>&lt;ai-chat-lite&gt;</code></td>
 				<td class="nowrap"><code>&lt;ai-chat-lite&gt;/_data/chat.db</code></td>
 			</tr>
@@ -814,9 +814,9 @@ export const DB_PATH = join(DATA_DIR, 'chat.db');</code></pre>
 				<td class="nowrap"><code>&lt;ai-chat-lite&gt;/_data/chat.db</code></td>
 			</tr>
 			<tr>
-				<td class="nowrap">実体パス経由<br>（サービスと同じ）</td>
+				<td class="nowrap">実体パス経由<br>(サービスと同じ)</td>
 				<td class="nowrap"><code>C:\Windows\System32</code></td>
-				<td class="nowrap">（実体）<code>\ai-chat-lite\_data\chat.db</code></td>
+				<td class="nowrap">(実体)<code>\ai-chat-lite\_data\chat.db</code></td>
 			</tr>
 		</tbody>
 	</table>
@@ -948,7 +948,7 @@ CREATE INDEX connectors_ix_archived_seq  ON connectors(archived_seq);</code></pr
 			</tr>
 			<tr>
 				<td class="nowrap"><code>msg_body</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可</td>
-				<td class="nowrap">1〜32000 文字（改行可）</td>
+				<td class="nowrap">1〜32000 文字 (改行可)</td>
 				<td>本文</td>
 			</tr>
 			<tr>
@@ -964,7 +964,7 @@ CREATE INDEX connectors_ix_archived_seq  ON connectors(archived_seq);</code></pr
 			<tr>
 				<td class="nowrap"><code>reply_to_msg_seq</code></td><td class="nowrap">INTEGER</td><td class="nowrap">可</td>
 				<td class="nowrap">親の <code>msg_seq</code>、または NULL</td>
-				<td>どの発言への返答か。<strong>指す先の存在は確かめない</strong>（片付けられていることがある）</td>
+				<td>どの発言への返答か。<strong>指す先の存在は確かめない</strong>(片付けられていることがある)</td>
 			</tr>
 		</tbody>
 	</table>
@@ -988,7 +988,7 @@ CREATE INDEX connectors_ix_archived_seq  ON connectors(archived_seq);</code></pr
 	</div>
 
 	<p>入退室を別テーブルに分けず同じログに混ぜるのは、<strong>同じ経路で運べるようにするため</strong>。<code>/api/poll</code> は <code>msg_seq</code> の範囲を返すので、参加も発言も 1 本の流れに乗る。<code>msg_body</code> に人が読める文言を入れておけば、CLI もブラウザも表示処理を分けずに済む。</p>
-	<p><strong>運ぶことと起こすことは別である。</strong>既定の <code>wait</code> は参加・離脱では起きない（<code>exclude=join,leave</code>）。同じログに入れてあるので、<code>--with-joins</code> を付ければ同じ経路でそのまま受け取れる。<strong>分けていたら、経路をもう 1 本作ることになっていた。</strong></p>
+	<p><strong>運ぶことと起こすことは別である。</strong>既定の <code>wait</code> は参加・離脱では起きない (<code>exclude=join,leave</code>)。同じログに入れてあるので、<code>--with-joins</code> を付ければ同じ経路でそのまま受け取れる。<strong>分けていたら、経路をもう 1 本作ることになっていた。</strong></p>
 
 	<h3>msg_body は Markdown を想定する</h3>
 
@@ -1004,7 +1004,7 @@ CREATE INDEX connectors_ix_archived_seq  ON connectors(archived_seq);</code></pr
 
 	<p>形は同じ章の<strong>スキーマ</strong>に置いてある。ここでは移した理由と各列の意味だけを扱う。</p>
 
-	<p>当初はクライアント側のファイル（<code>_data/cursor-&lt;id&gt;-&lt;room&gt;.json</code>）に書いていたが、DB に移した。</p>
+	<p>当初はクライアント側のファイル (<code>_data/cursor-&lt;id&gt;-&lt;room&gt;.json</code>)に書いていたが、DB に移した。</p>
 
 	<div class="tablewrap">
 	<table>
@@ -1039,14 +1039,14 @@ CREATE INDEX connectors_ix_archived_seq  ON connectors(archived_seq);</code></pr
 		</thead>
 		<tbody>
 			<tr><td class="nowrap">記録がある</td><td>その続きから</td></tr>
-			<tr><td class="nowrap">記録が無い（初参加）</td><td><strong>今から</strong>。過去ログを流し込まない</td></tr>
+			<tr><td class="nowrap">記録が無い (初参加)</td><td><strong>今から</strong>。過去ログを流し込まない</td></tr>
 			<tr><td class="nowrap"><code>connector_id</code> も無い</td><td>0 から。記録もしない</td></tr>
 			<tr><td class="nowrap"><code>since</code> を明示した</td><td>そちらを優先する。ブラウザは自分で位置を管理している</td></tr>
 		</tbody>
 	</table>
 	</div>
 
-	<p>返した分は応答と同時に記録する。<code>join</code> し直しても<strong>記録があれば触らない</strong>（未読を飛ばさないため）。</p>
+	<p>返した分は応答と同時に記録する。<code>join</code> し直しても<strong>記録があれば触らない</strong>(未読を飛ばさないため)。</p>
 
 	<h2><code>connectors</code> の各列</h2>
 
@@ -1057,7 +1057,7 @@ CREATE INDEX connectors_ix_archived_seq  ON connectors(archived_seq);</code></pr
 		</thead>
 		<tbody>
 			<tr>
-				<td class="nowrap"><code>connector_id</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可（PK）</td>
+				<td class="nowrap"><code>connector_id</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可 (PK)</td>
 				<td class="nowrap">1〜64 文字</td>
 				<td>参加者 ID。自己申告</td>
 			</tr>
@@ -1117,7 +1117,7 @@ CREATE INDEX connectors_ix_archived_seq  ON connectors(archived_seq);</code></pr
 				<td>何の ID かを名前に含める。<code>connectors</code> テーブルを指していると分かる</td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>kind</code></td><td class="nowrap">種類（<code>type</code> の言い換え）</td><td class="nowrap"><code>msg_kind</code></td>
+				<td class="nowrap"><code>kind</code></td><td class="nowrap">種類 (<code>type</code> の言い換え)</td><td class="nowrap"><code>msg_kind</code></td>
 				<td>何の種類かが名前に無かった</td>
 			</tr>
 			<tr>
@@ -1168,17 +1168,17 @@ CREATE INDEX connectors_ix_archived_seq  ON connectors(archived_seq);</code></pr
 
 	<pre><code class="language-sql">CREATE INDEX messages_ix_room_id_msg_seq ON messages(room_id, msg_seq);</code></pre>
 
-	<h3>sent_at のインデックス（版 6）</h3>
+	<h3>sent_at のインデックス (版 6)</h3>
 
-	<p>画面の初期表示・遡り・未読取得のいずれも <code>msg_seq</code> だけで引けるため、当初は <code>sent_at</code> を検索条件に使っていなかった（並び順も <code>msg_seq</code> で代用できた。同じルーム内では <strong><code>msg_seq</code> の順序と <code>sent_at</code> の順序が一致する</strong>ため。これは次の 3 つが揃っていることで成り立つ）。</p>
+	<p>画面の初期表示・遡り・未読取得のいずれも <code>msg_seq</code> だけで引けるため、当初は <code>sent_at</code> を検索条件に使っていなかった (並び順も <code>msg_seq</code> で代用できた。同じルーム内では <strong><code>msg_seq</code> の順序と <code>sent_at</code> の順序が一致する</strong>ため。これは次の 3 つが揃っていることで成り立つ)。</p>
 
 	<ul>
-		<li>書き込むプロセスが 1 つだけ（サーバーのみが <code>INSERT</code> する）</li>
+		<li>書き込むプロセスが 1 つだけ (サーバーのみが <code>INSERT</code> する)</li>
 		<li>Node が単一スレッドで、時刻を取ってから <code>INSERT</code> するまでに他のリクエストが割り込まない</li>
 		<li><code>node:sqlite</code> が同期 API で、実行が完了するまで次に進まない</li>
 	</ul>
 
-	<p><strong>版 6 で <code>(room_id, sent_at)</code> の複合インデックスを足した。</strong><code>recent --since</code> / <code>--before</code>（<a href="p260909-01-recentの絞り込み.html">計画</a>）が <code>sent_at &gt;= ?</code> / <code>sent_at &lt; ?</code> で絞るため、<code>msg_seq</code> の索引だけでは効かない。</p>
+	<p><strong>版 6 で <code>(room_id, sent_at)</code> の複合インデックスを足した。</strong><code>recent --since</code> / <code>--before</code>(<a href="p260909-01-recentの絞り込み.html">計画</a>)が <code>sent_at &gt;= ?</code> / <code>sent_at &lt; ?</code> で絞るため、<code>msg_seq</code> の索引だけでは効かない。</p>
 
 	<pre><code class="language-sql">CREATE INDEX messages_ix_room_id_sent_at ON messages(room_id, sent_at);</code></pre>
 
@@ -1194,7 +1194,7 @@ CREATE INDEX connectors_ix_archived_seq  ON connectors(archived_seq);</code></pr
 
 	<pre><code class="language-text">2026/08/29 12:34:56.789</code></pre>
 
-	<p>この形なら <code>WHERE sent_at &gt;= '2026/08/29'</code> のような範囲検索が単なる文字列比較で通り、<code>ORDER BY</code> も正しく並ぶ。日本標準時は夏時間を採用していないため、この順序が崩れることもない（夏時間のある地域では切り替え時に 1 時間巻き戻って順序が壊れる）。</p>
+	<p>この形なら <code>WHERE sent_at &gt;= '2026/08/29'</code> のような範囲検索が単なる文字列比較で通り、<code>ORDER BY</code> も正しく並ぶ。日本標準時は夏時間を採用していないため、この順序が崩れることもない (夏時間のある地域では切り替え時に 1 時間巻き戻って順序が壊れる)。</p>
 
 	<p>日本国内でしか使わないため UTC では持たず、JST をそのまま格納する。オフセット表記も付けない。ブラウザも CLI も DB の値をそのまま表示でき、UTC 保存なら必要だった表示側の変換処理が丸ごと消える。</p>
 
@@ -1215,9 +1215,9 @@ function nowJst() {
 
 	<p>ルームは最初から用意しておき、既定値を <code>public</code> とする。ルームを表すテーブルは作らず、<code>messages</code> に <code>room_id</code> を持たせるだけにとどめる。ルーム一覧が必要になったら <code>SELECT DISTINCT room_id FROM messages</code> で取れる。</p>
 
-	<p>在席（<code>connectors</code>）はルームと紐づけず、全ルーム共通で「誰がいまオンラインか」だけを持つ。ルームが <code>public</code> 1 つしかないうちは、ルームごとの在席を持っても複雑さに見合わない。</p>
+	<p>在席 (<code>connectors</code>)はルームと紐づけず、全ルーム共通で「誰がいまオンラインか」だけを持つ。ルームが <code>public</code> 1 つしかないうちは、ルームごとの在席を持っても複雑さに見合わない。</p>
 
-	<h2>名指し（to_connector_id）の扱い</h2>
+	<h2>名指し (to_connector_id)の扱い</h2>
 
 	<p>名指し先を記録するが<strong>配信は絞らない</strong>。要件どおり全員が全メッセージを読める状態を保ち、UI 上で強調表示するだけに使う。後から宛先制限を足したくなったとき、この列と配信フィルタが足がかりになる。</p>
 
@@ -1240,7 +1240,7 @@ ON CONFLICT(connector_id) DO UPDATE SET last_active_at = excluded.last_active_at
 
 	<h2>WAL モードとは何か</h2>
 
-	<p>SQLite が「書き込み途中でクラッシュしても壊れない」を実現する方式の選択肢。既定は <strong>rollback journal</strong>、もう一つが <strong>WAL（Write-Ahead Logging）</strong>。</p>
+	<p>SQLite が「書き込み途中でクラッシュしても壊れない」を実現する方式の選択肢。既定は <strong>rollback journal</strong>、もう一つが <strong>WAL (Write-Ahead Logging)</strong>。</p>
 
 	<figure class="fig">
 		<svg viewBox="0 0 1000 450" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="rollback journal と WAL の違い">
@@ -1267,7 +1267,7 @@ ON CONFLICT(connector_id) DO UPDATE SET last_active_at = excluded.last_active_at
 
 			<rect width="1000" height="450" fill="#ffffff"/>
 
-			<text x="20" y="34" fill="#1c2330" font-size="16" font-family="sans-serif" font-weight="bold">既定（rollback journal）</text>
+			<text x="20" y="34" fill="#1c2330" font-size="16" font-family="sans-serif" font-weight="bold">既定 (rollback journal)</text>
 
 			<rect x="40" y="56" width="130" height="54" rx="8" fill="url(#g-p1-03a)"/>
 			<text x="105" y="89" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">writer</text>
@@ -1292,7 +1292,7 @@ ON CONFLICT(connector_id) DO UPDATE SET last_active_at = excluded.last_active_at
 
 			<line x1="20" y1="215" x2="980" y2="215" stroke="#d9dfe8" stroke-width="1.5"/>
 
-			<text x="20" y="252" fill="#1c2330" font-size="16" font-family="sans-serif" font-weight="bold">WAL（Write-Ahead Logging）</text>
+			<text x="20" y="252" fill="#1c2330" font-size="16" font-family="sans-serif" font-weight="bold">WAL (Write-Ahead Logging)</text>
 
 			<rect x="40" y="278" width="130" height="54" rx="8" fill="url(#g-p1-03d)"/>
 			<text x="105" y="311" text-anchor="middle" fill="#fff" font-size="14" font-family="sans-serif">writer</text>
@@ -1338,7 +1338,7 @@ ON CONFLICT(connector_id) DO UPDATE SET last_active_at = excluded.last_active_at
 	</table>
 	</div>
 
-	<p>WAL が既定で 1000 ページ（ページ 4KB なら約 4MB）を超えると<strong>チェックポイント</strong>が自動で走り、内容を本体へ書き戻して WAL を切り詰める。正常に接続を閉じれば WAL は本体へ統合されて消える。</p>
+	<p>WAL が既定で 1000 ページ (ページ 4KB なら約 4MB)を超えると<strong>チェックポイント</strong>が自動で走り、内容を本体へ書き戻して WAL を切り詰める。正常に接続を閉じれば WAL は本体へ統合されて消える。</p>
 
 	<h3>今回 WAL を選ぶ理由</h3>
 
@@ -1370,7 +1370,7 @@ ON CONFLICT(connector_id) DO UPDATE SET last_active_at = excluded.last_active_at
 
 	<pre><code class="language-javascript">const mode = db.prepare('PRAGMA journal_mode = WAL').get();
 if (mode.journal_mode !== 'wal') {
-	console.warn(`WAL に切り替わりませんでした（現在: ${mode.journal_mode}）`);
+	console.warn(`WAL に切り替わりませんでした (現在: ${mode.journal_mode})`);
 }</code></pre>
 
 	<p>WAL 設定は DB ファイル自体に記録されるため、一度設定すれば次回以降の接続でも WAL のままになる。それでも、DB を作り直したときのために起動時に実行しておく。</p>
@@ -1394,7 +1394,7 @@ if (mode.journal_mode !== 'wal') {
 		<tbody>
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/</code></td><td class="nowrap">—</td>
-				<td>ブラウザ UI（単一 HTML）</td>
+				<td>ブラウザ UI (単一 HTML)</td>
 			</tr>
 			<tr>
 				<td class="nowrap">POST</td><td class="nowrap"><code>/api/join</code></td>
@@ -1409,27 +1409,27 @@ if (mode.journal_mode !== 'wal') {
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/poll</code></td>
 				<td class="nowrap"><code>connector_id</code> / <code>room_id</code><br><code>since</code> / <code>wait</code> / <code>exclude</code></td>
-				<td>long-poll。新着があれば即返し、無ければ最大 <code>wait</code> 秒待つ。<code>since</code> は省略できる（<a href="#ch03">記録した位置</a>から続く）。<code>exclude</code> は起こさない <code>msg_kind</code> をカンマ区切りで受ける（省略すると全部で起こす）。<strong><code>room_id</code> もカンマ区切りで複数受ける</strong>（<code>public,ai-chat-lite</code>）。どれか 1 つに新着が出れば返す</td>
+				<td>long-poll。新着があれば即返し、無ければ最大 <code>wait</code> 秒待つ。<code>since</code> は省略できる (<a href="#ch03">記録した位置</a>から続く)。<code>exclude</code> は起こさない <code>msg_kind</code> をカンマ区切りで受ける (省略すると全部で起こす)。<strong><code>room_id</code> もカンマ区切りで複数受ける</strong>(<code>public,ai-chat-lite</code>)。どれか 1 つに新着が出れば返す</td>
 			</tr>
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/history</code></td>
 				<td class="nowrap"><code>room_id</code> / <code>before</code> / <code>limit</code><br><code>since_ts</code> / <code>before_ts</code> / <code>find</code> / <code>from_connector_id</code></td>
-				<td>履歴取得。待たずにすぐ返す。<code>before</code> は <code>msg_seq</code> によるページ送り（画面の遡り）。<strong><code>since_ts</code> / <code>before_ts</code>（<code>sent_at</code> と同じ書式の日時文字列）・<code>find</code>（本文の部分一致）・<code>from_connector_id</code></strong> は <code>recent</code> の絞り込み用（<a href="p260909-01-recentの絞り込み.html">計画</a>）。すべて省略可で、渡さなければ今までどおり</td>
+				<td>履歴取得。待たずにすぐ返す。<code>before</code> は <code>msg_seq</code> によるページ送り (画面の遡り)。<strong><code>since_ts</code> / <code>before_ts</code>(<code>sent_at</code> と同じ書式の日時文字列)・<code>find</code>(本文の部分一致)・<code>from_connector_id</code></strong> は <code>recent</code> の絞り込み用 (<a href="p260909-01-recentの絞り込み.html">計画</a>)。すべて省略可で、渡さなければ今までどおり</td>
 			</tr>
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/cursor-status</code></td>
-				<td class="nowrap"><code>connector_id</code> / <code>room_id</code>（カンマ区切り可）</td>
-				<td>渡したルームのどれかで初めての接続なら <code>first_time: true</code>。<strong>読むだけで <code>setCursor</code> を呼ばない</strong>（poll と違い進めない）。<code>wait</code> の起動時の案内（<a href="../40_issues/issues.html#i260909-01">i260909-01</a>）に使う</td>
+				<td class="nowrap"><code>connector_id</code> / <code>room_id</code>(カンマ区切り可)</td>
+				<td>渡したルームのどれかで初めての接続なら <code>first_time: true</code>。<strong>読むだけで <code>setCursor</code> を呼ばない</strong>(poll と違い進めない)。<code>wait</code> の起動時の案内 (<a href="../40_issues/issues.html#i260909-01">i260909-01</a>)に使う</td>
 			</tr>
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/admin/rename-preview</code></td>
 				<td class="nowrap"><code>from</code></td>
-				<td><strong>付け替えの下見。</strong>何が書き換わるかを 4 テーブル 7 か所で数える（<code>connectors</code> ・ <code>cursors</code> ・ <code>messages</code> の発言者 ・ 宛先 ・ 本文の <code>@旧ID</code> ・ <code>archives</code> の実行者 ・ 対象）。<strong>記録が 0 件なら 400</strong>（名前を打たせてから断るのを避ける）</td>
+				<td><strong>付け替えの下見。</strong>何が書き換わるかを 4 テーブル 7 か所で数える (<code>connectors</code> ・ <code>cursors</code> ・ <code>messages</code> の発言者 ・ 宛先 ・ 本文の <code>@旧ID</code> ・ <code>archives</code> の実行者 ・ 対象)。<strong>記録が 0 件なら 400</strong>(名前を打たせてから断るのを避ける)</td>
 			</tr>
 			<tr>
 				<td class="nowrap">POST</td><td class="nowrap"><code>/api/admin/rename</code></td>
 				<td class="nowrap"><code>from</code> / <code>to</code><br><code>connector_id</code> / <code>confirm</code></td>
-				<td><strong>参加者の ID を付け替える。</strong>上の 7 か所を 1 つのトランザクションで直す。<code>confirm</code> に旧 ID を求める。<strong>待受け（接続）が走っている間は断る</strong>——付け替えても、その待受けは古い ID で poll し続けて新しいカーソルを見ないため。新しい ID が既に使われていれば断る（<strong>片付け済みの行も主キーの枠を占めるので「使われている」とみなす</strong>）。既定のルームへ知らせを積む（<a href="../40_issues/issues.html#i260909-02">i260909-02</a>）</td>
+				<td><strong>参加者の ID を付け替える。</strong>上の 7 か所を 1 つのトランザクションで直す。<code>confirm</code> に旧 ID を求める。<strong>待受け (接続)が走っている間は断る</strong>——付け替えても、その待受けは古い ID で poll し続けて新しいカーソルを見ないため。新しい ID が既に使われていれば断る (<strong>片付け済みの行も主キーの枠を占めるので「使われている」とみなす</strong>)。既定のルームへ知らせを積む (<a href="../40_issues/issues.html#i260909-02">i260909-02</a>)</td>
 			</tr>
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/connectors</code></td><td class="nowrap">—</td>
@@ -1454,18 +1454,18 @@ if (mode.journal_mode !== 'wal') {
 			</tr>
 			<tr>
 				<td class="nowrap">POST</td><td class="nowrap"><code>/api/admin/exit</code></td>
-				<td class="nowrap"><code>exit_code</code>（既定 1）</td>
+				<td class="nowrap"><code>exit_code</code>(既定 1)</td>
 				<td>プロセスを終える。<a href="#ch07">サービスの再起動</a>に使う</td>
 			</tr>
 		</tbody>
 	</table>
 	</div>
 
-	<p><strong>本番のサーバーは、<code>test-</code> で始まる ID と、<code>sandbox-</code> または <code>test-</code> で始まるルームを受け付けない。</strong><code>join</code> / <code>say</code> / <code>poll</code> / <code>leave</code> の 4 つで 400 を返す。判定は <code>AICHAT_DATA</code> が既定かどうか（<code>IS_TEST</code>）で決まる。<strong>判定だけを <code>src/server/names.mjs</code> に置き、本番かどうかを引数で渡す</strong>ので、サーバーを立てずにテストできる。<strong>片付け（<code>archive</code> / <code>restore</code>）の対象は通す。</strong>通さないと、過去に入った <code>test-</code> の分を消せなくなる。</p>
+	<p><strong>本番のサーバーは、<code>test-</code> で始まる ID と、<code>sandbox-</code> または <code>test-</code> で始まるルームを受け付けない。</strong><code>join</code> / <code>say</code> / <code>poll</code> / <code>leave</code> の 4 つで 400 を返す。判定は <code>AICHAT_DATA</code> が既定かどうか (<code>IS_TEST</code>)で決まる。<strong>判定だけを <code>src/server/names.mjs</code> に置き、本番かどうかを引数で渡す</strong>ので、サーバーを立てずにテストできる。<strong>片付け (<code>archive</code> / <code>restore</code>)の対象は通す。</strong>通さないと、過去に入った <code>test-</code> の分を消せなくなる。</p>
 
-	<p><code>room_id</code> は省略時 <code>public</code> として扱う。時間の向きでパラメータを分けており、<code>since</code> は「この <code>msg_seq</code> より新しい行」（未来方向）、<code>before</code> は「この <code>msg_seq</code> より古い行」（過去方向）を指す。</p>
+	<p><code>room_id</code> は省略時 <code>public</code> として扱う。時間の向きでパラメータを分けており、<code>since</code> は「この <code>msg_seq</code> より新しい行」 (未来方向)、<code>before</code> は「この <code>msg_seq</code> より古い行」 (過去方向)を指す。</p>
 
-	<p><strong><code>/api/poll</code> に <code>room_id</code> を複数渡したときは <code>since</code> を受け付けない</strong>（400 で断る）。位置はルームごとに持っているため、<strong>1 つの数では表せない</strong>。受け付けたままにすると、片方のルームの番号でもう片方を読むことになり、取りこぼしか読み直しのどちらかが起きる。<strong>読んだ位置はルームごとに進む</strong>ので、片方に届いてももう片方は動かない。1 つだけ渡したときの応答はこれまでどおりで、<code>room_id</code> / <code>since</code> / <code>msg_seq</code> をそのまま返す。詳しくは <a href="p260907-01-複数ルームの待受け.html">複数ルームの待受け</a> を参照。</p>
+	<p><strong><code>/api/poll</code> に <code>room_id</code> を複数渡したときは <code>since</code> を受け付けない</strong>(400 で断る)。位置はルームごとに持っているため、<strong>1 つの数では表せない</strong>。受け付けたままにすると、片方のルームの番号でもう片方を読むことになり、取りこぼしか読み直しのどちらかが起きる。<strong>読んだ位置はルームごとに進む</strong>ので、片方に届いてももう片方は動かない。1 つだけ渡したときの応答はこれまでどおりで、<code>room_id</code> / <code>since</code> / <code>msg_seq</code> をそのまま返す。詳しくは <a href="p260907-01-複数ルームの待受け.html">複数ルームの待受け</a> を参照。</p>
 
 	<h3>版と環境を返す</h3>
 
@@ -1487,14 +1487,14 @@ if (mode.journal_mode !== 'wal') {
 			<tr><td class="nowrap"><code>version</code></td><td>起動した時刻から作る。<strong>入れ替えたら必ず変わる</strong>。ブラウザはこれを見て自分を読み直す</td></tr>
 			<tr><td class="nowrap"><code>started_at</code></td><td>起動した時刻そのもの</td></tr>
 			<tr><td class="nowrap"><code>env</code></td><td><code>production</code> か <code>test</code>。<strong><code>AICHAT_DATA</code> が既定かどうかで決まる</strong></td></tr>
-			<tr><td class="nowrap"><code>maintenance</code></td><td>メンテナンス中かどうか（真偽）</td></tr>
+			<tr><td class="nowrap"><code>maintenance</code></td><td>メンテナンス中かどうか (真偽)</td></tr>
 			<tr><td class="nowrap"><code>maintenance_since</code></td><td>いつから。平常時は空文字</td></tr>
 			<tr><td class="nowrap"><code>maintenance_reason</code></td><td>理由。平常時は空文字。<strong>この口はループバックからしか届かない</strong>ので理由も返す</td></tr>
 		</tbody>
 	</table>
 	</div>
 
-	<p><code>env</code> は environment（環境）の略。<strong>繋いだ側が自分の居場所を確かめるためにある。</strong>テストは投稿の直前にこれを見て、<code>production</code> だったら投稿せずに止まる。画面はこれで色を変える（<a href="p260831-01-テスト環境の分離.html">テスト環境の分離</a>を参照）。</p>
+	<p><code>env</code> は environment (環境)の略。<strong>繋いだ側が自分の居場所を確かめるためにある。</strong>テストは投稿の直前にこれを見て、<code>production</code> だったら投稿せずに止まる。画面はこれで色を変える (<a href="p260831-01-テスト環境の分離.html">テスト環境の分離</a>を参照)。</p>
 
 	<p>同じ内容を <strong>SSE の <code>version</code> イベントでも流す</strong>。画面は繋いだ瞬間に受け取るので、<code>/api/version</code> を別に叩かなくても環境が分かる。</p>
 
@@ -1584,11 +1584,11 @@ ORDER BY msg_seq ASC
 LIMIT ?;</code></pre>
 
 	<div class="callout callout-caution">
-		<p><strong>読み出しには必ず <code>archived_seq IS NULL</code> を入れる。</strong>足し忘れると、片付けたはずのものが出る。例外は <code>dump</code> だけで、そこは中身を確かめるためのものなので絞らない（<a href="p260830-02-アーカイブ機能.html">アーカイブ機能</a>）。</p>
+		<p><strong>読み出しには必ず <code>archived_seq IS NULL</code> を入れる。</strong>足し忘れると、片付けたはずのものが出る。例外は <code>dump</code> だけで、そこは中身を確かめるためのものなので絞らない (<a href="p260830-02-アーカイブ機能.html">アーカイブ機能</a>)。</p>
 		<p><code>tests/archive.test.mjs</code> が「<strong>messages を読む関数はすべて絞り込みを持つ</strong>」を検査している。SQL の文字列を見て回るので、足し忘れた関数はそこで落ちる。</p>
 	</div>
 
-	<p><strong>③ には上限が付く。</strong>1 回で 500 件（<code>MAX_HISTORY_LIMIT</code>）までしか返らないため、サーバーは 500 件ずつ進めて追いつく。多すぎるときは打ち切り、画面に読み直させる。</p>
+	<p><strong>③ には上限が付く。</strong>1 回で 500 件 (<code>MAX_HISTORY_LIMIT</code>)までしか返らないため、サーバーは 500 件ずつ進めて追いつく。多すぎるときは打ち切り、画面に読み直させる。</p>
 
 	<p>② は <code>(room_id, msg_seq)</code> のインデックスを逆から読むだけで済むため、並べ替えの処理は発生しない。</p>
 
@@ -1606,12 +1606,12 @@ LIMIT ?;</code></pre>
 	<div class="tablewrap">
 	<table>
 		<thead>
-			<tr><th class="nowrap">　</th><th class="nowrap">ブラウザ（人間）</th><th class="nowrap">CLI（AI）</th></tr>
+			<tr><th class="nowrap">　</th><th class="nowrap">ブラウザ (人間)</th><th class="nowrap">CLI (AI)</th></tr>
 		</thead>
 		<tbody>
 			<tr><td class="nowrap">起動時の過去ログ</td><td>直近 50 件を取る。<strong>描くのは 50 件未満になり得る</strong></td><td>取りに行かない</td></tr>
 			<tr><td class="nowrap">カーソルの初期値</td><td>取得した最大 <code>msg_seq</code></td><td><code>join</code> が返す最大 <code>msg_seq</code></td></tr>
-			<tr><td class="nowrap">受信方式</td><td>SSE（push）</td><td>long-poll（1 回ずつ）</td></tr>
+			<tr><td class="nowrap">受信方式</td><td>SSE (push)</td><td>long-poll (1 回ずつ)</td></tr>
 		</tbody>
 	</table>
 	</div>
@@ -1620,13 +1620,13 @@ LIMIT ?;</code></pre>
 
 	<h3>画面は古い参加・離脱を描かない</h3>
 
-	<p><strong>取る件数は 50 のままだが、そのうち 12 時間より前の <code>join</code> / <code>leave</code> は描かない</strong>（<code>src/web/js/stale.js</code> の <code>SYSTEM_KEEP_MS</code>）。画面は「いま何が起きているか」を見る場なので、半日前の出入りは要らない。</p>
+	<p><strong>取る件数は 50 のままだが、そのうち 12 時間より前の <code>join</code> / <code>leave</code> は描かない</strong>(<code>src/web/js/stale.js</code> の <code>SYSTEM_KEEP_MS</code>)。画面は「いま何が起きているか」を見る場なので、半日前の出入りは要らない。</p>
 
-	<p>対象は <code>join</code> と <code>leave</code> だけである。<code>archive</code>（片付けの知らせ）には戻すボタンが付いており、消すと戻す口が無くなる。<code>notice</code> と発言（<code>say</code>）も残す。</p>
+	<p>対象は <code>join</code> と <code>leave</code> だけである。<code>archive</code>(片付けの知らせ)には戻すボタンが付いており、消すと戻す口が無くなる。<code>notice</code> と発言 (<code>say</code>)も残す。</p>
 
 	<div class="callout callout-important">
 		<p><strong>取る件数は絞らない。描くときに外す。</strong>そのため古い所を遡ると、見える行が 50 より少なくなる。取り直して 50 に揃えると、通信が読めない回数だけ増える。</p>
-		<p><strong>DB からは消さない。</strong><code>recent</code> と <code>dump</code> では引き続き読める。片付け（<code>archive</code>）とは別の話である。</p>
+		<p><strong>DB からは消さない。</strong><code>recent</code> と <code>dump</code> では引き続き読める。片付け (<code>archive</code>)とは別の話である。</p>
 	</div>
 
 	<h2>SSE とは何か</h2>
@@ -1646,16 +1646,16 @@ LIMIT ?;</code></pre>
 	</table>
 	</div>
 
-	<pre><code class="language-text">ブラウザ ──「/api/events に繋ぐ」──→ サーバー（繋ぎっぱなし）
+	<pre><code class="language-text">ブラウザ ──「/api/events に繋ぐ」──→ サーバー (繋ぎっぱなし)
 
 誰かが発言
-サーバー ──「新しい発言だよ」──────→ ブラウザ（リロードせず画面に足す）
-サーバー ──「参加者が変わったよ」──→ ブラウザ（一覧を塗り直す）
-サーバー ──「版はこれだよ」────────→ ブラウザ（入れ替わったら読み直す）</code></pre>
+サーバー ──「新しい発言だよ」──────→ ブラウザ (リロードせず画面に足す)
+サーバー ──「参加者が変わったよ」──→ ブラウザ (一覧を塗り直す)
+サーバー ──「版はこれだよ」────────→ ブラウザ (入れ替わったら読み直す)</code></pre>
 
 	<h3>WebSocket ではなく SSE を選んだ理由</h3>
 
-	<p><strong>双方向が要らない。</strong>ブラウザからの送信は普通の HTTP（<code>/api/say</code>）で足りる。サーバー→ブラウザの片方向だけあればよく、その分だけ作りが単純になる。</p>
+	<p><strong>双方向が要らない。</strong>ブラウザからの送信は普通の HTTP (<code>/api/say</code>)で足りる。サーバー→ブラウザの片方向だけあればよく、その分だけ作りが単純になる。</p>
 
 	<p>受け側は標準の <code>EventSource</code> で書ける。<strong>切れたときの繋ぎ直しもブラウザが自分でやる。</strong></p>
 
@@ -1681,7 +1681,7 @@ LIMIT ?;</code></pre>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>recent</code> の絞り込み</td><td class="nowrap"><code>/api/history</code></td>
-				<td><code>archived_seq IS NULL AND room_id = ?</code> に、渡された分だけ <code>AND sent_at &gt;= ?</code>（<code>since_ts</code>）／ <code>AND sent_at &lt; ?</code>（<code>before_ts</code>）／ <code>AND (msg_body LIKE ? ESCAPE '\' [OR msg_body LIKE ? ESCAPE '\' …])</code>（<code>find</code>。<code>|</code> 区切りで OR）／ <code>AND from_connector_id = ?</code> を足す → <code>ORDER BY msg_seq DESC LIMIT ?</code>。条件は都度組み立てる（<a href="p260909-01-recentの絞り込み.html">計画</a>）</td>
+				<td><code>archived_seq IS NULL AND room_id = ?</code> に、渡された分だけ <code>AND sent_at &gt;= ?</code>(<code>since_ts</code>)／ <code>AND sent_at &lt; ?</code>(<code>before_ts</code>)／ <code>AND (msg_body LIKE ? ESCAPE '\' [OR msg_body LIKE ? ESCAPE '\' …])</code>(<code>find</code>。<code>|</code> 区切りで OR)／ <code>AND from_connector_id = ?</code> を足す → <code>ORDER BY msg_seq DESC LIMIT ?</code>。条件は都度組み立てる (<a href="p260909-01-recentの絞り込み.html">計画</a>)</td>
 			</tr>
 			<tr>
 				<td class="nowrap">未読取得</td><td class="nowrap"><code>/api/poll</code></td>
@@ -1703,7 +1703,7 @@ LIMIT ?;</code></pre>
 	</table>
 	</div>
 
-	<p>画面が使う場面（初期表示 ・ 遡り ・ 未読取得）は、すべて <code>(room_id, msg_seq)</code> のインデックス 1 本で引ける。<strong><code>sent_at</code> が条件に出るのは <code>recent</code> の絞り込みだけ</strong>で、そこは版 6 の <code>(room_id, sent_at)</code> が受ける（上の「<code>sent_at</code> のインデックス（版 6）」を参照）。</p>
+	<p>画面が使う場面 (初期表示 ・ 遡り ・ 未読取得)は、すべて <code>(room_id, msg_seq)</code> のインデックス 1 本で引ける。<strong><code>sent_at</code> が条件に出るのは <code>recent</code> の絞り込みだけ</strong>で、そこは版 6 の <code>(room_id, sent_at)</code> が受ける (上の「<code>sent_at</code> のインデックス (版 6)」を参照)。</p>
 
 	<h2>JSON のキー名は DB の列名に揃える</h2>
 
@@ -1722,11 +1722,11 @@ LIMIT ?;</code></pre>
   "reply_to_msg_seq": null
 }</code></pre>
 
-	<p><code>msg_kind</code> が <code>say</code> 以外のもの（<code>join</code> / <code>leave</code> / <code>archive</code> / <code>notice</code>）はサーバーが自動で積むシステム通知。<strong>既定の <code>wait</code> が起きるのは <code>archive</code> と <code>notice</code> まで</strong>で、参加・離脱では起きない（<code>--with-joins</code> を付けたときだけ受け取る）。</p>
+	<p><code>msg_kind</code> が <code>say</code> 以外のもの (<code>join</code> / <code>leave</code> / <code>archive</code> / <code>notice</code>)はサーバーが自動で積むシステム通知。<strong>既定の <code>wait</code> が起きるのは <code>archive</code> と <code>notice</code> まで</strong>で、参加・離脱では起きない (<code>--with-joins</code> を付けたときだけ受け取る)。</p>
 
 	<h2>long-poll の待ち時間の上限</h2>
 
-	<p>1 回の long-poll の上限は <strong>240 秒</strong>とする。<strong>それ以上サーバー側で引き延ばすと、途中で切れた接続を握り続けることになる</strong>ため。長く待ちたい側はクライアントが黙って待ち直す（「待ち直しの長さ」を参照）。</p>
+	<p>1 回の long-poll の上限は <strong>240 秒</strong>とする。<strong>それ以上サーバー側で引き延ばすと、途中で切れた接続を握り続けることになる</strong>ため。長く待ちたい側はクライアントが黙って待ち直す (「待ち直しの長さ」を参照)。</p>
 
 	<div class="callout callout-important">
 		<p><strong>この値を決めたときの根拠は、2 つとも後で崩れた。</strong>当時は「ツールの実行が 600 秒で打ち切られるので内側に収める」「待受けのサブエージェントが時間切れで異常終了すると区別できない」と考えていた。</p>
@@ -1767,7 +1767,7 @@ LIMIT ?;</code></pre>
 	</table>
 	</div>
 
-	<p>状態を増やすときは <code>presence.mjs</code> の <code>STATUS</code> に足す（処理中・離席など）。<strong>色は状態名から UI 側で決める</strong>。サーバーは状態名と日本語ラベルだけを返し、色を持たない。</p>
+	<p>状態を増やすときは <code>presence.mjs</code> の <code>STATUS</code> に足す (処理中・離席など)。<strong>色は状態名から UI 側で決める</strong>。サーバーは状態名と日本語ラベルだけを返し、色を持たない。</p>
 
 	<p>判定のたびに <code>online</code> かどうかを書き直さずに済むよう、状態から導ける 2 つの値も併せて返す。</p>
 
@@ -1808,10 +1808,10 @@ LIMIT ?;</code></pre>
 			<rect width="1000" height="250" fill="#ffffff"/>
 
 			<rect x="40"  y="96" width="380" height="52" rx="6" fill="url(#g-p1-05a)"/>
-			<text x="230" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">online（接続中）</text>
+			<text x="230" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">online (接続中)</text>
 
 			<rect x="420" y="96" width="230" height="52" rx="6" fill="url(#g-p1-05b)"/>
-			<text x="535" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">grace（一時切断）</text>
+			<text x="535" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">grace (一時切断)</text>
 
 			<rect x="650" y="96" width="310" height="52" rx="6" fill="url(#g-p1-05c)"/>
 			<text x="805" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">offline</text>
@@ -1846,7 +1846,7 @@ LIMIT ?;</code></pre>
 		<tbody>
 			<tr>
 				<td class="nowrap">指定</td>
-				<td><strong>コマンドの直後に <code>:id:</code> の形で明示する</strong>。既定値は設けず、指定が無ければエラーで止める。<code>--connector-id</code>（<code>-c</code>）は廃止した</td>
+				<td><strong>コマンドの直後に <code>:id:</code> の形で明示する</strong>。既定値は設けず、指定が無ければエラーで止める。<code>--connector-id</code>(<code>-c</code>)は廃止した</td>
 			</tr>
 			<tr>
 				<td class="nowrap">既定値を<br>置かない理由</td>
@@ -1882,7 +1882,7 @@ LIMIT ?;</code></pre>
 		</thead>
 		<tbody>
 			<tr>
-				<td class="nowrap"><strong>Rust 版</strong>（<code>aichat-rs</code>）</td>
+				<td class="nowrap"><strong>Rust 版</strong>(<code>aichat-rs</code>)</td>
 				<td class="nowrap"><code>src/cli-rs/</code></td>
 				<td class="num"><strong>6.41 MB</strong></td>
 				<td>どこでも</td>
@@ -1899,7 +1899,7 @@ LIMIT ?;</code></pre>
 
 	<div class="callout callout-caution">
 		<p><strong>直すときは 2 本とも直す。</strong>定義は <code>src/client/options.mjs</code> の 1 か所から配るが、振る舞いは写しになる。<strong>食い違いは目で読んで気づける差ではない。</strong><br>
-		守るのは <code>tests/cli-rs.test.mjs</code>（サーバーに繋がない分）と <code>tools/40_test/compare-cli.mjs</code>（実サーバーへ繋ぐ分）。<strong>かつて C# 版もあり（<a href="../40_issues/issues.html#i260918-01">i260918-01</a> で削除）、3 本の突き合わせだった。</strong></p>
+		守るのは <code>tests/cli-rs.test.mjs</code>(サーバーに繋がない分)と <code>tools/40_test/compare-cli.mjs</code>(実サーバーへ繋ぐ分)。<strong>かつて C# 版もあり (<a href="../40_issues/issues.html#i260918-01">i260918-01</a> で削除)、3 本の突き合わせだった。</strong></p>
 	</div>
 
 	<p>数字と測り方は <a href="../01_research/r260912-01-CLI実装のベンチマーク.html">CLI 実装のベンチマーク</a>、作った経緯は <a href="p260913-01-CLIをRustで書く.html">CLI を Rust で書く</a> にある。</p>
@@ -1911,17 +1911,17 @@ LIMIT ?;</code></pre>
 		</thead>
 		<tbody>
 			<tr><td class="nowrap"><code>join</code></td><td>参加登録。読み始めの位置はサーバーが記録する</td></tr>
-			<tr><td class="nowrap"><code>wait</code></td><td>long-poll。前回の続きから待ち、新着を整形して標準出力に書いて終了する。無ければ待ち直す（既定は最大 12 時間）。<strong>参加・離脱では起きない</strong>（<code>--with-joins</code> で含める）。<strong>渡したルームのどれかが初めてなら、案内を出してカーソルを立て、待たずに終わる</strong>（<a href="../40_issues/issues.html#i260909-01">i260909-01</a>）。実際に待ち始めるのは次の <code>wait</code> から</td></tr>
+			<tr><td class="nowrap"><code>wait</code></td><td>long-poll。前回の続きから待ち、新着を整形して標準出力に書いて終了する。無ければ待ち直す (既定は最大 12 時間)。<strong>参加・離脱では起きない</strong>(<code>--with-joins</code> で含める)。<strong>渡したルームのどれかが初めてなら、案内を出してカーソルを立て、待たずに終わる</strong>(<a href="../40_issues/issues.html#i260909-01">i260909-01</a>)。実際に待ち始めるのは次の <code>wait</code> から</td></tr>
 			<tr><td class="nowrap"><code>say</code></td><td>投稿。<code>--to :&lt;id&gt;:</code> で名指しできる</td></tr>
-			<tr><td class="nowrap"><code>recent</code></td><td>直近の履歴を表示する。<code>--since</code> / <code>--since-day</code> / <code>--since-hour</code> / <code>--before</code>（期間）・<code>--find</code>（検索）・<code>--from</code>（差出人）でも絞れる（<a href="p260909-01-recentの絞り込み.html">計画</a>）</td></tr>
+			<tr><td class="nowrap"><code>recent</code></td><td>直近の履歴を表示する。<code>--since</code> / <code>--since-day</code> / <code>--since-hour</code> / <code>--before</code>(期間)・<code>--find</code>(検索)・<code>--from</code>(差出人)でも絞れる (<a href="p260909-01-recentの絞り込み.html">計画</a>)</td></tr>
 			<tr><td class="nowrap"><code>who</code></td><td>参加者一覧とオンライン状態を表示する</td></tr>
 			<tr><td class="nowrap"><code>waiters</code></td><td>走っている待受けの本数を数える。<strong>サーバーには繋がず、手元のプロセスだけを見る</strong></td></tr>
 			<tr><td class="nowrap"><code>dump</code></td><td>全メッセージを JSONL に書き出す</td></tr>
 			<tr><td class="nowrap"><code>leave</code></td><td>離脱を知らせる。打たなくても、待受けが消えれば猶予のあとサーバーが流す</td></tr>
-			<tr><td class="nowrap"><code>archive</code></td><td>発言・参加者・ルームを片付ける。先に件数を出し、対象名の入力を求める（<a class="doclink" href="p260830-02-アーカイブ機能.html">アーカイブ機能の設計</a>）</td></tr>
+			<tr><td class="nowrap"><code>archive</code></td><td>発言・参加者・ルームを片付ける。先に件数を出し、対象名の入力を求める (<a class="doclink" href="p260830-02-アーカイブ機能.html">アーカイブ機能の設計</a>)</td></tr>
 			<tr><td class="nowrap"><code>archives</code></td><td>片付けたものの一覧を出す</td></tr>
 			<tr><td class="nowrap"><code>restore</code></td><td>片付けたものをまとめて戻す</td></tr>
-			<tr><td class="nowrap"><code>rename</code></td><td>参加者の ID を付け替える。<code>connectors</code> ・ <code>cursors</code> ・ <code>messages</code>（発言者 ・ 宛先 ・ 本文の <code>@旧ID</code>）・ <code>archives</code> を横断して直す。先に件数を出し、旧 ID の入力を求める。<strong>待受けが走っている間は断る</strong>（<a href="../40_issues/issues.html#i260909-02">i260909-02</a>）</td></tr>
+			<tr><td class="nowrap"><code>rename</code></td><td>参加者の ID を付け替える。<code>connectors</code> ・ <code>cursors</code> ・ <code>messages</code>(発言者 ・ 宛先 ・ 本文の <code>@旧ID</code>)・ <code>archives</code> を横断して直す。先に件数を出し、旧 ID の入力を求める。<strong>待受けが走っている間は断る</strong>(<a href="../40_issues/issues.html#i260909-02">i260909-02</a>)</td></tr>
 		</tbody>
 	</table>
 	</div>
@@ -1930,7 +1930,7 @@ LIMIT ?;</code></pre>
 
 	<h3>参加・離脱では起こさない</h3>
 
-	<p><strong>既定で <code>join</code> と <code>leave</code> を除く</strong>（<code>/api/poll</code> に <code>exclude=join,leave</code> を渡す）。<code>--with-joins</code> を付けたときだけ含める。</p>
+	<p><strong>既定で <code>join</code> と <code>leave</code> を除く</strong>(<code>/api/poll</code> に <code>exclude=join,leave</code> を渡す)。<code>--with-joins</code> を付けたときだけ含める。</p>
 
 	<p>絞るのは<strong>サーバー側</strong>である。受け取ってから CLI で捨てると、経過時間の数え方が壊れる。</p>
 
@@ -1961,7 +1961,7 @@ while (unlimited || waited &lt; limitSec) {
 		<tbody>
 			<tr>
 				<td class="nowrap"><code>--wait-hour</code> ・ <code>-w</code></td><td class="nowrap">時</td>
-				<td><strong>既定は 12 時間</strong>（渡さないときの値）。<code>0</code> で上限なし</td>
+				<td><strong>既定は 12 時間</strong>(渡さないときの値)。<code>0</code> で上限なし</td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>--wait-min</code></td><td class="nowrap">分</td>
@@ -1969,18 +1969,18 @@ while (unlimited || waited &lt; limitSec) {
 			</tr>
 			<tr>
 				<td class="nowrap"><code>--wait-sec</code></td><td class="nowrap">秒</td>
-				<td>テストが数秒で終われるように残してある。<strong>隠す仕組みは無いので <code>--help</code> にも出る</strong>（定義に足せば表示にも出る形にしてあるため）</td>
+				<td>テストが数秒で終われるように残してある。<strong>隠す仕組みは無いので <code>--help</code> にも出る</strong>(定義に足せば表示にも出る形にしてあるため)</td>
 			</tr>
 		</tbody>
 	</table>
 	</div>
 
 	<div class="callout callout-important">
-		<p><strong><code>--timeout</code> と <code>--retry-count</code> は廃止した。</strong>渡すと <code>--wait-*</code> への言い換えを添えてエラーで止まる。黙って無視すると、他プロジェクトの手順に残った <code>--retry-count 15</code> が効かないまま動いてしまう（<a class="doclink" href="p260901-01-CLIのオプションを整える.html">CLI のオプションを整える</a>）。</p>
+		<p><strong><code>--timeout</code> と <code>--retry-count</code> は廃止した。</strong>渡すと <code>--wait-*</code> への言い換えを添えてエラーで止まる。黙って無視すると、他プロジェクトの手順に残った <code>--retry-count 15</code> が効かないまま動いてしまう (<a class="doclink" href="p260901-01-CLIのオプションを整える.html">CLI のオプションを整える</a>)。</p>
 	</div>
 
 	<div class="callout callout-important">
-		<p><strong>既定を 480 秒にしていた前提は、実測で崩れた。</strong>「前面のツール実行は 600 秒で打ち切られる」と考えて回数の既定値と警告文を決めていたが、実際には<strong>打ち切られず背面に移されるだけで、プロセスは走り続けた</strong>。4 通り（親の前面 ・ 親の背面 ・ サブエージェントの前面 ・ サブエージェントの背面）で 8 時間の指定を起こし、いずれも走り切ることを確かめてある。</p>
+		<p><strong>既定を 480 秒にしていた前提は、実測で崩れた。</strong>「前面のツール実行は 600 秒で打ち切られる」と考えて回数の既定値と警告文を決めていたが、実際には<strong>打ち切られず背面に移されるだけで、プロセスは走り続けた</strong>。4 通り (親の前面 ・ 親の背面 ・ サブエージェントの前面 ・ サブエージェントの背面)で 8 時間の指定を起こし、いずれも走り切ることを確かめてある。</p>
 		<p>そこで既定を 12 時間に伸ばし、<strong>長さに対する警告も出さないことにした</strong>。待受けは張りっぱなしにするのが常態である。</p>
 	</div>
 
@@ -1996,7 +1996,7 @@ while (unlimited || waited &lt; limitSec) {
 
 	<p>順序が重要で、<strong>先に全体を HTML エスケープしてから記法を処理する</strong>。この順にすると、本文に生の HTML が含まれていてもタグとして解釈される経路が無くなる。</p>
 
-	<pre><code class="language-javascript">// 1. 先にすべてエスケープする（ここで raw HTML の混入経路が塞がれる）
+	<pre><code class="language-javascript">// 1. 先にすべてエスケープする (ここで raw HTML の混入経路が塞がれる)
 let s = src.replace(/&amp;/g, '&amp;amp;')
            .replace(/&lt;/g, '&amp;lt;')
            .replace(/&gt;/g, '&amp;gt;');
@@ -2038,8 +2038,8 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 	<h2>待受け常駐の流れ</h2>
 
 	<div class="callout callout-important">
-		<p><strong>いまはサブエージェントを使わない。</strong>バックグラウンド実行（<code>run_in_background</code>）に変えた。待って出力を返すだけの役目に、判断できる相手を割り当てる理由がないため。</p>
-		<p>以下の図と説明は設計当時のもの。<strong>流れ自体は変わらない</strong>（待つ → 着信で終わる → 通知が届く → 張り直す）ので残す。使い方は<a class="doclink" href="../../CHAT-USAGE.html">使い方</a>を参照。</p>
+		<p><strong>いまはサブエージェントを使わない。</strong>バックグラウンド実行 (<code>run_in_background</code>)に変えた。待って出力を返すだけの役目に、判断できる相手を割り当てる理由がないため。</p>
+		<p>以下の図と説明は設計当時のもの。<strong>流れ自体は変わらない</strong>(待つ → 着信で終わる → 通知が届く → 張り直す)ので残す。使い方は<a class="doclink" href="../../CHAT-USAGE.html">使い方</a>を参照。</p>
 	</div>
 
 	<figure class="fig">
@@ -2075,7 +2075,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 			<line x1="830" y1="62" x2="830" y2="400" stroke="#d9dfe8" stroke-width="2"/>
 
 			<rect x="470" y="140" width="20" height="80" rx="3" fill="#c7d4e8"/>
-			<text x="510" y="186" fill="#4a5568" font-size="12" font-family="sans-serif">待機（最大 240 秒）</text>
+			<text x="510" y="186" fill="#4a5568" font-size="12" font-family="sans-serif">待機 (最大 240 秒)</text>
 
 			<line x1="140" y1="100" x2="470" y2="100" stroke="#4a5568" stroke-width="1.6" marker-end="url(#m-p1-06)"/>
 			<text x="305" y="92" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">wait を実行させる</text>
@@ -2090,7 +2090,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 			<text x="305" y="254" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">終了 → 完了通知と本文</text>
 
 			<line x1="140" y1="318" x2="820" y2="318" stroke="#4a5568" stroke-width="1.6" marker-end="url(#m-p1-06)"/>
-			<text x="480" y="310" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">POST /api/say（返信）</text>
+			<text x="480" y="310" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">POST /api/say (返信)</text>
 
 			<line x1="140" y1="374" x2="470" y2="374" stroke="#4a5568" stroke-width="1.6" marker-end="url(#m-p1-06)" stroke-dasharray="6 4"/>
 			<text x="305" y="366" text-anchor="middle" fill="#1c2330" font-size="13" font-family="sans-serif">再び wait を張り直す</text>
@@ -2111,39 +2111,39 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 
 	<pre><code class="language-text">ai-chat-lite/
   README.html                      … 概要・セットアップ・資料へのリンク
-  CHAT-USAGE.html                  … 他プロジェクトからの使い方（AI が読む）
+  CHAT-USAGE.html                  … 他プロジェクトからの使い方 (AI が読む)
   AGENTS.md                        … ローカルルールを 1 行で取り込む
-  bin/aichat.exe                   … Rust 版 CLI（Git 管理外）。公開インターフェース（i260922-01）。PATH には bin/ だけを入れる
-  bin/aichat-node・aichat-node.cmd … node 版 CLI のランチャー（aichat.exe の代替。i260924-06 で bin/ へ移した）
-  target/aichat-rs.exe             … Rust 版 CLI のビルド出力（Git 管理外。install-aichat.mjs が bin/aichat.exe へ写す。共通ルールは他言語のビルド出力先を言語ごとの既定に読み替えるとし、Rust の例に target/ を挙げている）
-  tools/50_run/aichat-bun・aichat-bun.cmd … bun 優先・node 代替の開発用ランチャー（突き合わせ用。i260924-06 で root から移した）
+  bin/aichat.exe                   … Rust 版 CLI (Git 管理外)。公開インターフェース (i260922-01)。PATH には bin/ だけを入れる
+  bin/aichat-node・aichat-node.cmd … node 版 CLI のランチャー (aichat.exe の代替。i260924-06 で bin/ へ移した)
+  target/aichat-rs.exe             … Rust 版 CLI のビルド出力 (Git 管理外。install-aichat.mjs が bin/aichat.exe へ写す。共通ルールは他言語のビルド出力先を言語ごとの既定に読み替えるとし、Rust の例に target/ を挙げている)
+  tools/50_run/aichat-bun・aichat-bun.cmd … bun 優先・node 代替の開発用ランチャー (突き合わせ用。i260924-06 で root から移した)
   .gitignore
-  deploy/node-ai-chat-lite-winsw.exe   … WinSW 本体（Git 管理外）
+  deploy/node-ai-chat-lite-winsw.exe   … WinSW 本体 (Git 管理外)
   deploy/node-ai-chat-lite-winsw.xml   … サービス定義
-  deploy/node-ai-chat-lite.exe         … node.exe のコピー（Git 管理外・98.9 MB）
+  deploy/node-ai-chat-lite.exe         … node.exe のコピー (Git 管理外・98.9 MB)
   deploy/install-service.cmd           … サービスの登録と開始
   deploy/uninstall-service.cmd         … サービスの停止と登録解除
   etc/c.bat
-  docs/css/style.css               … 共通 CSS（notes から相対参照する）
+  docs/css/style.css               … 共通 CSS (notes から相対参照する)
   docs/ファイルで排他する.html     … 公開資料
   src/
     server/main.mjs                … 起動口。印が消えるのを待ってから server を読む
     server/listen.mjs              … 待ち受けだけを始める。受け口はあとから差し替える
     server/server.mjs              … HTTP ルーティング・SSE・long-poll
-    server/serve.mjs               … HTTP の応答を組み立てる（JSON・静的ファイル）
+    server/serve.mjs               … HTTP の応答を組み立てる (JSON・静的ファイル)
     server/names.mjs               … 本番で断る ID・ルームの判定。DB を開かずに確かめられる
     server/hub.mjs                 … 新着を待っている相手をまとめて管理する
-    server/store.mjs               … node:sqlite（投稿・範囲取得）。形は作らず、揃っているかだけ確かめる
+    server/store.mjs               … node:sqlite (投稿・範囲取得)。形は作らず、揃っているかだけ確かめる
     server/tables.mjs              … 版が作るテーブルの名前。store.mjs が確かめる一覧
     server/migrate.mjs             … 版を当てる。versions を作り、足りない分だけ順に当てる
-    server/backup.mjs              … 控えを取る（VACUUM INTO）。世代を整理する
+    server/backup.mjs              … 控えを取る (VACUUM INTO)。世代を整理する
     server/presence.mjs            … online / grace / offline の 3 状態を判定
     server/config.mjs              … ポート等の既定値
     server/time.mjs                … JST の固定長文字列を作る
     server/log.mjs                 … 日時とレベルを付けて 1 行 1 件で出す
     server/maintenance.mjs         … _data\MAINTENANCE を見張る
     server/maintenance-handler.mjs … メンテナンス中の受け口。DB を触らない
-    client/chat.mjs                … CLI クライアント（AI・人間 共用）
+    client/chat.mjs                … CLI クライアント (AI・人間 共用)
     client/options.mjs             … コマンドとオプションの定義。2 本の CLI の出どころ
     client/since-parse.mjs         … recent の --since / --before の日時を読む
     client/waiters-pick.mjs        … 走っている待受けの読み取りと、止めてよいものの分け方
@@ -2153,7 +2153,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
     web/js/markdown.js             … 本文の変換。エスケープを先に済ませる
     web/js/stale.js                … 古くなった参加・離脱を画面から外す判定
     scripts/20_migrate/            … ver_NNNNNN/*.sql。DB の形の出どころ
-    cli-rs/                        … Rust 版 CLI の原本（Cargo プロジェクト。外部クレートを使わない）
+    cli-rs/                        … Rust 版 CLI の原本 (Cargo プロジェクト。外部クレートを使わない)
   tests/
     helpers/prepare-db.mjs         … 置き場を作り直して版を当てる。store より先に呼ぶ
     helpers/cli-args.mjs           … ID の囲みなど、CLI の引数を組み立てる
@@ -2197,8 +2197,8 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
   notes/40_issues/                 … これから解決する課題
   notes/60_releases/               … 変わったことの記録
   notes/90_rules/                  … ローカルルールと運用の手引き
-  logs/                            … サービスのログ（Git 管理外）
-  _data/                           … chat.db・MAINTENANCE（Git 管理外）
+  logs/                            … サービスのログ (Git 管理外)
+  _data/                           … chat.db・MAINTENANCE (Git 管理外)
   tmp/  etc/                       … Git 管理外</code></pre>
 
 	<p>WinSW 関係の 3 つと、登録・解除のスクリプト 2 本は <code>deploy/</code> に並べる。<code>node.exe</code> のコピーを隣に置くことで、XML から絶対パスを追い出せる。<code>arguments</code> と <code>logpath</code> は、<code>deploy/</code> から見てルートの <code>src</code> と <code>logs</code> を <code>..\</code> で指す。</p>
@@ -2217,25 +2217,25 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 				<td class="nowrap"><code>AICHAT_PORT</code></td>
 				<td class="nowrap">サーバー<br>CLI</td>
 				<td class="nowrap"><code>8787</code></td>
-				<td>待ち受けポート。塞がっているときに変える。<strong>CLI は接続先には使わない</strong>（案内文に出す既定の値としてだけ読む）</td>
+				<td>待ち受けポート。塞がっているときに変える。<strong>CLI は接続先には使わない</strong>(案内文に出す既定の値としてだけ読む)</td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>AICHAT_DATA</code></td>
 				<td class="nowrap">サーバー / CLI</td>
 				<td class="nowrap"><code>_data</code></td>
-				<td>データの置き場。DB も、バックアップ・メンテナンスの印も、すべてこの下に置く。<strong>通常は設定しない</strong>（既定のままサービスからでも正しく解決される。<a href="#ch03">DB の置き場</a>を参照）。テストのときだけ差し替える。<strong>ここが既定でなければテスト用として動く</strong>（<a href="p260831-01-テスト環境の分離.html">テスト環境の分離</a>を参照）。<strong>CLI もこれだけは読む</strong>——テスト用の置き場かどうかで、待受けの記録を書くかどうかが変わるため（接続先と ID は環境変数では渡せない）</td>
+				<td>データの置き場。DB も、バックアップ・メンテナンスの印も、すべてこの下に置く。<strong>通常は設定しない</strong>(既定のままサービスからでも正しく解決される。<a href="#ch03">DB の置き場</a>を参照)。テストのときだけ差し替える。<strong>ここが既定でなければテスト用として動く</strong>(<a href="p260831-01-テスト環境の分離.html">テスト環境の分離</a>を参照)。<strong>CLI もこれだけは読む</strong>——テスト用の置き場かどうかで、待受けの記録を書くかどうかが変わるため (接続先と ID は環境変数では渡せない)</td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>AICHAT_LEAVE_GRACE_MS</code></td>
 				<td class="nowrap">サーバー</td>
 				<td class="nowrap"><code>5000</code></td>
-				<td>接続が切れてから「離脱しました」を積むまでの猶予（ミリ秒）。リロードでは積まないための待ち。テストもこの値を見て後始末の待ち時間を決める</td>
+				<td>接続が切れてから「離脱しました」を積むまでの猶予 (ミリ秒)。リロードでは積まないための待ち。テストもこの値を見て後始末の待ち時間を決める</td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>AICHAT_LOCK_POLL_MS</code></td>
 				<td class="nowrap">バックアップ</td>
 				<td class="nowrap"><code>30000</code></td>
-				<td>バックアップ中の印が消えるのを待つ間隔（ミリ秒）</td>
+				<td>バックアップ中の印が消えるのを待つ間隔 (ミリ秒)</td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>AICHAT_LOCK_MAX_TRIES</code></td>
@@ -2253,7 +2253,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 				<td class="nowrap"><s><code>AICHAT_URL</code></s></td>
 				<td class="nowrap">CLI</td>
 				<td class="nowrap">—</td>
-				<td><strong>廃止した。</strong><code>--url</code>（<code>-u</code>）か <code>--port</code>（<code>-p</code>）で渡す。<strong>既定値は持たない</strong></td>
+				<td><strong>廃止した。</strong><code>--url</code>(<code>-u</code>)か <code>--port</code>(<code>-p</code>)で渡す。<strong>既定値は持たない</strong></td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>AICHAT_MANAGED</code></td>
@@ -2335,7 +2335,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 
 	<div class="callout callout-important">
 		<p><strong>高いものは 1 回にまとめる。</strong>同じテーブルを 2 回作り直すのは無駄で、途中で落ちたときの切り分けも難しくなる。</p>
-		<p>逆に<strong>低いものは分けて構わない</strong>。<code>archives</code> テーブルを版 3 に分けたのはこれに当たる。作り直しが要る <code>msg_kind</code> の <code>CHECK</code>（<code>archive</code> と <code>notice</code> を足す）は版 2 で済ませてある。</p>
+		<p>逆に<strong>低いものは分けて構わない</strong>。<code>archives</code> テーブルを版 3 に分けたのはこれに当たる。作り直しが要る <code>msg_kind</code> の <code>CHECK</code>(<code>archive</code> と <code>notice</code> を足す)は版 2 で済ませてある。</p>
 	</div>
 
 	<p>この見立てがあったため、<code>archived_seq</code> は<strong>使う前から置いてある</strong>。あとから足すと <code>messages</code> の作り直しになるためで、列を足すだけなら安いという判断ではなく、<strong>足す時期を選べたから安く済ませた</strong>ということである。</p>
@@ -2351,7 +2351,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000003/</code></td><td><code>archives</code> テーブルと <code>archived_seq</code> の索引</td></tr>
 			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000004/</code></td><td><code>messages.ref_archived_seq</code>。片付けの知らせが指す番号</td></tr>
 			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000005/</code></td><td><code>messages.reply_to_msg_seq</code>。返信元の番号。あわせて日時の区切りを <code>/</code> に変え、既存の行も書き換える</tr>
-			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000006/</code></td><td><code>messages_ix_room_id_sent_at</code>。<code>recent --since</code> / <code>--before</code> の絞り込みが効くようにする（<a href="../40_issues/issues.html#i260830-03">i260830-03</a>）</td></tr>
+			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000006/</code></td><td><code>messages_ix_room_id_sent_at</code>。<code>recent --since</code> / <code>--before</code> の絞り込みが効くようにする (<a href="../40_issues/issues.html#i260830-03">i260830-03</a>)</td></tr>
 			<tr><td class="nowrap"><code>src/server/migrate.mjs</code></td><td>版を当てる処理。<strong><code>store.mjs</code> とは別の接続で開く</strong></td></tr>
 		</tbody>
 	</table>
@@ -2377,7 +2377,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 
 	<div class="callout callout-caution">
 		<p>他の 4 つのテーブルは <code>src/scripts/20_migrate/</code> の SQL が形の出どころだが、<strong><code>versions</code> だけは <code>migrate.mjs</code> の <code>CREATE TABLE IF NOT EXISTS</code> が出どころ</strong>である。版の状況を読むために先に必要なので、版の SQL では作れない。</p>
-		<p><strong>作り直す版を足すときも、この文字列は書き換えない。</strong>書き換えると空の DB でだけ壊れる（新しい形が先にでき、そこへ旧→新の作り直しが当たり、消した列を <code>SELECT</code> して落ちる）。既存の DB では起きないため、気づくのが最後になる。</p>
+		<p><strong>作り直す版を足すときも、この文字列は書き換えない。</strong>書き換えると空の DB でだけ壊れる (新しい形が先にでき、そこへ旧→新の作り直しが当たり、消した列を <code>SELECT</code> して落ちる)。既存の DB では起きないため、気づくのが最後になる。</p>
 	</div>
 
 	<h3>版を足す手順</h3>
@@ -2388,18 +2388,18 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 			<tr><th class="num nowrap">#</th><th>やること</th></tr>
 		</thead>
 		<tbody>
-			<tr><td class="num">1</td><td>次の番号の <code>src/scripts/20_migrate/ver_NNNNNN/</code> を作る。<strong>番号は連続させる</strong>（飛んでいると起動が止まる）</td></tr>
-			<tr><td class="num">2</td><td>その下に <code>001-なにをするか.sql</code> を置く。<strong>1 つの版に複数置ける</strong>（名前順に当たる）</td></tr>
-			<tr><td class="num">3</td><td>テーブルを増やしたときは <code>src/server/tables.mjs</code> の <code>REQUIRED_TABLES</code> に足す。<strong>形そのものは書かない</strong>。ただし <code>versions</code> は入れない（<code>migrate.mjs</code> 自身が最初に作るため、<code>store.mjs</code> が開く時点で必ず在る）。<strong>入れ忘れは <code>tests/tables.test.mjs</code> が落とす</strong></td></tr>
+			<tr><td class="num">1</td><td>次の番号の <code>src/scripts/20_migrate/ver_NNNNNN/</code> を作る。<strong>番号は連続させる</strong>(飛んでいると起動が止まる)</td></tr>
+			<tr><td class="num">2</td><td>その下に <code>001-なにをするか.sql</code> を置く。<strong>1 つの版に複数置ける</strong>(名前順に当たる)</td></tr>
+			<tr><td class="num">3</td><td>テーブルを増やしたときは <code>src/server/tables.mjs</code> の <code>REQUIRED_TABLES</code> に足す。<strong>形そのものは書かない</strong>。ただし <code>versions</code> は入れない (<code>migrate.mjs</code> 自身が最初に作るため、<code>store.mjs</code> が開く時点で必ず在る)。<strong>入れ忘れは <code>tests/tables.test.mjs</code> が落とす</strong></td></tr>
 			<tr><td class="num">4</td><td>テストを流す。<strong>空の DB から全部当てて最新の形になるか</strong>を <code>migrate.test.mjs</code> が見る</td></tr>
-			<tr><td class="num">5</td><td><strong>本番の写しで予行する</strong>（<a class="doclink" href="../90_rules/db-version.html">手引き</a>）。控えを取り、テスト環境で当ててから進む</td></tr>
+			<tr><td class="num">5</td><td><strong>本番の写しで予行する</strong>(<a class="doclink" href="../90_rules/db-version.html">手引き</a>)。控えを取り、テスト環境で当ててから進む</td></tr>
 			<tr><td class="num">6</td><td>サーバーを起動し直す。<strong>起動時に自動で当たる</strong></td></tr>
 		</tbody>
 	</table>
 	</div>
 
 	<div class="callout callout-caution">
-		<p><strong>当て済みの SQL を書き換えてはいけない。</strong>当て済みの環境では二度と実行されないため、書き換えると<strong>環境ごとに形が違う状態</strong>になる。指紋（<code>sql_sha256</code>）を記録しており、食い違うと起動が止まる。</p>
+		<p><strong>当て済みの SQL を書き換えてはいけない。</strong>当て済みの環境では二度と実行されないため、書き換えると<strong>環境ごとに形が違う状態</strong>になる。指紋 (<code>sql_sha256</code>)を記録しており、食い違うと起動が止まる。</p>
 		<p>直したいときは<strong>新しい版として足す</strong>。</p>
 	</div>
 
@@ -2413,19 +2413,19 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 		<tbody>
 			<tr>
 				<td class="nowrap">失敗したとき</td>
-				<td><strong>1 版 = 1 トランザクション。巻き戻して起動を止める。</strong>版は上がらない。SQLite は DDL もトランザクションに入る（<code>PRAGMA</code> と <code>VACUUM</code> は入らない）</td>
+				<td><strong>1 版 = 1 トランザクション。巻き戻して起動を止める。</strong>版は上がらない。SQLite は DDL もトランザクションに入る (<code>PRAGMA</code> と <code>VACUUM</code> は入らない)</td>
 			</tr>
 			<tr>
 				<td class="nowrap">控え</td>
-				<td><strong>当てる前に自動で取る</strong>（<code>VACUUM INTO</code>）。<code>_data/pre-ver-NNNNNN-yyyymmddhhmmss.db</code>。稼働中でも 24 ミリ秒で終わることを実測している</td>
+				<td><strong>当てる前に自動で取る</strong>(<code>VACUUM INTO</code>)。<code>_data/pre-ver-NNNNNN-yyyymmddhhmmss.db</code>。稼働中でも 24 ミリ秒で終わることを実測している</td>
 			</tr>
 			<tr>
-				<td class="nowrap">下り（元に戻す）</td>
+				<td class="nowrap">下り (元に戻す)</td>
 				<td><strong>持たない。</strong>SQLite では列の削除もできず、下りを正しく書き続けるのは重い。<strong>戻すなら控えから戻す</strong></td>
 			</tr>
 			<tr>
 				<td class="nowrap">すでに使われている DB</td>
-				<td><code>versions</code> を持たない DB は<strong>版 1 として記録するだけ</strong>（当てない）。改名の前から動いている DB はすでに版 1 の形である</td>
+				<td><code>versions</code> を持たない DB は<strong>版 1 として記録するだけ</strong>(当てない)。改名の前から動いている DB はすでに版 1 の形である</td>
 			</tr>
 			<tr>
 				<td class="nowrap">当てる場所</td>
@@ -2441,7 +2441,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 
 	<div class="callout callout-important">
 		<p><strong>定義は版の SQL だけにある。</strong><code>store.mjs</code> は形を作らず、開いたときに<strong>揃っているかを確かめて、足りなければ止める</strong>。</p>
-		<p>はじめは <code>store.mjs</code> の <code>CREATE TABLE IF NOT EXISTS</code> を残していたが、<strong>2 つの困りごとが出たのでやめた</strong>。定義が 2 か所にあると食い違っても静かに動くこと、そして<strong><code>AICHAT_DATA</code> を立てずに読み込むと本番の DB にテーブルが作られること</strong>である（<a href="../40_issues/issues.html#i260902-01">i260902-01</a>）。後者は実際に起き、版 3 を当てられない状態になった。</p>
+		<p>はじめは <code>store.mjs</code> の <code>CREATE TABLE IF NOT EXISTS</code> を残していたが、<strong>2 つの困りごとが出たのでやめた</strong>。定義が 2 か所にあると食い違っても静かに動くこと、そして<strong><code>AICHAT_DATA</code> を立てずに読み込むと本番の DB にテーブルが作られること</strong>である (<a href="../40_issues/issues.html#i260902-01">i260902-01</a>)。後者は実際に起き、版 3 を当てられない状態になった。</p>
 	</div>
 
 	<h3>版の SQL に古い名前が残るのは正しい</h3>
@@ -2489,10 +2489,10 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 			</tr>
 			<tr>
 				<td class="nowrap">それ以外の <code>/api/*</code></td><td class="nowrap"><strong>503</strong></td>
-				<td>理由と <code>Retry-After</code>（印の「見込み: N 分」から。無ければ 60 秒）</td>
+				<td>理由と <code>Retry-After</code>(印の「見込み: N 分」から。無ければ 60 秒)</td>
 			</tr>
 			<tr>
-				<td class="nowrap">画面（<code>/</code>）</td><td class="nowrap"><strong>200</strong></td>
+				<td class="nowrap">画面 (<code>/</code>)</td><td class="nowrap"><strong>200</strong></td>
 				<td>HTML は返す。中で <code>/api/version</code> を見て帯を出し、入力欄を使えなくする</td>
 			</tr>
 		</tbody>
@@ -2511,19 +2511,19 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 			<tr><th class="num nowrap">#</th><th>手順</th></tr>
 		</thead>
 		<tbody>
-			<tr><td class="num">0</td><td><strong>これから止めることを <code>public</code> に流し、10 秒待つ。</strong>印を置く前に投稿する（置いてからでは受け付けてもらえない）</td></tr>
+			<tr><td class="num">0</td><td><strong>これから止めることを <code>public</code> に流し、10 秒待つ。</strong>印を置く前に投稿する (置いてからでは受け付けてもらえない)</td></tr>
 			<tr><td class="num">1</td><td><code>_data\MAINTENANCE</code> を作る。中身に理由を書くとログと 503 に出る。<code>見込み: N 分</code> の行を足すと <code>Retry-After</code> になる</td></tr>
-			<tr><td class="num">2</td><td>サーバーを落とす（<code>chat.mjs restart</code> でよい。起動して待ち受けだけ始め、DB は開かない）</td></tr>
+			<tr><td class="num">2</td><td>サーバーを落とす (<code>chat.mjs restart</code> でよい。起動して待ち受けだけ始め、DB は開かない)</td></tr>
 			<tr><td class="num">3</td><td>DB を好きに触る</td></tr>
 			<tr><td class="num">4</td><td>印を消す → <strong>受け口が通常に切り替わり、再開したことを <code>public</code> に流す</strong></td></tr>
 		</tbody>
 	</table>
 	</div>
 
-	<p><code>restore.ps1</code> は 0 と 1 を自分で行う。<strong>素の <code>restart</code>（コードの入れ替え）では何も流さない</strong>ので、開発中にルームが起動メッセージで埋まることはない。</p>
+	<p><code>restore.ps1</code> は 0 と 1 を自分で行う。<strong>素の <code>restart</code>(コードの入れ替え)では何も流さない</strong>ので、開発中にルームが起動メッセージで埋まることはない。</p>
 
 	<pre><code class="language-text">2026/08/30 07:56:57.625 WARN  メンテナンスの印があるため、起動を保留します
-2026/08/30 07:56:57.625 WARN    印: （実体）\_data\MAINTENANCE
+2026/08/30 07:56:57.625 WARN    印: (実体)\_data\MAINTENANCE
 2026/08/30 07:56:57.625 WARN    理由: DB を整理している
 2026/08/30 07:56:57.625 WARN    この印を消すと、自分から起動します
 2026/08/30 07:57:19.601 INFO  メンテナンスの印が消えました。起動を続けます</code></pre>
@@ -2533,7 +2533,7 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 	<p><code>store.mjs</code> は<strong>読み込んだ時点で DB を開く</strong>。<code>server.mjs</code> をそのまま実行すると、印を見る前にファイルを掴んでしまう。そこで起動口を <code>main.mjs</code> に分け、印が消えるのを待ってから動的 <code>import</code> で読み込む。</p>
 
 	<pre><code class="language-javascript">// main.mjs
-// 印があっても待ち受けは先に始める。受け口はメンテナンス用（DB を触らない）
+// 印があっても待ち受けは先に始める。受け口はメンテナンス用 (DB を触らない)
 const servers = await startListening(createMaintenanceHandler(info));
 
 const waited = await waitUntilCleared();
@@ -2552,7 +2552,7 @@ if (waited) announceResumed(info.since);</code></pre>
 		</thead>
 		<tbody>
 			<tr><td class="nowrap"><code>listen.mjs</code></td><td>待ち受けを始める。受け口を差し替える。<strong>DB を触らない</strong></td></tr>
-			<tr><td class="nowrap"><code>maintenance-handler.mjs</code></td><td>メンテナンス中の受け口（200 / 503 / 静的）。<strong>DB を触らない</strong></td></tr>
+			<tr><td class="nowrap"><code>maintenance-handler.mjs</code></td><td>メンテナンス中の受け口 (200 / 503 / 静的)。<strong>DB を触らない</strong></td></tr>
 			<tr><td class="nowrap"><code>serve.mjs</code></td><td><code>sendJson</code> と静的ファイルの配信。両方の受け口が使う</td></tr>
 		</tbody>
 	</table>
@@ -2619,7 +2619,7 @@ if (waited) announceResumed(info.since);</code></pre>
 
 	<p>WinSW が振り分ける先は 3 つになる。</p>
 
-	<pre><code class="language-text">logs\…-winsw.out.log        … 標準出力（起動ログ・警告）
+	<pre><code class="language-text">logs\…-winsw.out.log        … 標準出力 (起動ログ・警告)
 logs\…-winsw.err.log        … 標準エラー。ERROR だけがここに来る
 logs\…-winsw.wrapper.log    … WinSW 自身。起動・停止・子プロセスの ID</code></pre>
 
@@ -2647,7 +2647,7 @@ logs\…-winsw.wrapper.log    … WinSW 自身。起動・停止・子プロセ�
 
 	<h2>サービスとして常駐させる</h2>
 
-	<p><code>tools/50_run/</code> の手動起動は開発用で、コンソールを閉じるとサーバーも止まる。常用するには PC の起動時に自動で立ち上がってほしいため、Windows サービスとして登録する。<strong>WinSW（Windows Service Wrapper）</strong>を使う。</p>
+	<p><code>tools/50_run/</code> の手動起動は開発用で、コンソールを閉じるとサーバーも止まる。常用するには PC の起動時に自動で立ち上がってほしいため、Windows サービスとして登録する。<strong>WinSW (Windows Service Wrapper)</strong>を使う。</p>
 
 	<h3>WinSW を使う理由</h3>
 
@@ -2751,9 +2751,9 @@ logs\…-winsw.wrapper.log    … WinSW 自身。起動・停止・子プロセ�
 			<tr><th class="nowrap">確認項目</th><th>結果</th></tr>
 		</thead>
 		<tbody>
-			<tr><td class="nowrap">起動</td><td><code>v26.8.1</code>。コピー 1 つで動く（付随ファイルは要らない）</td></tr>
+			<tr><td class="nowrap">起動</td><td><code>v26.8.1</code>。コピー 1 つで動く (付随ファイルは要らない)</td></tr>
 			<tr><td class="nowrap"><code>node:sqlite</code></td><td>動作する</td></tr>
-			<tr><td class="nowrap">日本語ロケール</td><td>動作する（ICU が実行ファイルに埋め込まれている）</td></tr>
+			<tr><td class="nowrap">日本語ロケール</td><td>動作する (ICU が実行ファイルに埋め込まれている)</td></tr>
 			<tr><td class="nowrap">プロセス名</td><td><code>node-ai-chat-lite</code> として見える</td></tr>
 			<tr><td class="nowrap">サイズ</td><td>98.9 MB</td></tr>
 		</tbody>
@@ -2762,7 +2762,7 @@ logs\…-winsw.wrapper.log    … WinSW 自身。起動・停止・子プロセ�
 
 	<h3>XML にパスを書かない</h3>
 
-	<p>WinSW は相対パスを<strong>自身の実行ファイルがあるフォルダ（<code>deploy/</code>）を基準に</strong>解決する。<code>executable</code> は隣の exe を指し、ルートの <code>src</code> は <code>..\</code> で指すため、絶対パスは 1 つも書かずに済む。</p>
+	<p>WinSW は相対パスを<strong>自身の実行ファイルがあるフォルダ (<code>deploy/</code>)を基準に</strong>解決する。<code>executable</code> は隣の exe を指し、ルートの <code>src</code> は <code>..\</code> で指すため、絶対パスは 1 つも書かずに済む。</p>
 
 	<pre><code class="language-xml">&lt;service&gt;
   &lt;id&gt;node-ai-chat-lite&lt;/id&gt;
@@ -2785,9 +2785,9 @@ logs\…-winsw.wrapper.log    … WinSW 自身。起動・停止・子プロセ�
   &lt;startmode&gt;Automatic&lt;/startmode&gt;
 &lt;/service&gt;</code></pre>
 
-	<p><code>workingdirectory</code> は省略している。<strong>子プロセスの作業フォルダは WinSW の置き場（<code>deploy/</code>）になる</strong>（2026-10-07 に <code>deploy/</code> へ移して実測した。<code>arguments</code> の <code>..\src\server\main.mjs</code> が解決され、<code>err.log</code> は 0 バイトのまま）。サーバーは作業フォルダに依存しない（<code>ROOT</code> は <code>config.mjs</code> が自分のファイルの位置から決める）ため、データの置き場は動かない。</p>
+	<p><code>workingdirectory</code> は省略している。<strong>子プロセスの作業フォルダは WinSW の置き場 (<code>deploy/</code>)になる</strong>(2026-10-07 に <code>deploy/</code> へ移して実測した。<code>arguments</code> の <code>..\src\server\main.mjs</code> が解決され、<code>err.log</code> は 0 バイトのまま)。サーバーは作業フォルダに依存しない (<code>ROOT</code> は <code>config.mjs</code> が自分のファイルの位置から決める)ため、データの置き場は動かない。</p>
 
-	<p><code>logpath</code> だけは、サービス（WinSW 本体）のカレントが <code>C:\Windows\System32</code> なので、<code>%BASE%</code>（WinSW の置き場）を前に付けて指す。</p>
+	<p><code>logpath</code> だけは、サービス (WinSW 本体)のカレントが <code>C:\Windows\System32</code> なので、<code>%BASE%</code>(WinSW の置き場)を前に付けて指す。</p>
 
 	<h3>登録は実体のフォルダで行う</h3>
 
@@ -2795,10 +2795,10 @@ logs\…-winsw.wrapper.log    … WinSW 自身。起動・停止・子プロセ�
 		<p><strong>X: のような subst ドライブから install してはいけない。</strong>WinSW は登録時、サービスの <code>ImagePath</code> に自分のフルパスを書き込む。割り当てはログオンセッション単位に閉じているため、<code>X:\…</code> が記録されるとサービス側からは解決できず起動に失敗する。<code>subst</code> コマンドで実体を確認し、<strong><code>C:\</code> 側の実際のフォルダへ移動してから登録する</strong>。</p>
 	</div>
 
-	<pre><code class="language-batch">:: 実体のフルパスで実行する（管理者のコンソールから）
-C:\（実体のパス）\ai-chat-lite\deploy\install-service.cmd</code></pre>
+	<pre><code class="language-batch">:: 実体のフルパスで実行する (管理者のコンソールから)
+C:\ (実体のパス)\ai-chat-lite\deploy\install-service.cmd</code></pre>
 
-	<p>スクリプトは、C: 以外から呼ばれたとき・必要なファイルが隣に無いとき・すでに登録されているとき・管理者でないときに、WinSW を呼ぶ前に終了コード 1 で止まる。登録のあと、登録された実行ファイルのパスを表示する（ドライブを目で確かめる）。</p>
+	<p>スクリプトは、C: 以外から呼ばれたとき・必要なファイルが隣に無いとき・すでに登録されているとき・管理者でないときに、WinSW を呼ぶ前に終了コード 1 で止まる。登録のあと、登録された実行ファイルのパスを表示する (ドライブを目で確かめる)。</p>
 
 	<p>一度登録してしまえば、以降の <code>start</code> / <code>stop</code> はどこから呼んでも構わない。XML 側にパスを書いていないのは、この登録時のフルパスだけを正しくすれば済むようにするため。</p>
 
@@ -2810,7 +2810,7 @@ C:\（実体のパス）\ai-chat-lite\deploy\install-service.cmd</code></pre>
 			<tr><th class="nowrap">コマンド</th><th>動作</th></tr>
 		</thead>
 		<tbody>
-			<tr><td class="nowrap"><code>install</code></td><td>サービスとして登録する（実体のフォルダで実行する）</td></tr>
+			<tr><td class="nowrap"><code>install</code></td><td>サービスとして登録する (実体のフォルダで実行する)</td></tr>
 			<tr><td class="nowrap"><code>start</code> / <code>stop</code></td><td>開始・停止する</td></tr>
 			<tr><td class="nowrap"><code>restart</code></td><td>再起動する</td></tr>
 			<tr><td class="nowrap"><code>status</code></td><td>状態を表示する</td></tr>
@@ -2870,7 +2870,7 @@ C:\（実体のパス）\ai-chat-lite\deploy\install-service.cmd</code></pre>
 			</tr>
 			<tr>
 				<td class="num">2</td><td class="nowrap">実行ファイルは Git に入れない</td>
-				<td><code>node-ai-chat-lite.exe</code>（98.9 MB）と <code>node-ai-chat-lite-winsw.exe</code>。<code>logs/</code> も含めて <code>.gitignore</code> に足す</td>
+				<td><code>node-ai-chat-lite.exe</code>(98.9 MB)と <code>node-ai-chat-lite-winsw.exe</code>。<code>logs/</code> も含めて <code>.gitignore</code> に足す</td>
 			</tr>
 			<tr>
 				<td class="num">3</td><td class="nowrap">Node の更新が自動では乗らない</td>

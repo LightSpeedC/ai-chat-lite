@@ -32,7 +32,7 @@ async function failing(args) {
 describe('繋ぎ直す回数の決め', () => {
 	/*
 	 * 実際に粘らせると 1 回で 10 分かかるため、ここでは表の値だけを確かめる。
-	 * 粘る動き自体は「粘らないコマンド」で見る（下の describe）。
+	 * 粘る動き自体は「粘らないコマンド」で見る (下の describe)。
 	 */
 	test('wait はいちばん長く粘る', () => {
 		assert.equal(RETRY_TIMES.wait * RETRY_INTERVAL_SEC, 600, 'wait が 10 分になっていない');
@@ -60,7 +60,7 @@ describe('繋がらないとき', () => {
 		assert.match(stderr, /繋がりません/);
 	});
 
-	test('サービスの確かめ方は、deploy/ の WinSW を指す（i260830-01）', async () => {
+	test('サービスの確かめ方は、deploy/ の WinSW を指す (i260830-01)', async () => {
 		/*
 		 * WinSW 本体はルート直下から deploy/ へ移した。パスなしの名前だけで案内すると、
 		 * ルートでは見つからず、案内どおりに打っても動かない。
@@ -138,7 +138,7 @@ describe('求め方が悪いと言われたとき', () => {
 	test('400 は粘らずに終了コード 1 で終わる', async () => {
 		/*
 		 * 向こうの都合ではなく、こちらの求め方の問題。粘っても直らない。
-		 * 3（繋がらない）と区別できることが要点。
+		 * 3 (繋がらない)と区別できることが要点。
 		 */
 		const { code, stderr } = await failing(withId(['say', '本文はある', '--port', String(port)], 'test-connector1'));
 

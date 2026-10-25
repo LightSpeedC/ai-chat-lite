@@ -5,7 +5,7 @@
 
 .DESCRIPTION
 	動いているサーバーに DB を掴まれたままでは入れ替えられないため、
-	メンテナンスの印（_data\MAINTENANCE）を置いてからサーバーを落とす。
+	メンテナンスの印 (_data\MAINTENANCE)を置いてからサーバーを落とす。
 	印がある間、サービスは何度落ちても待機で止まる。入れ替えが済んで
 	印を消すと、サーバーが自分から起動する。管理者権限は要らない。
 
@@ -20,12 +20,12 @@
 	確認を省く。タスクから呼ぶとき用。
 
 .PARAMETER EstimatedMinutes
-	再開までの見込み（分）。停止の案内と、メンテナンス中の Retry-After に使う。
+	再開までの見込み (分)。停止の案内と、メンテナンス中の Retry-After に使う。
 	既定は 5 分。実測では 1 分前後で終わるが、短く言って外すより余裕を持たせる。
 
 .PARAMETER DataRoot
 	_data・_backup・tmp\restore-work・logs の親を差し替える。テスト用。
-	省略するとこのスクリプトの実体の場所（本番）を使う。
+	省略するとこのスクリプトの実体の場所 (本番)を使う。
 
 .PARAMETER AccessToken
 	CLI に渡すアクセストークン。本番は既定でトークンを求めないため通常は要らない。
@@ -41,8 +41,8 @@ param(
 	[switch] $Force,
 	[int] $EstimatedMinutes = 5,
 	# 【テスト用】_data・_backup・tmp\restore-work・logs の親を差し替える。
-	# 省略時はこのスクリプトの実体の場所（＝本番）から計算する。
-	# node を呼ぶ側（$clientPath）は差し替えない。CLI の実体は常にここにしかない
+	# 省略時はこのスクリプトの実体の場所 (＝本番)から計算する。
+	# node を呼ぶ側 ($clientPath)は差し替えない。CLI の実体は常にここにしかない
 	[string] $DataRoot,
 	[string] $AccessToken
 )
@@ -101,7 +101,7 @@ Write-Host ''
 
 if (-not $Force) {
 	Write-Host 'いまの DB は 3 つとも _data\prev-yyyymmdd-hhmmss\ へ退避します。'
-	$answer = Read-Host 'この内容で戻しますか（yes と入力すると実行します）'
+	$answer = Read-Host 'この内容で戻しますか (yes と入力すると実行します)'
 	if ($answer -cne 'yes') {
 		Write-Host '中止しました。'
 		exit 1
@@ -116,7 +116,7 @@ if (-not $Force) {
 # 投稿は即座に届き、読ませるだけならこれで足りる。止めたい側を長く待たせない
 # ことを優先している。
 #
-# 素の restart（コードの入れ替え）では投稿しない。案内を出すのはこの手順を
+# 素の restart (コードの入れ替え)では投稿しない。案内を出すのはこの手順を
 # 通ったときだけ、という条件がこれで自然に満たされる。
 $reason = 'バックアップから戻しています: ' + (Split-Path $Path -Leaf)
 $notice = @"
@@ -129,8 +129,8 @@ $notice = @"
 	ここだけ $ErrorActionPreference を緩める。
 
 	2>&1 で受けた標準エラーは Stop のままだと NativeCommandError になる。
-	node 側の announceEnv（chat.mjs）は繋ぐコマンドすべてで環境名を必ず標準エラーに
-	書くため、この 1 行は素の Stop では毎回落ちていた（レビュー #20）。
+	node 側の announceEnv (chat.mjs)は繋ぐコマンドすべてで環境名を必ず標準エラーに
+	書くため、この 1 行は素の Stop では毎回落ちていた (レビュー #20)。
 	backup.ps1 の $ErrorActionPreference の緩め方と同じ形にする。
 
 	成否は $LASTEXITCODE で見る。& node は非ゼロでも例外を投げない
@@ -138,17 +138,17 @@ $notice = @"
 $prevEap = $ErrorActionPreference
 $ErrorActionPreference = 'Continue'
 try {
-	# 名乗る ID はコマンドの直後に、コロンで囲んで置く（--connector-id は廃止した）
+	# 名乗る ID はコマンドの直後に、コロンで囲んで置く (--connector-id は廃止した)
 	$sayOutput = & node $clientPath say :ai-chat-lite: $notice --port $serverPort --room public @tokenArgs 2>&1
 } finally {
 	$ErrorActionPreference = $prevEap
 }
 if ($LASTEXITCODE -eq 0) {
-	Write-Host '[0/5] 停止することを知らせました（10 秒待ちます）'
+	Write-Host '[0/5] 停止することを知らせました (10 秒待ちます)'
 	Start-Sleep -Seconds 10
 } else {
 	# 止まっているなら知らせる相手もいない。ここで止める理由はない
-	Write-Host '[0/5] 知らせられませんでした（すでに止まっている可能性）'
+	Write-Host '[0/5] 知らせられませんでした (すでに止まっている可能性)'
 }
 
 # --- 1. メンテナンスの印を置く ---
@@ -178,7 +178,7 @@ try {
 	#
 	# ここも $ErrorActionPreference を緩める。node 側の announceEnv が繋ぐ
 	# コマンドすべてで環境名を必ず標準エラーに書くため、Stop のままだと
-	# say の呼び出し（[0/5]）と同じ理由で NativeCommandError になる（レビュー #20）
+	# say の呼び出し ([0/5])と同じ理由で NativeCommandError になる (レビュー #20)
 	$prevEap = $ErrorActionPreference
 	$ErrorActionPreference = 'Continue'
 	try {
@@ -187,11 +187,11 @@ try {
 		$ErrorActionPreference = $prevEap
 	}
 	if ($LASTEXITCODE -eq 0) {
-		Write-Host '[2/5] サーバーを落としました（10 秒後に起動し直します）'
+		Write-Host '[2/5] サーバーを落としました (10 秒後に起動し直します)'
 	} else {
 		# 動いていなければ「繋がりません」で失敗する。それは想定どおりなので、
 		# ここでは止めず、DB が解放されているかどうかで判断する
-		Write-Host '[2/5] サーバーは応答しませんでした（もともと止まっていた可能性）'
+		Write-Host '[2/5] サーバーは応答しませんでした (もともと止まっていた可能性)'
 	}
 
 	# 掴んでいたファイルが解放されるまで少し待つ
@@ -262,7 +262,7 @@ console.log(r.c + ' 件 / 最大 msg_seq ' + (r.m ?? 'なし'));
 	}
 
 	Move-Item -LiteralPath $restored -Destination $dbPath
-	Write-Host ('[4/5] 入れ替えました（前の {0} を {1} に残しています）' -f ($moved -join ' / '), (Split-Path $prevDir -Leaf))
+	Write-Host ('[4/5] 入れ替えました (前の {0} を {1} に残しています)' -f ($moved -join ' / '), (Split-Path $prevDir -Leaf))
 
 	Write-OpsLog -Level I -Kind restore -LogsDir $logsDir -Message (
 		'復旧 {0} から {1} / 前の DB は {2} へ' -f (Split-Path $Path -Leaf), $check, (Split-Path $prevDir -Leaf)

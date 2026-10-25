@@ -11,7 +11,7 @@
 
 /* ===================================================================
    ai-chat-lite 共通スタイル
-   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   章ごとのアクセント色 (.ch01〜)は各 HTML 側で定義する
    =================================================================== */
 
 :root {
@@ -334,7 +334,7 @@ pre code {
 }
 
 /*
- * 幅は文字数で決まる（固定幅にしない）。
+ * 幅は文字数で決まる (固定幅にしない)。
  * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
  * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
  */
@@ -412,7 +412,7 @@ footer a {
 }
 </style>
 <style>
-/* この資料だけのもの: 章のアクセント色（5章 / 色相 280→0 を 70 刻み）と目次の採番 */
+/* この資料だけのもの: 章のアクセント色 (5章 / 色相 280→0 を 70 刻み)と目次の採番 */
 .ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
 .ch02 { --accent: hsl(210, 78%, 25%); --accent2: hsl(210, 58%, 55%); --soft: hsl(210, 28%, 95%); }
 .ch03 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); --soft: hsl(140, 28%, 95%); }
@@ -506,14 +506,14 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait --access-token 3f9c1e8a-... -
 <tbody>
 	<tr><td class="nowrap"><code>--retry-count</code></td><td><strong>廃止する。</strong>回数は内部で決める</td></tr>
 	<tr><td class="nowrap"><code>--timeout</code></td><td><strong>内部に隠す。</strong>呼ぶ側からは指定しない</td></tr>
-	<tr><td class="nowrap">待つ長さ</td><td><strong><code>--wait-min</code> と <code>--wait-hour</code></strong>（<code>480</code> と <code>8</code> はどちらも 8 時間）</td></tr>
+	<tr><td class="nowrap">待つ長さ</td><td><strong><code>--wait-min</code> と <code>--wait-hour</code></strong>(<code>480</code> と <code>8</code> はどちらも 8 時間)</td></tr>
 	<tr><td class="nowrap">両方を指定</td><td><strong>エラーにする。</strong>足さない・後勝ちにしない</td></tr>
 	<tr><td class="nowrap">上限なし</td><td><strong><code>0</code> を無限とする</strong></td></tr>
-	<tr><td class="nowrap">既定値</td><td><strong>8 時間</strong>（いまは 480 秒）</td></tr>
+	<tr><td class="nowrap">既定値</td><td><strong>8 時間</strong>(いまは 480 秒)</td></tr>
 	<tr><td class="nowrap">ログ</td><td><strong>開始 1 行と終了 1 行だけ。</strong>240 秒ごとの「新着なし」は出さない</td></tr>
 	<tr><td class="nowrap">名乗る ID</td><td><strong><code>AICHAT_ID</code> をやめ <code>--connector-id</code> にする。</strong>両対応にしない</td></tr>
 	<tr><td class="nowrap">接続先</td><td><strong><code>--url</code> と <code>--port</code> を足す。</strong><code>--port</code> は <code>localhost</code> のポートだけを指定する</td></tr>
-	<tr><td class="nowrap">短い形</td><td><code>-c</code> <code>-a</code> <code>-r</code> <code>-p</code> <code>-u</code> <code>-w</code> を付ける（<code>-w</code> は <code>--wait-hour</code>）</td></tr>
+	<tr><td class="nowrap">短い形</td><td><code>-c</code> <code>-a</code> <code>-r</code> <code>-p</code> <code>-u</code> <code>-w</code> を付ける (<code>-w</code> は <code>--wait-hour</code>)</td></tr>
 	<tr><td class="nowrap">テスト用の指定</td><td><strong><code>--wait-sec</code> を足す</strong></td></tr>
 	<tr><td class="nowrap"><code>--url</code> と <code>--port</code> の同時指定</td><td><strong>エラーにする</strong></td></tr>
 	<tr><td class="nowrap"><code>--connector-id</code> の省略</td><td><strong>エラーにする。</strong>既定値を持たせない</td></tr>
@@ -559,7 +559,7 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait --access-token 3f9c1e8a-... -
 <h2>1. テストで短く待つ手段</h2>
 
 <div class="callout callout-warning">
-<p><strong>分と時しか指定できないと、テストが 1 件も流せない。</strong>いまのテストは <code>--timeout 1 --retry-count 3</code> のように<strong>秒</strong>で指定して数秒で終わらせている（<code>client-wait.test.mjs</code> 7 件）。既定値が 8 時間になるため、短く待つ手段が無いと 1 件ごとに待たされる。</p>
+<p><strong>分と時しか指定できないと、テストが 1 件も流せない。</strong>いまのテストは <code>--timeout 1 --retry-count 3</code> のように<strong>秒</strong>で指定して数秒で終わらせている (<code>client-wait.test.mjs</code> 7 件)。既定値が 8 時間になるため、短く待つ手段が無いと 1 件ごとに待たされる。</p>
 </div>
 
 <div class="tablewrap">
@@ -569,13 +569,13 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait --access-token 3f9c1e8a-... -
 </thead>
 <tbody>
 	<tr>
-		<td class="nowrap"><strong>A（採る）</strong></td>
+		<td class="nowrap"><strong>A (採る)</strong></td>
 		<td><code>--wait-sec</code> を足す。単位は名前に出ている</td>
 		<td>指定が 3 通りになる</td>
 	</tr>
 	<tr>
 		<td class="nowrap">B</td>
-		<td>小数を許す（<code>--wait-min 0.05</code> ＝ 3 秒）</td>
+		<td>小数を許す (<code>--wait-min 0.05</code> ＝ 3 秒)</td>
 		<td><strong>読んで分からない。</strong>テストの意図が伝わらない</td>
 	</tr>
 	<tr>
@@ -596,7 +596,7 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait --access-token 3f9c1e8a-... -
 <h2>3. 短い形をどれに付けるか</h2>
 
 <div class="callout callout-warning">
-<p><strong>頭文字が衝突する。</strong><code>--room</code> と <code>--role</code> はどちらも <code>r</code>、<code>--to</code> と <code>--timeout</code> はどちらも <code>t</code>。大小で分けると（<code>-r</code> と <code>-R</code>）取り違える。</p>
+<p><strong>頭文字が衝突する。</strong><code>--room</code> と <code>--role</code> はどちらも <code>r</code>、<code>--to</code> と <code>--timeout</code> はどちらも <code>t</code>。大小で分けると (<code>-r</code> と <code>-R</code>)取り違える。</p>
 </div>
 
 <div class="tablewrap">
@@ -607,10 +607,10 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait --access-token 3f9c1e8a-... -
 <tbody>
 	<tr><td class="nowrap"><code>-c</code></td><td class="nowrap"><code>--connector-id</code></td><td>付ける。毎回打つ</td></tr>
 	<tr><td class="nowrap"><code>-a</code></td><td class="nowrap"><code>--access-token</code></td><td>付ける。値が長い</td></tr>
-	<tr><td class="nowrap"><code>-r</code></td><td class="nowrap"><code>--room</code></td><td>付ける。<strong><code>--role</code> には付けない</strong>（<code>join</code> でしか使わない）</td></tr>
+	<tr><td class="nowrap"><code>-r</code></td><td class="nowrap"><code>--room</code></td><td>付ける。<strong><code>--role</code> には付けない</strong>(<code>join</code> でしか使わない)</td></tr>
 	<tr><td class="nowrap"><code>-p</code></td><td class="nowrap"><code>--port</code></td><td>付ける</td></tr>
 	<tr><td class="nowrap"><code>-u</code></td><td class="nowrap"><code>--url</code></td><td>付ける</td></tr>
-	<tr><td class="nowrap"><code>-n</code></td><td class="nowrap"><code>--n</code></td><td><strong>すでにある</strong>（<code>recent</code> の件数）</td></tr>
+	<tr><td class="nowrap"><code>-n</code></td><td class="nowrap"><code>--n</code></td><td><strong>すでにある</strong>(<code>recent</code> の件数)</td></tr>
 	<tr><td class="nowrap">—</td><td class="nowrap"><code>--to</code> <code>--out</code> <code>--role</code></td><td><strong>付けない。</strong>衝突するか、打つ回数が少ない</td></tr>
 	<tr><td class="nowrap"><code>-w</code></td><td class="nowrap"><code>--wait-hour</code></td><td>付ける。<strong>3 つとも <code>w</code> で始まるので、時にだけ割り当てる</strong></td></tr>
 	<tr><td class="nowrap">—</td><td class="nowrap"><code>--wait-min</code> <code>--wait-sec</code></td><td><strong>付けない。</strong><code>-w</code> は時が取った</td></tr>
@@ -633,7 +633,7 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait --access-token 3f9c1e8a-... -
 </thead>
 <tbody>
 	<tr>
-		<td class="nowrap"><strong>A（採る）</strong></td>
+		<td class="nowrap"><strong>A (採る)</strong></td>
 		<td>必須にする。無ければエラーで止める</td>
 		<td>毎回打つ</td>
 	</tr>
@@ -646,7 +646,7 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait --access-token 3f9c1e8a-... -
 </table>
 </div>
 
-<p><strong>案 A に決めた。</strong>いまの実装も必須になっている（設計とは食い違っているが、動きとしてはこちら）。名乗る名前は取り違えると他プロジェクトの記録に混ざるので、暗黙の既定値を持たせない方が安全である。<strong>設計側の記述を実装に合わせて直す。</strong></p>
+<p><strong>案 A に決めた。</strong>いまの実装も必須になっている (設計とは食い違っているが、動きとしてはこちら)。名乗る名前は取り違えると他プロジェクトの記録に混ざるので、暗黙の既定値を持たせない方が安全である。<strong>設計側の記述を実装に合わせて直す。</strong></p>
 
 <h2>5. 環境変数を廃止するか</h2>
 
@@ -656,7 +656,7 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait --access-token 3f9c1e8a-... -
 	<tr><th class="nowrap">変数</th><th>いまの用途</th><th>どうするか</th></tr>
 </thead>
 <tbody>
-	<tr><td class="nowrap"><code>AICHAT_ID</code></td><td>名乗る ID</td><td><strong>廃止</strong>（決定済み）</td></tr>
+	<tr><td class="nowrap"><code>AICHAT_ID</code></td><td>名乗る ID</td><td><strong>廃止</strong>(決定済み)</td></tr>
 	<tr><td class="nowrap"><code>AICHAT_URL</code></td><td>接続先</td><td><strong>廃止する。</strong><code>--url</code> / <code>--port</code> で足りる</td></tr>
 	<tr><td class="nowrap"><code>AICHAT_PORT</code></td><td><strong>サーバー側</strong>の待ち受けポート</td><td><strong>残す。</strong>CLI のものではない</td></tr>
 	<tr><td class="nowrap"><code>AICHAT_DATA</code></td><td><strong>サーバー側</strong>の置き場</td><td><strong>残す。</strong>同上</td></tr>
@@ -668,7 +668,7 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait --access-token 3f9c1e8a-... -
 
 <h2>6. 一覧を 2 か所で保つ方法</h2>
 
-<p>オプション名の一覧は 2 か所にある。<strong>放っておくとずれる</strong>（実際に <code>usage()</code> の <code>--retry-count</code> と <code>USAGE</code> の <code>--access-token</code> が抜けていた）。</p>
+<p>オプション名の一覧は 2 か所にある。<strong>放っておくとずれる</strong>(実際に <code>usage()</code> の <code>--retry-count</code> と <code>USAGE</code> の <code>--access-token</code> が抜けていた)。</p>
 
 <div class="tablewrap">
 <table>
@@ -677,7 +677,7 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait --access-token 3f9c1e8a-... -
 </thead>
 <tbody>
 	<tr>
-		<td class="nowrap"><strong>A（採る）</strong></td>
+		<td class="nowrap"><strong>A (採る)</strong></td>
 		<td>別名の表を 1 つ持ち、<code>usage()</code> はそこから組み立てる</td>
 		<td><code>USAGE</code> の HTML は手で揃えたままになる</td>
 	</tr>
@@ -721,7 +721,7 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait --access-token 3f9c1e8a-... -
 	<tr><td class="nowrap"><code>--retry-count</code></td><td class="nowrap"><strong>消える</strong></td><td>回数は内部で計算</td></tr>
 	<tr><td class="nowrap">—</td><td class="nowrap"><code>--wait-hour</code></td><td>既定 8。<code>0</code> で無限</td></tr>
 	<tr><td class="nowrap">—</td><td class="nowrap"><code>--wait-min</code></td><td>分で指定する</td></tr>
-	<tr><td class="nowrap">—</td><td class="nowrap"><code>--wait-sec</code></td><td>テスト・確認用（案 A を採るなら）</td></tr>
+	<tr><td class="nowrap">—</td><td class="nowrap"><code>--wait-sec</code></td><td>テスト・確認用 (案 A を採るなら)</td></tr>
 	<tr><td class="nowrap"><code>--role</code> <code>--to</code> <code>--out</code> <code>-n</code></td><td class="nowrap"><strong>変えない</strong></td><td>短い形も付けない</td></tr>
 </tbody>
 </table>
@@ -731,12 +731,12 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait --access-token 3f9c1e8a-... -
 
 <p>テスト用サーバーへ繋いで 8 時間待つ場合。</p>
 
-<pre><code class="language-text">いま（PowerShell 専用・3 行）
+<pre><code class="language-text">いま (PowerShell 専用・3 行)
   $env:AICHAT_ID = 'ai-chat-lite'
   $env:AICHAT_URL = 'http://localhost:<テスト用のポート>'
   node ...\chat.mjs wait --access-token 3f9c1e8a-... --retry-count 120
 
-あと（bash でも PowerShell でも同じ 1 行）
+あと (bash でも PowerShell でも同じ 1 行)
   node ...\chat.mjs wait -c ai-chat-lite -p <テスト用のポート> -a 3f9c1e8a-...</code></pre>
 
 <p><strong><code>--wait-hour</code> は書かない。</strong>既定が 8 時間になるため、ふだんの待受けでは省ける。</p>
@@ -803,7 +803,7 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait --access-token 3f9c1e8a-... -
 	<tr><td class="nowrap"><code>USAGE-FOR-PROJECTS.html</code></td><td>コマンド × オプションの表と例</td></tr>
 	<tr><td class="nowrap"><code>notes/90_rules/test-server.html</code></td><td><code>--access-token</code> の例</td></tr>
 	<tr><td class="nowrap"><code>notes/10_plan/p260829-01-設計.html</code></td><td>「無ければ cwd のフォルダ名」を実装に合わせる</td></tr>
-	<tr><td class="nowrap">共通ルール</td><td>待受けの例（<strong>利用者の指示を待って直す</strong>）</td></tr>
+	<tr><td class="nowrap">共通ルール</td><td>待受けの例 (<strong>利用者の指示を待って直す</strong>)</td></tr>
 	<tr><td class="nowrap">PlayWright 側</td><td><code>ACCESS_TOKEN_ARGS</code> と CLI を叩く箇所</td></tr>
 </tbody>
 </table>
@@ -814,7 +814,7 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait --access-token 3f9c1e8a-... -
 <ul>
 	<li><code>--wait-min</code> と <code>--wait-hour</code> を<strong>同時に指定するとエラーになる</strong></li>
 	<li><code>--url</code> と <code>--port</code> を<strong>同時に指定するとエラーになる</strong></li>
-	<li><code>0</code> を渡すと<strong>無限に待つ</strong>（回数で止まらない）</li>
+	<li><code>0</code> を渡すと<strong>無限に待つ</strong>(回数で止まらない)</li>
 	<li>何も指定しないと<strong>8 時間</strong>になる</li>
 	<li>ログが<strong>開始 1 行と終了 1 行だけ</strong>になる</li>
 	<li><code>--connector-id</code> を省くと<strong>エラーで止まる</strong></li>
@@ -850,7 +850,7 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait --access-token 3f9c1e8a-... -
 	</tr>
 	<tr>
 		<td class="num">5</td><td class="nowrap"><code>usage()</code> を表から組み立てた</td>
-		<td>定義を <code>src/client/options.mjs</code> に分け、テストが<strong>同じ表を読んで表示と突き合わせる</strong>（15 件）。<code>-h</code> も足した</td>
+		<td>定義を <code>src/client/options.mjs</code> に分け、テストが<strong>同じ表を読んで表示と突き合わせる</strong>(15 件)。<code>-h</code> も足した</td>
 	</tr>
 	<tr>
 		<td class="num">6</td><td class="nowrap">資料を直した</td>

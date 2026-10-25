@@ -3,7 +3,7 @@
 //! **囲むのは ID どうしの前方一致を止めるため。**囲みが無いと `project-a` を
 //! 探す式が `project-aa` にも当たり、1 本しか張っていない待受けが 2 本に見える。
 //! それを二重と誤認して片方を止めると、相手は原因不明の `exit 255` で落ちる
-//! （課題 i260901-07 で実際に起きた）。
+//! (課題 i260901-07 で実際に起きた)。
 //!
 //! **囲みはコマンドラインの書き方であって、値の一部ではない。**読んだ直後に
 //! 剥がし、以降は裸の ID だけを扱う。API へ送る値・ログ・画面はすべて裸にする。
@@ -40,8 +40,8 @@ pub fn is_valid(id: &str) -> bool {
 
 /// 囲みを剥がす。囲まれていない・使えない文字が入っていれば理由を返す。
 ///
-/// * `wrap` … 囲みの記号（定義の `id_wrap`）
-/// * `where_` … どこで受け取ったか（案内に出す）
+/// * `wrap` … 囲みの記号 (定義の `id_wrap`)
+/// * `where_` … どこで受け取ったか (案内に出す)
 pub fn unwrap(raw: &str, wrap: &str, where_: &str) -> Result<String, String> {
 	// 囲みの長さ 2 つぶんより長いこと。:: は中身が空なので通さない
 	if raw.len() > wrap.len() * 2 && raw.starts_with(wrap) && raw.ends_with(wrap) {
@@ -50,14 +50,14 @@ pub fn unwrap(raw: &str, wrap: &str, where_: &str) -> Result<String, String> {
 			return Ok(id.to_string());
 		}
 		return Err(format!(
-			"ID に使えない文字が入っています（{}）: {}\n  \
+			"ID に使えない文字が入っています ({}): {}\n  \
 			 使えるのは英数字・ハイフン・下線・ピリオドだけです。ピリオドは先頭と末尾には置けません。",
 			where_, raw
 		));
 	}
 
 	Err(format!(
-		"ID は {} で囲んでください（{}）: {}\n  例: {}{}{}",
+		"ID は {} で囲んでください ({}): {}\n  例: {}{}{}",
 		wrap,
 		where_,
 		raw,
@@ -83,7 +83,7 @@ pub fn unwrap_flexible(raw: &str, wrap: &str, where_: &str) -> Result<String, St
 		return Ok(id.to_string());
 	}
 	Err(format!(
-		"ID に使えない文字が入っています（{}）: {}\n  \
+		"ID に使えない文字が入っています ({}): {}\n  \
 		 使えるのは英数字・ハイフン・下線・ピリオドだけです。ピリオドは先頭と末尾には置けません。",
 		where_, raw
 	))

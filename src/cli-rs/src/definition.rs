@@ -6,7 +6,7 @@
 //! **手で写さない。**2 か所に書くと必ずずれる。実際に node 版と C# 版で
 //! `usage()` の一覧が食い違い、`--retry-count` が抜けていたことがある。
 //!
-//! JSON は追跡しない（生成物）。`tools/20_build/build-aichat-rs.mjs` が
+//! JSON は追跡しない (生成物)。`tools/20_build/build-aichat-rs.mjs` が
 //! ビルドの前に作る。無いままだとコンパイルが通らないので、写し忘れには気づける。
 
 use crate::json::{self, Json};
@@ -24,7 +24,7 @@ pub struct OptionDef {
 	pub long: String,
 	/// 短い形。持たないものもある
 	pub short: Option<String>,
-	/// 値の見出し。空なら旗（値を取らない）
+	/// 値の見出し。空なら旗 (値を取らない)
 	pub arg: String,
 	/// そのコマンドだけのもの。`None` はどのコマンドにも付けられる
 	pub cmd: Option<String>,
@@ -52,7 +52,7 @@ pub struct CommandDef {
 	pub name: String,
 	pub arg: String,
 	pub desc: String,
-	/// サーバーに繋がないコマンド（`waiters`）
+	/// サーバーに繋がないコマンド (`waiters`)
 	pub offline: bool,
 }
 
@@ -97,7 +97,7 @@ impl Definition {
 		let schema = take_i64(&root, "schema")?;
 		if schema != EXPECTED_SCHEMA {
 			return Err(format!(
-				"定義の形が違います（読めるのは {} ・ 渡されたのは {}）。\
+				"定義の形が違います (読めるのは {} ・ 渡されたのは {})。\
 				 export-options.mjs を走らせ直すか、EXPECTED_SCHEMA を合わせてください",
 				EXPECTED_SCHEMA, schema
 			));
@@ -173,7 +173,7 @@ impl Definition {
 		self.options.iter().find(|o| o.long == long)
 	}
 
-	/// 値を取らないオプションを、先頭の記号を含めて並べる（`positionals` に渡す）
+	/// 値を取らないオプションを、先頭の記号を含めて並べる (`positionals` に渡す)
 	pub fn flag_words(&self) -> Vec<String> {
 		self.options.iter().filter(|o| o.is_flag()).flat_map(|o| o.flags()).collect()
 	}
@@ -251,7 +251,7 @@ mod tests {
 	#[test]
 	fn 接続先の既定値を持たない決めごとが数値として入っている() {
 		// 既定のポートは定義に入っているが、使うのは使い方の表示だけ。
-		// 繋ぐときは渡されなければ止める（options.mjs の決めごと）
+		// 繋ぐときは渡されなければ止める (options.mjs の決めごと)
 		let def = Definition::load().unwrap();
 		assert_eq!(def.default_port, 8787);
 		assert_eq!(def.default_room, "public");

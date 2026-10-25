@@ -1,6 +1,6 @@
-//! ai-chat-lite の CLI（Rust 版）。
+//! ai-chat-lite の CLI (Rust 版)。
 //!
-//! node 版（`src/client/chat.mjs`）・C# 版（`src/cli-cs/`）と同じ仕事をする。
+//! node 版 (`src/client/chat.mjs`)・C# 版 (`src/cli-cs/`)と同じ仕事をする。
 //! 出力も終了コードも 1 文字ずつ揃える。食い違いは `tests/cli-rs.test.mjs` が落とす。
 //!
 //! 外部クレートを使わない。JSON も HTTP も標準ライブラリだけで書く。
@@ -27,7 +27,7 @@ use definition::Definition;
 ///
 ///   1 … 一般のエラー
 ///   2 … 使い方の誤り
-///   3 … 繋がらない（サーバーの都合。定義の exit_unreachable）
+///   3 … 繋がらない (サーバーの都合。定義の exit_unreachable)
 ///
 /// 3 を分けているのは、呼ぶ側が「自分の書き方が悪い」のか「向こうが止まっている」
 /// のかを区別できるようにするため。
@@ -106,7 +106,7 @@ fn run() -> i32 {
 
 	/*
 	 * 接続先はここで要る。既定値を持たないので、無ければ止める。
-	 * サーバーに繋がないコマンド（waiters）だけは先に振り分ける。
+	 * サーバーに繋がないコマンド (waiters)だけは先に振り分ける。
 	 */
 	let offline = def.command(command).map(|c| c.offline).unwrap_or(false);
 	if offline {
@@ -123,9 +123,9 @@ fn run() -> i32 {
 		/*
 		 * 数え方は waiters::list_processes が決める。
 		 *
-		 * Windows では API を直に呼び（20 ms）、失敗したら PowerShell（213 ms）へ
+		 * Windows では API を直に呼び (20 ms)、失敗したら PowerShell (213 ms)へ
 		 * 落ちる。C# 版へ委譲していた段は外した——API が直に呼べるようになり、
-		 * 委譲（274 ms）より速いうえ、隣に C# 版が要らなくなる。
+		 * 委譲 (274 ms)より速いうえ、隣に C# 版が要らなくなる。
 		 */
 		return match commands::waiters_cmd(&me, &basis, &def.default_room) {
 			Ok(()) => 0,
@@ -157,7 +157,7 @@ fn run() -> i32 {
 	/*
 	 * 名乗る ID を先に確かめ、そのあとで環境を出す。順序は node 版に合わせる。
 	 *
-	 * 逆にすると、ID を書き忘れたときに「テスト（:NNNN）」が先に出る。
+	 * 逆にすると、ID を書き忘れたときに「テスト (:NNNN)」が先に出る。
 	 * 案内の頭に別の行が挟まると、読み手は何を直せばよいか探すことになる。
 	 */
 	const READ_ONLY: [&str; 4] = ["recent", "who", "dump", "archives"];
@@ -272,7 +272,7 @@ fn run() -> i32 {
 			 * 下見を出して名前まで打たせてから断るのは、手間をかけさせるだけになる。
 			 */
 			if kind == "room" && target == def.default_room {
-				eprintln!("{} は片付けられません（参加時の行き先です）", def.default_room);
+				eprintln!("{} は片付けられません (参加時の行き先です)", def.default_room);
 				return EXIT_USAGE;
 			}
 			match commands::archive(
@@ -337,7 +337,7 @@ fn run() -> i32 {
 			commands::dump(&cli, &out)
 		}
 		_ => {
-			eprintln!("{} はまだ作っていません（Rust 版）", command);
+			eprintln!("{} はまだ作っていません (Rust 版)", command);
 			return EXIT_USAGE;
 		}
 	};
@@ -428,7 +428,7 @@ fn recent_opts(def: &Definition, a: &Args) -> Result<commands::RecentOpts, Strin
 
 /// 名乗る ID を要る形で取り出す。無ければ案内を出して終了コードを返す。
 ///
-/// **読むだけのコマンド（recent ・ who ・ dump ・ archives）は名乗らなくてよい。**
+/// **読むだけのコマンド (recent ・ who ・ dump ・ archives)は名乗らなくてよい。**
 /// ここを呼ぶのは書き込み系だけにする。
 fn require_id(def: &Definition, resolved: &Option<String>, positionals: &[&str]) -> Result<String, i32> {
 	if let Some(id) = resolved {
@@ -489,7 +489,7 @@ fn reply_to_seq(a: &Args) -> Result<Option<i64>, String> {
 /// 最大どれだけ待つかを秒で返す。0 は上限なし。
 ///
 /// 単位ごとに別のオプションを持つ。値だけを見て取り違えないようにするため
-/// （`--wait 480` が分か秒かは定義を読まないと分からない）。3 つは排他。
+/// (`--wait 480` が分か秒かは定義を読まないと分からない)。3 つは排他。
 fn wait_sec(def: &Definition, a: &Args) -> Result<(i64, bool), String> {
 	let given: Vec<(&str, &str, i64)> = def
 		.wait_units
@@ -530,7 +530,7 @@ fn warn_if_foreground(limit_sec: i64, from_default: bool) {
 	let detail = if label == format!("{} 秒", limit_sec) {
 		label
 	} else {
-		format!("{}（{} 秒）", label, limit_sec)
+		format!("{} ({} 秒)", label, limit_sec)
 	};
 	eprintln!("{}待つ設定です。", detail);
 	eprintln!("  前面で呼ぶと {} 秒で背面に移されます。プロセスは走り続けますが、", commands::FOREGROUND_SEC);

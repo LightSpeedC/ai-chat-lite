@@ -9,7 +9,7 @@ import { prepareTestDb } from './helpers/prepare-db.mjs';
 const here = dirname(fileURLToPath(import.meta.url));
 const TEST_DATA = join(here, '..', 'tmp', '_data', 'unit-archive');
 
-// 版を当ててから store を読み込む（store.mjs は形を作らない）
+// 版を当ててから store を読み込む (store.mjs は形を作らない)
 await prepareTestDb(TEST_DATA);
 
 const store = await import('../src/server/store.mjs');
@@ -195,7 +195,7 @@ describe('参加者を片付ける', () => {
 describe('片付けたあとに繋ぎ直す', () => {
 	/*
 	 * 【なぜ必要か】
-	 * connectors（主キー connector_id）と cursors（主キー connector_id, room_id）は、
+	 * connectors (主キー connector_id)と cursors (主キー connector_id, room_id)は、
 	 * 片付けた行が枠を占め続ける。INSERT は必ず DO UPDATE に落ちるので、
 	 * archived_seq を NULL に戻さないと、読み出し側の archived_seq IS NULL に
 	 * 弾かれて「書けるのに読めない行」になる。
@@ -221,8 +221,8 @@ describe('片付けたあとに繋ぎ直す', () => {
 	/*
 	 * 【なぜ必要か】
 	 * 上の検査は joinConnector 経由の復活しか見ていなかった。実際には
-	 * join を経ずに touchConnector（say・poll・SSE 接続のたびに呼ばれる）
-	 * だけで登録・復活する参加者もいる（レビュー #20、i260908-07）。
+	 * join を経ずに touchConnector (say・poll・SSE 接続のたびに呼ばれる)
+	 * だけで登録・復活する参加者もいる (レビュー #20、i260908-07)。
 	 * upsertConnector と touchConnector は別の SQL 文で、どちらも
 	 * archived_seq = NULL を持つが、touchConnector 側だけ検査が無いと
 	 * 足し忘れに気づけない。
@@ -232,7 +232,7 @@ describe('片付けたあとに繋ぎ直す', () => {
 		store.archive({ kind: 'connector', id: 'test-retouch', byConnectorId: 'test-connector1', description: 'touchConnector の検査' });
 		assert.equal(store.getConnector('test-retouch'), undefined, '片付いていない');
 
-		// join ではなく touchConnector（say・poll・SSE 接続と同じ経路）で戻す
+		// join ではなく touchConnector (say・poll・SSE 接続と同じ経路)で戻す
 		store.touchConnector('test-retouch');
 
 		assert.ok(store.getConnector('test-retouch'), 'touchConnector で戻しても一覧に戻らない');
@@ -352,7 +352,7 @@ describe('戻す', () => {
 });
 
 describe('読み出しの絞り込みを足し忘れていないか', () => {
-	test('messages を読む関数はすべて絞り込みを持つ（dump だけ例外）', () => {
+	test('messages を読む関数はすべて絞り込みを持つ (dump だけ例外)', () => {
 		/*
 		 * 関数を増やしたときに気づけるようにする。
 		 *
@@ -368,7 +368,7 @@ describe('読み出しの絞り込みを足し忘れていないか', () => {
 			sql: m[2],
 		}));
 
-		assert.ok(entries.length >= 15, `SQL を拾えていない（${entries.length} 件）`);
+		assert.ok(entries.length >= 15, `SQL を拾えていない (${entries.length} 件)`);
 
 		const reads = entries.filter((e) => /SELECT/i.test(e.sql));
 		const missing = reads

@@ -30,7 +30,7 @@ class BadRequest extends Error {}
  * サーバー自身が案内を出すときに名乗る名前。
  *
  * 「名乗る ID は project フォルダ名」という決まりに沿う。すでに参加者にいるので
- * 一覧が増えない。専用の名前（server 等）にすると、接続を持たない参加者が
+ * 一覧が増えない。専用の名前 (server 等)にすると、接続を持たない参加者が
  * 常にオフラインとして一覧に残り続ける。
  */
 const SERVER_ID = 'ai-chat-lite';
@@ -57,7 +57,7 @@ function requireId(value, name) {
 	if (!id) throw new BadRequest(`${name} は必須です`);
 	if (id.length > MAX_ID_LENGTH) throw new BadRequest(`${name} は ${MAX_ID_LENGTH} 文字までです`);
 	if (!ID_RE.test(id)) {
-		throw new BadRequest(`${name} に使えるのは英数字・ハイフン・下線・ピリオド（先頭と末尾には置けません）だけです: ${id}`);
+		throw new BadRequest(`${name} に使えるのは英数字・ハイフン・下線・ピリオド (先頭と末尾には置けません)だけです: ${id}`);
 	}
 	return id;
 }
@@ -149,7 +149,7 @@ const MSG_KINDS = ['say', 'join', 'leave', 'archive', 'notice'];
 export const SSE_CATCHUP_MAX = 2000;
 
 /**
- * 待受けを起こさない msg_kind を読む。省略されていたら空（全部で起こす）。
+ * 待受けを起こさない msg_kind を読む。省略されていたら空 (全部で起こす)。
  *
  * 知らない名前は断る。素通しすると「除いたつもりで除けていない」状態になり、
  * 呼ぶ側は待受けが起きる理由を追えない。綴りの間違いは黙って通さない。
@@ -217,7 +217,7 @@ function postSystemMessage(roomId, connectorId, kind, body, refArchivedSeq = nul
 /**
  * 直前に見たときの在席。offline へ落ちた瞬間を見つけるために覚えておく。
  * サーバーを起動し直すと空になるが、そのときは全員 offline から始まるので
- * 落ちたことにはならない（誤って離脱を流さない）。
+ * 落ちたことにはならない (誤って離脱を流さない)。
  */
 const knownStatus = new Map();
 
@@ -249,12 +249,12 @@ export function sweepOffline() {
 }
 
 /**
- * 初めて参加するルームの読み始め位置（i260920-01）。
+ * 初めて参加するルームの読み始め位置 (i260920-01)。
  *
  * 「その日の 0 時」と「6 時間前」のうち古い方を起点にする。深夜早い時間帯に
  * 初めて繋いだ場合、0 時だけだと直近 1 時間程度しか遡らないため、6 時間前を
  * 下限として併記する。起点より前の最後の msg_seq を「既読」として cursor に
- * 置き、それより新しい分（起点以降）を未読として届ける。
+ * 置き、それより新しい分 (起点以降)を未読として届ける。
  */
 function initialSeq(roomId) {
 	const midnight = jstTodayMidnight();
@@ -275,12 +275,12 @@ async function handleJoin(req, res) {
 	const before = getPresence(connectorId);
 	joinConnector(connectorId, role);
 
-	// すでにオンラインだった相手の再接続では通知しない（張り直しのたびに流れてしまう）
+	// すでにオンラインだった相手の再接続では通知しない (張り直しのたびに流れてしまう)
 	if (!before || before.status === STATUS.OFFLINE) {
 		postSystemMessage(roomId, connectorId, 'join', `${connectorId} が参加しました`);
 	}
 	// 初めてのときだけ、参加した時点を読み始めの位置にする。
-	// すでに読んでいる位置があれば触らない（未読を飛ばさないため）
+	// すでに読んでいる位置があれば触らない (未読を飛ばさないため)
 	if (getCursor(connectorId, roomId) === null) setCursor(connectorId, roomId, initialSeq(roomId));
 
 	broadcastPresence();
@@ -311,8 +311,8 @@ async function handleSay(req, res) {
 }
 
 /**
- * msg_seq のバリデーション。reply_to_msg_seq とは別に持つ（あちらは省略可、
- * こちらは必須で、メッセージ名も違う）。
+ * msg_seq のバリデーション。reply_to_msg_seq とは別に持つ (あちらは省略可、
+ * こちらは必須で、メッセージ名も違う)。
  */
 function requireMsgSeq(value) {
 	const n = Number(value);
@@ -323,9 +323,9 @@ function requireMsgSeq(value) {
 }
 
 /**
- * 確定済み位置（acked_seq）を進める（i260917-01）。
+ * 確定済み位置 (acked_seq)を進める (i260917-01)。
  *
- * 配信済み位置（cursors.msg_seq）を超える値は受け付けない。まだ配信して
+ * 配信済み位置 (cursors.msg_seq)を超える値は受け付けない。まだ配信して
  * いない分を確定させると、次の poll の pending 計算がずれる。
  */
 async function handleAck(req, res) {
@@ -353,7 +353,7 @@ async function handlePoll(req, res, url) {
 	/*
 	 * since を省略したら、サーバーが覚えている位置から続ける。
 	 * クライアントが自分で位置を管理しなくて済み、実行した場所にも縛られない。
-	 * 明示的に渡された場合はそちらを優先する（ブラウザは自分で管理している）。
+	 * 明示的に渡された場合はそちらを優先する (ブラウザは自分で管理している)。
 	 *
 	 * ただし since は数 1 つなので、複数のルームを表せない。受け付けたままにすると
 	 * 片方の番号でもう片方を読むことになり、取りこぼしか読み直しが起きる。断る。
@@ -361,7 +361,7 @@ async function handlePoll(req, res, url) {
 	const sinceParam = url.searchParams.get('since');
 	const hasSince = sinceParam !== null && sinceParam !== '';
 	if (hasSince && rooms.length > 1) {
-		throw new BadRequest('複数のルームを待つときは since を渡せません（サーバーが覚えている位置から続きます）');
+		throw new BadRequest('複数のルームを待つときは since を渡せません (サーバーが覚えている位置から続きます)');
 	}
 
 	const sinceByRoom = new Map();
@@ -405,7 +405,7 @@ async function handlePoll(req, res, url) {
 
 	/*
 	 * 切れたら待機もやめる。印を付けるだけにすると、相手がいないのに
-	 * 時間切れまで（既定 240 秒）待機が居座る。
+	 * 時間切れまで (既定 240 秒)待機が居座る。
 	 */
 	let closed = false;
 	const cancel = new AbortController();
@@ -441,12 +441,12 @@ async function handlePoll(req, res, url) {
 		});
 
 		/*
-		 * pending（確定前の繰り越し）は messages とは別枠にする（i260917-01）。
-		 * messages の契約（一度返した内容は二度と出ない）は一切変えない。
+		 * pending (確定前の繰り越し)は messages とは別枠にする (i260917-01)。
+		 * messages の契約 (一度返した内容は二度と出ない)は一切変えない。
 		 *
-		 * 確定済み位置（acked_seq）から、今回の poll が始まった時点の
-		 * 配信済み位置（since = 前回までの msg_seq）までの範囲を返す。
-		 * 未参加（connectorId が無い）なら常に空。
+		 * 確定済み位置 (acked_seq)から、今回の poll が始まった時点の
+		 * 配信済み位置 (since = 前回までの msg_seq)までの範囲を返す。
+		 * 未参加 (connectorId が無い)なら常に空。
 		 */
 		const pending = connectorId
 			? rooms.flatMap((roomId) => {
@@ -469,10 +469,10 @@ async function handlePoll(req, res, url) {
 }
 
 /**
- * sent_at と同じ形（yyyy/mm/dd HH:MM:SS.mmm 固定 23 文字）かを確かめて返す。
+ * sent_at と同じ形 (yyyy/mm/dd HH:MM:SS.mmm 固定 23 文字)かを確かめて返す。
  *
- * CLI 側（node 版・C# 版とも）は、期間の書式・未来への丸めを解決したあと
- * 必ずこの形にして渡す。ここでは形だけを見る（値の意味までは踏み込まない）。
+ * CLI 側 (node 版・C# 版とも)は、期間の書式・未来への丸めを解決したあと
+ * 必ずこの形にして渡す。ここでは形だけを見る (値の意味までは踏み込まない)。
  * 直に叩かれたときのために、サーバー側でも軽く確かめておく。
  */
 const SENT_AT_RE = /^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/;
@@ -480,7 +480,7 @@ const SENT_AT_RE = /^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/;
 function tsParam(url, name) {
 	const raw = url.searchParams.get(name);
 	if (!raw) return null;
-	if (!SENT_AT_RE.test(raw)) throw new BadRequest(`${name} の形が正しくありません（yyyy/mm/dd HH:MM:SS.mmm）: ${raw}`);
+	if (!SENT_AT_RE.test(raw)) throw new BadRequest(`${name} の形が正しくありません (yyyy/mm/dd HH:MM:SS.mmm): ${raw}`);
 	return raw;
 }
 
@@ -494,8 +494,8 @@ function handleHistory(res, url) {
 	const fromConnectorId = optionalId(url.searchParams.get('from_connector_id'), 'from_connector_id');
 
 	/*
-	 * 新しい絞り込み（since_ts・before_ts・find・from_connector_id）のどれか 1 つでも
-	 * あれば getFiltered を使う。無ければ今までどおり（before は msg_seq のページ送り）。
+	 * 新しい絞り込み (since_ts・before_ts・find・from_connector_id)のどれか 1 つでも
+	 * あれば getFiltered を使う。無ければ今までどおり (before は msg_seq のページ送り)。
 	 * 既存の呼び出しはこの4つを渡さないので、今までと同じ経路のまま動く。
 	 */
 	const messages =
@@ -511,8 +511,8 @@ function handleHistory(res, url) {
 /**
  * その connector が、渡したルームのどれかで「初めての接続」かを返す。
  *
- * wait の起動時に出す案内（i260909-01）に使う。読むだけで、setCursor は
- * 呼ばない（poll と違い、待たない・進めない）。何度呼んでも同じ答えを返す。
+ * wait の起動時に出す案内 (i260909-01)に使う。読むだけで、setCursor は
+ * 呼ばない (poll と違い、待たない・進めない)。何度呼んでも同じ答えを返す。
  */
 function handleCursorStatus(res, url) {
 	const connectorId = requireId(url.searchParams.get('connector_id'), 'connector_id');
@@ -574,7 +574,7 @@ function handleVersion(res) {
  *
  * ブラウザは pagehide で /api/leave を送るが、この行事は画面を閉じたときだけで
  * なく「リロード」でも起きる。呼ばれた時点で積むと、リロードのたびに
- * 「離脱しました」が並ぶ（実測でリロード 3 回につき 3 件）。
+ * 「離脱しました」が並ぶ (実測でリロード 3 回につき 3 件)。
  *
  * pagehide からは閉じたのかリロードなのか区別できない。区別できるのは
  * サーバー側で、少し待って接続が戻ってくるかを見ればよい。リロードなら
@@ -629,7 +629,7 @@ function scheduleExit(res, code, payload) {
 
 	// テストから叩くときは実際に落とさない
 	if (process.env.AICHAT_NO_EXIT === '1') {
-		log.warn(`AICHAT_NO_EXIT=1 のため終了しません（本来なら終了コード ${code}）`);
+		log.warn(`AICHAT_NO_EXIT=1 のため終了しません (本来なら終了コード ${code})`);
 		return;
 	}
 
@@ -662,10 +662,10 @@ const MANAGED_BY = process.env.AICHAT_MANAGED ?? null;
 /**
  * プロセスを終える。再起動するかどうかは終了コードで決まる。
  *
- * 既定を 1（再起動される側）にしているのは、取り違えたときの被害が小さいため。
+ * 既定を 1 (再起動される側)にしているのは、取り違えたときの被害が小さいため。
  * 0 で止めてしまうと、動かし直すのに管理者権限が要る。
  */
-// --- 片付ける（archive） ---
+// --- 片付ける (archive) ---
 
 /** 片付けられる対象の種類 */
 const ARCHIVE_KINDS = new Set(['message', 'connector', 'room']);
@@ -681,12 +681,12 @@ function describeArchive(kind, id, counts, byConnectorId) {
 	const label = { message: '発言', connector: '参加者', room: 'ルーム' }[kind];
 	const detail =
 		kind === 'message'
-			? `（msg_seq ${id}）`
+			? `(msg_seq ${id})`
 			: kind === 'room'
-				? `（発言 ${counts.messages} 件 / 読んだ位置 ${counts.cursors} 件）`
+				? `(発言 ${counts.messages} 件 / 読んだ位置 ${counts.cursors} 件)`
 				: counts.messages > 0
-					? `（発言 ${counts.messages} 件も含む）`
-					: '（発言は残す）';
+					? `(発言 ${counts.messages} 件も含む)`
+					: '(発言は残す)';
 
 	return `${when} に ${byConnectorId} が ${label} ${id} を片付けた${detail}`;
 }
@@ -706,7 +706,7 @@ async function handleArchive(req, res) {
 	 * 参加時の行き先になっているため、片付けると誰も参加できなくなる。
 	 */
 	if (kind === 'room' && id === DEFAULT_ROOM) {
-		throw new BadRequest(`${DEFAULT_ROOM} は片付けられません（参加時の行き先です）`);
+		throw new BadRequest(`${DEFAULT_ROOM} は片付けられません (参加時の行き先です)`);
 	}
 
 	/*
@@ -715,7 +715,7 @@ async function handleArchive(req, res) {
 	 * スクリプトからの誤爆を防ぐため。y や true では通さない。
 	 */
 	if (String(input.confirm ?? '') !== id) {
-		throw new BadRequest(`confirm に "${id}" を入れてください（誤って片付けるのを防ぐため）`);
+		throw new BadRequest(`confirm に "${id}" を入れてください (誤って片付けるのを防ぐため)`);
 	}
 
 	const counts = previewArchive(kind, id, withMessages);
@@ -729,7 +729,7 @@ async function handleArchive(req, res) {
 	const result = archive({ kind, id, withMessages, byConnectorId, description });
 
 	// 後から「消えている」と気づいたときに経緯を追えるようにする
-	log.warn(`片付けました（archived_seq ${result.archived_seq}）: ${description}`);
+	log.warn(`片付けました (archived_seq ${result.archived_seq}): ${description}`);
 
 	/*
 	 * 黙って消えると、他の参加者は何が起きたか分からない。
@@ -751,12 +751,12 @@ async function handleRestore(req, res) {
 	const result = restore(seq);
 	if (!result) throw new BadRequest(`archived_seq ${seq} はありません`);
 
-	log.warn(`戻しました（archived_seq ${seq} / ${result.restored} 件）: ${result.row.description}`);
+	log.warn(`戻しました (archived_seq ${seq} / ${result.restored} 件): ${result.row.description}`);
 	postSystemMessage(
 		DEFAULT_ROOM,
 		byConnectorId,
 		'archive',
-		`${nowJst().slice(0, 16)} に ${byConnectorId} が archived_seq ${seq} を戻した（${result.restored} 件）`
+		`${nowJst().slice(0, 16)} に ${byConnectorId} が archived_seq ${seq} を戻した (${result.restored} 件)`
 	);
 	broadcastPresence();
 
@@ -794,7 +794,7 @@ function handleRenamePreview(res, url) {
 }
 
 /**
- * 参加者の ID を付け替える（i260909-02）。
+ * 参加者の ID を付け替える (i260909-02)。
  *
  * ID は 4 つのテーブルに散っている。手で SQL を書くと洗い出しから毎回やり直しに
  * なり、漏らすと「発言は見えるのに一覧にいない」「読んだ位置を失う」形で表に出る。
@@ -811,10 +811,10 @@ async function handleRename(req, res) {
 	if (from === to) throw new BadRequest(`同じ ID には付け替えられません: ${from}`);
 
 	/*
-	 * confirm に旧 ID を求める。スクリプトからの誤爆を防ぐため（archive と同じ）。
+	 * confirm に旧 ID を求める。スクリプトからの誤爆を防ぐため (archive と同じ)。
 	 */
 	if (String(input.confirm ?? '') !== from) {
-		throw new BadRequest(`confirm に "${from}" を入れてください（誤って付け替えるのを防ぐため）`);
+		throw new BadRequest(`confirm に "${from}" を入れてください (誤って付け替えるのを防ぐため)`);
 	}
 
 	/*
@@ -827,12 +827,12 @@ async function handleRename(req, res) {
 	const connector = getConnector(from);
 	if (connector && Number(connector.active_connection_count) > 0) {
 		throw new BadRequest(
-			`${from} は待受け（または接続）が ${connector.active_connection_count} 本走っています。止めてから付け替えてください`
+			`${from} は待受け (または接続)が ${connector.active_connection_count} 本走っています。止めてから付け替えてください`
 		);
 	}
 
 	/*
-	 * store が投げるのは入力の誤り（新しい ID が使われている・同じ ID）なので、
+	 * store が投げるのは入力の誤り (新しい ID が使われている・同じ ID)なので、
 	 * 500 ではなく 400 で返す。500 だと呼ぶ側が「サーバーの不具合」と読む。
 	 */
 	let result;
@@ -844,11 +844,11 @@ async function handleRename(req, res) {
 	if (!result) throw new BadRequest(`その ID の記録がありません: ${from}`);
 
 	// 後から「名前が変わっている」と気づいたときに経緯を追えるようにする
-	log.warn(`付け替えました（${from} → ${to}）`);
+	log.warn(`付け替えました (${from} → ${to})`);
 
 	/*
 	 * 黙って変わると、他の参加者は同じ相手だと分からない。
-	 * 片付け（archive）と同じく、既定のルームに知らせを積む。
+	 * 片付け (archive)と同じく、既定のルームに知らせを積む。
 	 *
 	 * 【自己改名では、知らせも新しい ID から出す】
 	 * 書式は rename :<自分のID>: connector :<旧>: :<新>: で、自分の ID を自分で
@@ -858,7 +858,7 @@ async function handleRename(req, res) {
 	 * store.mjs が挙げる失敗形「発言は見えるのに参加者一覧にいない」を
 	 * rename 自身の手で作ってしまう。previewRename(旧 ID) も 1 件返すため、
 	 * 実体の無い旧 ID をもう一度 rename できる状態になる
-	 * （レビュー #22 medium 5。実測で再現した）。
+	 * (レビュー #22 medium 5。実測で再現した)。
 	 */
 	const noticeFrom = byConnectorId === from ? to : byConnectorId;
 	postSystemMessage(
@@ -879,7 +879,7 @@ async function handleExit(req, res) {
 	 * 以前はブラウザのアドレスバーから叩けるよう GET も受けていたが、本番は
 	 * 認証を求めないため、同じ PC のブラウザで <img src="…/api/admin/exit"> を
 	 * 含むページを踏むだけでサーバーが止まった。exit_code 0 なら will_restart が
-	 * false なので、サービスは起動し直さない（レビュー #21 high 5）。
+	 * false なので、サービスは起動し直さない (レビュー #21 high 5)。
 	 *
 	 * 「localhost 限定だから安全」は外部ホストには効くが、同じ PC のブラウザ
 	 * 経由には効かない。archive / restore / rename は同じ理由で先に POST 限定に
@@ -895,7 +895,7 @@ async function handleExit(req, res) {
 	}
 
 	const willRestart = code !== 0;
-	log.warn(`終了の要求を受け取りました（要求元: ${who} / 終了コード ${code}）`);
+	log.warn(`終了の要求を受け取りました (要求元: ${who} / 終了コード ${code})`);
 
 	scheduleExit(res, code, {
 		exit_code: code,
@@ -919,7 +919,7 @@ function handleEvents(req, res, url) {
 	 *
 	 * join / say / poll / leave の 4 か所には入れていたが、SSE だけ抜けて
 	 * いた。画面は SSE で繋ぐので、本番で test- を名乗った接続がここから
-	 * 通っていた（レビュー #21 medium 9）。
+	 * 通っていた (レビュー #21 medium 9)。
 	 *
 	 * 実際、本番に test- の参加者が入り込んで痕跡が残った。入口を塞がないと
 	 * また入る。ヘッダを返す前に投げること——返した後では 400 にできない。
@@ -948,7 +948,7 @@ function handleEvents(req, res, url) {
 	/*
 	 * 履歴を取ってから繋ぐまでの隙間に届いた分を、まず流す。
 	 *
-	 * getSince は 1 回で MAX_HISTORY_LIMIT（500）件までしか返さない。1 回だけ
+	 * getSince は 1 回で MAX_HISTORY_LIMIT (500)件までしか返さない。1 回だけ
 	 * 呼んでいたため、切れている間に 500 件を超えると、その先が永久に届かなかった。
 	 * 画面は開いた時点の since を URL に焼き付けるので、繋ぎ直しても同じ所から
 	 * 500 件で切れる。読み飛ばしと区別できず、見ている側は欠けに気づけない。
@@ -970,7 +970,7 @@ function handleEvents(req, res, url) {
 				/*
 				 * バッチが満杯のまま上限に達した。ここで無条件に打ち切ると、
 				 * 滞留がちょうど上限で終わっている場合まで truncated を送って
-				 * しまう（満杯かどうかだけでは続きの有無が分からない）。
+				 * しまう (満杯かどうかだけでは続きの有無が分からない)。
 				 * 1 件だけ覗いて、本当に続きがあるときだけ送る
 				 */
 				if (getSince(roomId, cursor, 1).length > 0) {
@@ -1003,7 +1003,7 @@ function handleEvents(req, res, url) {
  * テスト用として立っているとき、アクセストークンを持たない相手を断る。
  *
  * 他プロジェクトがポートを見つけて繋いでくると、テスト中のデータに他人の発言が
- * 混ざる。本番では何も求めない（IS_TEST が false のときは素通り）ので、
+ * 混ざる。本番では何も求めない (IS_TEST が false のときは素通り)ので、
  * 他プロジェクトの使い方は変わらない。
  *
  * /api/version だけは通す。繋ぐ前に「ここはテスト用だ」と知るための入口で、
@@ -1013,7 +1013,7 @@ function isAllowed(url, req) {
 	if (!IS_TEST) return true;
 	if (url.pathname === '/api/version') return true;
 
-	// SSE（EventSource）はヘッダを付けられないため、クエリも見る
+	// SSE (EventSource)はヘッダを付けられないため、クエリも見る
 	return (
 		req.headers['x-aichat-access-token'] === TEST_ACCESS_TOKEN ||
 		url.searchParams.get('access_token') === TEST_ACCESS_TOKEN
@@ -1024,7 +1024,7 @@ export async function handleRequest(req, res) {
 	const url = new URL(req.url, 'http://localhost');
 	const path = url.pathname;
 
-	// 画面（HTML・CSS・JS）はアクセストークンなしで返す。開いた先でアクセストークンを受け取る
+	// 画面 (HTML・CSS・JS)はアクセストークンなしで返す。開いた先でアクセストークンを受け取る
 	if (path.startsWith('/api/') && !isAllowed(url, req)) {
 		sendJson(res, 403, { error: 'テスト用のサーバーです。アクセストークンがありません' });
 		return;
@@ -1107,7 +1107,7 @@ export function takeOver(servers) {
  * 読んだ位置は保たれるので取りこぼしは無いが、**遅れたことは書かないと分からない**。
  * 止まっていた長さを添える。
  *
- * 印を待った起動のときだけ呼ぶ。素の restart（コードの入れ替え）でも流すと、
+ * 印を待った起動のときだけ呼ぶ。素の restart (コードの入れ替え)でも流すと、
  * 開発中にルームが起動メッセージで埋まる。
  *
  * 名乗るのはこのプロジェクトのフォルダ名。本文は【メンテナンス】で始める。

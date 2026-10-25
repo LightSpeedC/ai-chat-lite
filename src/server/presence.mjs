@@ -17,7 +17,7 @@ import { listConnectors, getConnector } from './store.mjs';
  * サブエージェントが終了してから親が次の待受けを立てるまでの空白が、そのまま
  * オフライン表示になるのを防ぐ。
  *
- * 状態を増やすときはここに足す（処理中・離席など）。色は状態名から UI 側で決める。
+ * 状態を増やすときはここに足す (処理中・離席など)。色は状態名から UI 側で決める。
  */
 export const STATUS = {
 	ONLINE: 'online',
@@ -25,7 +25,7 @@ export const STATUS = {
 	OFFLINE: 'offline',
 };
 
-/** 画面や CLI にそのまま出せる日本語。色は持たせない（表示側の責務） */
+/** 画面や CLI にそのまま出せる日本語。色は持たせない \(表示側の責務\) */
 export const STATUS_LABEL = {
 	[STATUS.ONLINE]: '接続中',
 	[STATUS.GRACE]: '一時切断',
@@ -108,7 +108,7 @@ export function countByStatus() {
 	return counts;
 }
 
-/** オフラインでない人数（online と grace の合計） */
+/** オフラインでない人数 \(online と grace の合計\) */
 export function countOnline() {
 	const counts = countByStatus();
 	return counts[STATUS.ONLINE] + counts[STATUS.GRACE];

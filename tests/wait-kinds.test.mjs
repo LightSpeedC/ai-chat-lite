@@ -3,7 +3,7 @@
  *
  * 【なぜ絞るのか】
  * public には join と leave が数分ごとに流れる。既定のままだと 12 時間を指定しても
- * 数分で返っていた（実測 4 分）。ルールは「参加・離脱の記録は伝えない」なので、
+ * 数分で返っていた (実測 4 分)。ルールは「参加・離脱の記録は伝えない」なので、
  * 読まずに捨てるもので起こされていたことになる。
  *
  * 【なぜサーバー側で絞るのか】
@@ -62,7 +62,7 @@ function laterSay(from, body, delayMs = 400) {
 	}, delayMs).unref?.();
 }
 
-/** 少し待ってから参加させる（join の記録が積まれる） */
+/** 少し待ってから参加させる \(join の記録が積まれる\) */
 function laterJoin(id, delayMs = 400) {
 	setTimeout(() => {
 		fetch(`${base}/api/join`, {
@@ -105,7 +105,7 @@ describe('既定では参加・離脱で起きない', () => {
 	test('開始の行に「参加・離脱も」が出ない', async () => {
 		const { stdout } = await chat(['wait', '--wait-sec', '1']);
 
-		assert.match(stdout, /pid \d+ で待受け中（最大/);
+		assert.match(stdout, /pid \d+ で待受け中 \(最大/);
 		assert.doesNotMatch(stdout, /参加・離脱も/);
 	});
 });
@@ -153,10 +153,10 @@ describe('除くのは join と leave だけ', () => {
 		 * archive には画面で戻すボタンが付く。知らせを落とすと戻す口が見えなくなる。
 		 *
 		 * CLI の archive は対象名の入力を求めるため、ここでは API を直に叩く
-		 * （子プロセスにすると標準入力を待って止まる）。
+		 * (子プロセスにすると標準入力を待って止まる)。
 		 */
 		const said = await chat(['say', 'これを片付けます']);
-		const seq = Number(/送信しました（(\d+)）/.exec(said.stdout)[1]);
+		const seq = Number(/送信しました \((\d+)\)/.exec(said.stdout)[1]);
 
 		// 位置を最新にしてから片付ける。archive の知らせだけを見たい
 		await api('/api/poll?connector_id=test-arch&room_id=public&wait=0').then((r) => r.json());
@@ -187,7 +187,7 @@ describe('誤りは断る', () => {
 
 	test('省略したら全部で起こす', async () => {
 		/*
-		 * 画面（SSE）と既存の呼び出しのために、既定の振る舞いは変えない。
+		 * 画面 (SSE)と既存の呼び出しのために、既定の振る舞いは変えない。
 		 * 絞るかどうかを決めるのは CLI 側である。
 		 */
 		await api('/api/poll?connector_id=test-all&room_id=public&wait=0').then((r) => r.json());

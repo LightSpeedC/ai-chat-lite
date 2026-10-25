@@ -1,12 +1,12 @@
 /*
- * 参加者の ID を付け替える（rename）。
+ * 参加者の ID を付け替える (rename)。
  *
  * 【なぜ要るのか】
  * プロジェクト名を変えると、名乗る ID も変えたくなる。ID は connectors だけで
- * なく cursors ・ messages（発言者と宛先）・ archives にも散っており、
+ * なく cursors ・ messages (発言者と宛先)・ archives にも散っており、
  * 1 つでも漏らすと「発言は見えるのに参加者一覧にいない」「読んだ位置を失って
  * 過去を読み直す」といった形で表に出る。手で SQL を書いていたときは、
- * 対象を洗い出すところから毎回やり直していた（i260909-02）。
+ * 対象を洗い出すところから毎回やり直していた (i260909-02)。
  */
 import { test, describe, before } from 'node:test';
 import assert from 'node:assert/strict';
@@ -27,7 +27,7 @@ function say(roomId, from, body, to = null) {
 	return store.addMessage({ roomId, fromConnectorId: from, body, toConnectorId: to });
 }
 
-describe('下見（previewRename）', () => {
+describe('下見 (previewRename)', () => {
 	before(() => {
 		store.joinConnector('test-rename-a', 'ai');
 		store.joinConnector('test-rename-watcher', 'ai');
@@ -45,7 +45,7 @@ describe('下見（previewRename）', () => {
 		assert.equal(counts.messages_to, 1, '宛先としての件数が違う');
 	});
 
-	test('居ない ID は 0 件で返る（例外にしない）', () => {
+	test('居ない ID は 0 件で返る (例外にしない)', () => {
 		const counts = store.previewRename('test-rename-nobody');
 
 		assert.equal(counts.connectors, 0);
@@ -55,7 +55,7 @@ describe('下見（previewRename）', () => {
 	});
 });
 
-describe('付け替える（renameConnector）', () => {
+describe('付け替える (renameConnector)', () => {
 	before(() => {
 		store.joinConnector('test-rename-b', 'ai');
 		const m = say('sandbox-rename', 'test-rename-b', '付け替える前');
@@ -99,7 +99,7 @@ describe('本文の中の @旧ID も付け替える', () => {
 	/*
 	 * 【なぜ必要か】
 	 * 名指しは to_connector_id に入るが、本文に自分で @相手 と書く形も普通に使う
-	 * （「@project-a ご報告ありがとうございます」など）。列だけ直して本文を
+	 * (「@project-a ご報告ありがとうございます」など)。列だけ直して本文を
 	 * 置き去りにすると、過去のやり取りだけ古い名前で残り、検索も当たらなくなる。
 	 */
 	test('本文の @旧ID が新しい ID になる', () => {
@@ -118,10 +118,10 @@ describe('本文の中の @旧ID も付け替える', () => {
 	/*
 	 * 【なぜ必要か】
 	 * 前方一致で置き換えると、@project-a を直したつもりで @project-aa まで
-	 * 壊れる。共通ルールも「前方一致では探さない」と明記している（実際に
-	 * 待受けの検索式で事故になった）。ID に使える文字が続くときは置き換えない。
+	 * 壊れる。共通ルールも「前方一致では探さない」と明記している (実際に
+	 * 待受けの検索式で事故になった)。ID に使える文字が続くときは置き換えない。
 	 */
-	test('前方一致では置き換えない（@旧ID の続きが ID の文字なら別物）', () => {
+	test('前方一致では置き換えない (@旧ID の続きが ID の文字なら別物)', () => {
 		store.joinConnector('test-rename-p', 'ai');
 		store.joinConnector('test-rename-pp', 'ai');
 		say('sandbox-rename-p', 'test-rename-watcher', '@test-rename-pp は別の相手');
@@ -188,14 +188,14 @@ describe('断る条件', () => {
 			() => store.renameConnector('test-rename-e', 'test-rename-taken'),
 			/既に使われています|already/
 		);
-		// 断ったあとも元のままであること（途中まで書き換わっていない）
+		// 断ったあとも元のままであること (途中まで書き換わっていない)
 		assert.ok(store.getConnector('test-rename-e'), '断ったのに元が消えている');
 	});
 
 	/*
 	 * 【なぜ必要か】
 	 * 片付けた参加者は connectors に行が残り、主キーの枠を占め続ける
-	 * （archived_seq が入るだけ）。読み出しには出ないので「空いている」ように
+	 * (archived_seq が入るだけ)。読み出しには出ないので「空いている」ように
 	 * 見えるが、その名前へ付け替えると主キーが衝突する。
 	 */
 	test('片付け済みの ID も「使われている」として断る', () => {

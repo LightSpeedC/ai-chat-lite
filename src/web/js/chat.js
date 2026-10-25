@@ -2,10 +2,10 @@
  * ai-chat-lite ブラウザ画面
  *
  * 起動の順序:
- *   1. ID を決める（localStorage、無ければ尋ねる）
+ *   1. ID を決める (localStorage、無ければ尋ねる)
  *   2. join で参加登録し、現在位置と参加者一覧を受け取る
  *   3. history で直近 50 件を取る
- *   4. events（SSE）を繋ぐ。3 と 4 の隙間に届いた分は since で埋まる
+ *   4. events (SSE)を繋ぐ。3 と 4 の隙間に届いた分は since で埋まる
  */
 
 import { renderBody, escapeText } from './markdown.js';
@@ -92,7 +92,7 @@ function replyQuote(seq) {
  * 返信先の入力を数にする。空なら null。
  *
  * 先頭の # は落とす。画面には #474 と出るので、そのまま写して貼れるようにする。
- * 数でなければ null にする（送信そのものは止めない）。
+ * 数でなければ null にする (送信そのものは止めない)。
  */
 function replyToValue() {
 	const raw = el.replyTo.value.trim().replace(/^#/, '');
@@ -156,7 +156,7 @@ function messageElement(m) {
 	/*
 	 * 返信元を 1 行だけ引用する。
 	 *
-	 * 指す先が画面に無いことがある（片付けられた、まだ読み込んでいない）。
+	 * 指す先が画面に無いことがある (片付けられた、まだ読み込んでいない)。
 	 * サーバーに問い合わせず、持っている範囲だけで出す。無ければ番号だけ出す。
 	 * 存在を強いると、返信が付いた発言を片付けられなくなるため。
 	 */
@@ -274,7 +274,7 @@ const ACCESS_TOKEN = (() => {
 	}
 })();
 
-/** アクセストークンがあればクエリに足す。SSE（EventSource）はヘッダを付けられないため */
+/** アクセストークンがあればクエリに足す。SSE \(EventSource\)はヘッダを付けられないため */
 function withAccessToken(path) {
 	if (!ACCESS_TOKEN) return path;
 	return path + (path.includes('?') ? '&' : '?') + 'access_token=' + encodeURIComponent(ACCESS_TOKEN);
@@ -307,7 +307,7 @@ function applyEnv(env) {
 /**
  * メンテナンス中であることを出す。
  *
- * 環境の色（本番＝紺／テスト＝赤茶）とは別の軸なので、色を置き換えずに帯で重ねる。
+ * 環境の色 (本番＝紺／テスト＝赤茶)とは別の軸なので、色を置き換えずに帯で重ねる。
  * 入力欄は使えないようにする。書けても届かないため。
  */
 function applyMaintenance(maintenance, since, reason) {
@@ -319,7 +319,7 @@ function applyMaintenance(maintenance, since, reason) {
 	if (send) send.disabled = Boolean(maintenance);
 
 	if (!maintenance) return;
-	const from = since ? `（${new Date(since).toLocaleString('ja-JP')} から）` : '';
+	const from = since ? `(${new Date(since).toLocaleString('ja-JP')} から)` : '';
 	const why = reason ? ` ${reason}` : '';
 	showBanner(`メンテナンス中です${from}。${why} 再開までお待ちください。`);
 }
@@ -350,7 +350,7 @@ function checkVersion({ version, env, maintenance, maintenance_since, maintenanc
 	}
 	if (serverVersion === version) return;
 
-	showBanner(`サーバーが新しくなりました（${version}）。読み直します…`);
+	showBanner(`サーバーが新しくなりました (${version})。読み直します…`);
 	// 帯を読める間だけ待ってから読み直す
 	setTimeout(() => location.reload(), 1500);
 }
@@ -410,16 +410,16 @@ async function loadRooms() {
 }
 
 /*
- * サーバー側（src/server/server.mjs の requireId）と同じ規則。変えたら両方直す。
+ * サーバー側 (src/server/server.mjs の requireId)と同じ規則。変えたら両方直す。
  *
  * 検証せずに localStorage へ書くと、誤入力した名前がそのまま固定され、
- * リロードのたびに同じ失敗（サーバーの 400）を繰り返す（レビュー #19、
- * i260908-05）。
+ * リロードのたびに同じ失敗 (サーバーの 400)を繰り返す (レビュー #19、
+ * i260908-05)。
  *
  * ルーム名と名乗る ID の両方に使う。以前はルーム名だけを通しており、
  * ID の側は空かどうかしか見ずに localStorage へ書いていた。サーバーは
  * /api/join の connector_id にも同じ検査を掛けるので、上のコメントが
- * 警告している状況が ID 側にだけ残っていた（レビュー #23 medium 13）。
+ * 警告している状況が ID 側にだけ残っていた (レビュー #23 medium 13)。
  */
 const ID_RE = /^[A-Za-z0-9_-](?:[A-Za-z0-9_.-]*[A-Za-z0-9_-])?$/;
 
@@ -436,7 +436,7 @@ const TEST_CONNECTOR_PREFIX = 'test-';
  * 読めず、error イベントしか来ない。画面には「接続が切れました。繋ぎ直して
  * います…」だけが出続け、原因が分からないまま止まる。
  *
- * だから SSE を張る前に、ここで断って理由を出す（レビュー #21 medium 9）。
+ * だから SSE を張る前に、ここで断って理由を出す (レビュー #21 medium 9)。
  * どちらの環境かは applyEnv が body に入れている。
  */
 function rejectedHere(id) {
@@ -447,8 +447,8 @@ function rejectedHere(id) {
  * ルームを切り替える。表示を空にしてから読み直す。
  *
  * force は同じルームのまま読み直したいとき用。戻したものは SSE で流れて
- * こない（既にある行の archived_seq を NULL にするだけで、新しい発言が
- * 積まれるわけではない）ため、取り込むには読み直すしかない。
+ * こない (既にある行の archived_seq を NULL にするだけで、新しい発言が
+ * 積まれるわけではない)ため、取り込むには読み直すしかない。
  */
 async function switchRoom(next, force = false) {
 	if (!next || (next === room && !force)) return;
@@ -466,7 +466,7 @@ async function switchRoom(next, force = false) {
  * メンテナンス中かどうかを尋ねる。
  *
  * 印がある間、API は 503 を返すが /api/version だけは 200 で状態を返す
- * （src/server/maintenance-handler.mjs）。SSE も 503 なので、帯を出せるのは
+ * (src/server/maintenance-handler.mjs)。SSE も 503 なので、帯を出せるのは
  * この口だけである。ここを叩いていなかったため、印があるときの画面は
  * 版が「—」・参加者 0 人・ログ空・入力欄は使えるまま、という姿だった。
  *
@@ -502,7 +502,7 @@ async function start() {
 
 	/*
 	 * 先に印を見る。メンテナンス中に join や history を投げると 503 になり、
-	 * 例外の帯（繋がりません）が出て、本当の理由が伝わらない
+	 * 例外の帯 (繋がりません)が出て、本当の理由が伝わらない
 	 */
 	if (await checkMaintenance()) {
 		waitUntilCleared();
@@ -599,7 +599,7 @@ el.roomDialog.addEventListener('close', () => {
 	const name = el.roomInput.value.trim();
 	if (!name) return;
 	if (!ID_RE.test(name)) {
-		showBanner(`ルーム名に使えるのは英数字・ハイフン・下線・ピリオド（先頭と末尾には置けません）だけです: ${name}`);
+		showBanner(`ルーム名に使えるのは英数字・ハイフン・下線・ピリオド (先頭と末尾には置けません)だけです: ${name}`);
 		return;
 	}
 	switchRoom(name);
@@ -675,7 +675,7 @@ async function openArchives() {
 		const count = Number(a.msg_count) + Number(a.cursor_count) + Number(a.connector_count);
 		const tr = document.createElement('tr');
 
-		// 本文は他人が書いた文字列。textContent で入れる（innerHTML にしない）
+		// 本文は他人が書いた文字列。textContent で入れる (innerHTML にしない)
 		for (const [text, cls] of [
 			[String(a.archived_seq), 'nowrap'],
 			[a.archived_at.slice(0, 16), 'nowrap'],
@@ -768,7 +768,7 @@ el.dialog.addEventListener('close', () => {
 	}
 	// 検証せずに書くと、誤った名前が固定されてリロードのたびに 400 を繰り返す
 	if (!ID_RE.test(value)) {
-		showBanner(`ID に使えるのは英数字・ハイフン・下線・ピリオド（先頭と末尾には置けません）だけです: ${value}`);
+		showBanner(`ID に使えるのは英数字・ハイフン・下線・ピリオド (先頭と末尾には置けません)だけです: ${value}`);
 		el.dialog.showModal();
 		return;
 	}

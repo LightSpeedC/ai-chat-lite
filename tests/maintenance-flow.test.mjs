@@ -21,7 +21,7 @@ const MARKER = join(TEST_DATA, 'MAINTENANCE');
  * 別プロセスで動かすのは、main.mjs がトップレベルで待ち受けを始める作りだから。
  * import では試せない。
  *
- * 本番（_data・8787）には触らない。置き場もポートもテスト用に差し替える。
+ * 本番 (_data・8787)には触らない。置き場もポートもテスト用に差し替える。
  */
 
 /** 空いているポートを 1 つ borrow する */
@@ -77,7 +77,7 @@ async function until(check, { timeoutMs = 20000, everyMs = 200, what = '条件' 
 		}
 		await new Promise((r) => setTimeout(r, everyMs));
 	}
-	assert.fail(`${what} が満たされませんでした（${timeoutMs}ms）`);
+	assert.fail(`${what} が満たされませんでした (${timeoutMs}ms)`);
 }
 
 let child;
@@ -173,7 +173,7 @@ describe('メンテナンスの通し', () => {
 
 	test('印を待たずに起動したときは案内を出さない', async () => {
 		/*
-		 * 素の restart（コードの入れ替え）でも流すと、開発中にルームが
+		 * 素の restart (コードの入れ替え)でも流すと、開発中にルームが
 		 * 起動メッセージで埋まる。印を待った起動のときだけにしてある。
 		 */
 		const data = join(ROOT, 'tmp', '_data', 'unit-maintenance-flow-plain');
@@ -211,18 +211,18 @@ describe('メンテナンスの通し', () => {
 		}
 	});
 
-	test('メンテナンス中に張った待受けは、明けてから繋ぎ直す（初回はカーソルを立てて終わる）', async () => {
+	test('メンテナンス中に張った待受けは、明けてから繋ぎ直す (初回はカーソルを立てて終わる)', async () => {
 		/*
 		 * 粘って繋がる道筋を見る。諦める道筋は wait だと 10 分かかるので、
-		 * 粘らないコマンド（stop）で別に見ている（client-unreachable）。
+		 * 粘らないコマンド (stop)で別に見ている (client-unreachable)。
 		 *
 		 * 間隔が 10 秒なので、印を消してから最初の繋ぎ直しまで最大 10 秒かかる。
 		 *
 		 * 【1 回目と 2 回目に分けた理由】
 		 * test-connector1 はこの DB では初めての接続になる。初回の wait は
-		 * カーソルを立てて案内を出したらすぐ終わる（i260909-01）ため、
+		 * カーソルを立てて案内を出したらすぐ終わる (i260909-01)ため、
 		 * メンテ明けの繋ぎ直し自体は 1 回目で確かめ、新着を受け取る確認は
-		 * （初回でなくなった）2 回目で行う。
+		 * (初回でなくなった)2 回目で行う。
 		 */
 		const data = join(ROOT, 'tmp', '_data', 'unit-maintenance-flow-retry');
 		await removeWhenFree(data);
@@ -244,7 +244,7 @@ describe('メンテナンスの通し', () => {
 
 		/*
 		 * 置き場を渡す。渡さないと本番の置き場を見ていることになり、
-		 * CLI が logs/client/ に記録を残してしまう（実際に残った）。
+		 * CLI が logs/client/ に記録を残してしまう (実際に残った)。
 		 */
 		const spawnWaiter = (extraArgs) =>
 			spawn(
@@ -279,12 +279,12 @@ describe('メンテナンスの通し', () => {
 			// 明ける
 			rmSync(marker, { force: true });
 
-			assert.equal(await waiting1, 0, `1 回目（初回）が正常に終わっていない\n${errText1}`);
+			assert.equal(await waiting1, 0, `1 回目 (初回)が正常に終わっていない\n${errText1}`);
 
 			// 粘ったことは始めの 1 行で分かる。途中は出さない
 			assert.match(errText1, /メンテナンス中です/);
 			assert.equal(errText1.split('\n').filter((l) => l.includes('メンテナンス中です')).length, 1, '途中も出している');
-			assert.match(outText1, /初めての接続です/, '初回の案内が出ていない（メンテ明けの判定より前に first_time が確定している可能性）');
+			assert.match(outText1, /初めての接続です/, '初回の案内が出ていない (メンテ明けの判定より前に first_time が確定している可能性)');
 
 			// --- 2 回目: 初回ではなくなったので、普通に待つ ---
 			let outText2 = '';
@@ -300,7 +300,7 @@ describe('メンテナンスの通し', () => {
 			 * 繋ぎ直しを待ってから投稿する。
 			 *
 			 * 先に投稿すると、待受けは繋いだ時点の位置から待ち始めるため、
-			 * その発言を新着として受け取れない（読んだ位置がそこまで進んでいる）。
+			 * その発言を新着として受け取れない (読んだ位置がそこまで進んでいる)。
 			 * 待っている間は接続を保持しているので、在席に出たら繋がったと分かる。
 			 */
 			await until(

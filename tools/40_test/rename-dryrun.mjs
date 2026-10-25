@@ -1,8 +1,8 @@
 /*
- * 参加者の ID 付け替え（rename）を、本番の写しで試す。
+ * 参加者の ID 付け替え (rename)を、本番の写しで試す。
  *
  * 【なぜ要るか】
- * rename は connectors ・ cursors ・ messages（差出人 ・ 宛先 ・ 本文の @）・
+ * rename は connectors ・ cursors ・ messages (差出人 ・ 宛先 ・ 本文の @)・
  * archives を横断して書き換える。**取りこぼしても例外は出ない。**
  * 古い ID を指す行が残るだけで、静かに食い違う。
  *
@@ -39,7 +39,7 @@ const workDir = join(root, 'tmp', '_data-rename');
 const copyPath = join(workDir, 'chat.db');
 const livePath = join(root, '_data', 'chat.db');
 
-// --- 1. 本番の写しを作る（本番には書き込まない） ---
+// --- 1. 本番の写しを作る (本番には書き込まない) ---
 
 rmSync(workDir, { recursive: true, force: true });
 mkdirSync(workDir, { recursive: true });
@@ -95,7 +95,7 @@ let before;
 	before = countRefs(db, from);
 	db.close();
 }
-const beforeTotal = report(`付け替える前（${from} を指す行）`, before);
+const beforeTotal = report(`付け替える前 (${from} を指す行)`, before);
 
 if (beforeTotal === 0) {
 	console.error(`${from} を指す行がありません。ID を確かめてください。`);
@@ -114,14 +114,14 @@ process.env.AICHAT_NO_EXIT = '1';
 const store = await import('../../src/server/store.mjs');
 
 const preview = store.previewRename(from);
-process.stdout.write('--- 下見（previewRename）---\n');
+process.stdout.write('--- 下見 (previewRename)---\n');
 for (const [key, value] of Object.entries(preview)) {
 	process.stdout.write(`  ${key.padEnd(20)} ${String(value).padStart(5)}\n`);
 }
 process.stdout.write('\n');
 
 const result = store.renameConnector(from, to);
-process.stdout.write('--- 付け替えた結果（renameConnector）---\n');
+process.stdout.write('--- 付け替えた結果 (renameConnector)---\n');
 for (const [key, value] of Object.entries(result)) {
 	process.stdout.write(`  ${key.padEnd(20)} ${String(value).padStart(5)}\n`);
 }
@@ -136,8 +136,8 @@ const afterOld = countRefs(db, from);
 const afterNew = countRefs(db, to);
 db.close();
 
-const oldTotal = report(`付け替えた後（${from} を指す行。0 であること）`, afterOld);
-const newTotal = report(`付け替えた後（${to} を指す行）`, afterNew);
+const oldTotal = report(`付け替えた後 (${from} を指す行。0 であること)`, afterOld);
+const newTotal = report(`付け替えた後 (${to} を指す行)`, afterNew);
 
 // --- 5. 判定 ---
 

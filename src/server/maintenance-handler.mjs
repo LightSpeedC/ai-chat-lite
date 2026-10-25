@@ -25,7 +25,7 @@ const DEFAULT_RETRY_SEC = 60;
  *
  * @param {object} info 印から読んだもの
  * @param {string} info.reason 理由。空でもよい
- * @param {number} info.retryAfterSec 再開の見込み（秒）
+ * @param {number} info.retryAfterSec 再開の見込み (秒)
  * @param {string} info.since いつから止まっているか
  */
 export function createMaintenanceHandler(info = {}) {

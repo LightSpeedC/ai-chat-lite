@@ -11,7 +11,7 @@
 
 /* ===================================================================
    ai-chat-lite 共通スタイル
-   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   章ごとのアクセント色 (.ch01〜)は各 HTML 側で定義する
    =================================================================== */
 
 :root {
@@ -197,7 +197,7 @@ th.nowrap {
 	white-space: nowrap;
 }
 
-/* 一覧の印。● と ○ と — を中央に揃え、読まない（—）は薄くして目立たせない */
+/* 一覧の印。● と ○ と — を中央に揃え、読まない (—)は薄くして目立たせない */
 td.mark,
 th.mark {
 	text-align: center;
@@ -405,7 +405,7 @@ a.doclink {
 }
 </style>
 <style>
-/* この資料だけのもの: 章のアクセント色（5章 / 色相 280→0 を 4 分割）と目次の採番 */
+/* この資料だけのもの: 章のアクセント色 (5章 / 色相 280→0 を 4 分割)と目次の採番 */
 .ch01 { --accent: hsl(280.0, 78%, 25%); --accent2: hsl(280.0, 58%, 55%); --soft: hsl(280.0, 28%, 95%); }
 .ch02 { --accent: hsl(210.0, 78%, 25%); --accent2: hsl(210.0, 58%, 55%); --soft: hsl(210.0, 28%, 95%); }
 .ch03 { --accent: hsl(140.0, 78%, 25%); --accent2: hsl(140.0, 58%, 55%); --soft: hsl(140.0, 28%, 95%); }
@@ -420,7 +420,7 @@ a.doclink {
 <div class="titlebar">
 	<div class="inner">
 		<h1>環境変数の使い方</h1>
-		<p class="lead">どの環境変数を、どこで（クライアント・サーバ・道具）、どの場面で（本番・試験）使っているか。<strong>使っていないことが一目でわかる形</strong>で持ち続ける</p>
+		<p class="lead">どの環境変数を、どこで (クライアント・サーバ・道具)、どの場面で (本番・試験)使っているか。<strong>使っていないことが一目でわかる形</strong>で持ち続ける</p>
 		<p class="date">📅 作成: 2026-10-15 / 更新: 2026-10-15</p>
 	</div>
 </div>
@@ -429,7 +429,7 @@ a.doclink {
 
 <p class="backlink"><a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
 
-<p>このプロジェクトのコード（<code>src/</code> ・ <code>tools/</code> ・ <code>tests/</code> ・ <code>deploy/</code> ・ <code>bin/</code>）が読む環境変数と、それを渡している所をまとめる。<strong>環境変数はプロセスの一覧に出ず、渡し損ねても既定値で静かに動く。</strong>どこで効いていて、どこで効いていないかを、ここで 1 か所に持つ。</p>
+<p>このプロジェクトのコード (<code>src/</code> ・ <code>tools/</code> ・ <code>tests/</code> ・ <code>deploy/</code> ・ <code>bin/</code>)が読む環境変数と、それを渡している所をまとめる。<strong>環境変数はプロセスの一覧に出ず、渡し損ねても既定値で静かに動く。</strong>どこで効いていて、どこで効いていないかを、ここで 1 か所に持つ。</p>
 
 <div class="callout callout-important">
 	<p><strong>変数を足す・消す・渡し方を変えたら、同じ作業の中でこの資料を直す。</strong>見直しの手順は 5 章。</p>
@@ -451,23 +451,23 @@ a.doclink {
 	<h1>ひと目でわかる一覧</h1>
 
 	<h2>読む側ごと</h2>
-	<p>その場面で<strong>値が渡されて効いている</strong>変数だけを書く。読むコードはあっても誰も渡していないものは、ここには入れない（次の表の ○）。</p>
+	<p>その場面で<strong>値が渡されて効いている</strong>変数だけを書く。読むコードはあっても誰も渡していないものは、ここには入れない (次の表の ○)。</p>
 	<div class="tablewrap">
 	<table>
 		<thead><tr><th class="nowrap">読む側</th><th>本番</th><th>試験</th></tr></thead>
 		<tbody>
-			<tr><td class="nowrap">クライアント（node 版 <code>src/client/</code>）</td><td><span class="badge b-none">なし</span></td><td><span class="badge b-none">なし</span></td></tr>
-			<tr><td class="nowrap">クライアント（Rust 版 <code>src/cli-rs/</code>）</td><td><span class="badge b-none">なし</span></td><td><span class="badge b-none">なし</span></td></tr>
-			<tr><td class="nowrap">ブラウザ画面（<code>src/web/</code>）</td><td><span class="badge b-none">なし</span></td><td><span class="badge b-none">なし</span></td></tr>
-			<tr><td class="nowrap">サーバ（<code>src/server/</code>）</td><td><code>AICHAT_PORT</code>（中身は既定と同じ 8787）<br><code>AICHAT_MANAGED</code></td><td><code>AICHAT_DATA</code> ・ <code>AICHAT_PORT</code><br><code>AICHAT_NO_EXIT</code> ・ <code>AICHAT_LEAVE_GRACE_MS</code></td></tr>
-			<tr><td class="nowrap">運用の道具（<code>tools/80_ops/</code>）</td><td><code>USERPROFILE</code>（OS が渡す）</td><td><code>AICHAT_DATA</code> ・ <code>AICHAT_PORT</code><br><code>MASK_LOG_TEST_CALL_LOG</code>（テストの偽物が読む）</td></tr>
-			<tr><td class="nowrap">試験の道具（<code>tools/40_test/</code>）</td><td>（本番では使わない）</td><td><code>AICHAT_DATA</code> ・ <code>AICHAT_NO_EXIT</code><br><code>CONTRAST_TARGET_DIR</code>（外の道具へ渡す）</td></tr>
+			<tr><td class="nowrap">クライアント (node 版 <code>src/client/</code>)</td><td><span class="badge b-none">なし</span></td><td><span class="badge b-none">なし</span></td></tr>
+			<tr><td class="nowrap">クライアント (Rust 版 <code>src/cli-rs/</code>)</td><td><span class="badge b-none">なし</span></td><td><span class="badge b-none">なし</span></td></tr>
+			<tr><td class="nowrap">ブラウザ画面 (<code>src/web/</code>)</td><td><span class="badge b-none">なし</span></td><td><span class="badge b-none">なし</span></td></tr>
+			<tr><td class="nowrap">サーバ (<code>src/server/</code>)</td><td><code>AICHAT_PORT</code>(中身は既定と同じ 8787)<br><code>AICHAT_MANAGED</code></td><td><code>AICHAT_DATA</code> ・ <code>AICHAT_PORT</code><br><code>AICHAT_NO_EXIT</code> ・ <code>AICHAT_LEAVE_GRACE_MS</code></td></tr>
+			<tr><td class="nowrap">運用の道具 (<code>tools/80_ops/</code>)</td><td><code>USERPROFILE</code>(OS が渡す)</td><td><code>AICHAT_DATA</code> ・ <code>AICHAT_PORT</code><br><code>MASK_LOG_TEST_CALL_LOG</code>(テストの偽物が読む)</td></tr>
+			<tr><td class="nowrap">試験の道具 (<code>tools/40_test/</code>)</td><td>(本番では使わない)</td><td><code>AICHAT_DATA</code> ・ <code>AICHAT_NO_EXIT</code><br><code>CONTRAST_TARGET_DIR</code>(外の道具へ渡す)</td></tr>
 		</tbody>
 	</table>
 	</div>
 
 	<h2>変数ごと</h2>
-	<p>印の意味: <strong>●</strong> 値が渡されて効いている ／ <strong>○</strong> 読むコードはあるが、誰も渡していない（既定値で動く） ／ <strong>—</strong> 読まない</p>
+	<p>印の意味: <strong>●</strong> 値が渡されて効いている ／ <strong>○</strong> 読むコードはあるが、誰も渡していない (既定値で動く) ／ <strong>—</strong> 読まない</p>
 	<div class="tablewrap">
 	<table>
 		<thead>
@@ -483,7 +483,7 @@ a.doclink {
 			<tr><td class="nowrap"><code>AICHAT_LOCK_MAX_TRIES</code></td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark">○</td><td class="mark">○</td></tr>
 			<tr><td class="nowrap"><code>MASK_LOG_TEST_CALL_LOG</code></td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark">●</td></tr>
 			<tr><td class="nowrap"><code>CONTRAST_TARGET_DIR</code></td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark">●</td></tr>
-			<tr><td class="nowrap"><code>USERPROFILE</code>（OS）</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark">●</td><td class="mark">●</td></tr>
+			<tr><td class="nowrap"><code>USERPROFILE</code>(OS)</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark off">—</td><td class="mark">●</td><td class="mark">●</td></tr>
 		</tbody>
 	</table>
 	</div>
@@ -503,15 +503,15 @@ a.doclink {
 	<table>
 		<thead><tr><th class="nowrap">変数</th><th>何を変えるか</th><th class="nowrap">読む所</th><th class="nowrap">既定値</th><th>渡している所</th></tr></thead>
 		<tbody>
-			<tr><td class="nowrap"><code>AICHAT_DATA</code></td><td>データの置き場（DB ・ バックアップの印 ・ メンテナンスの印）。<strong>本番かテストかも、これで決まる</strong>（置き場が <code>_data</code> そのものなら本番、それ以外はテスト）</td><td class="nowrap"><code>src/server/config.mjs:34</code>（<code>:112</code> で由来を記録）<br>試験の道具 5 本（<code>start-test-server.mjs</code> ・ <code>compare-cli.mjs</code> ・ <code>benchmark-waiters.mjs</code> ・ <code>purge-test-data.mjs</code> ・ <code>rename-dryrun.mjs</code>）</td><td class="nowrap"><code>_data</code></td><td>テスト（<code>tests/helpers/prepare-db.mjs</code> ほか多数）・ テスト用サーバ ・ <code>run-ui-tests.ps1</code> ・ <code>benchmark-server.mjs</code>。<strong>本番は誰も渡さない</strong>（サービスもバックアップのタスクも既定で動く）</td></tr>
-			<tr><td class="nowrap"><code>AICHAT_PORT</code></td><td>サーバが受けるポート</td><td class="nowrap"><code>src/server/config.mjs:66</code>（<code>:111</code> で由来を記録）<br><code>tools/80_ops/restore.ps1:64</code></td><td class="nowrap">8787</td><td><strong>本番は <code>deploy/node-ai-chat-lite-winsw.xml:20</code> が 8787 を渡す。</strong>テスト用サーバ ・ テスト ・ <code>restore-ps1.test.mjs</code>（<code>restore.ps1</code> に渡す）。<code>restore.ps1</code> を本番で動かすときは誰も渡さず、既定の 8787 になる</td></tr>
-			<tr><td class="nowrap"><code>AICHAT_MANAGED</code></td><td>WinSW から起動されたか。終了の要求を受けたとき、起動し直してもらえる前提で終わってよいかの判断に使う</td><td class="nowrap"><code>src/server/server.mjs:660</code></td><td class="nowrap">なし</td><td><strong>本番は <code>deploy/node-ai-chat-lite-winsw.xml:23</code> が <code>winsw</code> を渡す。</strong>テストは渡さない（直に起動するため。<code>tests/server.test.mjs:625</code>）</td></tr>
-			<tr><td class="nowrap"><code>AICHAT_NO_EXIT</code></td><td><code>1</code> なら、終了の要求が来ても落ちない（テストのプロセスごと落ちないようにする）</td><td class="nowrap"><code>src/server/server.mjs:631</code></td><td class="nowrap">なし</td><td>テスト 9 本（<code>server.test.mjs</code> ・ <code>client-wait.test.mjs</code> など）・ <code>rename-dryrun.mjs</code>（自分のプロセスに立てる）。<code>restore-ps1.test.mjs</code> は、本当に落ちることを確かめるため、わざと渡さない</td></tr>
-			<tr><td class="nowrap"><code>AICHAT_LEAVE_GRACE_MS</code></td><td>切断から離脱とみなすまでの猶予（ミリ秒）</td><td class="nowrap"><code>src/server/server.mjs:591</code></td><td class="nowrap">5000</td><td><code>tests/server.test.mjs:16</code>（150 に縮める）だけ</td></tr>
-			<tr><td class="nowrap"><code>AICHAT_LOCK_POLL_MS</code></td><td>バックアップの印を見に行く間隔（ミリ秒）</td><td class="nowrap"><code>src/server/backup.mjs:119</code></td><td class="nowrap">30000</td><td><strong>誰も渡していない。</strong>テスト（<code>backup.test.mjs</code> ・ <code>maintenance.test.mjs</code>）は、関数の引数 <code>pollMs</code> で縮めている</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_DATA</code></td><td>データの置き場 (DB ・ バックアップの印 ・ メンテナンスの印)。<strong>本番かテストかも、これで決まる</strong>(置き場が <code>_data</code> そのものなら本番、それ以外はテスト)</td><td class="nowrap"><code>src/server/config.mjs:34</code>(<code>:112</code> で由来を記録)<br>試験の道具 5 本 (<code>start-test-server.mjs</code> ・ <code>compare-cli.mjs</code> ・ <code>benchmark-waiters.mjs</code> ・ <code>purge-test-data.mjs</code> ・ <code>rename-dryrun.mjs</code>)</td><td class="nowrap"><code>_data</code></td><td>テスト (<code>tests/helpers/prepare-db.mjs</code> ほか多数)・ テスト用サーバ ・ <code>run-ui-tests.ps1</code> ・ <code>benchmark-server.mjs</code>。<strong>本番は誰も渡さない</strong>(サービスもバックアップのタスクも既定で動く)</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_PORT</code></td><td>サーバが受けるポート</td><td class="nowrap"><code>src/server/config.mjs:66</code>(<code>:111</code> で由来を記録)<br><code>tools/80_ops/restore.ps1:64</code></td><td class="nowrap">8787</td><td><strong>本番は <code>deploy/node-ai-chat-lite-winsw.xml:20</code> が 8787 を渡す。</strong>テスト用サーバ ・ テスト ・ <code>restore-ps1.test.mjs</code>(<code>restore.ps1</code> に渡す)。<code>restore.ps1</code> を本番で動かすときは誰も渡さず、既定の 8787 になる</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_MANAGED</code></td><td>WinSW から起動されたか。終了の要求を受けたとき、起動し直してもらえる前提で終わってよいかの判断に使う</td><td class="nowrap"><code>src/server/server.mjs:660</code></td><td class="nowrap">なし</td><td><strong>本番は <code>deploy/node-ai-chat-lite-winsw.xml:23</code> が <code>winsw</code> を渡す。</strong>テストは渡さない (直に起動するため。<code>tests/server.test.mjs:625</code>)</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_NO_EXIT</code></td><td><code>1</code> なら、終了の要求が来ても落ちない (テストのプロセスごと落ちないようにする)</td><td class="nowrap"><code>src/server/server.mjs:631</code></td><td class="nowrap">なし</td><td>テスト 9 本 (<code>server.test.mjs</code> ・ <code>client-wait.test.mjs</code> など)・ <code>rename-dryrun.mjs</code>(自分のプロセスに立てる)。<code>restore-ps1.test.mjs</code> は、本当に落ちることを確かめるため、わざと渡さない</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_LEAVE_GRACE_MS</code></td><td>切断から離脱とみなすまでの猶予 (ミリ秒)</td><td class="nowrap"><code>src/server/server.mjs:591</code></td><td class="nowrap">5000</td><td><code>tests/server.test.mjs:16</code>(150 に縮める)だけ</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_LOCK_POLL_MS</code></td><td>バックアップの印を見に行く間隔 (ミリ秒)</td><td class="nowrap"><code>src/server/backup.mjs:119</code></td><td class="nowrap">30000</td><td><strong>誰も渡していない。</strong>テスト (<code>backup.test.mjs</code> ・ <code>maintenance.test.mjs</code>)は、関数の引数 <code>pollMs</code> で縮めている</td></tr>
 			<tr><td class="nowrap"><code>AICHAT_LOCK_MAX_TRIES</code></td><td>バックアップの印を待って諦めるまでの回数</td><td class="nowrap"><code>src/server/backup.mjs:120</code></td><td class="nowrap">10</td><td><strong>誰も渡していない。</strong>テストは引数 <code>maxTries</code> で縮めている</td></tr>
-			<tr><td class="nowrap"><code>MASK_LOG_TEST_CALL_LOG</code></td><td>テスト用の偽物の <code>mask-log.ps1</code> が、呼ばれた回数を書くファイル</td><td class="nowrap"><code>tests/helpers/fake-mask-log*.ps1</code>（3 本）</td><td class="nowrap">なし</td><td><code>tests/mask-log-input-ps1.test.mjs</code>。本物の道具は読まない</td></tr>
-			<tr><td class="nowrap"><code>CONTRAST_TARGET_DIR</code></td><td>外の道具（<code>check-contrast</code>）に、調べるフォルダを伝える</td><td class="nowrap">このプロジェクトでは読まない</td><td class="nowrap">—</td><td><code>tools/40_test/run-ui-tests.ps1:64</code></td></tr>
+			<tr><td class="nowrap"><code>MASK_LOG_TEST_CALL_LOG</code></td><td>テスト用の偽物の <code>mask-log.ps1</code> が、呼ばれた回数を書くファイル</td><td class="nowrap"><code>tests/helpers/fake-mask-log*.ps1</code>(3 本)</td><td class="nowrap">なし</td><td><code>tests/mask-log-input-ps1.test.mjs</code>。本物の道具は読まない</td></tr>
+			<tr><td class="nowrap"><code>CONTRAST_TARGET_DIR</code></td><td>外の道具 (<code>check-contrast</code>)に、調べるフォルダを伝える</td><td class="nowrap">このプロジェクトでは読まない</td><td class="nowrap">—</td><td><code>tools/40_test/run-ui-tests.ps1:64</code></td></tr>
 			<tr><td class="nowrap"><code>USERPROFILE</code></td><td>会話ログの置き場を組み立て、表示するパスのユーザ名を <code>~</code> に伏せる</td><td class="nowrap"><code>tools/80_ops/mask-log.ps1:45</code> ・ <code>:91</code></td><td class="nowrap">—</td><td>OS</td></tr>
 		</tbody>
 	</table>
@@ -519,8 +519,8 @@ a.doclink {
 
 	<h2>この資料に入れないもの</h2>
 	<ul>
-		<li><strong>処理系や OS が自分で読む変数</strong>（<code>NODE_OPTIONS</code>、一時フォルダを決める <code>TEMP</code> など）。このプロジェクトのコードが名指しで読むものではない。Rust 版の単体テストが一時フォルダを使うのは、この類</li>
-		<li><strong>子プロセスへの素通し</strong>（<code>{ ...process.env, … }</code>）。親が持つものをそのまま渡すだけで、特定の変数を読んではいない。<strong>足している変数のほうは、上の表に入れてある</strong></li>
+		<li><strong>処理系や OS が自分で読む変数</strong>(<code>NODE_OPTIONS</code>、一時フォルダを決める <code>TEMP</code> など)。このプロジェクトのコードが名指しで読むものではない。Rust 版の単体テストが一時フォルダを使うのは、この類</li>
+		<li><strong>子プロセスへの素通し</strong>(<code>{ ...process.env, … }</code>)。親が持つものをそのまま渡すだけで、特定の変数を読んではいない。<strong>足している変数のほうは、上の表に入れてある</strong></li>
 	</ul>
 </section>
 
@@ -534,9 +534,9 @@ a.doclink {
 	<table>
 		<thead><tr><th class="nowrap">変数</th><th class="nowrap">やめた時期</th><th>代わり</th><th>見張っているテスト</th></tr></thead>
 		<tbody>
-			<tr><td class="nowrap"><code>AICHAT_DB</code></td><td class="nowrap">2026-08-31</td><td><code>AICHAT_DATA</code>（DB だけでなく、印も含めて置き場ごと分ける）。<a href="../10_plan/p260831-01-テスト環境の分離.html">テスト環境の分離</a></td><td>なし</td></tr>
-			<tr><td class="nowrap"><code>AICHAT_ID</code></td><td class="nowrap">2026-09-01</td><td>名乗る ID は、コマンドの直後にコロンで囲んで渡す（<code>:project-a:</code>）。<a href="../10_plan/p260901-01-CLIのオプションを整える.html">CLI のオプションを整える</a></td><td><code>tests/client-usage.test.mjs</code>（使い方の表示に出ない）</td></tr>
-			<tr><td class="nowrap"><code>AICHAT_URL</code></td><td class="nowrap">2026-09-04</td><td>接続先は <code>-p</code>（ポート）か <code>-u</code>（URL）で毎回渡す</td><td><code>tests/client-usage.test.mjs</code>（使い方の表示に出ない）・ <code>tests/client-no-defaults.test.mjs</code>（定義そのものが無い）</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_DB</code></td><td class="nowrap">2026-08-31</td><td><code>AICHAT_DATA</code>(DB だけでなく、印も含めて置き場ごと分ける)。<a href="../10_plan/p260831-01-テスト環境の分離.html">テスト環境の分離</a></td><td>なし</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_ID</code></td><td class="nowrap">2026-09-01</td><td>名乗る ID は、コマンドの直後にコロンで囲んで渡す (<code>:project-a:</code>)。<a href="../10_plan/p260901-01-CLIのオプションを整える.html">CLI のオプションを整える</a></td><td><code>tests/client-usage.test.mjs</code>(使い方の表示に出ない)</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_URL</code></td><td class="nowrap">2026-09-04</td><td>接続先は <code>-p</code>(ポート)か <code>-u</code>(URL)で毎回渡す</td><td><code>tests/client-usage.test.mjs</code>(使い方の表示に出ない)・ <code>tests/client-no-defaults.test.mjs</code>(定義そのものが無い)</td></tr>
 		</tbody>
 	</table>
 	</div>
@@ -554,9 +554,9 @@ a.doclink {
 	<table>
 		<thead><tr><th class="num">#</th><th>気づいた点</th><th>関係する所</th></tr></thead>
 		<tbody>
-			<tr><td class="num">1</td><td><strong><code>AICHAT_LOCK_POLL_MS</code> ・ <code>AICHAT_LOCK_MAX_TRIES</code> は、誰も渡していない。</strong>コメントには「既定のままでは動作を確かめるのに 5 分かかるため、短くできる」とあるが、テストは関数の引数で縮めている。入れた日（2026-08-30）から一度も渡されていない</td><td><code>src/server/backup.mjs:115-120</code></td></tr>
-			<tr><td class="num">2</td><td><strong>本番のポートを、環境変数で渡している。</strong>共通ルール「プロセスの識別性」は、本番とテストを見分けるための情報（ポート等）を<strong>コマンドライン引数で渡す</strong>としている。環境変数はプロセスの一覧に出ないため。テスト用サーバのポートと置き場も、環境変数で渡している。<strong>しかも本番で渡している 8787 は、既定と同じ値</strong></td><td><code>deploy/node-ai-chat-lite-winsw.xml:20</code><br><code>src/server/config.mjs:66</code></td></tr>
-			<tr><td class="num">3</td><td><strong>テナントごとにサーバを並べると（<a href="../10_plan/i261014-01-チャットをクラウドへ移す.html">i261014-01</a> の計画）、2 が強く効く。</strong>同じサーバが、置き場とポートだけを変えて何本も並ぶ。どれがどのテナントかは、引数で見分けられるようにする</td><td><a href="../40_issues/issues.html#i261014-01">i261014-01</a></td></tr>
+			<tr><td class="num">1</td><td><strong><code>AICHAT_LOCK_POLL_MS</code> ・ <code>AICHAT_LOCK_MAX_TRIES</code> は、誰も渡していない。</strong>コメントには「既定のままでは動作を確かめるのに 5 分かかるため、短くできる」とあるが、テストは関数の引数で縮めている。入れた日 (2026-08-30)から一度も渡されていない</td><td><code>src/server/backup.mjs:115-120</code></td></tr>
+			<tr><td class="num">2</td><td><strong>本番のポートを、環境変数で渡している。</strong>共通ルール「プロセスの識別性」は、本番とテストを見分けるための情報 (ポート等)を<strong>コマンドライン引数で渡す</strong>としている。環境変数はプロセスの一覧に出ないため。テスト用サーバのポートと置き場も、環境変数で渡している。<strong>しかも本番で渡している 8787 は、既定と同じ値</strong></td><td><code>deploy/node-ai-chat-lite-winsw.xml:20</code><br><code>src/server/config.mjs:66</code></td></tr>
+			<tr><td class="num">3</td><td><strong>テナントごとにサーバを並べると (<a href="../10_plan/i261014-01-チャットをクラウドへ移す.html">i261014-01</a> の計画)、2 が強く効く。</strong>同じサーバが、置き場とポートだけを変えて何本も並ぶ。どれがどのテナントかは、引数で見分けられるようにする</td><td><a href="../40_issues/issues.html#i261014-01">i261014-01</a></td></tr>
 		</tbody>
 	</table>
 	</div>
@@ -577,7 +577,7 @@ a.doclink {
 	<pre><code class="language-powershell">git grep -n -E "&lt;env |AICHAT_[A-Z_]+:" -- deploy tools tests</code></pre>
 
 	<div class="callout callout-warning">
-		<p><strong>cmd ・ bat は SJIS なので、<code>git grep</code> と Grep から漏れることがある。</strong>日本語を含まない変数名なら当たることが多いが、確実ではない。<code>text find</code> でも探す（2026-10-15 は、<code>AICHAT</code> を含む cmd ・ bat は 0 本だった。検索式が cmd を走査していることは、既知の語で確かめた）。</p>
+		<p><strong>cmd ・ bat は SJIS なので、<code>git grep</code> と Grep から漏れることがある。</strong>日本語を含まない変数名なら当たることが多いが、確実ではない。<code>text find</code> でも探す (2026-10-15 は、<code>AICHAT</code> を含む cmd ・ bat は 0 本だった。検索式が cmd を走査していることは、既知の語で確かめた)。</p>
 		<pre><code class="language-powershell">text find "AICHAT" --path . --recurse --include "*.cmd,*.bat,*.reg"</code></pre>
 	</div>
 
@@ -585,7 +585,7 @@ a.doclink {
 	<ul>
 		<li>1 章の 2 つの表と、2 章の表を、<strong>同じ作業の中で揃えて直す</strong></li>
 		<li>消した変数は 3 章へ移す。<strong>表から黙って消さない</strong></li>
-		<li>読むが誰も渡さない（○）だけの変数が増えたら、4 章に書く</li>
+		<li>読むが誰も渡さない (○)だけの変数が増えたら、4 章に書く</li>
 	</ul>
 </section>
 

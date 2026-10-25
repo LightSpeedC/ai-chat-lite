@@ -4,7 +4,7 @@
  * 【なぜ要るか】
  * 既定の `aichat.exe` は待受けが掴んでいる。待受けは 12 時間張りっぱなしになり、
  * 掴んでいるのは自分の分だけではない。他プロジェクトの待受けも混ざる。
- * 止めれば相手は原因不明の `exit 255` で落ちる（ローカルルール 3）。
+ * 止めれば相手は原因不明の `exit 255` で落ちる (ローカルルール 3)。
  *
  * そこで「消さずに改名する」形を使う。Windows では走っている exe を削除できないが、
  * 名前は変えられる。改名はディレクトリの項目を書き換えるだけで、開かれている
@@ -14,7 +14,7 @@
  * 理屈だけで信じず、実物の exe を走らせた状態で 1 段ずつ確かめる。
  *
  * 【Windows 専用】
- * Mac ・ Linux では走っているバイナリを unlink できる（実体は参照が切れるまで残る）。
+ * Mac ・ Linux では走っているバイナリを unlink できる (実体は参照が切れるまで残る)。
  * 入れ替えに困らないので、この検証の対象にならない。
  */
 import { test, describe, before, after } from 'node:test';
@@ -56,7 +56,7 @@ let exited = null;
 /** 子の出力。落ちた理由を assert のメッセージに出すために貯める */
 let childOutput = '';
 
-/** 終わるまで待つ（最大 ms） */
+/** 終わるまで待つ \(最大 ms\) */
 function waitForExit(ms) {
 	return new Promise((resolve) => {
 		if (exited !== null) return resolve(true);
@@ -87,7 +87,7 @@ before(async () => {
 	 *
 	 * spawnSync は使えない。サーバーはこのプロセスの中で動いているので、
 	 * 同期で待つとイベントループが止まり、子からの要求に応えられなくなる
-	 * （待受けが応答を待ち、こちらが待受けを待つ形で噛み合う）。
+	 * (待受けが応答を待ち、こちらが待受けを待つ形で噛み合う)。
 	 */
 	await new Promise((resolve, reject) => {
 		const primer = spawn(
@@ -151,7 +151,7 @@ describe('走っている exe の入れ替え', { skip: win ? false : 'Windows �
 		 * ここが成功してしまうと、ビルドが黙って待受けの足元を外すことになる。
 		 * 「消せない」ことを確かめてから、改名で逃がす形に進む。
 		 */
-		assert.equal(exited, null, '待受けが先に終わっている（この先の検証が成り立たない）');
+		assert.equal(exited, null, '待受けが先に終わっている (この先の検証が成り立たない)');
 
 		let code = null;
 		try {
@@ -159,7 +159,7 @@ describe('走っている exe の入れ替え', { skip: win ? false : 'Windows �
 		} catch (err) {
 			code = err.code;
 		}
-		assert.ok(code === 'EBUSY' || code === 'EPERM', `消せてしまった（code=${code}）`);
+		assert.ok(code === 'EBUSY' || code === 'EPERM', `消せてしまった (code=${code})`);
 		assert.ok(existsSync(PROBE), '消えている');
 	});
 
@@ -176,7 +176,7 @@ describe('走っている exe の入れ替え', { skip: win ? false : 'Windows �
 		 * 落ちるなら他プロジェクトの待受けを巻き添えにすることになる。
 		 */
 		const finished = await waitForExit(300);
-		assert.equal(finished, false, `落ちた（exit=${exited}）: ${childOutput.trim()}`);
+		assert.equal(finished, false, `落ちた (exit=${exited}): ${childOutput.trim()}`);
 	});
 
 	test('空いた名前に新しいものを置ける', () => {
@@ -188,7 +188,7 @@ describe('走っている exe の入れ替え', { skip: win ? false : 'Windows �
 
 	test('置き換えたあとも、走っているプロセスは落ちない', async () => {
 		const finished = await waitForExit(300);
-		assert.equal(finished, false, `落ちた（exit=${exited}）: ${childOutput.trim()}`);
+		assert.equal(finished, false, `落ちた (exit=${exited}): ${childOutput.trim()}`);
 	});
 
 	test('待受けが終われば、逃がしたものを消せる', async () => {
@@ -202,7 +202,7 @@ describe('走っている exe の入れ替え', { skip: win ? false : 'Windows �
 		} catch (err) {
 			code = err.code;
 		}
-		assert.ok(code === 'EBUSY' || code === 'EPERM', `走っている間に消せてしまった（code=${code}）`);
+		assert.ok(code === 'EBUSY' || code === 'EPERM', `走っている間に消せてしまった (code=${code})`);
 
 		child.kill();
 		const finished = await waitForExit(3000);

@@ -1,7 +1,7 @@
 /*
  * テスト専用のサーバーを立てる。
  *
- * 本番（8787 / 既定の置き場）とは別のポート・別の置き場で動かす。
+ * 本番 (8787 / 既定の置き場)とは別のポート・別の置き場で動かす。
  * 本番には他プロジェクトの AI が待ち受けているため、テストの投稿にも返事が来る。
  * ポートを分ければそもそも届かない。
  *
@@ -25,7 +25,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
  * テストの置き場。本番と同じ構造にする。
  *
  * DB も、バックアップ・メンテナンスの印も、接続情報もすべてこの下に入る。
- * 置き場が既定でなければテスト用として動く（config.mjs の IS_TEST）。
+ * 置き場が既定でなければテスト用として動く (config.mjs の IS_TEST)。
  */
 const DATA_DIR = process.env.AICHAT_DATA ?? join(root, 'tmp', '_data');
 const INFO = join(DATA_DIR, 'server.json');
@@ -90,16 +90,16 @@ if (process.argv.includes('--stop')) {
 	const info = JSON.parse(readFileSync(INFO, 'utf8'));
 	try {
 		process.kill(info.pid);
-		console.log(`止めました（pid ${info.pid} / ポート ${info.port}）。`);
+		console.log(`止めました (pid ${info.pid} / ポート ${info.port})。`);
 	} catch (err) {
-		console.log(`既に居ません（pid ${info.pid}）: ${err.code}`);
+		console.log(`既に居ません (pid ${info.pid}): ${err.code}`);
 	}
 
 	/*
 	 * プロセスが閉じるのを待つ。
 	 *
 	 * kill はすぐ返るが、その時点ではまだ DB のハンドルを握っている。
-	 * 待たずに消すと EPERM になる（実際になった）。
+	 * 待たずに消すと EPERM になる (実際になった)。
 	 */
 	for (let i = 0; i < 40; i++) {
 		try {
@@ -113,7 +113,7 @@ if (process.argv.includes('--stop')) {
 	/*
 	 * 置き場ごと捨てる。テスト用なので取っておく意味がない。
 	 *
-	 * 後始末を抜けた分（猶予のあとに積まれた離脱など）もここで消える。
+	 * 後始末を抜けた分 (猶予のあとに積まれた離脱など)もここで消える。
 	 * DB は本体・-wal・-shm の 3 つ組だが、フォルダごと消すので数えなくてよい。
 	 */
 	let left = null;
@@ -127,7 +127,7 @@ if (process.argv.includes('--stop')) {
 			await wait(200);
 		}
 	}
-	console.log(left ? `  置き場を消せませんでした（${left}）。` : '  置き場ごと捨てました。');
+	console.log(left ? `  置き場を消せませんでした (${left})。` : '  置き場ごと捨てました。');
 	process.exit(0);
 }
 
@@ -202,7 +202,7 @@ if (!version) {
 		/* 既に落ちている */
 	}
 	const tail = existsSync(LOG) ? readFileSync(LOG, 'utf8').trim() : '(ログがありません)';
-	throw new Error(`立ち上がりません（ポート ${port}）。\n--- サーバーの出力 ---\n${tail}`);
+	throw new Error(`立ち上がりません (ポート ${port})。\n--- サーバーの出力 ---\n${tail}`);
 }
 
 /*
@@ -217,11 +217,11 @@ if (version.env !== 'test') {
 	} catch {
 		/* 既に落ちている */
 	}
-	throw new Error(`テストとして立ちませんでした（env=${version.env}）。置き場: ${DATA_DIR}`);
+	throw new Error(`テストとして立ちませんでした (env=${version.env})。置き場: ${DATA_DIR}`);
 }
 
 /*
- * アクセストークンはサーバーが起動のたびに作る。/api/version では返さない（誰でも読めてしまう）。
+ * アクセストークンはサーバーが起動のたびに作る。/api/version では返さない (誰でも読めてしまう)。
  * ログの 1 行目に出しているので、そこから取り出す。
  */
 const accessToken = readFileSync(LOG, 'utf8').match(/アクセストークン: (\S+)/)?.[1] ?? '';

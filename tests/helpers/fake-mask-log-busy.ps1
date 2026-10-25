@@ -1,5 +1,5 @@
 ﻿<#
-	mask-log-input.ps1 のテスト用の偽物（claude が走っている版）。
+	mask-log-input.ps1 のテスト用の偽物 (claude が走っている版)。
 
 	本物は claude が走っていると警告を出して exit 4 で止まる。下見の時点で
 	止めるので、呼ぶ側は「セッションが開いている」と言えなければならない。
@@ -19,5 +19,5 @@ if ($env:MASK_LOG_TEST_CALL_LOG) {
 
 Write-Host '★ claude が動いています。セッションを閉じてから実行してください。'
 Write-Host '  pid: 12345'
-Write-Host '  数えるだけの実行（-WhatIfOnly）も、ここで止めます'
+Write-Host '  数えるだけの実行 (-WhatIfOnly)も、ここで止めます'
 exit 4

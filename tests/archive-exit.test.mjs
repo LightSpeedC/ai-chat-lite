@@ -3,7 +3,7 @@
  *
  * 【なぜ要るか】
  * 本番で `aichat archive` のシェルが 2 本、10 時間以上残っているのを見つけた
- * （課題 i260913-02）。片付け自体は成功しているのに終わっていない。
+ * (課題 i260913-02)。片付け自体は成功しているのに終わっていない。
  *
  *   00:38:10 pid 29820  archives に記録なし … 確認待ちのまま止まったと見られる
  *   00:40:24 pid 22532  archives に seq 7   … 片付けを終えたのに終わっていない
@@ -37,7 +37,7 @@ const NODE_CLI = join(root, 'src', 'client', 'chat.mjs');
 /**
  * bun の在り処。
  *
- * 本番で残っていたのは bun 版だった（当時の aichat は sh から bun を起こしていた）。
+ * 本番で残っていたのは bun 版だった (当時の aichat は sh から bun を起こしていた)。
  * ここを飛ばすと、再現しようとしている当の実装を試さないことになる。
  *
  * サーバーを立てる前に 1 度だけ呼ぶので、ここは同期でよい。
@@ -64,10 +64,10 @@ const built = existsSync(EXE);
  * CLI を起こし、終わるまで待つ。終わらなければ止めて、その旨を返す。
  *
  * spawnSync は使えない。サーバーが同じプロセスに居るため、同期で待つと
- * イベントループが止まって噛み合う（共通ルール「同期 API は〜」）。
+ * イベントループが止まって噛み合う (共通ルール「同期 API は〜」)。
  *
  * @param {string[]} args 引数
- * @param {string | null} input 標準入力に流すもの。null なら閉じる（背面と同じ）
+ * @param {string | null} input 標準入力に流すもの。null なら閉じる (背面と同じ)
  * @param {number} limitMs これを超えたら止める
  */
 function runCli(runner, args, input, limitMs = 10_000) {
@@ -110,7 +110,7 @@ async function makeMessage(runner, text) {
 		null
 	);
 	assert.equal(res.finished, true, `say が終わらなかった: ${res.out}`);
-	const m = res.out.match(/（(\d+)）/);
+	const m = res.out.match(/\((\d+)\)/);
 	assert.ok(m, `送った番号が読み取れない: ${res.out}`);
 	return Number(m[1]);
 }
@@ -137,12 +137,12 @@ after(async () => {
 });
 
 for (const runner of RUNNERS) {
-	describe(`archive は必ず終わる（${runner.name}）`, () => {
+	describe(`archive は必ず終わる (${runner.name})`, () => {
 		test('標準入力が閉じていても止まらない', async (t) => {
 			if (runner.missing) return t.skip(runner.missing);
 
 			/*
-			 * 背面（run_in_background）で起こすと、この形になる。
+			 * 背面 (run_in_background)で起こすと、この形になる。
 			 * 入力を待ち続けるなら、ここで終わらない。
 			 */
 			const seq = await makeMessage(runner, '入力なしの調査用');
@@ -217,7 +217,7 @@ for (const runner of RUNNERS) {
 
 			assert.equal(res.finished, true, `${res.ms} ms 待っても終わらなかった: ${res.out.trim()}`);
 			assert.equal(res.code, 0, `片付けられていない: ${res.out.trim()}`);
-			assert.match(res.out, /片付けました（archived_seq \d+）/, `片付けた知らせが出ていない: ${res.out.trim()}`);
+			assert.match(res.out, /片付けました \(archived_seq \d+\)/, `片付けた知らせが出ていない: ${res.out.trim()}`);
 			assert.match(res.out, /戻すには: restore /, `戻し方が出ていない: ${res.out.trim()}`);
 		});
 

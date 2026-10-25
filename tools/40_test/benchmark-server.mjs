@@ -10,8 +10,8 @@
  *
  * 待受けの相手として常駐するものなので、2 がいちばん効く。4 は体感に出る。
  *
- * テスト用の置き場（tmp 配下）に立てる。本番の DB には触らない。ポートは OS に
- * 空きを割り当てさせるので、番号をソースに書かない（本番へ飛ぶ事故も起きない）。
+ * テスト用の置き場 (tmp 配下)に立てる。本番の DB には触らない。ポートは OS に
+ * 空きを割り当てさせるので、番号をソースに書かない (本番へ飛ぶ事故も起きない)。
  *
  *   node tools/40_test/benchmark-server.mjs
  *
@@ -35,7 +35,7 @@ const RUNTIMES = ['node', 'bun'];
 /** 待受けの本数。0 は誰もぶら下がっていない状態 */
 const WAITER_COUNTS = [0, 1, 5, 10];
 
-/** メモリを 1 条件につき何ミリ秒ぶん貯めるか（probe が 250ms ごとに報告する） */
+/** メモリを 1 条件につき何ミリ秒ぶん貯めるか \(probe が 250ms ごとに報告する\) */
 const MEM_WINDOW_MS = 3000;
 
 /** メモリを測る前に落ち着くのを待つ長さ */
@@ -118,7 +118,7 @@ async function startServer(runtime) {
 	const readyPromise = new Promise((ok, ng) => {
 		child.once('error', ng);
 		child.once('exit', (code) => {
-			if (!state.ready) ng(new Error(`${runtime} が立ち上がる前に終わりました（code ${code}）${state.fatal}`));
+			if (!state.ready) ng(new Error(`${runtime} が立ち上がる前に終わりました (code ${code})${state.fatal}`));
 		});
 
 		const rl = createInterface({ input: child.stdout });
@@ -177,17 +177,17 @@ async function stopServer(srv) {
 }
 
 /**
- * 確保量（Private Bytes）を測る。Windows でだけ動く。
+ * 確保量 (Private Bytes)を測る。Windows でだけ動く。
  *
  * 【なぜ probe 側で測らないか】
- * process.memoryUsage() は実メモリ（rss）までしか返さない。確保量は OS に
- * 聞くしかなく、聞き方が OS ごとに違う（Windows は Get-Process、Linux は
- * /proc/<pid>/status、Mac は ps や vmmap）。
+ * process.memoryUsage() は実メモリ (rss)までしか返さない。確保量は OS に
+ * 聞くしかなく、聞き方が OS ごとに違う (Windows は Get-Process、Linux は
+ * /proc/<pid>/status、Mac は ps や vmmap)。
  *
  * 実メモリだけを見ると読み違える。CLI を測ったとき、bun は実メモリが小さいのに
  * 確保量は 5 実装のうち最大だった。だから取れる環境では取っておく。
  *
- * PowerShell は 1 回だけ起こす。250 ms ごとに起こすと、起動（185 ms）のほうが
+ * PowerShell は 1 回だけ起こす。250 ms ごとに起こすと、起動 (185 ms)のほうが
  * 測る間隔より長くなる。まとめて何回ぶんか取らせて、結果だけ受け取る。
  *
  * @returns {{n: number, avg: number, median: number, p95: number, min: number, max: number} | null}
@@ -215,7 +215,7 @@ function samplePrivateBytes(pid, samples, intervalMs) {
 	return mb.length > 0 ? summarize(mb) : null;
 }
 
-/** 指定した長さのあいだメモリを貯めて、まとめを返す（MB） */
+/** 指定した長さのあいだメモリを貯めて、まとめを返す \(MB\) */
 async function sampleMemory(srv, ms) {
 	srv.state.samples = [];
 	srv.state.collecting = true;
@@ -236,7 +236,7 @@ const agent = new Agent({ keepAlive: true, maxSockets: 64 });
  * API を叩く。アクセストークンはヘッダで渡す。
  *
  * 【なぜ fetch を使わないか】
- * node の fetch は Windows で 1 往復ごとに 15 ms ほど待たされる（i260912-02）。
+ * node の fetch は Windows で 1 往復ごとに 15 ms ほど待たされる (i260912-02)。
  * それを載せたまま測ると、say も recent も件数によらず一律 15 ms になり、
  * サーバーの差がまるごと隠れる。実際に一度それで測り直しになった。
  * node:http の http.request なら node ・ bun のどちらで走らせても 0.2 ms で返る。
@@ -313,7 +313,7 @@ async function openWaiters(srv, n) {
 async function run(runtime) {
 	process.stdout.write(`\n=== ${runtime} ===\n`);
 	const srv = await startServer(runtime);
-	process.stdout.write(`  立ち上がり ${srv.startupMs} ms（${srv.base}）\n`);
+	process.stdout.write(`  立ち上がり ${srv.startupMs} ms (${srv.base})\n`);
 
 	const result = { runtime, startupMs: srv.startupMs, memory: [], say: null, sayBusy: null, recent: {}, fanout: [] };
 
@@ -323,17 +323,17 @@ async function run(runtime) {
 			const waiters = n > 0 ? await openWaiters(srv, n) : null;
 			await sleep(SETTLE_MS);
 			const mem = await sampleMemory(srv, MEM_WINDOW_MS);
-			// 確保量は OS に聞く。取れない環境（Windows 以外）では null が返る
+			// 確保量は OS に聞く。取れない環境 (Windows 以外)では null が返る
 			const priv = samplePrivateBytes(srv.child.pid, 5, 250);
 			result.memory.push({ waiters: n, ...mem, private: priv });
 			const privText = priv ? ` / 確保 ${priv.avg.toFixed(2)} MB` : '';
 			process.stdout.write(
-				`  メモリ 待受け ${String(n).padStart(2)} 本  実 ${mem.avg.toFixed(2)} MB（${mem.min.toFixed(2)} 〜 ${mem.max.toFixed(2)}）${privText}\n`
+				`  メモリ 待受け ${String(n).padStart(2)} 本  実 ${mem.avg.toFixed(2)} MB (${mem.min.toFixed(2)} 〜 ${mem.max.toFixed(2)})${privText}\n`
 			);
 			if (waiters) await waiters.stop();
 		}
 
-		// --- say の往復（誰もぶら下がっていない状態） ---
+		// --- say の往復 (誰もぶら下がっていない状態) ---
 		for (let i = 0; i < WARMUP; i++) await say(srv, 'bench-say', 'ウォームアップ');
 		const sayLat = [];
 		for (let i = 0; i < CALLS; i++) {
@@ -345,7 +345,7 @@ async function run(runtime) {
 		result.say = summarize(sayLat);
 		process.stdout.write(`  say        中央値 ${result.say.median} ms / p95 ${result.say.p95} ms\n`);
 
-		// --- recent（/api/history）の往復 ---
+		// --- recent (/api/history)の往復 ---
 		// 件数で変わるかを見たいので、先に規定数まで積む
 		let have = WARMUP + CALLS;
 		while (have < SEED_TOTAL) {
@@ -375,7 +375,7 @@ async function run(runtime) {
 			for (let i = 0; i < CALLS; i++) {
 				const t = performance.now();
 				const res = await say(srv, 'bench-say', `裏で ${i}`, 'bench-other');
-				if (res.status !== 200) throw new Error(`say（待受けあり）が ${res.status} を返しました`);
+				if (res.status !== 200) throw new Error(`say (待受けあり)が ${res.status} を返しました`);
 				lat.push(performance.now() - t);
 			}
 			result.sayBusy = summarize(lat);

@@ -263,7 +263,7 @@ footer {
 
 <h2>名前が実体を言い当てていない</h2>
 
-<p><code>user_role</code> が <code>ai</code> と <code>human</code> の 2 つを持っていること自体が、<strong>「user」で括れていない</strong>証拠である。人と AI を同じ土俵に載せているのに、名前は片方（人）だけを指している。</p>
+<p><code>user_role</code> が <code>ai</code> と <code>human</code> の 2 つを持っていること自体が、<strong>「user」で括れていない</strong>証拠である。人と AI を同じ土俵に載せているのに、名前は片方 (人)だけを指している。</p>
 
 <div class="tablewrap">
 <table>
@@ -271,7 +271,7 @@ footer {
 <tr><th class="nowrap">いまの名前</th><th>実際に入るもの</th></tr>
 </thead>
 <tbody>
-<tr><td class="nowrap"><code>user_id</code></td><td>プロジェクトのフォルダ名（<code>ai-chat-lite</code> <code>html2md</code>）、または <code>human</code></td></tr>
+<tr><td class="nowrap"><code>user_id</code></td><td>プロジェクトのフォルダ名 (<code>ai-chat-lite</code> <code>html2md</code>)、または <code>human</code></td></tr>
 <tr><td class="nowrap"><code>user_role</code></td><td><code>ai</code> か <code>human</code></td></tr>
 <tr><td class="nowrap"><code>users</code></td><td>繋いできたものの一覧。人も AI も混ざる</td></tr>
 </tbody>
@@ -346,7 +346,7 @@ footer {
 </tr>
 <tr>
 	<td class="nowrap"><code>presence</code></td><td class="num">73</td>
-	<td>在席の状態（online / grace / offline）</td>
+	<td>在席の状態 (online / grace / offline)</td>
 	<td><strong>変えない</strong></td>
 </tr>
 <tr>
@@ -389,7 +389,7 @@ footer {
 </div>
 
 <div class="callout callout-important">
-<p><strong><code>client</code> はどれも「繋ぐ側の道具・1 本の接続」を指しており、<code>connector</code>（繋いでくる人か AI）とは別のものである。</strong>区別はついている。</p>
+<p><strong><code>client</code> はどれも「繋ぐ側の道具・1 本の接続」を指しており、<code>connector</code>(繋いでくる人か AI)とは別のものである。</strong>区別はついている。</p>
 <p>ただし<strong>読み手には紛らわしい</strong>。改名したあと、<code>connector</code> と <code>client</code> の違いを設計に 1 行書く。</p>
 </div>
 
@@ -401,9 +401,9 @@ footer {
 <tr><th class="nowrap">語</th><th class="num">行</th><th>指しているもの</th><th>どうするか</th></tr>
 </thead>
 <tbody>
-<tr><td class="nowrap">参加者</td><td class="num">125</td><td><strong>繋いでくる人か AI</strong>（= connector）</td><td>これを正とする</td></tr>
+<tr><td class="nowrap">参加者</td><td class="num">125</td><td><strong>繋いでくる人か AI</strong>(= connector)</td><td>これを正とする</td></tr>
 <tr><td class="nowrap">接続</td><td class="num">142</td><td>1 本の接続。<code>connection</code> の訳</td><td>変えない</td></tr>
-<tr><td class="nowrap">クライアント</td><td class="num">44</td><td><strong>CLI そのもの</strong>（= 上記①）</td><td>変えない</td></tr>
+<tr><td class="nowrap">クライアント</td><td class="num">44</td><td><strong>CLI そのもの</strong>(= 上記①)</td><td>変えない</td></tr>
 <tr><td class="nowrap">相手</td><td class="num">57</td><td>会話の相手。参加者と同じものを指す場面が多い</td><td><strong>読み直す</strong></td></tr>
 <tr><td class="nowrap">セッション</td><td class="num">60</td><td>Claude Code のセッション</td><td>変えない</td></tr>
 <tr><td class="nowrap">エージェント</td><td class="num">30</td><td>AI エージェント</td><td>変えない</td></tr>
@@ -450,9 +450,9 @@ footer {
 </thead>
 <tbody>
 <tr><td class="nowrap"><code>/api/join</code></td><td>入力・応答の <code>user_id</code> <code>user_role</code>、応答の <code>users</code></td></tr>
-<tr><td class="nowrap"><code>/api/say</code></td><td>入力の <code>from_user_id</code> <code>to_user_id</code>、応答（発言そのもの）</td></tr>
+<tr><td class="nowrap"><code>/api/say</code></td><td>入力の <code>from_user_id</code> <code>to_user_id</code>、応答 (発言そのもの)</td></tr>
 <tr><td class="nowrap"><code>/api/poll</code></td><td>クエリの <code>user_id</code></td></tr>
-<tr><td class="nowrap"><code>/api/users</code></td><td><strong>パスも変える</strong>（<code>/api/connectors</code>）。応答の <code>users</code></td></tr>
+<tr><td class="nowrap"><code>/api/users</code></td><td><strong>パスも変える</strong>(<code>/api/connectors</code>)。応答の <code>users</code></td></tr>
 <tr><td class="nowrap"><code>/api/events</code></td><td>クエリの <code>user_id</code>、<code>presence</code> イベントの中身</td></tr>
 <tr><td class="nowrap"><code>/api/leave</code></td><td>入力・応答の <code>user_id</code></td></tr>
 </tbody>
@@ -472,11 +472,11 @@ footer {
 </thead>
 <tbody>
 <tr><td class="nowrap"><code>userId</code></td><td class="nowrap"><code>connectorId</code></td></tr>
-<tr><td class="nowrap"><code>USER_ID</code>（CLI）</td><td class="nowrap"><code>CONNECTOR_ID</code></td></tr>
-<tr><td class="nowrap"><code>AICHAT_ID</code></td><td class="nowrap"><strong>変えない</strong>（<a href="../40_issues/issues.html#i260831-02">i260831-02</a> で別途扱う）</td></tr>
+<tr><td class="nowrap"><code>USER_ID</code>(CLI)</td><td class="nowrap"><code>CONNECTOR_ID</code></td></tr>
+<tr><td class="nowrap"><code>AICHAT_ID</code></td><td class="nowrap"><strong>変えない</strong>(<a href="../40_issues/issues.html#i260831-02">i260831-02</a> で別途扱う)</td></tr>
 <tr><td class="nowrap"><code>joinUser</code> <code>touchUser</code> <code>getUser</code></td><td class="nowrap"><code>joinConnector</code> <code>touchConnector</code> <code>getConnector</code></td></tr>
-<tr><td class="nowrap"><code>userList</code> <code>userCount</code> <code>userIds</code>（画面）</td><td class="nowrap"><code>connectorList</code> <code>connectorCount</code> <code>connectorIds</code></td></tr>
-<tr><td class="nowrap"><code>#user-list</code> <code>#user-count</code>（HTML の id）</td><td class="nowrap"><code>#connector-list</code> <code>#connector-count</code></td></tr>
+<tr><td class="nowrap"><code>userList</code> <code>userCount</code> <code>userIds</code>(画面)</td><td class="nowrap"><code>connectorList</code> <code>connectorCount</code> <code>connectorIds</code></td></tr>
+<tr><td class="nowrap"><code>#user-list</code> <code>#user-count</code>(HTML の id)</td><td class="nowrap"><code>#connector-list</code> <code>#connector-count</code></td></tr>
 </tbody>
 </table>
 </div>
@@ -489,11 +489,11 @@ footer {
 <tr><th class="nowrap">いま</th><th class="nowrap">あと</th><th>備考</th></tr>
 </thead>
 <tbody>
-<tr><td class="nowrap"><code>who</code></td><td class="nowrap"><strong>変えない</strong></td><td><strong>コマンド名は据え置く。</strong>他プロジェクトの手順を二度変えないため（<code>--connector-id</code> の周知を今日すでに 1 回出している）。<code>/api/connectors</code> とは揃わないが、<code>who</code> は「誰が」を尋ねる語として意味が通る</td></tr>
+<tr><td class="nowrap"><code>who</code></td><td class="nowrap"><strong>変えない</strong></td><td><strong>コマンド名は据え置く。</strong>他プロジェクトの手順を二度変えないため (<code>--connector-id</code> の周知を今日すでに 1 回出している)。<code>/api/connectors</code> とは揃わないが、<code>who</code> は「誰が」を尋ねる語として意味が通る</td></tr>
 <tr><td class="nowrap"><code>--role ai|human</code></td><td class="nowrap"><strong>変えない</strong></td><td><code>role</code> に <code>user</code> は入っていない</td></tr>
 <tr><td class="nowrap"><code>--to &lt;id&gt;</code></td><td class="nowrap"><strong>変えない</strong></td><td>同上</td></tr>
 <tr><td class="nowrap"><code>join</code> <code>wait</code> <code>say</code> <code>recent</code> <code>dump</code> <code>leave</code></td><td class="nowrap"><strong>変えない</strong></td><td>同上</td></tr>
-<tr><td class="nowrap"><code>USER_ID</code>（内部の定数）</td><td class="nowrap"><code>CONNECTOR_ID</code></td><td></td></tr>
+<tr><td class="nowrap"><code>USER_ID</code>(内部の定数)</td><td class="nowrap"><code>CONNECTOR_ID</code></td><td></td></tr>
 </tbody>
 </table>
 </div>
@@ -563,7 +563,7 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait</code></pre>
 
 <p><strong>プロジェクト内に <code>user</code> を含むファイル名は無い。</strong>実測で 0 件だった。</p>
 
-<p>PlayWright 側に <code>chat-users.png</code> がある。<strong>これはテストが撮るスクリーンショットで、出力なので Git 管理外</strong>である。撮る側（<code>chat-ui.spec.ts</code>）の名前を <code>chat-connectors.png</code> に変える。</p>
+<p>PlayWright 側に <code>chat-users.png</code> がある。<strong>これはテストが撮るスクリーンショットで、出力なので Git 管理外</strong>である。撮る側 (<code>chat-ui.spec.ts</code>)の名前を <code>chat-connectors.png</code> に変える。</p>
 
 <h3>日本語の記述</h3>
 
@@ -574,7 +574,7 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait</code></pre>
 </thead>
 <tbody>
 <tr><td class="nowrap">参加者</td><td class="num">125</td><td><strong>そのまま。</strong>日本語としてこれが自然で、画面の見出しでもある</td></tr>
-<tr><td class="nowrap">ユーザー / ユーザ</td><td class="num">21</td><td><strong>読み直して個別に判断する</strong>（下記）</td></tr>
+<tr><td class="nowrap">ユーザー / ユーザ</td><td class="num">21</td><td><strong>読み直して個別に判断する</strong>(下記)</td></tr>
 <tr><td class="nowrap">接続者</td><td class="num">1</td><td>読み直す</td></tr>
 </tbody>
 </table>
@@ -589,7 +589,7 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait</code></pre>
 </thead>
 <tbody>
 <tr><td class="nowrap">繋いでくるもの</td><td>「ユーザが参加すると…」</td><td><strong>「参加者」に直す</strong></td></tr>
-<tr><td class="nowrap">この道具を使う人</td><td>「ユーザが指示するまで実行しない」</td><td><strong>そのまま</strong>（意味が違う）</td></tr>
+<tr><td class="nowrap">この道具を使う人</td><td>「ユーザが指示するまで実行しない」</td><td><strong>そのまま</strong>(意味が違う)</td></tr>
 </tbody>
 </table>
 </div>
@@ -653,7 +653,7 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait</code></pre>
 
 <p>他プロジェクトとのやり取り 48 件。<strong>md-skip や callout の分類について交わした議論が入っている。</strong>資料には反映済みだが、経緯そのものは消える。</p>
 
-<p>各プロジェクトの<strong>読み位置（<code>cursors</code>）も消える</strong>。次に待受けを張ると、そこから読み始める。取りこぼしにはならないが、過去の分は流れない。</p>
+<p>各プロジェクトの<strong>読み位置 (<code>cursors</code>)も消える</strong>。次に待受けを張ると、そこから読み始める。取りこぼしにはならないが、過去の分は流れない。</p>
 
 </section>
 
@@ -673,10 +673,10 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait</code></pre>
 <tr><td class="num">3</td><td class="nowrap"><code>store.mjs</code> のスキーマと関数</td><td>ここが源。他はこれに合わせる</td></tr>
 <tr><td class="num">4</td><td class="nowrap">単体テストを通す</td><td><strong>3 の直後に通す。</strong>ここで止めれば影響が閉じている</td></tr>
 <tr><td class="num">5</td><td class="nowrap"><code>presence.mjs</code> <code>server.mjs</code></td><td>API のキーとパス</td></tr>
-<tr><td class="num">6</td><td class="nowrap">画面（<code>chat.js</code> <code>index.html</code> <code>chat.css</code>）</td><td>id とクラス名</td></tr>
-<tr><td class="num">7</td><td class="nowrap">CLI（<code>chat.mjs</code>）</td><td><code>who</code> → <code>connectors</code>、<code>USER_ID</code> → <code>CONNECTOR_ID</code></td></tr>
-<tr><td class="num">8</td><td class="nowrap">道具（<code>purge-test-data.mjs</code>）</td><td>列名で絞っている</td></tr>
-<tr><td class="num">9</td><td class="nowrap">画面テスト（PlayWright の spec）</td><td>別リポジトリ。スクショの名前も</td></tr>
+<tr><td class="num">6</td><td class="nowrap">画面 (<code>chat.js</code> <code>index.html</code> <code>chat.css</code>)</td><td>id とクラス名</td></tr>
+<tr><td class="num">7</td><td class="nowrap">CLI (<code>chat.mjs</code>)</td><td><code>who</code> → <code>connectors</code>、<code>USER_ID</code> → <code>CONNECTOR_ID</code></td></tr>
+<tr><td class="num">8</td><td class="nowrap">道具 (<code>purge-test-data.mjs</code>)</td><td>列名で絞っている</td></tr>
+<tr><td class="num">9</td><td class="nowrap">画面テスト (PlayWright の spec)</td><td>別リポジトリ。スクショの名前も</td></tr>
 <tr><td class="num">10</td><td class="nowrap">日本語の「ユーザ」21 行を読み直す</td><td><strong>意味が 2 種類ある。</strong>一括では置き換えられない</td></tr>
 <tr><td class="num">11</td><td class="nowrap">設計・USAGE・手引き・課題</td><td>すべて決まってから</td></tr>
 </tbody>
@@ -734,7 +734,7 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait</code></pre>
 </table>
 </div>
 
-<p><strong>語ごとに指定して置き換える。</strong><code>user_id</code> → <code>connector_id</code>、<code>users</code> → <code>connectors</code> のように、長いものから順に当てる（<code>from_user_id</code> を <code>user_id</code> より先に処理する）。</p>
+<p><strong>語ごとに指定して置き換える。</strong><code>user_id</code> → <code>connector_id</code>、<code>users</code> → <code>connectors</code> のように、長いものから順に当てる (<code>from_user_id</code> を <code>user_id</code> より先に処理する)。</p>
 
 <h2>確かめること</h2>
 
@@ -743,8 +743,8 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait</code></pre>
 	<li>画面テストが全件通る</li>
 	<li>画面を開いて参加者一覧が出る</li>
 	<li>CLI から <code>join</code> <code>say</code> <code>wait</code> <code>connectors</code> ができる</li>
-	<li><strong><code>user</code> という語が識別子として残っていない</strong>（日本語と <code>USAGE</code> と環境変数は除く）</li>
-	<li>DB のスキーマに <code>user</code> が残っていない（<code>sqlite_master</code> を全文で見る）</li>
+	<li><strong><code>user</code> という語が識別子として残っていない</strong>(日本語と <code>USAGE</code> と環境変数は除く)</li>
+	<li>DB のスキーマに <code>user</code> が残っていない (<code>sqlite_master</code> を全文で見る)</li>
 	<li>他プロジェクトが繋いで会話できる</li>
 	<li>html2md の変換が通り、リンク切れが出ない</li>
 </ul>
@@ -765,7 +765,7 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait</code></pre>
 <tr><td class="nowrap"><code>$env:USERPROFILE</code> <code>$env:USERNAME</code></td><td>Windows の環境変数</td></tr>
 <tr><td class="nowrap"><code>active_connection_count</code></td><td><strong>接続の本数</strong>。<code>connector</code> とは別のもの</td></tr>
 <tr><td class="nowrap">「ユーザが指示するまで」等</td><td><strong>この道具を使う人</strong>を指す。意味が違う</td></tr>
-<tr><td class="nowrap">参加者（125 行）</td><td>日本語としてこれが自然</td></tr>
+<tr><td class="nowrap">参加者 (125 行)</td><td>日本語としてこれが自然</td></tr>
 </tbody>
 </table>
 </div>
@@ -799,11 +799,11 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait</code></pre>
 </tr>
 <tr>
 	<td class="num">5</td><td class="nowrap"><code>who</code> コマンド</td>
-	<td><strong>変えない。</strong>他プロジェクトの手順を二度変えないため（<code>--connector-id</code> の周知を今日すでに 1 回出している）</td>
+	<td><strong>変えない。</strong>他プロジェクトの手順を二度変えないため (<code>--connector-id</code> の周知を今日すでに 1 回出している)</td>
 </tr>
 <tr>
 	<td class="num">6</td><td class="nowrap"><code>notice</code></td>
-	<td><strong>いま足す。</strong>作り直す機会が今回なので、<code>msg_kind</code> の <code>CHECK</code> を <code>say</code> / <code>join</code> / <code>leave</code> / <code>archive</code> / <code>notice</code> の 5 つにする（<a href="../40_issues/issues.html#i260901-03">i260901-03</a>）</td>
+	<td><strong>いま足す。</strong>作り直す機会が今回なので、<code>msg_kind</code> の <code>CHECK</code> を <code>say</code> / <code>join</code> / <code>leave</code> / <code>archive</code> / <code>notice</code> の 5 つにする (<a href="../40_issues/issues.html#i260901-03">i260901-03</a>)</td>
 </tr>
 <tr>
 	<td class="num">7</td><td class="nowrap">アーカイブの単位</td>
@@ -818,14 +818,14 @@ node &lt;ai-chat-lite&gt;/src/client/chat.mjs wait</code></pre>
 </div>
 
 <div class="callout callout-caution">
-<p><strong>作り直しの前に控えを取る。</strong>途中で書き込まれると整合が崩れるため、メンテナンスの印を置いてから行う。<code>-wal</code> と <code>-shm</code> も 3 つ一組で退避する（本体の大きさから中身の量は判断できない）。</p>
+<p><strong>作り直しの前に控えを取る。</strong>途中で書き込まれると整合が崩れるため、メンテナンスの印を置いてから行う。<code>-wal</code> と <code>-shm</code> も 3 つ一組で退避する (本体の大きさから中身の量は判断できない)。</p>
 </div>
 
 <h2>残っていること</h2>
 
 <h2>データを捨てるか移すか</h2>
 
-<p><strong>案 A（捨てる）を勧める。</strong>移す手数に見合うものが 48 件のやり取りの中に無い。資料には反映済みである。</p>
+<p><strong>案 A (捨てる)を勧める。</strong>移す手数に見合うものが 48 件のやり取りの中に無い。資料には反映済みである。</p>
 
 <p>ただし<strong>これは判断を要する</strong>。捨てると読み返せない。</p>
 

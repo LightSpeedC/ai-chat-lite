@@ -8,7 +8,7 @@
 			</defs>
 	<rect width="100%" height="100%" fill="#ffffff"/>
 			<rect width="100%" height="100%" fill="#ffffff"/>
-			<text x="10" y="22" font-size="14" font-weight="700" fill="#1c2330">走らせるのに要るファイルの大きさ（MB）</text>
+			<text x="10" y="22" font-size="14" font-weight="700" fill="#1c2330">走らせるのに要るファイルの大きさ (MB)</text>
 			<g stroke="#d9dfe8" stroke-width="1">
 				<line x1="140" y1="36" x2="140" y2="248"/>
 				<line x1="272.5" y1="36" x2="272.5" y2="248"/>
@@ -32,7 +32,7 @@
 			<rect x="140" y="178" width="524.4" height="24" rx="3" fill="url(#i4)"/>
 			<rect x="140" y="222" width="435.2" height="24" rx="3" fill="url(#i5)"/>
 			<g font-size="13" fill="#1c2330" font-weight="700">
-				<text x="151" y="63">0.067（68.5 KB）</text>
+				<text x="151" y="63">0.067 (68.5 KB)</text>
 				<text x="172.5" y="107">4.63</text>
 				<text x="191.1" y="151">8.13</text>
 				<text x="672.4" y="195">98.94</text>

@@ -17,7 +17,7 @@ test('UTC ではなく JST を返す', () => {
 	assert.equal(jstHour, (utcHour + 9) % 24);
 });
 
-test('T や Z を含まない（DB にそのまま入る形）', () => {
+test('T や Z を含まない (DB にそのまま入る形)', () => {
 	const at = nowJst();
 	assert.ok(!at.includes('T'), 'T が残っている');
 	assert.ok(!at.includes('Z'), 'Z が残っている');

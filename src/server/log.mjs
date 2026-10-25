@@ -10,7 +10,7 @@ import { nowJst } from './time.mjs';
  *
  * ファイルへの書き出しは WinSW に任せる。標準出力は out.log、標準エラーは err.log に
  * 転送される。XML の logpath には %BASE% を付けること。相対パスはサービスの
- * カレントディレクトリ（C:\Windows\System32）を基準に解決されてしまう。
+ * カレントディレクトリ (C:\Windows\System32)を基準に解決されてしまう。
  */
 function format(level, message) {
 	return `${nowJst()} ${level.padEnd(5)} ${message}`;

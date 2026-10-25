@@ -1,13 +1,13 @@
 /*
  * 名乗る ID の渡し方を確かめる。
  *
- * ID はコマンドの直後の位置引数で、コロンで囲む（wait :ai-chat-lite: -p 8787）。
+ * ID はコマンドの直後の位置引数で、コロンで囲む (wait :ai-chat-lite: -p 8787)。
  * --connector-id / -c は廃止した。
  *
  * なぜ囲むのか。囲みが無いと、プロセス一覧から待受けを探す式が前方一致する。
  * project-a を探すと project-aa にも当たり、1 本しか張っていない待受けが
  * 2 本に見える。それを二重と誤認して片方を止めると、相手は原因不明の
- * exit 255 で落ちる（実際に起きた。issues の i260901-07）。
+ * exit 255 で落ちる (実際に起きた。issues の i260901-07)。
  * 閉じのコロンが境目になるので、囲めば起きない。
  *
  * なぜ位置を固定するのか。オプションはコマンドの前にも後ろにも書けるため、
@@ -47,7 +47,7 @@ after(async () => {
 	await stopServers(servers);
 });
 
-/** 引数をそのまま渡す。ID の差し込みはしない（形そのものを試すため） */
+/** 引数をそのまま渡す。ID の差し込みはしない \(形そのものを試すため\) */
 function raw(args) {
 	return run(process.execPath, [CLIENT, ...args, '--url', base, '--access-token', TEST_ACCESS_TOKEN], {
 		env: { ...process.env },
@@ -97,7 +97,7 @@ describe('ID はコマンドの直後に置く', () => {
 	 *
 	 * ここだけ 1 のままだったので、同じ関数の中で「囲みが違えば 2、丸ごと
 	 * 無ければ 1」という分かれ方をしていた。C# 版も同じ値だったため、
-	 * 2 本の突き合わせでは見つからなかった（レビュー #21 medium 6）。
+	 * 2 本の突き合わせでは見つからなかった (レビュー #21 medium 6)。
 	 */
 	test('ID を書かないと、使い方の誤りとして止まる', async () => {
 		const { code, stderr } = await failing(['wait', '--wait-sec', '1']);
@@ -147,7 +147,7 @@ describe('囲みの検査', () => {
 	});
 
 	test('ピリオドは先頭・末尾に置けない', async () => {
-		// Windows がファイル名の末尾のピリオドを落とすため（待受けのログが ID を含む名前で残る）
+		// Windows がファイル名の末尾のピリオドを落とすため (待受けのログが ID を含む名前で残る)
 		for (const bad of [':.te:', ':te.:', ':.:', ':..:']) {
 			const { code, stderr } = await failing(['join', bad]);
 
@@ -174,7 +174,7 @@ describe('前方一致する ID を取り違えない', () => {
 		const shorter = `aichat.exe wait ${wrapId('project-a')} -p 8787`;
 		const longer = `aichat.exe wait ${wrapId('project-aa')} -p 8787`;
 
-		// 囲まないと 2 本に見える（これが事故の元）
+		// 囲まないと 2 本に見える (これが事故の元)
 		assert.ok(shorter.includes('project-a'));
 		assert.ok(longer.includes('project-a'), '囲まなければ前方一致してしまう');
 
@@ -211,7 +211,7 @@ describe('--to も囲む', () => {
 		const { code, stderr } = await failing(['say', wrapId('test-id1'), 'x', '--to', 'test-id2']);
 
 		assert.equal(code, 2);
-		assert.match(stderr, /ID は : で囲んでください（--to）/);
+		assert.match(stderr, /ID は : で囲んでください \(--to\)/);
 	});
 });
 
@@ -267,7 +267,7 @@ describe('サーバー側でも文字を検査する', () => {
 		assert.match(body.error, /room_id/);
 	});
 
-	test('コロンを含む ID は断る（囲みと紛れる）', async () => {
+	test('コロンを含む ID は断る (囲みと紛れる)', async () => {
 		const res = await fetch(`${base}/api/join`, {
 			method: 'POST',
 			headers: { 'content-type': 'application/json', 'X-AiChat-Access-Token': TEST_ACCESS_TOKEN },

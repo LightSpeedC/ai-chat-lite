@@ -4,7 +4,7 @@
 //! 相手は localhost のサーバー 1 つだけなので、必要なところに絞る。
 //!
 //! **`fetch` の轍は踏まない。**node の `fetch` は Windows で 1 往復ごとに
-//! 15 ms ほど待たされる（課題 i260912-02）。ここは生のソケットに書くので、
+//! 15 ms ほど待たされる (課題 i260912-02)。ここは生のソケットに書くので、
 //! その待ちは入らない。
 //!
 //! 組み立てと読み取りはソケットから切り離してある。そうしないと、
@@ -25,11 +25,11 @@ pub struct Response {
 /// 送る要求
 pub struct Request<'a> {
 	pub method: &'a str,
-	/// パスと問い合わせ（`/api/poll?connector_id=...`）
+	/// パスと問い合わせ (`/api/poll?connector_id=...`)
 	pub path: &'a str,
 	pub host: &'a str,
 	pub port: u16,
-	/// 追加のヘッダ（名前, 値）
+	/// 追加のヘッダ (名前, 値)
 	pub headers: Vec<(String, String)>,
 	/// 本文。`None` なら付けない
 	pub body: Option<&'a str>,
@@ -104,13 +104,13 @@ pub fn parse_response(raw: &[u8]) -> Result<Response, String> {
 	})
 }
 
-/// 分割して送られた本文（chunked）を繋ぐ
+/// 分割して送られた本文 (chunked)を繋ぐ
 fn decode_chunked(body: &[u8]) -> Result<Vec<u8>, String> {
 	let mut out = Vec::new();
 	let mut at = 0;
 
 	loop {
-		// 終わりの印（長さ 0）を見ないまま尽きたら、途中で切れている
+		// 終わりの印 (長さ 0)を見ないまま尽きたら、途中で切れている
 		if at >= body.len() {
 			return Err("分割の終わりが来ていません".to_string());
 		}
@@ -118,7 +118,7 @@ fn decode_chunked(body: &[u8]) -> Result<Vec<u8>, String> {
 		let size_text = std::str::from_utf8(&body[at..at + line_end])
 			.map_err(|_| "分割の長さが文字として読めません".to_string())?;
 
-		// 拡張（size;name=value）が付くことがある。長さだけを見る
+		// 拡張 (size;name=value)が付くことがある。長さだけを見る
 		let size_text = size_text.split(';').next().unwrap_or("").trim();
 
 		// 16 進で読む。10 を 10 バイトと読むと途中で切れる
@@ -147,7 +147,7 @@ fn find_subslice(haystack: &[u8], needle: &[u8]) -> Option<usize> {
 	haystack.windows(needle.len()).position(|w| w == needle)
 }
 
-/// 1 往復する。`timeout` は読み書きの上限（long-poll では長く取る）
+/// 1 往復する。`timeout` は読み書きの上限 (long-poll では長く取る)
 pub fn send(req: &Request, timeout: Option<Duration>) -> std::io::Result<Response> {
 	let mut stream = TcpStream::connect((req.host, req.port))?;
 	stream.set_read_timeout(timeout)?;

@@ -2,7 +2,7 @@
 //!
 //! node 版の `waiters-pick.mjs` と同じ規則にする。**ここを間違えると事故になる。**
 //! 数え違いで他プロジェクトの待受けを止めると、相手は原因不明の `exit 255` で
-//! 落ちる（課題 i260901-07 で実際に起きた）。
+//! 落ちる (課題 i260901-07 で実際に起きた)。
 //!
 //! 外部クレートを使わないので正規表現は持たない。`readArg` に当たる読み取りは
 //! 手で書く。
@@ -13,7 +13,7 @@ pub struct Waiter {
 	pub pid: i64,
 	/// 覆っているルーム
 	pub rooms: Vec<String>,
-	/// 立った時刻（`yyyy/mm/dd HH:mm:ss.fff`）。並べ替えに使う
+	/// 立った時刻 (`yyyy/mm/dd HH:mm:ss.fff`)。並べ替えに使う
 	pub at: String,
 }
 
@@ -22,19 +22,19 @@ pub struct Waiter {
 pub struct Process {
 	pub pid: i64,
 	pub ppid: i64,
-	/// 実行ファイルの名前（`aichat-rs.exe` ・ `node.exe` など）
+	/// 実行ファイルの名前 (`aichat-rs.exe` ・ `node.exe` など)
 	pub name: String,
 	pub cmd: String,
-	/// 立った時刻（`yyyy-MM-dd HH:mm:ss`）
+	/// 立った時刻 (`yyyy-MM-dd HH:mm:ss`)
 	pub at: String,
 }
 
-/// 経過を `h:mm` で返す。**日をまたいでも時のまま増やす**（2 日なら 48:00）。
+/// 経過を `h:mm` で返す。**日をまたいでも時のまま増やす** (2 日なら 48:00)。
 ///
 /// 日数に繰り上げると、張りっぱなしの待受けが「2 日」と出て、何時間走って
 /// いるのか読めなくなる。
 pub fn elapsed_of(at: &str, now_ms: i64) -> String {
-	// at は `yyyy-MM-dd HH:mm:ss`（ps ・ Get-CimInstance の形）
+	// at は `yyyy-MM-dd HH:mm:ss`(ps ・ Get-CimInstance の形)
 	let started = parse_at(at).unwrap_or(now_ms);
 	let min = ((now_ms - started) / 60000).max(0);
 	format!("{}:{:02}", min / 60, min % 60)
@@ -48,7 +48,7 @@ fn parse_at(at: &str) -> Option<i64> {
 	crate::jst::parse_jst(&format!("{} {}.000", slashed, time)).ok()
 }
 
-/// 委譲先の実行ファイル名（Windows 専用）
+/// 委譲先の実行ファイル名 (Windows 専用)
 const DELEGATE_NAME: &str = "aichat-cs.exe";
 
 /// Windows で `waiters` を任せる相手を探す。
@@ -81,12 +81,12 @@ pub fn exe_dir() -> Option<std::path::PathBuf> {
 /// 走っているプロセスの一覧を取る。
 ///
 /// **ここだけ OS で分かれる。**Mac ・ Linux に PowerShell は無い。
-/// 取り方だけを分け、選び方（`pick_waiters`）は 1 つに保つ。
+/// 取り方だけを分け、選び方 (`pick_waiters`)は 1 つに保つ。
 ///
 /// Windows では 2 段で試す。
 ///
-///   1. Windows の API を直に呼ぶ（20 ms）
-///   2. PowerShell を起こす（213 ms）
+///   1. Windows の API を直に呼ぶ (20 ms)
+///   2. PowerShell を起こす (213 ms)
 ///
 /// **1 は非公開の仕組みに乗っている。**PEB の並びは公開されておらず、
 /// Windows の版が変わると位置がずれうる。そのときは黙って 2 へ落ちる。
@@ -147,7 +147,7 @@ fn list_unix() -> Result<Vec<Process>, String> {
 			None => continue,
 		};
 		let ppid: i64 = it.next().and_then(|s| s.parse().ok()).unwrap_or(0);
-		// lstart は 5 語（曜 月 日 時刻 年）。並べ替えに使うので順に並ぶ形へ直す
+		// lstart は 5 語 (曜 月 日 時刻 年)。並べ替えに使うので順に並ぶ形へ直す
 		let stamp: Vec<&str> = (0..5).filter_map(|_| it.next()).collect();
 		let name = it.next().unwrap_or("").to_string();
 		let cmd = it.collect::<Vec<_>>().join(" ");
@@ -201,7 +201,7 @@ fn parse_rows(text: &str, fields: usize) -> Vec<Process> {
 /// 同じ判定を手で書く。**`wait` の後ろに空白を要求するのが要点。**これが無いと
 /// `waiters` 自身に一致し、数えているコマンドが数に入る。
 ///
-/// 古い形（`-c` ・ `--connector-id`）も拾う。切り替えの途中は新旧が混ざるため、
+/// 古い形 (`-c` ・ `--connector-id`)も拾う。切り替えの途中は新旧が混ざるため、
 /// 片方しか見ないと相手の待受けを見落として二重に張らせてしまう。
 pub fn waiter_id(cmd: &str) -> Option<String> {
 	let bytes = cmd.as_bytes();
@@ -212,7 +212,7 @@ pub fn waiter_id(cmd: &str) -> Option<String> {
 		let end = start + 4;
 		from = end;
 
-		// 語の頭であること（行頭か空白のあと）
+		// 語の頭であること (行頭か空白のあと)
 		let head_ok = start == 0 || bytes[start - 1].is_ascii_whitespace();
 		// 直後に空白があること。waiters に当たらないようにする
 		let tail_ok = end < bytes.len() && bytes[end].is_ascii_whitespace();
@@ -250,7 +250,7 @@ pub fn waiter_id(cmd: &str) -> Option<String> {
 /// 待受けが見ている先
 #[derive(Debug, Clone, PartialEq)]
 pub struct Target {
-	/// 案内に出す形（`:8787` ・ `example:9000` ・ `(未指定)`）
+	/// 案内に出す形 (`:8787` ・ `example:9000` ・ `(未指定)`)
 	pub label: String,
 	pub rooms: Vec<String>,
 	/// 同じ場所かを比べるための番号。読めなければ 0
@@ -304,7 +304,7 @@ pub fn via_of(name: &str, parent_name: Option<&str>) -> String {
 ///
 /// 新しい実行体が増えたらここへ足す。足し忘れても本数が少なく見えるだけで、
 /// 二重に数えて「張らなくてよい」と読み違える向きには外れない。
-/// node 版（waiters-pick.mjs の WAITER_RUNTIMES）と同じ並びにする。
+/// node 版 (waiters-pick.mjs の WAITER_RUNTIMES)と同じ並びにする。
 pub fn is_waiter_runtime(name: &str) -> bool {
 	let lower = name.to_ascii_lowercase();
 	let base = lower.strip_suffix(".exe").unwrap_or(&lower);
@@ -325,7 +325,7 @@ pub fn pick_waiters(rows: &[Process], exclude_pids: &[i64]) -> Vec<(Process, Str
 
 	// 末端に数えるのは待受けの実体だけ。bash ・ timeout ・ pwsh のようなラッパーは数えない。
 	// timeout 越しに起動すると外側の timeout.exe の親が先に終わり、bash から親子が切れて、
-	// bash が「子を持たない末端」として残っていた（i261004-01）
+	// bash が「子を持たない末端」として残っていた (i261004-01)
 	let parents: Vec<i64> = hits.iter().map(|(p, _)| p.ppid).collect();
 	let mut leaves: Vec<(Process, String)> = hits
 		.iter()
@@ -429,7 +429,7 @@ pub fn rooms_arg(rooms: &[String]) -> String {
 /// 「2 本目以降を止める」にすると、そのルームを覆う唯一の 1 本まで名指しする。
 /// 言われたとおり止めれば覆えなくなり、張り直す → また二重、を往復する。
 ///
-/// 判定に入れるのは基準（`-r` で渡したルーム）に触れる待受けだけ。基準を見ずに
+/// 判定に入れるのは基準 (`-r` で渡したルーム)に触れる待受けだけ。基準を見ずに
 /// 全部を並べると、渡していないルームの pid を止めろと出る。
 ///
 /// 並びは基準の外を多く持つものを先に。止められるものをより多く見つけられる。
@@ -708,8 +708,8 @@ mod tests {
 
 	#[test]
 	fn 親子が切れたラッパーは数えない() {
-		// timeout 越しに起動すると外側の timeout.exe の親（8296）が先に終わっていて、
-		// 一覧に無い。bash（38572）から timeout へ親子がつながらず、bash が末端に残った（i261004-01）
+		// timeout 越しに起動すると外側の timeout.exe の親 (8296)が先に終わっていて、
+		// 一覧に無い。bash (38572)から timeout へ親子がつながらず、bash が末端に残った (i261004-01)
 		let shell = "bash.exe -c \"eval 'timeout 7200 aichat wait :me: -p 8787 -r public' < /dev/null\"";
 		let rows = vec![
 			proc(22172, 37516, "bash.exe", shell, "2026-10-04 12:50:56"),
@@ -898,7 +898,7 @@ mod tests {
 
 	#[test]
 	fn 覆いが同じなら古いほうを残す() {
-		// node 版で実測して合わせた（keep: [2] / stop: [1]）
+		// node 版で実測して合わせた (keep: [2] / stop: [1])
 		let mine = vec![
 			waiter(1, &["a"], "2026/09/13 12:00:00.000"),
 			waiter(2, &["a"], "2026/09/13 10:00:00.000"),
@@ -911,7 +911,7 @@ mod tests {
 	#[test]
 	fn 外の数が同じでも中身が違えば両方残す() {
 		// 外の数だけで決めない。外 1 と外 2 は別のルームなので、
-		// どちらを止めてもそこが覆えなくなる（node 版で実測: keep [2,1] / stop []）
+		// どちらを止めてもそこが覆えなくなる (node 版で実測: keep [2,1] / stop [])
 		let mine = vec![
 			waiter(1, &["a", "外1"], "2026/09/13 12:00:00.000"),
 			waiter(2, &["a", "外2"], "2026/09/13 10:00:00.000"),

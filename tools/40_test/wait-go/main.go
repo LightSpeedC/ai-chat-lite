@@ -1,7 +1,7 @@
 // ベンチマーク用の最小の待受け。
 //
 // aichat wait と同じように long-poll でぶら下がるだけ。**検証も表示も持たない**。
-// 待受け中のメモリを他の実装（C# ・ node ・ bun ・ Rust）と並べて測るためだけに作った。
+// 待受け中のメモリを他の実装 (C# ・ node ・ bun ・ Rust)と並べて測るためだけに作った。
 //
 // 製品として使うものではない。ID もルームも検証せず、繋がらなければ黙って終わる。
 //
@@ -74,7 +74,7 @@ func main() {
 	// 読んだ位置を立てる。初めての接続だと、これが無いと最初の poll が全件を返す
 	_, _ = poll(port, id, room, token, 0)
 
-	fmt.Printf("pid %d で待受け中（最大 %d 秒、ルーム %s）\n", os.Getpid(), total, room)
+	fmt.Printf("pid %d で待受け中 (最大 %d 秒、ルーム %s)\n", os.Getpid(), total, room)
 
 	left := total
 	for left > 0 {

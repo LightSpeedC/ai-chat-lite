@@ -79,7 +79,7 @@ tools\80_ops\restore.ps1 -Path _backup\daily\chat-20260828-000100.db.zip
 
 | 順 | すること |
 |---:|---|
-| 0 | <strong>これから止めることを `public` に流し、10 秒待つ。</strong>印を置く前に投稿する（置いてからでは受け付けてもらえない） |
+| 0 | <strong>これから止めることを `public` に流し、10 秒待つ。</strong>印を置く前に投稿する (置いてからでは受け付けてもらえない) |
 | 1 | `_data\MAINTENANCE` を置く。理由と `見込み: N 分` を書く |
 | 2 | サーバーを落とす。印があるので、**待ち受けだけ始めて DB は開かない** |
 | 3 | zip を展開し、中身の件数を数えて確かめる |
@@ -108,7 +108,7 @@ tools\80_ops\restore.ps1 -EstimatedMinutes 20
 echo 戻し直しています > _data\MAINTENANCE
 node src\client\chat.mjs restart :restore: --port 8787
 
-# _data\prev-… の中身 3 つを _data\ へ移す（chat.db / chat.db-wal / chat.db-shm）
+# _data\prev-… の中身 3 つを _data\ へ移す (chat.db / chat.db-wal / chat.db-shm)
 
 Remove-Item _data\MAINTENANCE
 ```
@@ -145,7 +145,7 @@ tools\80_ops\unregister-backup-tasks.cmd
 
 4 つとも解除し、**空になったフォルダも消す**。ほかのタスクが同じフォルダに残っていれば、フォルダは消さずにそのままにする。
 
-控え（`_backup`）は消さない。要らなくなったら手で消す。
+控え (`_backup`)は消さない。要らなくなったら手で消す。
 
 | `LastTaskResult` | 意味 |
 |---:|---|

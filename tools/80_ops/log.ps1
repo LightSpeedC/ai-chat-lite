@@ -12,7 +12,7 @@
 	HTML にするのは WARN と ERROR を色で目立たせるため。テキストのログでは
 	見分けるのに目を凝らす必要がある。
 
-	1 行を <div> 1 つで書き、閉じタグ（</body> </html>）は書かない。
+	1 行を <div> 1 つで書き、閉じタグ (</body> </html>)は書かない。
 	ブラウザが補完するため、書き込みの途中で開いても壊れず、そこまでの行が
 	読める。ログは書かれ続けるファイルなので、いつ開かれるか分からない。
 
@@ -121,7 +121,7 @@ function Write-OpsLog {
 
 		[System.IO.File]::AppendAllText($path, $line + "`r`n", (New-Object System.Text.UTF8Encoding($false)))
 	} catch {
-		Write-Host ('（ログを書けませんでした: {0}）' -f $_.Exception.Message)
+		Write-Host ('(ログを書けませんでした: {0})' -f $_.Exception.Message)
 	}
 }
 
@@ -132,7 +132,7 @@ function Remove-OldOpsLogs {
 	if (-not (Test-Path $LogsDir)) { return }
 	$cutoff = (Get-Date).AddMonths(-$script:LOG_KEEP_MONTHS).ToString('yyyyMM')
 
-	# サービスのログ（WinSW が書くもの）に触れないよう、名前の形で絞る
+	# サービスのログ (WinSW が書くもの)に触れないよう、名前の形で絞る
 	foreach ($f in Get-ChildItem -LiteralPath $LogsDir -Filter '*-backup-*-log.html' -File) {
 		if ($f.Name -match '^(\d{6})-' -and $Matches[1] -lt $cutoff) {
 			Remove-Item -LiteralPath $f.FullName -Force

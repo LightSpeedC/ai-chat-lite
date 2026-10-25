@@ -10,12 +10,12 @@
 	出力は _backup\<区分>\chat-yyyymmdd-hhmmss.db.zip。サイズに関わらず
 	常に圧縮する。区分ごとに残す世代数が違う。
 
-	  hourly    8 世代（8 時間）
-	  daily     7 世代（1 週間）
-	  weekly    4 世代（1 か月）
-	  monthly   6 世代（半年）
+	  hourly    8 世代 (8 時間)
+	  daily     7 世代 (1 週間)
+	  weekly    4 世代 (1 か月)
+	  monthly   6 世代 (半年)
 
-	メンテナンス中（_data\MAINTENANCE がある）や、別のバックアップが動いて
+	メンテナンス中 (_data\MAINTENANCE がある)や、別のバックアップが動いて
 	いる間は待つ。30 秒おきに 10 回まで見に行き、消えなければ取らずに終える。
 	取らなかった場合の終了コードは 1。正常終了で流すとタスクの履歴が緑の
 	まま並び、控えが取れていないことに気づけないため。
@@ -67,15 +67,15 @@ Write-Host ('[{0}] DB のスナップショットを取得しています...' -f
 	Node 側で印を見て待ち、通れば VACUUM INTO する。結果を key=value で受け取る。
 
 	終了コード 2 は「印が消えず、取らずに終えた」。**これは失敗として扱う**
-	（下の 116 行以降で ERROR を残して exit 1 にする）。メンテナンス中は
+	(下の 116 行以降で ERROR を残して exit 1 にする)。メンテナンス中は
 	想定内の状態だが、印を消し忘れると以後すべての控えが取れなくなり、
 	緑のまま並ぶと気づけない。何が起きたかは Node 側が標準エラーに書いている
 #>
 <#
 	ここだけ $ErrorActionPreference を緩める。
 
-	2>&1 で受けた標準エラーは ErrorRecord として返る（下の選別がそれを前提に
-	している）。Stop のままだと、backup.mjs が 1 行書いた時点で
+	2>&1 で受けた標準エラーは ErrorRecord として返る (下の選別がそれを前提に
+	している)。Stop のままだと、backup.mjs が 1 行書いた時点で
 	NativeCommandError が投げられて終わる。
 
 	印と重なって「30 秒待ちます」が出たときがこれに当たり、待機の途中で落ちて
@@ -96,7 +96,7 @@ try {
 <#
 	標準エラーに出た説明から、記録に残す 1 行を選ぶ。
 
-	待機の途中経過（「30 秒待ちます（1/10）」）は画面には要るが、ログには要らない。
+	待機の途中経過 (「30 秒待ちます (1/10)」)は画面には要るが、ログには要らない。
 	10 回待てば 10 行が並び、肝心の結論が埋もれる。最後の 1 行だけを採る。
 #>
 $stderrLines = @($output | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] } |
@@ -146,7 +146,7 @@ $zipPath  = Join-Path $backupDir ($info['base'] + '.db.zip')
 
 Write-Host ('  元の DB     : {0}' -f $info['src'])
 Write-Host ('  発言数       : {0} 件' -f $info['messages'])
-Write-Host ('  スナップショット: {0:N0} バイト（{1} ミリ秒）' -f [int] $info['bytes'], $info['ms'])
+Write-Host ('  スナップショット: {0:N0} バイト ({1} ミリ秒)' -f [int] $info['bytes'], $info['ms'])
 
 if (-not (Test-Path $backupDir)) {
 	New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
@@ -161,7 +161,7 @@ Compress-Archive -Path $snapshot -DestinationPath $zipPath -CompressionLevel Opt
 
 $zipSize = (Get-Item -LiteralPath $zipPath).Length
 $ratio   = $zipSize / [int] $info['bytes']
-Write-Host ('  {0}  {1:N0} バイト（元の {2:P1}）' -f (Split-Path $zipPath -Leaf), $zipSize, $ratio)
+Write-Host ('  {0}  {1:N0} バイト (元の {2:P1})' -f (Split-Path $zipPath -Leaf), $zipSize, $ratio)
 
 # 作業用のスナップショットは消す。zip だけを残す
 Remove-Item -LiteralPath $workDir -Recurse -Force

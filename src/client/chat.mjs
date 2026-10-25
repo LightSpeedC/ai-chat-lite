@@ -52,7 +52,7 @@ const [, , command, ...rest] = process.argv;
 /**
  * コマンドを含めた引数の全体。
  *
- * 値を取らない旗（--help）と廃止したオプションは、ここを見る。
+ * 値を取らない旗 (--help)と廃止したオプションは、ここを見る。
  * `chat.mjs -h` のように旗を先頭に置くと command 側に入り、rest には来ない。
  */
 const WORDS = process.argv.slice(2);
@@ -70,7 +70,7 @@ for (const [name, { short, hint }] of REMOVED) {
 }
 
 /**
- * --name value 形式のオプションを取り出す。短い形（-x）も同じ値として受ける。
+ * --name value 形式のオプションを取り出す。短い形 (-x)も同じ値として受ける。
  *
  * 長い形を先に見る。両方書かれたときは長い形が勝つ。
  */
@@ -86,7 +86,7 @@ function option(name, fallback = null) {
 }
 
 /**
- * 値を取らないオプション（--help など）が渡されたかを見る。
+ * 値を取らないオプション (--help など)が渡されたかを見る。
  *
  * option() は「次の引数が値」という前提なので、旗として使うものはこちらで見る。
  */
@@ -132,14 +132,14 @@ const BASE = resolveBase();
 /**
  * 名乗る ID を渡す場所。コマンドの直後の位置引数に固定する。
  *
- * オプション（--connector-id / -c）は廃止した。オプションはコマンドの前にも
+ * オプション (--connector-id / -c)は廃止した。オプションはコマンドの前にも
  * 後ろにも書けるため、プロセス一覧から待受けを探すときに並びが定まらない。
  * コマンドの次の語に固定すれば、探す側が場所を決め打ちできる。
  *
  * 自動で決めない。既定値も持たず、カレントのフォルダ名からも採らない。
  * 取り違えた名前で名乗ると connectors とログに残り、後から消せない。
- * 実際に ID は project フォルダ名と一致しないものが使われている（agent-rules、
- * human）。一致を前提にした実装は取り違える。
+ * 実際に ID は project フォルダ名と一致しないものが使われている (agent-rules、
+ * human)。一致を前提にした実装は取り違える。
  *
  * 環境変数でも受けない。環境変数はプロセス一覧に出ないため、動いている
  * 待受けがどのプロジェクトのものか分からなくなる。
@@ -171,12 +171,12 @@ function unwrapId(raw, where) {
 		const id = raw.slice(w.length, -w.length);
 		if (new RegExp(ID_PATTERN).test(id)) return id;
 
-		console.error(`ID に使えない文字が入っています（${where}）: ${raw}`);
+		console.error(`ID に使えない文字が入っています (${where}): ${raw}`);
 		console.error('  使えるのは英数字・ハイフン・下線・ピリオドだけです。ピリオドは先頭と末尾には置けません。');
 		process.exit(2);
 	}
 
-	console.error(`ID は ${w} で囲んでください（${where}）: ${raw}`);
+	console.error(`ID は ${w} で囲んでください (${where}): ${raw}`);
 	console.error(`  例: ${w}${raw.replaceAll(w, '')}${w}`);
 	process.exit(2);
 }
@@ -244,12 +244,12 @@ function describeWait(sec) {
 	return `${sec} 秒`;
 }
 
-/** オプションでない最初の引数（本文など） */
+/** オプションでない最初の引数 \(本文など\) */
 function positionals() {
 	const args = [];
 	for (let i = 0; i < rest.length; i++) {
 		if (rest[i].startsWith('--') || rest[i].startsWith('-')) {
-			// 旗（値を取らないもの）は値を飛ばさない。飛ばすと次の位置引数が消える
+			// 旗 (値を取らないもの)は値を飛ばさない。飛ばすと次の位置引数が消える
 			if (!FLAGS.has(rest[i])) i++;
 			continue;
 		}
@@ -258,7 +258,7 @@ function positionals() {
 	return args;
 }
 
-/** 名乗る ID を除いた最初の位置引数（本文・戻す番号など） */
+/** 名乗る ID を除いた最初の位置引数 \(本文・戻す番号など\) */
 function positional() {
 	return TAIL[0] ?? null;
 }
@@ -274,7 +274,7 @@ function optionalWrappedId(name) {
  *
  * --from はコロンの有無を問わない。--to や waiters の囲み必須は
  * 「前方一致で探す式に埋め込むため」の制約だが、--from は完全一致の
- * SQL 条件（from_connector_id = ?）にするだけなので、その制約が要らない。
+ * SQL 条件 (from_connector_id = ?)にするだけなので、その制約が要らない。
  */
 function optionalFlexibleId(name) {
 	const raw = option(name);
@@ -285,7 +285,7 @@ function optionalFlexibleId(name) {
 
 	if (new RegExp(ID_PATTERN).test(id)) return id;
 
-	console.error(`ID に使えない文字が入っています（--${name}）: ${raw}`);
+	console.error(`ID に使えない文字が入っています (--${name}): ${raw}`);
 	console.error('  使えるのは英数字・ハイフン・下線・ピリオドだけです。ピリオドは先頭と末尾には置けません。');
 	process.exit(2);
 }
@@ -336,7 +336,7 @@ const retryTimes = RETRY_TIMES[command] ?? RETRY_TIMES.default;
  * HTTP を 1 往復し、本文を JSON として読んで返す。
  *
  * 【なぜ fetch を使わないか】
- * node の fetch は Windows で 1 往復ごとに 15 ms ほど待たされる（課題 i260912-02）。
+ * node の fetch は Windows で 1 往復ごとに 15 ms ほど待たされる (課題 i260912-02)。
  * 最小は 0.36 ms まで下がるので返せないのではなく、待たされている。Windows の
  * 既定のタイマー解像度 15.6 ms と一致する。node:http なら 0.2 ms で返り、
  * bun で動かしても同じ速さになる。
@@ -375,7 +375,7 @@ function httpJson(url, init = {}) {
 				res.on('end', () => {
 					const text = Buffer.concat(chunks).toString('utf8');
 					let json = {};
-					// 本文が JSON でないことはある（502 の HTML 等）。fetch 版も同じように黙って空にしていた
+					// 本文が JSON でないことはある (502 の HTML 等)。fetch 版も同じように黙って空にしていた
 					try {
 						json = text ? JSON.parse(text) : {};
 					} catch {
@@ -407,7 +407,7 @@ function httpJson(url, init = {}) {
 }
 
 /**
- * サーバーを呼ぶ。繋がらないときと、メンテナンス中（503）のときは繋ぎ直す。
+ * サーバーを呼ぶ。繋がらないときと、メンテナンス中 (503)のときは繋ぎ直す。
  *
  * 出すのは始めの 1 行と、諦めたときの 1 行だけ。黙ると固まったように見えるが、
  * 60 回すべて出すと 60 行になる。
@@ -428,7 +428,7 @@ async function call(path, init) {
 			res = await httpJson(base + path, { ...init, headers });
 		} catch (err) {
 			// node:http は err.code、fetch は err.cause.code に入れる。移したので両方を見る
-			lastReason = `繋がりません（${err?.code ?? err?.cause?.code ?? err?.message ?? err}）`;
+			lastReason = `繋がりません (${err?.code ?? err?.cause?.code ?? err?.message ?? err})`;
 			if (!announced && retryTimes > 0) {
 				console.error(`サーバーに繋がりません: ${base}`);
 				console.error(`  ${describeRetry()}繋ぎ直します`);
@@ -441,7 +441,7 @@ async function call(path, init) {
 
 		// メンテナンス中。落ちているのではないので、同じように粘る
 		if (res.status === 503) {
-			lastReason = `メンテナンス中です（${json.detail ?? '理由の記載なし'}）`;
+			lastReason = `メンテナンス中です (${json.detail ?? '理由の記載なし'})`;
 			if (!announced && retryTimes > 0) {
 				console.error(`メンテナンス中です: ${json.detail ?? '理由の記載なし'}`);
 				console.error(`  ${describeRetry()}繋ぎ直します`);
@@ -465,12 +465,12 @@ async function call(path, init) {
 	process.exit(EXIT_UNREACHABLE);
 }
 
-/** 「10 分（10 秒 × 60 回）まで」のような文字列を作る */
+/** 「10 分 \(10 秒 × 60 回\)まで」のような文字列を作る */
 function describeRetry() {
 	if (retryTimes === 0) return '';
 	const sec = RETRY_INTERVAL_SEC * retryTimes;
 	const span = sec % 60 === 0 ? `${sec / 60} 分` : `${sec} 秒`;
-	return `${span}（${RETRY_INTERVAL_SEC} 秒 × ${retryTimes} 回）まで`;
+	return `${span} (${RETRY_INTERVAL_SEC} 秒 × ${retryTimes} 回)まで`;
 }
 
 const postJson = (path, body) =>
@@ -489,7 +489,7 @@ const postJson = (path, body) =>
  * 返信しようにも指す先を書けない。# を付けるのは、付けないと
  * 「474 2026/09/04」と数が 2 つ並び、境目を読み手が判断することになるため。
  *
- * 仕組みからの発言（join / leave / archive / notice）にも番号を出す。
+ * 仕組みからの発言 (join / leave / archive / notice)にも番号を出す。
  * 種別で出し分けると、読み手が「番号が無い行は何か」を考えることになる。
  */
 /** 発言の区切り。本文が何十行あっても切れ目が分かるようにする */
@@ -501,8 +501,8 @@ const SEPARATOR = '────────';
  * 頭にルームを出すのは、1 本の待受けが複数のルームを見られるようになったため。
  * 1 つしか見ていなくても出す。出し分けると、読み手が「無い行は何か」を考えることになる。
  *
- * 番号（#msg_seq）が要るのは、受け取った発言へ返信するときに指す先を書くためである。
- * 仕組みからの発言（join / leave / archive / notice）にも同じ形で出す。
+ * 番号 (#msg_seq)が要るのは、受け取った発言へ返信するときに指す先を書くためである。
+ * 仕組みからの発言 (join / leave / archive / notice)にも同じ形で出す。
  */
 function formatMessage(m) {
 	const head = `${SEPARATOR} [${m.room_id}] #${m.msg_seq} ${m.sent_at}`;
@@ -525,7 +525,7 @@ function printMessages(messages) {
 async function cmdJoin() {
 	const role = option('role', 'ai');
 	const result = await postJson('/api/join', { connector_id: CONNECTOR_ID, connector_role: role, room_id: ROOM });
-	console.log(`${CONNECTOR_ID} として ${result.room_id} に参加しました（現在位置 ${result.msg_seq}）`);
+	console.log(`${CONNECTOR_ID} として ${result.room_id} に参加しました (現在位置 ${result.msg_seq})`);
 	console.log(`参加者 ${result.connectors.length} 人:`);
 	for (const u of result.connectors) {
 		console.log(`  ${STATUS_MARK[u.status]} ${u.connector_id} (${u.status_label})`);
@@ -546,7 +546,7 @@ async function cmdSay() {
 		reply_to_msg_seq: replyToMsgSeq(),
 		msg_body: body,
 	});
-	console.log(`送信しました（${message.msg_seq}）`);
+	console.log(`送信しました (${message.msg_seq})`);
 }
 
 /*
@@ -579,11 +579,11 @@ function logStamp() {
 }
 
 /**
- * 記録を始める。書けなければ黙って諦める（待受けは続ける）。
+ * 記録を始める。書けなければ黙って諦める (待受けは続ける)。
  *
  * テストのときは書かない。単体テストが cmdWait を呼ぶため、置き場に
  * test- で始まる記録が溜まる。実際に 7 本溜まった。
- * 置き場が本番かどうかで判断する（AICHAT_DATA を差し替えていればテスト）。
+ * 置き場が本番かどうかで判断する (AICHAT_DATA を差し替えていればテスト)。
  */
 function openWaitLog() {
 	if (IS_TEST) return;
@@ -597,7 +597,7 @@ function openWaitLog() {
 }
 
 /**
- * 1 行書く。書式はサーバーのログに揃える（日時 + レベル + 本文）。
+ * 1 行書く。書式はサーバーのログに揃える (日時 + レベル + 本文)。
  *
  * 失敗しても黙って捨てる。記録のために待受けを止めるのは本末転倒である。
  */
@@ -616,7 +616,7 @@ async function cmdWait() {
 	const label = describeWait(limitSec);
 
 	/*
-	 * 1 回の long-poll は MAX_WAIT_SEC（240 秒）で必ず返る。サーバー側で
+	 * 1 回の long-poll は MAX_WAIT_SEC (240 秒)で必ず返る。サーバー側で
 	 * これ以上引き延ばすと、途中の切断に気づけないまま握り続けることになる。
 	 * 代わりに、返ってきたら黙って張り直す。呼ぶ側から見ると 1 回の実行で
 	 * 長く待てる。何回に分かれたかは呼ぶ側には関係がないので出さない。
@@ -626,7 +626,7 @@ async function cmdWait() {
 		 * 括弧は「11 分」を秒に直して見せるためのもの。--wait-sec で
 		 * 指定されたときは label 自体が秒なので、同じ値が 2 度出る。
 		 */
-		const detail = label === `${limitSec} 秒` ? label : `${label}（${limitSec} 秒）`;
+		const detail = label === `${limitSec} 秒` ? label : `${label} (${limitSec} 秒)`;
 		console.error(`${detail}待つ設定です。`);
 		console.error(`  前面で呼ぶと ${FOREGROUND_SEC} 秒で背面に移されます。プロセスは走り続けますが、`);
 		console.error('  それまでの間、呼び出し側は待たされます。');
@@ -649,11 +649,11 @@ async function cmdWait() {
 	const excludeParam = withJoins ? '' : '&exclude=join,leave';
 
 	/*
-	 * 初めての接続なら案内を出す（i260909-01）。
+	 * 初めての接続なら案内を出す (i260909-01)。
 	 *
 	 * かつては「参加より前の発言は待たない」だったが、i260920-01 で初回の起点を
 	 * 「当日 0 時・6 時間前の古い方」に変えたため、その起点より前だけが対象になった
-	 * （USAGE「どこまで読んだかは覚えている」）。資料に書いてあるが、読んでいても
+	 * (USAGE「どこまで読んだかは覚えている」)。資料に書いてあるが、読んでいても
 	 * 初回は踏むという報告があった。それより古い過去ログを自動で流し込むのではなく、
 	 * recent で自分から取りに行く形を案内するだけにする。
 	 */
@@ -665,12 +665,12 @@ async function cmdWait() {
 		const where = port !== null ? `-p ${port}` : `-u ${option('url')}`;
 		/*
 		 * 初めてなのは、指定したルームのうち一部だけのことがある
-		 * （first_time はいずれか 1 つでも初めてなら true）。
+		 * (first_time はいずれか 1 つでも初めてなら true)。
 		 */
 		const firstRooms = cursorStatus.rooms.filter((r) => r.first_time).map((r) => r.room_id);
-		console.log(`初めての接続です（${firstRooms.join(', ')}）。当日 0 時・6 時間前の古い方より前の発言は待ちません。それより古い過去が必要なら recent で取ってください（例）:`);
+		console.log(`初めての接続です (${firstRooms.join(', ')})。当日 0 時・6 時間前の古い方より前の発言は待ちません。それより古い過去が必要なら recent で取ってください (例):`);
 		/*
-		 * 見本には -r を必ず付ける（レビュー #21 high 3）。
+		 * 見本には -r を必ず付ける (レビュー #21 high 3)。
 		 *
 		 * recent の既定は public なので、付けずに写されると「初めてだと言った
 		 * ルーム」ではなく public を見ることになり、取れると言われた過去が
@@ -690,19 +690,19 @@ async function cmdWait() {
 		 * 新着が来るか時間が経つまで案内そのものが誰の目にも触れない。
 		 *
 		 * wait=0 で 1 回だけ poll を叩き、カーソルだけ正しく立てて終わる
-		 * （poll は新着の有無に関係なく、実行時点の最大 msg_seq をカーソルに
-		 * するため、これで「今から」の状態になる）。2 回目の wait は今までどおり
+		 * (poll は新着の有無に関係なく、実行時点の最大 msg_seq をカーソルに
+		 * するため、これで「今から」の状態になる)。2 回目の wait は今までどおり
 		 * 普通に待つ。
 		 *
-		 * 対象は初めてのルームだけに絞る。ROOM 全体（既存カーソルを持つ
-		 * ルームも含む）に対してこれを呼ぶと、既存ルームの未読の新着まで
+		 * 対象は初めてのルームだけに絞る。ROOM 全体 (既存カーソルを持つ
+		 * ルームも含む)に対してこれを呼ぶと、既存ルームの未読の新着まで
 		 * 実際には取得したうえで、画面に出さないままカーソルだけ最新に
 		 * 進めてしまう。取りこぼしではなく「表示せずに既読化する」形の
-		 * データ消失になる（実際に他プロジェクトから報告があった事故。i260909-03）
+		 * データ消失になる (実際に他プロジェクトから報告があった事故。i260909-03)
 		 *
-		 * 【i260920-01 との組み合わせで踏んだ事故（i260922-03）】
+		 * 【i260920-01 との組み合わせで踏んだ事故 (i260922-03)】
 		 * 初回の起点が「参加時点」だった間は、この呼び出しは常に空振りだった。
-		 * i260920-01 で起点が過去（0 時・6 時間前の古い方）まで遡るようになり、
+		 * i260920-01 で起点が過去 (0 時・6 時間前の古い方)まで遡るようになり、
 		 * この呼び出し自体がバックログを持って返ってくるようになったのに、
 		 * 戻り値を捨てたままカーソルだけ進めていたため、そのバックログは
 		 * 画面に一度も出ないまま既読化されて消えていた。捨てずに表示する。
@@ -725,18 +725,18 @@ async function cmdWait() {
 	 * 「待受け中」と進行形にしてあるのは、この 1 行だけを見た相手に
 	 * 「終わった」と読ませないため。待受けを張るサブエージェントは背面の
 	 * コマンドを起こした時点で自分の仕事を終えるので、親には「終了」の扱いで
-	 * 通知が届く。そこで張り直すと二重になる（課題 i260905-01）。
+	 * 通知が届く。そこで張り直すと二重になる (課題 i260905-01)。
 	 *
 	 * pid を添えるのは、走っているかを親が確かめられるようにするため。
 	 * aichat waiters が名指しする pid と同じ値になる。
 	 */
-	console.log(`pid ${process.pid} で待受け中（最大 ${label}、ルーム ${ROOM}、${CONNECTOR_ID}${withJoins ? '、参加・離脱も' : ''}）`);
+	console.log(`pid ${process.pid} で待受け中 (最大 ${label}、ルーム ${ROOM}、${CONNECTOR_ID}${withJoins ? '、参加・離脱も' : ''})`);
 
 	openWaitLog();
 	writeWaitLog(
 		'INFO',
-		`待受け開始（最大 ${label}、ルーム ${ROOM}、${CONNECTOR_ID}、pid ${process.pid}` +
-			`${withJoins ? '、参加・離脱も' : '、参加・離脱は除く'}）`
+		`待受け開始 (最大 ${label}、ルーム ${ROOM}、${CONNECTOR_ID}、pid ${process.pid}` +
+			`${withJoins ? '、参加・離脱も' : '、参加・離脱は除く'})`
 	);
 
 	let waited = 0;
@@ -746,7 +746,7 @@ async function cmdWait() {
 
 		/*
 		 * since は渡さない。どこまで読んだかはサーバーが覚えている。
-		 * 一度も読んでいなければ、参加した時点から待つ扱いになる（過去ログは recent で取る）。
+		 * 一度も読んでいなければ、参加した時点から待つ扱いになる (過去ログは recent で取る)。
 		 * 受け取った分は返答と同時に記録されるので、次はその続きから届く。
 		 */
 		last = await call(
@@ -755,14 +755,14 @@ async function cmdWait() {
 		waited += wait;
 
 		/*
-		 * 前回配信したが未確定の分（pending）を確認し、確定する（i260917-01）。
+		 * 前回配信したが未確定の分 (pending)を確認し、確定する (i260917-01)。
 		 *
-		 * wait が応答を返した時点でカーソル（配信済み位置）は進んでいるが、
+		 * wait が応答を返した時点でカーソル (配信済み位置)は進んでいるが、
 		 * 確定済み位置はまだ進んでいない。ここで表示して初めて「読んだ」ことに
 		 * する。読み飛ばしても、確定しなければ次の wait でまた pending に出る。
 		 */
 		if (last.pending.length > 0) {
-			console.log(`前回分（確認）${last.pending.length} 件:`);
+			console.log(`前回分 (確認)${last.pending.length} 件:`);
 			printMessages(last.pending);
 			await ackPending(last);
 			writeWaitLog('INFO', `前回分 ${last.pending.length} 件を確認し、確定しました`);
@@ -774,7 +774,7 @@ async function cmdWait() {
 		 */
 		writeWaitLog(
 			'INFO',
-			`待機中（経過 ${waited} 秒 / 上限 ${unlimited ? '無し' : limitSec + ' 秒'}、新着 ${last.messages.length} 件、現在位置 ${describePositions(last)}）`
+			`待機中 (経過 ${waited} 秒 / 上限 ${unlimited ? '無し' : limitSec + ' 秒'}、新着 ${last.messages.length} 件、現在位置 ${describePositions(last)})`
 		);
 
 		if (last.messages.length > 0) {
@@ -785,15 +785,15 @@ async function cmdWait() {
 		}
 	}
 
-	console.log(`新着なし（${label}待機、現在位置 ${describePositions(last)}）`);
-	writeWaitLog('INFO', `新着なし。上限まで待ち切って終わります（${label}）`);
+	console.log(`新着なし (${label}待機、現在位置 ${describePositions(last)})`);
+	writeWaitLog('INFO', `新着なし。上限まで待ち切って終わります (${label})`);
 }
 
 /**
  * pending にあったルームだけ /api/ack を呼び、確定済み位置を進める。
  *
  * ルームごとに呼ぶのは、/api/ack が 1 ルーム分ずつしか受けないため。
- * その回の poll で pending が無かったルームは呼ばない（無駄な呼び出しをしない）。
+ * その回の poll で pending が無かったルームは呼ばない (無駄な呼び出しをしない)。
  */
 async function ackPending(result) {
 	for (const room of result.rooms) {
@@ -818,7 +818,7 @@ function describePositions(result) {
 /**
  * --since / --since-day / --since-hour から 1 つを解決する。
  *
- * 3 つは排他。2 つ以上渡されたらエラー（exit 2）。どれも無ければ null。
+ * 3 つは排他。2 つ以上渡されたらエラー (exit 2)。どれも無ければ null。
  * --wait-hour / --wait-min / --wait-sec の resolveWaitSec() と同じ形。
  */
 function resolveSinceTs() {
@@ -847,11 +847,11 @@ function resolveSinceTs() {
 }
 
 /**
- * --before を解決する。--since とは別に、単独でも渡せる（範囲検索は両方渡す）。
+ * --before を解決する。--since とは別に、単独でも渡せる (範囲検索は両方渡す)。
  *
- * sinceTs（--since 系がすでに解決した値）を渡すと、年・日付を省いた分は
- * それを引き継ぐ（「いま」とは比べない）。渡さない・null なら「いま」と比べる。
- * 引き継がないと、「--since 9/9 --before 9/10」（今日と明日）で明日だけが
+ * sinceTs (--since 系がすでに解決した値)を渡すと、年・日付を省いた分は
+ * それを引き継ぐ (「いま」とは比べない)。渡さない・null なら「いま」と比べる。
+ * 引き継がないと、「--since 9/9 --before 9/10」 (今日と明日)で明日だけが
  * 独立に未来と判定されて去年に丸まり、今日と去年の組み合わせになってしまう。
  */
 function resolveBeforeTs(sinceTs) {
@@ -861,7 +861,7 @@ function resolveBeforeTs(sinceTs) {
 
 /**
  * --since / --before の値を解決する。書式・丸めは since-parse.mjs を見る。
- * どちらも同じ関数を使う（分けると組み合わせたときに丸めが非対称になる）。
+ * どちらも同じ関数を使う (分けると組み合わせたときに丸めが非対称になる)。
  */
 function parseSinceOrBeforeArg(raw, anchorTs) {
 	try {
@@ -872,7 +872,7 @@ function parseSinceOrBeforeArg(raw, anchorTs) {
 	}
 }
 
-/** 見出し行に出す、絞り込みの説明。分単位まで（秒・ミリ秒は削る） */
+/** 見出し行に出す、絞り込みの説明。分単位まで \(秒・ミリ秒は削る\) */
 function describeFilter(sinceTs, beforeTs, find, from) {
 	const parts = [];
 	if (sinceTs) parts.push(`${sinceTs.slice(0, 16)} 以降`);
@@ -890,7 +890,7 @@ async function cmdRecent() {
 	const hasFilter = sinceTs !== null || beforeTs !== null || find !== null || from !== null;
 
 	/*
-	 * 絞り込みのどれかを指定したときは既定の件数上限を 500（MAX_HISTORY_LIMIT）にする。
+	 * 絞り込みのどれかを指定したときは既定の件数上限を 500 (MAX_HISTORY_LIMIT)にする。
 	 * -n を明示すればそちらが勝つ。期間・検索で自然に絞られているのに、
 	 * 既定の 20 件で黙って古い方が切り捨てられると気づきにくいため。
 	 */
@@ -932,13 +932,13 @@ async function cmdWho() {
  * 走っている待受けを数える。
  *
  * サーバーには繋がない。手元のプロセスだけを見る。who は「サーバーが知って
- * いる在席」を返すが、本数は分からない（1 本でも 2 本でも「接続中」になる）。
+ * いる在席」を返すが、本数は分からない (1 本でも 2 本でも「接続中」になる)。
  *
  * 【なぜコマンドにしたのか】
  * これまでは各プロジェクトに検索式を書かせていた。書き方を 1 つ守れなかった
  * だけで結果が反転し、そのたびに事故になった。
  *
- *   -c で絞らない        他プロジェクトの待受けまで数え、止めてしまう（i260901-07）
+ *   -c で絞らない        他プロジェクトの待受けまで数え、止めてしまう (i260901-07)
  *   プロセス名で絞る      張り方によって aichat.exe / cmd.exe / node.exe に変わる
  *   ID を直に書く        確認コマンド自身に一致し、0 本が 1 本に見える
  *   前方一致             project-a を探すと project-aa にも当たる
@@ -1012,9 +1012,9 @@ function basisOf() {
 	 * roomsFrom はカンマで分割するだけで、文字種は見ていない。waiters は
 	 * サーバーに繋がないため、サーバー側の room_id 検証を経由できない。
 	 * シングルクォートで囲んで渡すと、cmd はクォート文字ごと値に含めてしまい
-	 * （'public,ai-chat-lite' のような壊れた値になる）、そのままカンマで
+	 * ('public,ai-chat-lite' のような壊れた値になる)、そのままカンマで
 	 * 割ると不正な文字を含む「ルーム名」がエラーにならず素通りしていた
-	 * （実際に指摘があった）。ここで弾く
+	 * (実際に指摘があった)。ここで弾く
 	 */
 	for (const room of rooms) {
 		if (new RegExp(ID_PATTERN).test(room)) continue;
@@ -1055,23 +1055,23 @@ async function listWaiters() {
 }
 
 /*
- * 待受けの選び方（pickWaiters）・待っている先の読み取り（targetOf）・張り方の名前
- * （viaOf）は waiters-pick.mjs にある。写しにするとテストが本体を守れない。
- * どこを待っているかを出す理由（ルームは間違えても静かに動く）もそちらに書いた。
+ * 待受けの選び方 (pickWaiters)・待っている先の読み取り (targetOf)・張り方の名前
+ * (viaOf)は waiters-pick.mjs にある。写しにするとテストが本体を守れない。
+ * どこを待っているかを出す理由 (ルームは間違えても静かに動く)もそちらに書いた。
  */
 
 /**
  * -r の値をルームの配列にする。省略なら既定のルーム 1 つ。重複は落とす。
  *
  * 実体は waiters-pick.mjs に置いてテストと共有する。ここに書いてテストへ
- * 写していたときは、本体を壊してもテストが緑のままだった（レビュー #21
- * medium 8）。実際に readArg の穴（#22 medium 7）はその間ずっと見えなかった。
+ * 写していたときは、本体を壊してもテストが緑のままだった (レビュー #21
+ * medium 8)。実際に readArg の穴 (#22 medium 7)はその間ずっと見えなかった。
  */
 function roomsFrom(value) {
 	return roomsFromShared(value, DEFAULT_ROOM);
 }
 
-/** 経過を h:mm で返す。日をまたいでも時のまま増やす（2 日なら 48:00 になる） */
+/** 経過を h:mm で返す。日をまたいでも時のまま増やす \(2 日なら 48:00 になる\) */
 function elapsedOf(at, now = new Date()) {
 	const started = new Date(at.replace(' ', 'T'));
 	// getTime() を挟むのは型の検査を通すため。Date どうしの引き算は動くが、tsc が認めない
@@ -1080,7 +1080,7 @@ function elapsedOf(at, now = new Date()) {
 }
 
 /*
- * 一覧を出す。C# 版と 1 文字ずつ同じにする（テストで突き合わせている）。
+ * 一覧を出す。C# 版と 1 文字ずつ同じにする (テストで突き合わせている)。
  *
  * 幅は文字数ではなく表示幅で揃える。「張り方」は 3 文字だが 6 桁を占めるため、
  * padEnd で数えると列がずれる。
@@ -1118,24 +1118,24 @@ function printWaiters(all, basis, me) {
 	const mine = here.filter((h) => h.id === me);
 
 	console.log('');
-	console.log(`  自分（${me}）: ${mine.length} 本 / この場所に ${here.length} 本`);
+	console.log(`  自分 (${me}): ${mine.length} 本 / この場所に ${here.length} 本`);
 
 	/*
 	 * 別の場所を見ている自分の分は、pid まで出す。
 	 *
 	 * ルームを間違えた待受けは静かに動く。繋がっているので who は「接続中」と
 	 * 出すが、この場所の発言は 1 つも届かない。件数だけでは止めようがないので
-	 * pid を添える。他プロジェクトの分は件数だけにする（止めてはいけないため）。
+	 * pid を添える。他プロジェクトの分は件数だけにする (止めてはいけないため)。
 	 */
 	const strayMine = elsewhere.filter((h) => h.id === me);
 	if (strayMine.length > 0) {
-		const shown = strayMine.map((h) => `pid ${h.pid}（${h.target} / ${h.rooms.join(', ')}）`).join('、');
+		const shown = strayMine.map((h) => `pid ${h.pid} (${h.target} / ${h.rooms.join(', ')})`).join('、');
 		console.log(`  自分の分が別の場所に ${strayMine.length} 本: ${shown}`);
 	}
 
 	// elsewhere は接続先が違う分だけ。同じ接続先ならルームが違っても表に出ている
 	const others = elsewhere.length - strayMine.length;
-	if (others > 0) console.log(`  他に ${others} 本（別の接続先）`);
+	if (others > 0) console.log(`  他に ${others} 本 (別の接続先)`);
 
 	/*
 	 * 次にやることを書く。事実だけ出すと、読み手が判断のためにルールを
@@ -1143,7 +1143,7 @@ function printWaiters(all, basis, me) {
 	 *
 	 * ただし指示するのは自分の分についてだけにし、対象を名指しする。
 	 * 「1 本だけ残してください」のように読み手に選ばせると、他プロジェクトの
-	 * 待受けを止める事故が起きる（i260901-07）。
+	 * 待受けを止める事故が起きる (i260901-07)。
 	 */
 	/*
 	 * 覆えているかで見る。本数では見ない。
@@ -1178,7 +1178,7 @@ function printWaiters(all, basis, me) {
 		const rooms = [...new Set(stop.flatMap((h) => h.rooms.filter((room) => basisRooms.has(room))))].join(', ');
 		const stopped = stop.map((h) => h.pid).join(', ');
 		const kept = keep.map((h) => h.pid).join(', ');
-		console.log(`  ${rooms} を二重に張っています。pid ${stopped} を止めてください（pid ${kept} を残す）。`);
+		console.log(`  ${rooms} を二重に張っています。pid ${stopped} を止めてください (pid ${kept} を残す)。`);
 	}
 
 	if (missing.length === 0 && stop.length === 0) {
@@ -1196,7 +1196,7 @@ async function cmdDump() {
 	mkdirSync(join(ROOT, 'tmp'), { recursive: true });
 	writeFileSync(out, result.messages.map((m) => JSON.stringify(m)).join('\n') + '\n', 'utf8');
 	const archived = result.messages.filter((m) => m.archived_seq !== null).length;
-	console.log(`${result.messages.length} 件を書き出しました（片付けたもの ${archived} 件を含む）: ${out}`);
+	console.log(`${result.messages.length} 件を書き出しました (片付けたもの ${archived} 件を含む): ${out}`);
 }
 
 async function cmdLeave() {
@@ -1279,12 +1279,12 @@ function usage() {
 
   接続先: ${BASE ?? `(未指定)  ← --port ${PORT} か --url <URL> を渡してください`}
   名乗る ID: ${CONNECTOR_ID ?? `(未指定)  ← コマンドの直後に ${ID_WRAP}<自分のID>${ID_WRAP} を置いてください`}
-  ルーム: ${ROOM}         （--room で変更できる）
+  ルーム: ${ROOM}         (--room で変更できる)
 
 コマンド:
 ${commandBlock(COMMANDS)}
 
-サーバーの操作（管理者権限は要らない）:
+サーバーの操作 (管理者権限は要らない):
 ${commandBlock(ADMIN_COMMANDS)}
 
 どのコマンドにも付けられるもの:
@@ -1292,14 +1292,14 @@ ${globals}
 `);
 }
 
-// --- 片付ける（archive） ---
+// --- 片付ける (archive) ---
 
 /** 何件片付くかを先に出す。件数が思っていたより多ければ、そこで気づける */
 function printPreview(kind, id, counts) {
 	const label = { message: '発言', connector: '参加者', room: 'ルーム' }[kind];
 	console.log(`${label} ${id} を片付けると、次が見えなくなります。`);
 	if (counts.messages > 0) {
-		const span = counts.first && counts.last ? `（${counts.first.slice(5, 16)} 〜 ${counts.last.slice(5, 16)}）` : '';
+		const span = counts.first && counts.last ? `(${counts.first.slice(5, 16)} 〜 ${counts.last.slice(5, 16)})` : '';
 		console.log(`  発言       ${String(counts.messages).padStart(4)} 件${span}`);
 	}
 	if (counts.cursors > 0) console.log(`  読んだ位置 ${String(counts.cursors).padStart(4)} 件`);
@@ -1314,13 +1314,13 @@ function printPreview(kind, id, counts) {
  * 前面で人が打つとき用。パイプで渡されていれば、その 1 行を使う。
  *
  * 【EOF を必ず拾う】
- * 背面（run_in_background）で起こすと標準入力が閉じていて、data が 1 度も来ない。
+ * 背面 (run_in_background)で起こすと標準入力が閉じていて、data が 1 度も来ない。
  * end を見ていないと Promise が解けず、bun は待ち続け、node は
  * 「Detected unsettled top-level await」を出して終了コード 13 で落ちた。
- * 実際に本番でシェルが 10 時間以上残った（課題 i260913-02）。
+ * 実際に本番でシェルが 10 時間以上残った (課題 i260913-02)。
  *
  * 閉じていたら、そこまでに来ている分を返す。空なら確認に一致しないので中止になる。
- * Rust 版（src/cli-rs）は EOF で中止 ・ 終了コード 1 になる。そこへ揃える。
+ * Rust 版 (src/cli-rs)は EOF で中止 ・ 終了コード 1 になる。そこへ揃える。
  *
  * 【空行と EOF を分ける】
  * どちらも「答えが空」だが、読み手にとっては別の話である。空行は打ち間違い、
@@ -1345,7 +1345,7 @@ function readLine(prompt) {
 			if (nl < 0) return;
 			finish({ text: buf.slice(0, nl).trim(), eof: false });
 		};
-		// 改行が来ないまま閉じた分も拾う（`printf 'x' | aichat archive …` の形）
+		// 改行が来ないまま閉じた分も拾う (`printf 'x' | aichat archive …` の形)
 		const onEnd = () => finish({ text: buf.trim(), eof: true });
 		process.stdin.on('data', onData);
 		process.stdin.on('end', onEnd);
@@ -1356,14 +1356,14 @@ function readLine(prompt) {
 /**
  * 取り返しのつかない操作の前に、対象の名前を打たせる。
  *
- * --yes があれば聞かない。背面（run_in_background）から実行するときの唯一の手段で、
+ * --yes があれば聞かない。背面 (run_in_background)から実行するときの唯一の手段で、
  * これが無いと AI は archive ・ rename を使えない。確認を省くので、
  * 打ち間違いは止まらない。渡した側の責任になる。
  *
  * 【中止の理由を書き分ける】
  * 打ち間違えたのか、入力が来なかったのかは、読み手にとって別の話である。
  * 本番では背面から 2 度試して 2 度とも止まり、原因が分からないままになった
- * （課題 i260913-02）。詰まったその場で渡し方が読めるようにする。
+ * (課題 i260913-02)。詰まったその場で渡し方が読めるようにする。
  *
  * @param {string} target 打たせる名前
  * @param {string} prompt 問いかけ
@@ -1409,7 +1409,7 @@ async function cmdArchive() {
 	 * 下見を出して名前まで打たせてから断るのは、手間をかけさせるだけになる。
 	 */
 	if (kind === 'room' && id === DEFAULT_ROOM) {
-		console.error(`${DEFAULT_ROOM} は片付けられません（参加時の行き先です）`);
+		console.error(`${DEFAULT_ROOM} は片付けられません (参加時の行き先です)`);
 		process.exit(2);
 	}
 
@@ -1436,16 +1436,16 @@ async function cmdArchive() {
 		confirm: id,
 	});
 
-	console.log(`片付けました（archived_seq ${result.archived_seq}）`);
+	console.log(`片付けました (archived_seq ${result.archived_seq})`);
 	console.log(`  ${result.description}`);
 	console.log(`戻すには: restore ${ID_WRAP}${CONNECTOR_ID}${ID_WRAP} ${result.archived_seq}`);
 }
 
 /**
- * 参加者の ID を付け替える（i260909-02）。
+ * 参加者の ID を付け替える (i260909-02)。
  *
  * archive と同じ形にする。先に件数を出し、旧 ID の入力を求めてから実行する。
- * ID は connectors ・ cursors ・ messages（発言者 ・ 宛先 ・ 本文の @旧ID）・
+ * ID は connectors ・ cursors ・ messages (発言者 ・ 宛先 ・ 本文の @旧ID)・
  * archives に散っており、手で SQL を書くと洗い出しから毎回やり直しになる。
  */
 async function cmdRename() {
@@ -1469,9 +1469,9 @@ async function cmdRename() {
 	console.log(`参加者 ${from} を ${to} に付け替えます。`);
 	console.log(`  参加者        ${String(counts.connectors).padStart(4)} 件`);
 	console.log(`  読んだ位置    ${String(counts.cursors).padStart(4)} 件`);
-	console.log(`  発言（差出人）${String(counts.messages_from).padStart(4)} 件`);
-	console.log(`  発言（宛先）  ${String(counts.messages_to).padStart(4)} 件`);
-	console.log(`  発言（本文の @${from}）${String(counts.messages_body).padStart(4)} 件`);
+	console.log(`  発言 (差出人)${String(counts.messages_from).padStart(4)} 件`);
+	console.log(`  発言 (宛先)  ${String(counts.messages_to).padStart(4)} 件`);
+	console.log(`  発言 (本文の @${from})${String(counts.messages_body).padStart(4)} 件`);
 	console.log(`  片付けの記録  ${String(counts.archives + counts.archive_targets).padStart(4)} 件`);
 	console.log('走っている待受けがあると断られます。先に止めてください。');
 
@@ -1489,7 +1489,7 @@ async function cmdRename() {
 	const total =
 		result.connectors + result.cursors + result.messages_from + result.messages_to +
 		result.messages_body + result.archives + result.archive_targets;
-	console.log(`付け替えました（${result.from} → ${result.to} / ${total} 件）`);
+	console.log(`付け替えました (${result.from} → ${result.to} / ${total} 件)`);
 	console.log('  待受けを張り直すときは、新しい ID で張ってください。');
 }
 
@@ -1500,7 +1500,7 @@ async function cmdArchives() {
 		return;
 	}
 	/*
-	 * 対象（kind と id）を説明とは別の列で出す。
+	 * 対象 (kind と id)を説明とは別の列で出す。
 	 * 説明は --description で書き換えられるため、そこだけ見ても対象が分からない。
 	 */
 	const label = { message: '発言', connector: '参加者', room: 'ルーム' };
@@ -1529,7 +1529,7 @@ async function cmdRestore() {
 		connector_id: requireConnectorId(),
 	});
 
-	console.log(`archived_seq ${result.archived_seq} を戻しました（${result.restored} 件）`);
+	console.log(`archived_seq ${result.archived_seq} を戻しました (${result.restored} 件)`);
 	console.log(`  ${result.description}`);
 }
 
@@ -1541,7 +1541,7 @@ async function cmdRestore() {
  * 本番とテストで同じ public なので手がかりにならない。サーバーに聞けば必ず
  * 分かるので、繋ぐコマンドでは毎回聞いて先頭に出す。
  *
- * 出すのは stderr。recent や dump の出力（stdout）に混ぜない。
+ * 出すのは stderr。recent や dump の出力 (stdout)に混ぜない。
  */
 function isOfflineCommand(name) {
 	const def = [...COMMANDS, ...ADMIN_COMMANDS].find((c) => c.name === name);
@@ -1558,9 +1558,9 @@ async function announceEnv() {
 
 	/*
 	 * 取れなければ黙って諦める。印は補助なので、ここで粘る意味がない。
-	 * 粘ると、使い方の誤りが「繋がらない待ち」に埋もれる（--wait-hour と
+	 * 粘ると、使い方の誤りが「繋がらない待ち」に埋もれる (--wait-hour と
 	 * --wait-min を同時に渡したときの終了コード 2 が、600 秒かけて 3 に
-	 * なっていた）。繋がらないことの案内は、本来の呼び出しが出す。
+	 * なっていた)。繋がらないことの案内は、本来の呼び出しが出す。
 	 */
 	let info;
 	try {
@@ -1571,7 +1571,7 @@ async function announceEnv() {
 		return;
 	}
 
-	console.error(`${info.env === 'test' ? 'テスト' : '本番'}（${describePlace()}）`);
+	console.error(`${info.env === 'test' ? 'テスト' : '本番'} (${describePlace()})`);
 }
 const commands = {
 	join: cmdJoin,

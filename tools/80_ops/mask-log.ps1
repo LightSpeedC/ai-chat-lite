@@ -1,5 +1,5 @@
 ﻿<#
-	会話ログ（JSONL）の中の語を伏せ字に置き換える。
+	会話ログ (JSONL)の中の語を伏せ字に置き換える。
 
 	Claude Code の会話ログには、応答やツールの出力に出た文字がそのまま残る。
 	個人名・メールアドレス・ホスト名などが混じったときに、後から伏せるためのもの。
@@ -30,8 +30,8 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 
 <#
-	会話ログの置き場は、プロジェクトのパスから決まる。区切り（: と \）を - に
-	置き換えた名前になる（C:\work\project-name → C--work-project-name）。
+	会話ログの置き場は、プロジェクトのパスから決まる。区切り (: と \)を - に
+	置き換えた名前になる (C:\work\project-name → C--work-project-name)。
 
 	名前を決め打ちにしていたため、プロジェクトを移したときに黙って対象から
 	外れていた。伏せられるのは etc\history\jsonl のコピーだけになり、
@@ -54,7 +54,7 @@ $targets = @(
 	【下見でも止める】
 	以前は -WhatIfOnly のときだけ先へ進めていた。ところがトップレベルの
 	return は exit を通らないので $LASTEXITCODE を更新せず、呼ぶ側が
-	先に 0 を立ててから呼ぶ形（mask-log-input.ps1）と噛み合って
+	先に 0 を立ててから呼ぶ形 (mask-log-input.ps1)と噛み合って
 	「成功」と読まれていた。
 
 	そのため利用者から見た流れがこうなっていた。
@@ -64,21 +64,21 @@ $targets = @(
 	下見の時点で断てば、yes を押させてから何もしない形がなくなる。
 	そもそも伏せ字は「セッションを閉じてから実行する」道具なので、
 	走っている間に数えても、その値で判断はできない。
-	（レビュー #23 high 1）
+	(レビュー #23 high 1)
 
 	【終了コードを分ける】
-	4 は「claude が走っているので、いまはできない」。1（会話ログが
-	見つからない）と混ぜると、呼ぶ側が同じ文面しか出せない。前者は
+	4 は「claude が走っているので、いまはできない」。1 (会話ログが
+	見つからない)と混ぜると、呼ぶ側が同じ文面しか出せない。前者は
 	セッションを閉じる話、後者は場所を直す話で、やることが違う。
 
 	CLI 側は 1 = 一般のエラー / 2 = 使い方の誤り / 3 = 繋がらない、と
-	決めてある（options.mjs）。3 までは意味が埋まっているので 4 を使う。
+	決めてある (options.mjs)。3 までは意味が埋まっているので 4 を使う。
 #>
 $running = Get-Process -Name 'claude' -ErrorAction SilentlyContinue
 if ($running) {
 	Write-Host '★ claude が動いています。セッションを閉じてから実行してください。' -ForegroundColor Yellow
 	Write-Host ('  pid: ' + ($running.Id -join ', '))
-	Write-Host '  数えるだけの実行（-WhatIfOnly）も、ここで止めます'
+	Write-Host '  数えるだけの実行 (-WhatIfOnly)も、ここで止めます'
 	exit 4
 }
 
@@ -105,7 +105,7 @@ foreach ($dir in $targets) {
 		記録は <セッションID>\subagents\ に入る。実測では直下 1 件に対して
 		再帰 153 件で、そのうち 152 件が subagents だった。
 		-Recurse が無いと 99% が対象から外れたまま「残っている語は
-		ありませんでした。」と総括する（レビュー #21 high 4）。
+		ありませんでした。」と総括する (レビュー #21 high 4)。
 
 		サブエージェントの記録には、親から渡した指示文と返した報告が丸ごと
 		入る。伏せたい語が親の会話に出たなら、そちらにも同じ語が残る。
@@ -130,7 +130,7 @@ foreach ($dir in $targets) {
 		$totalFile++
 
 		if ($WhatIfOnly) {
-			Write-Host ("  {0,-46} {1} 件（数えただけ）" -f $f.Name, $hit)
+			Write-Host ("  {0,-46} {1} 件 (数えただけ)" -f $f.Name, $hit)
 		} else {
 			# JSONL は 1 行 1 レコード。改行を変えずに書き戻す
 			[IO.File]::WriteAllText($f.FullName, $text, (New-Object Text.UTF8Encoding $false))
@@ -155,7 +155,7 @@ if (-not (Test-Path $mainLog)) {
 }
 
 if ($WhatIfOnly) {
-	Write-Host ("{0} ファイル・{1} 件が見つかりました（書き換えていません）" -f $totalFile, $totalHit)
+	Write-Host ("{0} ファイル・{1} 件が見つかりました (書き換えていません)" -f $totalFile, $totalHit)
 } elseif ($totalHit -eq 0) {
 	Write-Host '残っている語はありませんでした。'
 } else {
@@ -168,8 +168,8 @@ if ($WhatIfOnly) {
 
 	PowerShell では .ps1 が exit を通らずに終わると $LASTEXITCODE が更新されない。
 	powershell.exe -File は毎回まっさらなセッションなので、呼び出し側から見ると
-	最初の呼び出しでは未定義（$null）のままになる。$null -ne 0 は真なので、
-	終了コードを見る側は成功を失敗と読む（レビュー #22 high 1。実測で再現した）。
+	最初の呼び出しでは未定義 ($null)のままになる。$null -ne 0 は真なので、
+	終了コードを見る側は成功を失敗と読む (レビュー #22 high 1。実測で再現した)。
 
 	上の exit 1 と対にしておけば、呼ぶ側は $LASTEXITCODE だけで成否を判別できる。
 #>

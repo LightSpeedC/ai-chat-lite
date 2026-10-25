@@ -1,5 +1,5 @@
 /*
- * 既定の CLI（aichat）を Rust 版に差し替える。
+ * 既定の CLI (aichat)を Rust 版に差し替える。
  *
  * 【ビルドと分けてある理由】
  * ビルドが走るたびに既定が入れ替わると、試しに作っただけのものが
@@ -11,10 +11,10 @@
  *
  * 【置き場は bin/】
  * 共通ルール「共有ツールの置き場とPATH」により、他プロジェクトから名前で
- * 呼ばれる公開CLIは bin/ に置く（i260922-01）。PATHに追加するのも bin/ だけで、
+ * 呼ばれる公開CLIは bin/ に置く (i260922-01)。PATHに追加するのも bin/ だけで、
  * プロジェクトルート自体は対象にしない。
  *
- * 実行ファイルは Git 管理外（.gitignore の *.exe）なので、取得した直後は無い。
+ * 実行ファイルは Git 管理外 (.gitignore の *.exe)なので、取得した直後は無い。
  * 先に node tools/20_build/build-aichat-rs.mjs でビルドすること。
  *
  *   node tools/20_build/install-aichat.mjs

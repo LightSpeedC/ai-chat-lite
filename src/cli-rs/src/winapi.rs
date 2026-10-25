@@ -29,7 +29,7 @@ const INVALID_HANDLE: isize = -1;
 /// 1601-01-01 から 1970-01-01 までの 100 ナノ秒の数
 const FILETIME_EPOCH_DIFF: u64 = 116_444_736_000_000_000;
 
-/// JST と UTC の差（ミリ秒）
+/// JST と UTC の差 (ミリ秒)
 const JST_OFFSET_MS: i64 = 9 * 60 * 60 * 1000;
 
 #[repr(C)]
@@ -71,7 +71,7 @@ extern "system" {
 /// `FILETIME` を JST の `yyyy-MM-dd HH:mm:ss` に直す。
 ///
 /// 元期が 1601 年で単位が 100 ナノ秒。1970 年からのミリ秒に直してから
-/// 9 時間足す。**書式は `Get-CimInstance` に揃える**（ハイフン区切り・ミリ秒なし）。
+/// 9 時間足す。**書式は `Get-CimInstance` に揃える** (ハイフン区切り・ミリ秒なし)。
 pub fn filetime_to_jst(low: u32, high: u32) -> String {
 	let ticks = ((high as u64) << 32) | (low as u64);
 	if ticks < FILETIME_EPOCH_DIFF {
@@ -193,7 +193,7 @@ fn read_command_line(handle: isize) -> Option<String> {
 	let peb_bytes = read_memory(handle, peb, 0x30)?;
 	let params = read_usize(&peb_bytes, 0x20);
 
-	// RTL_USER_PROCESS_PARAMETERS の 0x70 に CommandLine（長さ 2 バイト ＋ 番地 8 バイト）
+	// RTL_USER_PROCESS_PARAMETERS の 0x70 に CommandLine (長さ 2 バイト ＋ 番地 8 バイト)
 	let param_bytes = read_memory(handle, params, 0x80)?;
 	let length = u16::from_le_bytes([param_bytes[0x70], param_bytes[0x71]]) as usize;
 	let address = read_usize(&param_bytes, 0x78);
@@ -233,7 +233,7 @@ mod tests {
 	#[test]
 	fn 構造体の大きさがWindowsの決まりと合う() {
 		// 64 ビットでは 44 ＋ 520 を 8 バイト境界へ丸めて 568。
-		// ここがずれると Process32FirstW が 0 件を返す（実際に踏んだ）
+		// ここがずれると Process32FirstW が 0 件を返す (実際に踏んだ)
 		assert_eq!(std::mem::size_of::<ProcessEntry32W>(), 568);
 	}
 

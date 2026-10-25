@@ -11,7 +11,7 @@
 
 /* ===================================================================
    ai-chat-lite 共通スタイル
-   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   章ごとのアクセント色 (.ch01〜)は各 HTML 側で定義する
    =================================================================== */
 
 :root {
@@ -334,7 +334,7 @@ pre code {
 }
 
 /*
- * 幅は文字数で決まる（固定幅にしない）。
+ * 幅は文字数で決まる (固定幅にしない)。
  * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
  * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
  */
@@ -412,7 +412,7 @@ footer a {
 }
 </style>
 <style>
-/* この資料だけのもの: 章のアクセント色（4章 / 色相 280→0 を 93.3 刻み）と目次の採番 */
+/* この資料だけのもの: 章のアクセント色 (4章 / 色相 280→0 を 93.3 刻み)と目次の採番 */
 .ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
 .ch02 { --accent: hsl(186.7, 78%, 25%); --accent2: hsl(186.7, 58%, 55%); --soft: hsl(186.7, 28%, 95%); }
 .ch03 { --accent: hsl( 93.3, 78%, 25%); --accent2: hsl( 93.3, 58%, 55%); --soft: hsl( 93.3, 28%, 95%); }
@@ -538,7 +538,7 @@ tools\80_ops\register-backup-tasks.cmd</code></pre>
 			<tr><th class="num nowrap">順</th><th>すること</th></tr>
 		</thead>
 		<tbody>
-			<tr><td class="num">0</td><td><strong>これから止めることを <code>public</code> に流し、10 秒待つ。</strong>印を置く前に投稿する（置いてからでは受け付けてもらえない）</td></tr>
+			<tr><td class="num">0</td><td><strong>これから止めることを <code>public</code> に流し、10 秒待つ。</strong>印を置く前に投稿する (置いてからでは受け付けてもらえない)</td></tr>
 			<tr><td class="num">1</td><td><code>_data\MAINTENANCE</code> を置く。理由と <code>見込み: N 分</code> を書く</td></tr>
 			<tr><td class="num">2</td><td>サーバーを落とす。印があるので、<strong>待ち受けだけ始めて DB は開かない</strong></td></tr>
 			<tr><td class="num">3</td><td>zip を展開し、中身の件数を数えて確かめる</td></tr>
@@ -568,7 +568,7 @@ tools\80_ops\register-backup-tasks.cmd</code></pre>
 	<pre><code class="language-powershell">echo 戻し直しています &gt; _data\MAINTENANCE
 node src\client\chat.mjs restart :restore: --port 8787
 
-# _data\prev-… の中身 3 つを _data\ へ移す（chat.db / chat.db-wal / chat.db-shm）
+# _data\prev-… の中身 3 つを _data\ へ移す (chat.db / chat.db-wal / chat.db-shm)
 
 Remove-Item _data\MAINTENANCE</code></pre>
 
@@ -603,7 +603,7 @@ Remove-Item _data\MAINTENANCE</code></pre>
 
 	<p>4 つとも解除し、<strong>空になったフォルダも消す</strong>。ほかのタスクが同じフォルダに残っていれば、フォルダは消さずにそのままにする。</p>
 
-	<p>控え（<code>_backup</code>）は消さない。要らなくなったら手で消す。</p>
+	<p>控え (<code>_backup</code>)は消さない。要らなくなったら手で消す。</p>
 
 	<div class="tablewrap">
 	<table>

@@ -12,16 +12,16 @@ const MARKDOWN_JS_PATH = join(HERE, '..', 'src', 'web', 'js', 'markdown.js');
 /*
  * 【なぜ必要か】
  * PLACEHOLDER をバイト値 0 の 1 文字リテラルで書くと、git がこのファイルを
- * -text（バイナリ）と判定する。以後 diff は "Binary files … differ" にしか
+ * -text (バイナリ)と判定する。以後 diff は "Binary files … differ" にしか
  * ならず、ripgrep も定義の行を返さない。escapeText や自動リンクの文字集合が
- * 1 文字戻っても diff に出ず、grep は 0 件を返す（0 件が正常に見える失敗）。
+ * 1 文字戻っても diff に出ず、grep は 0 件を返す (0 件が正常に見える失敗)。
  * XSS 対策を止めている唯一のファイルが、レビューもコミット前確認も
  * 素通りすることになる。ソースをそのまま読んで確かめる。
  */
-test('ソースに NUL バイトが無い（git のバイナリ判定を避けるため）', () => {
+test('ソースに NUL バイトが無い (git のバイナリ判定を避けるため)', () => {
 	const bytes = readFileSync(MARKDOWN_JS_PATH);
 	const nulAt = bytes.indexOf(0);
-	assert.equal(nulAt, -1, `${nulAt} バイト目に NUL がある。PLACEHOLDER はエスケープ記法（\\u0000）で書く`);
+	assert.equal(nulAt, -1, `${nulAt} バイト目に NUL がある。PLACEHOLDER はエスケープ記法 (\\u0000)で書く`);
 });
 
 // --- ここが画面で唯一の攻撃面になるため、通す・通さないを明示的に固定する ---
@@ -78,7 +78,7 @@ test('" は実体参照になる', () => {
 /*
  * 【なぜ必要か】
  * 自動リンクの文字集合に < > が残っていると、直後に自分で生成したタグ
- * （<code> や <strong>、コードブロックを戻した <pre><code>）を URL ごと
+ * (<code> や <strong>、コードブロックを戻した <pre><code>)を URL ごと
  * 飲み込む。href の中に入るだけなら実害は無いが、リンクの表示文字にも
  * 同じ値を使っているため、そちらは innerHTML としてそのまま解釈される。
  * 飲み込まれた <code> がタグとして生き返り、意図しない入れ子になる。
@@ -106,14 +106,14 @@ test('リンクの直後の " はリンクに含まれない', () => {
  *
  * 結果、href が投稿された URL と別のものになり、残りが「amp;b=2」という
  * 文字列として本文に出る。クエリ付き URL はチャットでよく貼られる
- * （レビュー #23 medium 16）。
+ * (レビュー #23 medium 16)。
  *
  * & を戻しても < > " ' は外したままなので、タグを飲み込む経路は塞がれている。
  */
 test('クエリ付きの URL が & で切れない', () => {
 	const out = renderBody('https://example.com/?a=1&b=2 のあと');
 
-	// href は投稿された URL と同じものを指す（& はエスケープされた形で入る）
+	// href は投稿された URL と同じものを指す (& はエスケープされた形で入る)
 	assert.ok(out.includes('href="https://example.com/?a=1&amp;b=2"'), out);
 	// 切れた残りが本文に落ちていない
 	assert.ok(!out.includes('amp;b=2 のあと'), out);
@@ -129,7 +129,7 @@ test('& を戻してもタグは飲み込まない', () => {
 
 /*
  * 【なぜ必要か】
- * & を無条件に通すと、エスケープ後の " < > （&quot; &lt; &gt;）まで URL に
+ * & を無条件に通すと、エスケープ後の " < > (&quot; &lt; &gt;)まで URL に
  * 入る。そうなると「" と < > を文字集合から外した」理由がそのまま崩れ、
  * 属性から抜け出す経路とタグを飲み込む経路が戻る。
  * 通すのは &amp; だけで、他の実体参照ではリンクを切る。

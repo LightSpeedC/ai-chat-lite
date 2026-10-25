@@ -19,7 +19,7 @@ export const VERSION =
 	STARTED_AT.slice(0, 4) + STARTED_AT.slice(5, 7) + STARTED_AT.slice(8, 10) +
 	'-' + STARTED_AT.slice(11, 13) + STARTED_AT.slice(14, 16);
 
-/** プロジェクトのルート（src/server から 2 つ上） */
+/** プロジェクトのルート \(src/server から 2 つ上) */
 export const ROOT = join(here, '..', '..');
 
 /** 本番のデータの置き場。ここかどうかで本番かテストかが決まる */
@@ -50,10 +50,10 @@ export const DB_PATH = join(DATA_DIR, 'chat.db');
  * 他プロジェクトがテスト環境へ繋いでくると、テスト中のデータに他人の発言が混ざる。
  * ポートを見つけて叩かれても、これを知らなければ弾ける。
  *
- * 起動するたびに変わる。本番では使わない（IS_TEST が false のときは空）。
+ * 起動するたびに変わる。本番では使わない (IS_TEST が false のときは空)。
  *
  * サーバーは起動ログに 1 行出すだけで、ファイルには書かない。/api/version でも
- * 返さない（誰でも読めてしまう）。ログから拾って置き場の server.json に書くのは
+ * 返さない (誰でも読めてしまう)。ログから拾って置き場の server.json に書くのは
  * tools/40_test/start-test-server.mjs で、テストはその server.json を読む。
  * main.mjs を直に起動したときは server.json が無いので、ログから拾うことになる。
  */
@@ -75,16 +75,16 @@ export const HOSTS = ['::1', '127.0.0.1'];
 /** ルームを省略したときの既定値 */
 export const DEFAULT_ROOM = 'public';
 
-/** 接続が切れてからオンライン扱いを続ける猶予（ミリ秒） */
+/** 接続が切れてからオンライン扱いを続ける猶予 \(ミリ秒\) */
 export const ONLINE_GRACE_MS = 90 * 1000;
 
 /**
- * オフラインへ落ちた人を見つけるために在席を確かめる間隔（ミリ秒）。
+ * オフラインへ落ちた人を見つけるために在席を確かめる間隔 (ミリ秒)。
  * 猶予より短くしておく。この間隔の分だけ通知が遅れる。
  */
 export const OFFLINE_CHECK_MS = 30 * 1000;
 
-/** long-poll の待ち時間の上限（秒）。PowerShell ツールの 600 秒制限の内側に収める */
+/** long-poll の待ち時間の上限 \(秒\)。PowerShell ツールの 600 秒制限の内側に収める */
 export const MAX_WAIT_SEC = 240;
 
 /** 本文の最大文字数 */
@@ -106,7 +106,7 @@ export const MAX_HISTORY_LIMIT = 500;
  * 分からない。設定ミスがあっても静かに動いてしまうので、実際に使った値と、
  * それが既定なのか環境変数で上書きされたものなのかを記録する。
  */
-// 由来は値と同じタイミング（読み込み時）に確定させる。呼び出し時に process.env を
+// 由来は値と同じタイミング (読み込み時)に確定させる。呼び出し時に process.env を
 // 見に行くと、その間に環境変数が変わった場合に値と表示がずれる。
 const PORT_FROM_ENV = process.env.AICHAT_PORT !== undefined;
 const DATA_FROM_ENV = process.env.AICHAT_DATA !== undefined;

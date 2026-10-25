@@ -140,10 +140,10 @@ for (const entry of cases) {
 	const result = compare(args, { mask: useMask });
 	if (result.same) {
 		ok++;
-		console.log(`一致   ${args.join(' ') || '（引数なし）'}`);
+		console.log(`一致   ${args.join(' ') || '(引数なし)'}`);
 	} else {
 		ng++;
-		console.log(`差分   ${args.join(' ') || '（引数なし）'}`);
+		console.log(`差分   ${args.join(' ') || '(引数なし)'}`);
 		showDiff(result);
 	}
 }

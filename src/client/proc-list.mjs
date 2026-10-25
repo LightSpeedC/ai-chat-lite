@@ -6,15 +6,15 @@
  * chat.mjs に混ぜると、待受けを選ぶ規則と取り方が同じ場所に並んでしまう。
  *
  * 【Windows では 2 段】
- *   1. Windows の API を直に呼ぶ（bun は bun:ffi、node は koffi。18〜24 ms）
- *   2. PowerShell を起こす（523 ms）
+ *   1. Windows の API を直に呼ぶ (bun は bun:ffi、node は koffi。18〜24 ms)
+ *   2. PowerShell を起こす (523 ms)
  *
- * **1 は非公開の仕組みに乗っている。**PEB（プロセスの内部構造）の並びは
+ * **1 は非公開の仕組みに乗っている。**PEB (プロセスの内部構造)の並びは
  * マイクロソフトが公開しておらず、Windows の版が変わると位置がずれうる。
  * ずれたら黙って次の段へ落ちる。waiters は「止めてよい待受けを名指しする」
  * 道具なので、**誤って数えるより遅いほうがよい。**
  *
- * Mac ・ Linux では ps を使う（PowerShell が無い）。
+ * Mac ・ Linux では ps を使う (PowerShell が無い)。
  */
 import { spawnSync } from 'node:child_process';
 
@@ -34,7 +34,7 @@ const isBun = typeof globalThis.Bun !== 'undefined';
 /**
  * FILETIME を JST の `yyyy-MM-dd HH:mm:ss` に直す。
  *
- * **書式は Get-CimInstance に揃える**（ハイフン区切り・ミリ秒なし）。
+ * **書式は Get-CimInstance に揃える** (ハイフン区切り・ミリ秒なし)。
  * 揃えないと、PowerShell へ落ちたときに並べ替えが食い違う。
  */
 export function filetimeToJst(ticks) {
@@ -59,7 +59,7 @@ async function listByBunFfi() {
 		 * 名前を組み立ててから渡す。
 		 *
 		 * bun:ffi は bun にしかないので、node の型定義には無い。直に書くと
-		 * tsc が「そんなモジュールは無い」と言う（検査は node の型で走る）。
+		 * tsc が「そんなモジュールは無い」と言う (検査は node の型で走る)。
 		 * **実行時に解ければよい**ものなので、検査の目から外す。
 		 */
 		const mod = 'bun' + ':ffi';
@@ -177,7 +177,7 @@ async function listByBunFfi() {
 	}
 }
 
-/** koffi で一覧を取る（node 用）。使えなければ null */
+/** koffi で一覧を取る \(node 用\)。使えなければ null */
 async function listByKoffi() {
 	if (isBun) return null;
 
@@ -332,7 +332,7 @@ export function listByPowerShell() {
 	return Array.isArray(parsed) ? parsed : [parsed];
 }
 
-/** ps で一覧を取る（Mac ・ Linux） */
+/** ps で一覧を取る \(Mac ・ Linux\) */
 export function listByPs() {
 	const run = spawnSync('ps', ['-eo', 'pid=,ppid=,lstart=,comm=,args='], { encoding: 'utf8' });
 	if (run.status !== 0) throw new Error('ps が動きませんでした');

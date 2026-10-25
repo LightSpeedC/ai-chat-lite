@@ -46,7 +46,7 @@ describe('usage() とオプションの定義', () => {
 
 	test('定義した短い形はすべて表示に出る', () => {
 		for (const o of OPTIONS.filter((x) => x.short)) {
-			assert.ok(shownShorts.has(o.short), `-${o.short} が usage() に出ていない（--${o.long}）`);
+			assert.ok(shownShorts.has(o.short), `-${o.short} が usage() に出ていない (--${o.long})`);
 		}
 	});
 
@@ -63,8 +63,8 @@ describe('usage() とオプションの定義', () => {
 
 	test('コマンドだけのオプションは、そのコマンドの下に出る', () => {
 		/*
-		 * 同じ名前のオプションが複数のコマンドに付くことがある（--yes は
-		 * archive と rename の両方）。最初に見つかった 1 行だけを見ると、
+		 * 同じ名前のオプションが複数のコマンドに付くことがある (--yes は
+		 * archive と rename の両方)。最初に見つかった 1 行だけを見ると、
 		 * 後ろのコマンドでは「前のコマンドの下にある」と読んで落ちる。
 		 * コマンドの行から次のコマンドの行までの区間で探す。
 		 */
@@ -73,7 +73,7 @@ describe('usage() とオプションの定義', () => {
 			const cmdAt = lines.findIndex((l) => new RegExp(`^ {2}${o.cmd}(\\s|$)`).test(l));
 			assert.ok(cmdAt >= 0, `${o.cmd} の行が見つからない`);
 
-			// 次にコマンド（字下げ 2）が現れるところまでが、このコマンドの区間
+			// 次にコマンド (字下げ 2)が現れるところまでが、このコマンドの区間
 			let endAt = lines.findIndex((l, i) => i > cmdAt && /^ {2}\S/.test(l));
 			if (endAt < 0) endAt = lines.length;
 
@@ -152,12 +152,12 @@ describe('usage() とオプションの定義', () => {
 		};
 
 		const optionLines = HELP.split('\n').filter((l) => /^\s{2,}--/.test(l));
-		assert.ok(optionLines.length >= OPTIONS.length, `オプションの行が拾えていない（${optionLines.length} 行）`);
+		assert.ok(optionLines.length >= OPTIONS.length, `オプションの行が拾えていない (${optionLines.length} 行)`);
 
 		for (const line of optionLines) {
 			const m = line.match(/^(.*?) {2,}(\S.*)$/);
 			if (!m) continue;
-			assert.ok(widthOf(m[1]) < 40, `桁からはみ出している（幅 ${widthOf(m[1])}）: ${line}`);
+			assert.ok(widthOf(m[1]) < 40, `桁からはみ出している (幅 ${widthOf(m[1])}): ${line}`);
 		}
 	});
 });

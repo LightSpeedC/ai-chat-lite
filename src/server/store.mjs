@@ -16,11 +16,11 @@ const db = new DatabaseSync(DB_PATH);
 // この PRAGMA は失敗しても例外を投げず、切り替え後のモード名を返すだけ。
 const journalMode = db.prepare('PRAGMA journal_mode = WAL').get();
 if (journalMode.journal_mode !== 'wal') {
-	log.warn(`WAL に切り替わりませんでした（現在: ${journalMode.journal_mode}）`);
+	log.warn(`WAL に切り替わりませんでした (現在: ${journalMode.journal_mode})`);
 }
 
 /*
- * 形は作らない。版の SQL（src/scripts/20_migrate/）だけが形の出どころである。
+ * 形は作らない。版の SQL (src/scripts/20_migrate/)だけが形の出どころである。
  *
  * かつてはここに CREATE TABLE IF NOT EXISTS を並べていたが、2 つの困りごとが
  * あったのでやめた。
@@ -50,15 +50,15 @@ const found = new Set(
  */
 if (found.has('users')) {
 	throw new Error(
-		'この DB は改名前の形です（users テーブルがあります）。' +
-			'サーバーを起動し直すと版が当たります（src/server/migrate.mjs）。'
+		'この DB は改名前の形です (users テーブルがあります)。' +
+			'サーバーを起動し直すと版が当たります (src/server/migrate.mjs)。'
 	);
 }
 
 const missing = REQUIRED_TABLES.filter((t) => !found.has(t));
 if (missing.length > 0) {
 	throw new Error(
-		`DB の形が揃っていません（足りないテーブル: ${missing.join(' ')}）。` +
+		`DB の形が揃っていません (足りないテーブル: ${missing.join(' ')})。` +
 			'版を当ててから開いてください。サーバーは main.mjs が起動時に当てます。' +
 			'テストから使うときは store.mjs を読み込む前に migrate() を呼んでください。'
 	);
@@ -106,7 +106,7 @@ const stmt = {
 		'SELECT COALESCE(MAX(msg_seq), 0) AS seq FROM messages WHERE archived_seq IS NULL AND room_id = ? AND sent_at < ?'
 	),
 	/*
-	 * 片付けた行は主キーの枠を占め続ける（connector_id が主キー）。INSERT は必ず
+	 * 片付けた行は主キーの枠を占め続ける (connector_id が主キー)。INSERT は必ず
 	 * DO UPDATE に落ちるので、archived_seq = NULL に戻さないと、読み出し側の
 	 * archived_seq IS NULL に弾かれて「書けるのに読めない行」になる。
 	 *
@@ -149,9 +149,9 @@ const stmt = {
 	 * getCursor(...) ?? getMaxSeq(...) が「いまの最大値」を起点にする。
 	 * 待受けを張っていない間の発言を黙って飛ばすことになる。
 	 *
-	 * acked_seq（確定済み位置）は ON CONFLICT では触らない。新規行だけ
-	 * VALUES の acked_seq をそのまま入れる（呼び出し側が msg_seq と同じ
-	 * 値を渡すため、初参加時点では「未確定の繰り越し」が無い状態になる）。
+	 * acked_seq (確定済み位置)は ON CONFLICT では触らない。新規行だけ
+	 * VALUES の acked_seq をそのまま入れる (呼び出し側が msg_seq と同じ
+	 * 値を渡すため、初参加時点では「未確定の繰り越し」が無い状態になる)。
 	 */
 	upsertCursor: db.prepare(`
 		INSERT INTO cursors (connector_id, room_id, msg_seq, acked_seq, updated_at)
@@ -204,18 +204,18 @@ export function getSince(roomId, since, limit) {
 	return stmt.selectSince.all(roomId, Number(since) || 0, clampLimit(limit, MAX_HISTORY_LIMIT));
 }
 
-/** 直近 limit 件を古い順で返す（画面の初期表示に使う） */
+/** 直近 limit 件を古い順で返す \(画面の初期表示に使う\) */
 export function getLatest(roomId, limit) {
 	return stmt.selectLatest.all(roomId, clampLimit(limit, 50)).reverse();
 }
 
-/** before より古いメッセージを古い順で返す（遡りに使う） */
+/** before より古いメッセージを古い順で返す \(遡りに使う\) */
 export function getBefore(roomId, before, limit) {
 	return stmt.selectBefore.all(roomId, Number(before), clampLimit(limit, 50)).reverse();
 }
 
 /**
- * 期間・検索・差出人で絞り込んで返す（recent の --since 系）。古い順。
+ * 期間・検索・差出人で絞り込んで返す (recent の --since 系)。古い順。
  *
  * 条件は渡された分だけ足す。組み合わせが 16 通りあるため、あらかじめ
  * 用意した prepared statement では足りず、呼ぶたびに組み立てる。
@@ -238,10 +238,10 @@ export function getFiltered(roomId, { sinceTs, beforeTs, find, from, limit } = {
 	}
 	if (find) {
 		/*
-		 * | で区切ると OR 検索になる（--find "rule|ルール"）。前後の空白は trim し、
-		 * 空項（"rule|" の末尾など）は無視する。1 語だけのときは今までどおり。
+		 * | で区切ると OR 検索になる (--find "rule|ルール")。前後の空白は trim し、
+		 * 空項 ("rule|" の末尾など)は無視する。1 語だけのときは今までどおり。
 		 *
-		 * 大文字小文字は SQLite の LIKE が ASCII を既定で区別しない（実測済み）。
+		 * 大文字小文字は SQLite の LIKE が ASCII を既定で区別しない (実測済み)。
 		 * 日本語には大小の区別が無いので、この点はどちらにしろ影響しない。
 		 */
 		const terms = String(find)
@@ -279,7 +279,7 @@ export function getMaxSeq(roomId) {
 	return stmt.maxSeq.get(roomId).max_seq;
 }
 
-/** ts より前の最後の msg_seq。1 件も無ければ 0（i260920-01: 初回の起点計算に使う） */
+/** ts より前の最後の msg_seq。1 件も無ければ 0 \(i260920-01: 初回の起点計算に使う\) */
 export function getSeqBefore(roomId, ts) {
 	return stmt.seqBefore.get(roomId, ts).seq;
 }
@@ -312,12 +312,12 @@ export function touchConnector(connectorId, fallbackRole = 'ai') {
 	stmt.touchConnector.run(connectorId, fallbackRole, at, at);
 }
 
-/** 接続を 1 本増やす（long-poll / SSE の開始時） */
+/** 接続を 1 本増やす \(long-poll / SSE の開始時) */
 export function addConnection(connectorId) {
 	stmt.addConnection.run(nowJst(), connectorId);
 }
 
-/** 接続を 1 本減らす（long-poll / SSE の終了時） */
+/** 接続を 1 本減らす \(long-poll / SSE の終了時) */
 export function removeConnection(connectorId) {
 	stmt.removeConnection.run(nowJst(), connectorId);
 }
@@ -330,8 +330,8 @@ export function listConnectors() {
 // --- どこまで読んだか ---
 
 /**
- * 記録されている位置（配信済み）。まだ一度も読んでいなければ null。
- * 呼び出し側は null のときの既定（多くは「参加した時点」）を自分で決める。
+ * 記録されている位置 (配信済み)。まだ一度も読んでいなければ null。
+ * 呼び出し側は null のときの既定 (多くは「参加した時点」)を自分で決める。
  */
 export function getCursor(connectorId, roomId) {
 	const row = stmt.selectCursor.get(connectorId, roomId);
@@ -341,8 +341,8 @@ export function getCursor(connectorId, roomId) {
 /**
  * 配信済み位置を記録する。
  *
- * acked_seq（確定済み位置）は新規行のときだけ msg_seq と同じ値で入る
- * （初参加時点では「未確定の繰り越し」が無い状態にするため）。
+ * acked_seq (確定済み位置)は新規行のときだけ msg_seq と同じ値で入る
+ * (初参加時点では「未確定の繰り越し」が無い状態にするため)。
  * 既存行では upsertCursor の ON CONFLICT が acked_seq に触れないので、
  * 確定済み位置はここでは変わらない。
  */
@@ -351,8 +351,8 @@ export function setCursor(connectorId, roomId, msgSeq) {
 }
 
 /**
- * 確定済み位置（acked_seq）。まだ一度も読んでいなければ null
- * （getCursor と同じく、呼び出し側が既定を決める）。
+ * 確定済み位置 (acked_seq)。まだ一度も読んでいなければ null
+ * (getCursor と同じく、呼び出し側が既定を決める)。
  */
 export function getAckedSeq(connectorId, roomId) {
 	const row = stmt.selectCursor.get(connectorId, roomId);
@@ -360,8 +360,8 @@ export function getAckedSeq(connectorId, roomId) {
 }
 
 /**
- * 確定済み位置を進める（i260917-01 の /api/ack）。
- * 後退はしない（acked_seq < msgSeq の行だけを更新する WHERE 句で守る）。
+ * 確定済み位置を進める (i260917-01 の /api/ack)。
+ * 後退はしない (acked_seq < msgSeq の行だけを更新する WHERE 句で守る)。
  * @returns {boolean} 実際に進んだか
  */
 export function setAcked(connectorId, roomId, msgSeq) {
@@ -371,7 +371,7 @@ export function setAcked(connectorId, roomId, msgSeq) {
 
 /**
  * (sinceSeq, uptoSeq] の範囲のメッセージを古い順で返す。
- * pending（配信済みだが未確定の分）を取り出すのに使う。
+ * pending (配信済みだが未確定の分)を取り出すのに使う。
  */
 export function getRange(roomId, sinceSeq, uptoSeq) {
 	if (sinceSeq >= uptoSeq) return [];
@@ -388,7 +388,7 @@ export function getConnector(connectorId) {
 	return stmt.selectConnector.get(connectorId);
 }
 
-// --- 片付ける（archive） ---
+// --- 片付ける (archive) ---
 
 /**
  * 片付ける前に、何がどれだけ消えるかを数える。
@@ -525,8 +525,8 @@ export function restore(archivedSeq) {
 /**
  * 参加者の ID を付け替える前に、何が書き換わるかを数える。
  *
- * 居ない ID でも 0 件で返す。例外にしない（呼ぶ側が「0 件なので断る」と
- * 決められるようにするため）。
+ * 居ない ID でも 0 件で返す。例外にしない (呼ぶ側が「0 件なので断る」と
+ * 決められるようにするため)。
  *
  * @returns {{connectors: number, cursors: number, messages_from: number,
  *            messages_to: number, archives: number, archive_targets: number}}
@@ -547,7 +547,7 @@ export function previewRename(fromId) {
 	};
 }
 
-/** 本文に @旧ID を含む発言の数。前方一致（@id-2 など）は数えない */
+/** 本文に @旧ID を含む発言の数。前方一致 \(@id-2 など\)は数えない */
 function countBodyMentions(fromId) {
 	const like = `%@${fromId.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 	const rows = db
@@ -564,17 +564,17 @@ function countBodyMentions(fromId) {
  *
  *   connectors を漏らす … 発言は見えるのに参加者一覧にいない
  *   cursors を漏らす   … 読んだ位置を失い、次の待受けが「今から」になる
- *   messages を漏らす  … 過去の発言だけ古い名前で残る（宛先も同じ）
+ *   messages を漏らす  … 過去の発言だけ古い名前で残る (宛先も同じ)
  *   archives を漏らす  … 片付けた記録の中だけ古い名前で残り、戻す判断ができない
  *
  * のいずれかが起きる。手で SQL を書いていたときは、この洗い出しを毎回
- * やり直していた（i260909-02）。
+ * やり直していた (i260909-02)。
  *
  * すべて 1 つのトランザクションで行う。途中で失敗したら何も変わらない。
  *
  * 【片付け済みの ID も「使われている」とみなす】
  * 片付けた参加者は connectors に行が残り、主キーの枠を占め続ける
- * （archived_seq が入るだけ）。読み出しには出ないので空いて見えるが、
+ * (archived_seq が入るだけ)。読み出しには出ないので空いて見えるが、
  * そこへ付け替えると主キーが衝突する。
  *
  * @returns {object | null} 旧 ID がどこにも無ければ null
@@ -623,8 +623,8 @@ export function renameConnector(fromId, toId) {
  *
  * 【前方一致では置き換えない】
  * SQL の REPLACE() は境界を見ないので、@project-a を直すつもりで @project-aa
- * まで壊す。共通ルールも「前方一致では探さない」と明記している（待受けの
- * 検索式で実際に事故になった）。ID に使える文字が続くときは別物として残す。
+ * まで壊す。共通ルールも「前方一致では探さない」と明記している (待受けの
+ * 検索式で実際に事故になった)。ID に使える文字が続くときは別物として残す。
  *
  * @returns {number} 書き換えた発言の数
  */
@@ -636,7 +636,7 @@ function renameInBodies(fromId, toId) {
 		.all(like);
 	if (rows.length === 0) return 0;
 
-	// ID に使える文字（options.mjs の ID_PATTERN と同じ集合）が続くなら別物
+	// ID に使える文字 (options.mjs の ID_PATTERN と同じ集合)が続くなら別物
 	const pattern = new RegExp(`@${escapeRegExp(fromId)}(?![A-Za-z0-9_.-])`, 'g');
 	const update = db.prepare('UPDATE messages SET msg_body = ? WHERE msg_seq = ?');
 

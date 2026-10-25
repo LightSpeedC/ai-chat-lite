@@ -3,7 +3,7 @@ import { getSince } from './store.mjs';
 /**
  * 新着を待っている相手をまとめて管理する。
  *
- * long-poll（1 回待って返す）と SSE（繋ぎっぱなしで push する）の 2 通りがあるが、
+ * long-poll (1 回待って返す)と SSE (繋ぎっぱなしで push する)の 2 通りがあるが、
  * 「投稿があったら知らせる」という点は同じなのでここに集める。
  *
  * この状態はプロセスで 1 つだけ持つ。待ち受けアドレスは ::1 と 127.0.0.1 の
@@ -62,7 +62,7 @@ function siftRooms(rooms, sinceByRoom, exclude) {
 
 /**
  * 新着メッセージを待つ。すでにあれば待たずに返す。
- * 時間切れになったときは空配列を返す（着信が無かったことと区別できる）。
+ * 時間切れになったときは空配列を返す (着信が無かったことと区別できる)。
  *
  * ルームは複数渡せる。どれか 1 つに新着が出れば返す。
  *
@@ -71,7 +71,7 @@ function siftRooms(rooms, sinceByRoom, exclude) {
  * 読み直して同じ所で待つことになる。
  *
  * signal を渡すと、切れた時点で待機をやめる。渡さないと、相手が切っても
- * 時間切れまで（既定 240 秒）待機が居座る。
+ * 時間切れまで (既定 240 秒)待機が居座る。
  *
  * @param {string[]} rooms
  * @param {Map<string, number>} sinceByRoom ルームごとに、この msg_seq より新しいものを待つ
@@ -108,8 +108,8 @@ export function waitForMessages(rooms, sinceByRoom, timeoutMs, exclude = NOTHING
 
 /**
  * 投稿されたメッセージを、待っている相手に配る。
- * 待っていた人は自分のカーソル以降をまとめて受け取る（取りこぼしを防ぐため、
- * 渡されたメッセージ 1 件ではなく DB から引き直す）。
+ * 待っていた人は自分のカーソル以降をまとめて受け取る (取りこぼしを防ぐため、
+ * 渡されたメッセージ 1 件ではなく DB から引き直す)。
  */
 export function publish(message) {
 	for (const waiter of [...waiters]) {

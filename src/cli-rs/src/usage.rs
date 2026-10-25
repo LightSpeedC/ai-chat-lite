@@ -4,7 +4,7 @@
 //! 実際に node 版で `--retry-count` が使い方から抜けていた。
 //!
 //! node 版の `usage()` と 1 文字ずつ同じにする。桁は表示幅で揃える
-//! （日本語は半角 2 つ分）。
+//! (日本語は半角 2 つ分)。
 
 use crate::definition::{CommandDef, Definition, OptionDef};
 use crate::width::{pad_end, width};
@@ -78,12 +78,12 @@ pub fn render(def: &Definition, base: Option<&str>, connector_id: Option<&str>, 
 		 \n\
 		 \x20 接続先: {}\n\
 		 \x20 名乗る ID: {}\n\
-		 \x20 ルーム: {}         （--room で変更できる）\n\
+		 \x20 ルーム: {}         (--room で変更できる)\n\
 		 \n\
 		 コマンド:\n\
 		 {}\n\
 		 \n\
-		 サーバーの操作（管理者権限は要らない）:\n\
+		 サーバーの操作 (管理者権限は要らない):\n\
 		 {}\n\
 		 \n\
 		 どのコマンドにも付けられるもの:\n\

@@ -17,19 +17,19 @@ import { migrate } from './migrate.mjs';
  * 動的 import で読み込む。
  */
 
-log.info(`ai-chat-lite サーバーを起動しました（版 ${VERSION}）`);
+log.info(`ai-chat-lite サーバーを起動しました (版 ${VERSION})`);
 for (const line of describeEnv()) log.info(line);
 log.info(describeListen());
 
 /*
  * テスト用として立ったとき、アクセストークンをログに残す。
  *
- * API では返さない（誰でも読めてしまう）。起動した本人だけが受け取れる経路として
+ * API では返さない (誰でも読めてしまう)。起動した本人だけが受け取れる経路として
  * ログを使う。立てたスクリプトがここから取り出し、接続情報に書く。
  */
 if (IS_TEST) log.info(`アクセストークン: ${TEST_ACCESS_TOKEN}`);
 
-// 印を置く場所（_data）が無いと存在確認もできないので、先に作っておく
+// 印を置く場所 (_data)が無いと存在確認もできないので、先に作っておく
 mkdirSync(dirname(DB_PATH), { recursive: true });
 
 /*
@@ -52,8 +52,8 @@ const servers = await startListening(
 		since: info.since ? info.since.toISOString() : '',
 	})
 );
-log.info(`待ち受けを開始しました（${servers.length} 個のアドレス）`);
-if (underMaintenance) log.warn('メンテナンス中として応答します（API は 503）');
+log.info(`待ち受けを開始しました (${servers.length} 個のアドレス)`);
+if (underMaintenance) log.warn('メンテナンス中として応答します (API は 503)');
 
 const waited = await waitUntilCleared();
 
@@ -84,7 +84,7 @@ if (waited) announceResumed(info.since);
  *
  * 閉じないと WAL の内容が本体に統合されず、chat.db-wal と chat.db-shm が
  * 残る。しかも発言の大半はその -wal 側にあるため、chat.db だけを持ち出すと
- * 中身が欠ける（/api/admin/exit の経路には同じ理由で入れてある）。
+ * 中身が欠ける (/api/admin/exit の経路には同じ理由で入れてある)。
  *
  * stopServers ではなくこちらに置くのは、テスト 7 本が同じプロセスで
  * startServers / stopServers を繰り返すためである。stopServers で閉じると

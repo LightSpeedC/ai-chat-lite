@@ -9,7 +9,7 @@ import { prepareTestDb } from './helpers/prepare-db.mjs';
 const here = dirname(fileURLToPath(import.meta.url));
 const TEST_DATA = join(here, '..', 'tmp', '_data', 'unit-server');
 
-// 版を当ててから store を読み込む（store.mjs は形を作らない）
+// 版を当ててから store を読み込む (store.mjs は形を作らない)
 // admin/exit を叩いてもテストのプロセスを落とさない
 process.env.AICHAT_NO_EXIT = '1';
 // 離脱を積むまでの猶予。既定の 5 秒だとテストが待たされる
@@ -66,7 +66,7 @@ test('join すると現在位置と参加者一覧が返る', async () => {
 	assert.equal(json.room_id, 'public');
 	assert.ok(json.msg_seq >= 1, '参加を知らせるメッセージが積まれている');
 	assert.equal(json.connectors.length, 1);
-	// join は登録するだけで接続は張らない（接続を張るのは poll と events）。
+	// join は登録するだけで接続は張らない (接続を張るのは poll と events)。
 	// このため直後は grace になる。オフラインではない
 	assert.equal(json.connectors[0].status, 'grace');
 	assert.equal(json.connectors[0].online, true);
@@ -130,7 +130,7 @@ test('poll は新着が無ければ待ち、投稿があると起きる', async 
 	assert.equal(hub.stats().waiters, 0, '待機が残っている');
 });
 
-test('poll は時間切れでも空で返る（着信なしと区別できる）', async () => {
+test('poll は時間切れでも空で返る (着信なしと区別できる)', async () => {
 	const { json: latest } = await get('/api/history?limit=1');
 	const since = latest.messages[0].msg_seq;
 
@@ -195,7 +195,7 @@ test('待受けを切れば、待ち切る前に接続が外れる', async () =>
 });
 
 test('別のルームには届かない', async () => {
-	// ルーム名の接頭辞は sandbox-（テストデータの規約）
+	// ルーム名の接頭辞は sandbox- (テストデータの規約)
 	await post('/api/say', { room_id: 'sandbox-other', from_connector_id: 'test-connector1', msg_body: '別室' });
 	const { json } = await get('/api/history?room_id=sandbox-other&limit=10');
 	assert.equal(json.messages.length, 1);
@@ -204,11 +204,11 @@ test('別のルームには届かない', async () => {
 
 /*
  * 【なぜ必要か】
- * 既定のルーム（public）は参加時の行き先になっているため、片付けると
+ * 既定のルーム (public)は参加時の行き先になっているため、片付けると
  * 誰も参加できなくなる。ガード自体は server.mjs にあるが、それを通る
- * テストが無かった（status.html は archive.test.mjs に帰していたが、
+ * テストが無かった (status.html は archive.test.mjs に帰していたが、
  * archive.test.mjs は store.mjs を直接叩くだけで、このガードは HTTP
- * ハンドラ層にしかない）。レビュー #19、i260908-05
+ * ハンドラ層にしかない)。レビュー #19、i260908-05
  */
 test('既定のルームは archive で断る', async () => {
 	const { status, json } = await post('/api/admin/archive', {
@@ -221,7 +221,7 @@ test('既定のルームは archive で断る', async () => {
 	assert.match(json.error, /public は片付けられません/);
 });
 
-describe('参加者の ID を付け替える（i260909-02）', () => {
+describe('参加者の ID を付け替える (i260909-02)', () => {
 	/*
 	 * 【なぜ必要か】
 	 * ID は connectors ・ cursors ・ messages ・ archives に散っており、手で
@@ -302,13 +302,13 @@ describe('参加者の ID を付け替える（i260909-02）', () => {
 	 * 【なぜ必要か】
 	 * 書式は rename :<自分のID>: connector :<旧>: :<新>: で、自分の ID を自分で
 	 * 付け替えるのが主用途。ところが知らせを積むときに使う byConnectorId は
-	 * 呼び出し側が名乗った ID（自己改名なら旧 ID）で、postSystemMessage は
+	 * 呼び出し側が名乗った ID (自己改名なら旧 ID)で、postSystemMessage は
 	 * connectors の存在を見ずに messages へ素通しする。
 	 *
 	 * そのため付け替えた直後に、旧 ID を差出人とする発言が 1 件だけ新たに積まれ、
 	 * store.mjs のコメントが挙げる失敗形「発言は見えるのに参加者一覧にいない」を
 	 * rename 自身の手で作っていた。さらに previewRename(旧 ID) が 1 件返すので、
-	 * 実体の無い旧 ID をもう一度 rename できてしまう（レビュー #22 medium 5）。
+	 * 実体の無い旧 ID をもう一度 rename できてしまう (レビュー #22 medium 5)。
 	 *
 	 * 既存の rename テストは 6 件とも connector_id を別人にしていたため、この
 	 * 経路を 1 件も通していなかった。
@@ -319,7 +319,7 @@ describe('参加者の ID を付け替える（i260909-02）', () => {
 		await post('/api/join', { connector_id: from, connector_role: 'ai' });
 		await post('/api/say', { from_connector_id: from, msg_body: '自己改名の前' });
 
-		// 名乗る ID も付け替える対象と同じにする（これが主用途）
+		// 名乗る ID も付け替える対象と同じにする (これが主用途)
 		const { status } = await post('/api/admin/rename', {
 			from,
 			to,
@@ -406,7 +406,7 @@ describe('片付けたものの見え方', () => {
 		assert.equal(gone.length, 1, 'dump から消えている');
 		assert.equal(gone[0].archived_seq, seq, 'archived_seq が入っていない');
 
-		// 全ルームが混ざっていること（room_id で絞っていない）
+		// 全ルームが混ざっていること (room_id で絞っていない)
 		assert.ok(new Set(json.messages.map((m) => m.room_id)).size >= 2);
 	});
 
@@ -530,11 +530,11 @@ test('SSE で受け取れる', async () => {
 
 /*
  * 【なぜ必要か】
- * 補完ループは 500 件（MAX_HISTORY_LIMIT）ずつ進め、SSE_CATCHUP_MAX（2000 件）を
+ * 補完ループは 500 件 (MAX_HISTORY_LIMIT)ずつ進め、SSE_CATCHUP_MAX (2000 件)を
  * 超えたら truncated を送る。滞留がちょうど SSE_CATCHUP_MAX 件で終わっている
- * ときは、最後のバッチも満杯（500 件）で届くため、バッチの長さだけでは
+ * ときは、最後のバッチも満杯 (500 件)で届くため、バッチの長さだけでは
  * 「続きがあるか」を判別できない。続きが無いのに truncated を送ると、
- * 画面は不要な読み直しをする（レビュー #20）。
+ * 画面は不要な読み直しをする (レビュー #20)。
  */
 test('滞留がちょうど SSE_CATCHUP_MAX 件で終わっているときは truncated を送らない', async () => {
 	const roomId = 'test-sse-catchup';
@@ -606,7 +606,7 @@ test('知らないパスは 404', async () => {
 	assert.equal(status, 404);
 });
 
-test('exit は既定で終了コード 1（再起動される側）', async () => {
+test('exit は既定で終了コード 1 (再起動される側)', async () => {
 	// 取り違えたときの被害が小さい方を既定にしている。
 	// 0 で止めてしまうと、動かし直すのに管理者権限が要る
 	const { status, json } = await post('/api/admin/exit', { connector_id: 'test-tester' });
@@ -636,11 +636,11 @@ test('範囲外の終了コードは 400', async () => {
 /*
  * 【なぜ必要か】
  * 以前は「ブラウザのアドレスバーから叩けるように」GET も受けていた。
- * ところが本番は認証を求めない（isAllowed は IS_TEST のときだけトークンを
- * 見る）ので、同じ PC のブラウザで
+ * ところが本番は認証を求めない (isAllowed は IS_TEST のときだけトークンを
+ * 見る)ので、同じ PC のブラウザで
  *   <img src="http://localhost:<本番のポート>/api/admin/exit?exit_code=0">
  * を含むページを踏むだけでサーバーが止まる。exit_code 0 は will_restart が
- * false なので、サービスは起動し直さない（レビュー #21 high 5）。
+ * false なので、サービスは起動し直さない (レビュー #21 high 5)。
  *
  * 「localhost 限定だから安全」は外部ホストには効くが、同じ PC のブラウザ
  * 経由には効かない。<img> はクロスオリジンでも送信され、レスポンスを
@@ -649,7 +649,7 @@ test('範囲外の終了コードは 400', async () => {
  * archive / restore / rename は同じ理由で先に POST 限定にしてあった。
  * exit だけが例外として残っていた。
  */
-test('exit は GET では受けない（先読みや img で落とされないため）', async () => {
+test('exit は GET では受けない (先読みや img で落とされないため)', async () => {
 	const { status } = await get('/api/admin/exit?exit_code=0&connector_id=browser');
 	assert.equal(status, 404, 'GET が通っている');
 });
@@ -659,13 +659,13 @@ test('GET で省略しても受けない', async () => {
 });
 
 test('exit_code の既定は POST でも 1', async () => {
-	// 値を渡さないときに 0（止まったまま）へ倒れないこと。
+	// 値を渡さないときに 0 (止まったまま)へ倒れないこと。
 	// 取り違えたときの被害が小さい方を既定にしている
 	const { json } = await post('/api/admin/exit', { connector_id: 'test-tester' });
 	assert.equal(json.exit_code, 1);
 });
 
-test('wait を省略しても即座に返らない（既定が効いている）', async () => {
+test('wait を省略しても即座に返らない (既定が効いている)', async () => {
 	const { json: latest } = await get('/api/history?limit=1');
 	const since = latest.messages[0].msg_seq;
 
@@ -684,15 +684,15 @@ test('wait を省略しても即座に返らない（既定が効いている）
 
 /*
  * 【なぜ必要か】
- * fetch（WHATWG URL）は .. セグメントを送信前にクライアント側で正規化して
+ * fetch (WHATWG URL)は .. セグメントを送信前にクライアント側で正規化して
  * しまうため、このテストは実際には ../ を 1 つもサーバーへ送っておらず、
- * 単に存在しないパスの 404 で「たまたま」通っていた（レビュー #19、
- * i260908-05）。サーバー側も new URL(req.url, …) で受けているため、
+ * 単に存在しないパスの 404 で「たまたま」通っていた (レビュー #19、
+ * i260908-05)。サーバー側も new URL(req.url, …) で受けているため、
  * Node core の http.request で生のパスを送っても、その時点で正規化されて
- * しまい 404 にしかならない（実測で確認済み）。実際に .. を含む生のパスが
+ * しまい 404 にしかならない (実測で確認済み)。実際に .. を含む生のパスが
  * serveStatic まで届いた場合の防御は、関数を直接叩いて確かめる
  */
-test('web の外は参照できない（404 になる。実際に .. を送れていないことも記録する）', async () => {
+test('web の外は参照できない (404 になる。実際に .. を送れていないことも記録する)', async () => {
 	const res = await fetch(base + '/../../src/server/store.mjs');
 	assert.equal(res.status, 404);
 });
@@ -715,7 +715,7 @@ test('serveStatic は生の .. パスを渡されても WEB_DIR の外に出さ�
 
 /*
  * このブロックのテストは、他のテストが積んだ過去ログの影響を受けないよう
- * 専用のルーム（sandbox-cursor-*）を使う（i260920-01）。public・dev のような
+ * 専用のルーム (sandbox-cursor-*)を使う (i260920-01)。public・dev のような
  * 使い回しのルームは、ファイル全体で数百件が積まれた状態になっており、
  * 初回の起点が「6 時間前・当日 0 時の古い方」になった今は、他のテストの
  * 発言まで未読として拾ってしまう。
@@ -723,8 +723,8 @@ test('serveStatic は生の .. パスを渡されても WEB_DIR の外に出さ�
 
 test('空のルームでは、初めての参加でも自分の参加通知しか届かない', async () => {
 	/*
-	 * join 自体が「○○ が参加しました」を積む。この投稿は初参加の直後（「今」）に
-	 * 起きるため、i260920-01 の起点（6 時間前・当日 0 時の古い方）より新しく、
+	 * join 自体が「○○ が参加しました」を積む。この投稿は初参加の直後 (「今」)に
+	 * 起きるため、i260920-01 の起点 (6 時間前・当日 0 時の古い方)より新しく、
 	 * 本人の最初の poll でも未読として届く。他人の過去ログが無いことを確かめる
 	 * のが目的なので、「自分の参加通知だけ」であることを見る
 	 */
@@ -735,7 +735,7 @@ test('空のルームでは、初めての参加でも自分の参加通知し�
 	assert.equal(json.messages[0].from_connector_id, 'test-reader');
 });
 
-test('直近に投稿された分は、初めての参加でも届く（i260920-01）', async () => {
+test('直近に投稿された分は、初めての参加でも届く (i260920-01)', async () => {
 	// 参加より前に投稿されていても、6 時間前・当日 0 時より新しければ未読として届く
 	await post('/api/say', { room_id: 'sandbox-cursor-recent', from_connector_id: 'test-connector1', msg_body: '参加前の発言' });
 
@@ -765,7 +765,7 @@ test('位置はルームごとに別々', async () => {
 	// sandbox-cursor-recent 側の位置は進んでいるが、別ルームは初めてなので参加時点相当から
 	await post('/api/say', { room_id: 'sandbox-cursor-room2', from_connector_id: 'test-connector1', msg_body: 'room2 の発言' });
 
-	// 新しいルームでも、直近の投稿は初参加で届く（上と同じ i260920-01 の仕様）
+	// 新しいルームでも、直近の投稿は初参加で届く (上と同じ i260920-01 の仕様)
 	const room2 = await get('/api/poll?connector_id=test-reader&room_id=sandbox-cursor-room2&wait=0');
 	assert.equal(room2.json.messages.length, 1);
 	assert.equal(room2.json.messages[0].msg_body, 'room2 の発言');
@@ -776,14 +776,14 @@ test('位置はルームごとに別々', async () => {
 	assert.equal(room2Next.json.messages.length, 1);
 	assert.equal(room2Next.json.messages[0].msg_body, 'room2 の 2 つ目');
 
-	// sandbox-cursor-recent 側は room2 の投稿の影響を受けない（このテスト時点で受け取り済みのため空のまま）
+	// sandbox-cursor-recent 側は room2 の投稿の影響を受けない (このテスト時点で受け取り済みのため空のまま)
 	const recentAgain = await get('/api/poll?connector_id=test-reader&room_id=sandbox-cursor-recent&wait=0');
 	assert.deepEqual(recentAgain.json.messages, [], 'ルームをまたいで位置が混ざっていない');
 });
 
 /*
- * 初めての接続かを返す（wait の起動時の案内・i260909-01 用）。
- * setCursor は呼ばないので、何度呼んでも答えが変わらない（poll と違い進めない）。
+ * 初めての接続かを返す (wait の起動時の案内・i260909-01 用)。
+ * setCursor は呼ばないので、何度呼んでも答えが変わらない (poll と違い進めない)。
  */
 describe('/api/cursor-status', () => {
 	test('カーソルが無ければ first_time は true', async () => {
@@ -794,7 +794,7 @@ describe('/api/cursor-status', () => {
 		assert.equal(json.rooms[0].first_time, true);
 	});
 
-	test('呼んだだけではカーソルは進まない（何度呼んでも true のまま）', async () => {
+	test('呼んだだけではカーソルは進まない (何度呼んでも true のまま)', async () => {
 		await get('/api/cursor-status?connector_id=test-cursor-status-b&room_id=public');
 		const { json } = await get('/api/cursor-status?connector_id=test-cursor-status-b&room_id=public');
 		assert.equal(json.first_time, true, 'cursor-status 自身が setCursor を呼んでしまっている');
@@ -838,15 +838,15 @@ test('再び join しても位置は巻き戻らない', async () => {
 });
 
 /*
- * 配信済み位置（msg_seq）と確定済み位置（acked_seq）を分ける（i260917-01）。
+ * 配信済み位置 (msg_seq)と確定済み位置 (acked_seq)を分ける (i260917-01)。
  *
  * 読み飛ばしても発言が痕跡なく消えないよう、poll が応答した時点ではまだ
  * 「確定」しない。確定は /api/ack を呼んで初めて進む。確定していない分は
- * 次の poll で pending に出る。messages（新着）の契約は一切変えない。
+ * 次の poll で pending に出る。messages (新着)の契約は一切変えない。
  */
-describe('確定（ack）の分離 — i260917-01', () => {
-	test('未確定の配信は、次の poll で pending に出る（messages には出ない）', async () => {
-		// 初参加は「参加した時点から」になる（既存仕様）ため、投稿より先に一度参加させておく
+describe('確定 (ack)の分離 — i260917-01', () => {
+	test('未確定の配信は、次の poll で pending に出る (messages には出ない)', async () => {
+		// 初参加は「参加した時点から」になる (既存仕様)ため、投稿より先に一度参加させておく
 		await get('/api/poll?connector_id=test-pending-a&wait=0');
 		await post('/api/say', { from_connector_id: 'test-connector1', msg_body: 'pending 確認 A' });
 
@@ -957,10 +957,10 @@ test('/api/version が環境を名乗る', async () => {
 });
 
 /*
- * recent の絞り込み（since_ts / before_ts / find / from_connector_id）。
+ * recent の絞り込み (since_ts / before_ts / find / from_connector_id)。
  *
- * 専用のルーム（sandbox-since-filter）に積んで、他のテストの発言と混ざらない
- * ようにする。CLI 側（--since の書式・未来への丸め）は since-parse.test.mjs が
+ * 専用のルーム (sandbox-since-filter)に積んで、他のテストの発言と混ざらない
+ * ようにする。CLI 側 (--since の書式・未来への丸め)は since-parse.test.mjs が
  * 見ているので、ここでは API がパラメータをそのまま SQL に渡していることだけを見る。
  */
 describe('recent の絞り込み', () => {
@@ -982,7 +982,7 @@ describe('recent の絞り込み', () => {
 		const { json } = await get(`/api/history?room_id=${ROOM}&limit=10&since_ts=${encodeURIComponent(since)}`);
 		assert.equal(json.messages.length, 3);
 
-		const future = jstBefore(-1000 * 60 * 60); // 1 時間後（未来）。何も含まれない
+		const future = jstBefore(-1000 * 60 * 60); // 1 時間後 (未来)。何も含まれない
 		const { json: none } = await get(`/api/history?room_id=${ROOM}&limit=10&since_ts=${encodeURIComponent(future)}`);
 		assert.equal(none.messages.length, 0);
 	});
@@ -999,7 +999,7 @@ describe('recent の絞り込み', () => {
 
 	test('形が正しくない since_ts / before_ts は 400', async () => {
 		const { status } = await get(`/api/history?room_id=${ROOM}&limit=10&since_ts=${encodeURIComponent('2026-08-01')}`);
-		assert.equal(status, 400, 'ハイフン区切りは受けない形（内部の sent_at はスラッシュ区切り）');
+		assert.equal(status, 400, 'ハイフン区切りは受けない形 (内部の sent_at はスラッシュ区切り)');
 	});
 
 	test('find で、本文にその文字列を含むものだけになる', async () => {
@@ -1030,7 +1030,7 @@ describe('recent の絞り込み', () => {
 
 	test('find の OR 検索も % _ をワイルドカードとして働かせない', async () => {
 		const { json } = await get(`/api/history?room_id=${ROOM}&limit=10&find=${encodeURIComponent('50%|絶対に無い文字列xyz')}`);
-		assert.equal(json.messages.length, 1, '50% のワイルドカードが OR の中で効いてしまっている（500 まで拾う）');
+		assert.equal(json.messages.length, 1, '50% のワイルドカードが OR の中で効いてしまっている (500 まで拾う)');
 		assert.match(json.messages[0].msg_body, /50%/);
 	});
 
@@ -1050,10 +1050,10 @@ describe('recent の絞り込み', () => {
 		assert.match(json.messages[0].msg_body, /ルール/);
 	});
 
-	test('既存の before（msg_seq によるページ送り）は今までどおり動く', async () => {
+	test('既存の before (msg_seq によるページ送り)は今までどおり動く', async () => {
 		const { json: all } = await get(`/api/history?room_id=${ROOM}&limit=10`);
 		const secondSeq = all.messages[1].msg_seq;
 		const { json } = await get(`/api/history?room_id=${ROOM}&limit=10&before=${secondSeq}`);
-		assert.ok(json.messages.every((m) => m.msg_seq < secondSeq), 'before（msg_seq）で絞れていない');
+		assert.ok(json.messages.every((m) => m.msg_seq < secondSeq), 'before (msg_seq)で絞れていない');
 	});
 });

@@ -4,7 +4,7 @@
  * 【なぜ消さないか】
  * 走っている待受けが exe を掴んでいる。待受けは 12 時間張りっぱなしになり、
  * 掴んでいるのは自分の分だけではない。他プロジェクトの待受けも混ざる。
- * 止めれば相手は原因不明の exit 255 で落ちる（ローカルルール 3）。
+ * 止めれば相手は原因不明の exit 255 で落ちる (ローカルルール 3)。
  *
  * Windows では走っている exe を削除できないが、名前は変えられる。改名は
  * ディレクトリの項目を書き換えるだけで、開かれている実体には触らないため、
@@ -32,7 +32,7 @@ function parkedName(stem, ext, when = new Date()) {
  *
  * 【置く側が片付ける】
  * 掃除を別の場所に持つと、名前を分けたときに対象から漏れる。実際に
- * （かつての C# 版ビルドで）出力先を aichat-cs.exe へ移したとき、
+ * (かつての C# 版ビルドで)出力先を aichat-cs.exe へ移したとき、
  * aichat-old-*.exe が誰にも消されない状態になった。
  * **置いた本人が、次に置くときに片付ける。**
  *
@@ -103,12 +103,12 @@ export function reportPlaced(dest, result, root, write = process.stdout.write.bi
 	if (swept && swept.found > 0) {
 		write(
 			`  逃がしてあった ${swept.found} 本のうち ${swept.removed} 本を消しました` +
-				`（残り ${swept.found - swept.removed} 本は掴まれています）\n`
+				`(残り ${swept.found - swept.removed} 本は掴まれています)\n`
 		);
 	}
 	if (parked) {
 		write(`  待受けが掴んでいたので逃がしました: ${parked.replace(root, '.')}\n`);
 		write('    走っている待受けは落ちません。逃がした先を使い続けます\n');
 	}
-	write(`置きました: ${dest.replace(root, '.')}（${humanSize(statSync(dest).size)}）\n`);
+	write(`置きました: ${dest.replace(root, '.')} (${humanSize(statSync(dest).size)})\n`);
 }

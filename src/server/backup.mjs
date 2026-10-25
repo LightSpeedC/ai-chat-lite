@@ -13,7 +13,7 @@ import { MAINTENANCE_FILE } from './maintenance.mjs';
  * VACUUM INTO を使う。ファイルをコピーする方法は使えない。
  * WAL モードで動かしているため、直近の書き込みは chat.db 本体ではなく
  * chat.db-wal 側にある。本体だけを複製すると、その時点で統合されていない
- * 分がまるごと落ちる（実測では 64 件のうち 0 件しか入っていなかった）。
+ * 分がまるごと落ちる (実測では 64 件のうち 0 件しか入っていなかった)。
  *
  * VACUUM INTO は WAL を織り込んだ一貫したスナップショットを別ファイルに書く。
  * 読み取り専用の接続から実行でき、サービスを止める必要がない。
@@ -65,7 +65,7 @@ export function backupBaseName(at = nowJst()) {
 /**
  * DB のスナップショットを書き出す。
  *
- * @param {string} dest 出力先。既に在るとエラーになる（SQLite の仕様）
+ * @param {string} dest 出力先。既に在るとエラーになる (SQLite の仕様)
  * @param {string} [src] 元の DB
  * @returns {{ dest: string, bytes: number, ms: number, messages: number }}
  */
@@ -82,16 +82,16 @@ export function vacuumInto(dest, src = DB_PATH) {
 	const db = new DatabaseSync(src, { readOnly: true });
 	const startedAt = Date.now();
 	try {
-		// パスは埋め込むしかない（VACUUM INTO はプレースホルダを受け付けない）。
+		// パスは埋め込むしかない (VACUUM INTO はプレースホルダを受け付けない)。
 		// SQLite の文字列リテラルの規則に従い、シングルクォートを 2 つ重ねて逃がす
 		const quoted = "'" + dest.split("'").join("''") + "'";
 		db.exec('VACUUM INTO ' + quoted);
 
 		/*
-		 * 件数は dest（実際に取れたスナップショット）を数える。src（稼働中の
-		 * 元 DB）を数えると、VACUUM INTO 中〜直後に書き込みがあった場合、
-		 * ログの「取得 N 件」が実際の zip の中身と食い違う（レビュー #19、
-		 * i260908-05）
+		 * 件数は dest (実際に取れたスナップショット)を数える。src (稼働中の
+		 * 元 DB)を数えると、VACUUM INTO 中〜直後に書き込みがあった場合、
+		 * ログの「取得 N 件」が実際の zip の中身と食い違う (レビュー #19、
+		 * i260908-05)
 		 */
 		const destDb = new DatabaseSync(dest, { readOnly: true });
 		let messages;
@@ -148,10 +148,10 @@ export function isLockActive(file, staleMs = 0) {
 /**
  * バックアップ中の印を置く。置けたら true、既にあれば false。
  *
- * `wx` フラグ（O_CREAT | O_EXCL）で作る。OS が「無ければ作る」を
+ * `wx` フラグ (O_CREAT | O_EXCL)で作る。OS が「無ければ作る」を
  * 一続きの操作として保証するため、同時に取り合っても 1 つしか成功しない。
  *
- * 名前を変える方式（LOCK.pid を作って LOCK へ rename）は Windows では
+ * 名前を変える方式 (LOCK.pid を作って LOCK へ rename)は Windows では
  * 使えない。Node の renameSync は既にある印を黙って上書きするため、
  * 2 つのプロセスが両方「取れた」と思い込む。実測で確かめてある。
  * PowerShell の Rename-Item と cmd の ren は失敗するが、cmd の move は
@@ -160,7 +160,7 @@ export function isLockActive(file, staleMs = 0) {
 export function acquireLock(kind = 'manual', file = RUNNING_FILE) {
 	mkdirSync(dirname(file), { recursive: true });
 	try {
-		writeFileSync(file, `${kind} が ${nowJst()} に開始しました（pid ${process.pid}）\n`, {
+		writeFileSync(file, `${kind} が ${nowJst()} に開始しました (pid ${process.pid})\n`, {
 			flag: 'wx',
 		});
 		return true;
@@ -244,7 +244,7 @@ export function readLock(file = RUNNING_FILE) {
  * ファイルの更新日時は、コピーや展開で変わってしまうため当てにしない。
  *
  * @param {string} dir
- * @returns {string[]} ファイル名（新しい順）
+ * @returns {string[]} ファイル名 (新しい順)
  */
 export function listBackups(dir) {
 	if (!existsSync(dir)) return [];

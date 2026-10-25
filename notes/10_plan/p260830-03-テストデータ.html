@@ -369,7 +369,7 @@ const testBody = (body: string) =&gt; `${NOTICE}\n\n${body}\n\n${NOTICE}`;</code
 <h2>置き場</h2>
 
 <pre><code class="language-text">tools/40_test/purge-test-data.mjs   本体
-tools/40_test/purge-test-data.cmd   cmd から呼ぶ用（引数を素通しする）</code></pre>
+tools/40_test/purge-test-data.cmd   cmd から呼ぶ用 (引数を素通しする)</code></pre>
 
 <p>API は作らない。<strong>DB を直接開いて消す。</strong>後始末のためにサーバーへ口を増やす必要はない。</p>
 
@@ -392,8 +392,8 @@ DELETE FROM connectors    WHERE connector_id LIKE 'test-%';</code></pre>
 </thead>
 <tbody>
 <tr><td class="nowrap">テストの終わり</td><td>Playwright の <code>afterAll</code> から呼ぶ。失敗してもテスト結果は変えない</td></tr>
-<tr><td class="nowrap">手で消したいとき</td><td><code>purge-test-data.cmd --test</code>（置き場の明示が必須。ダブルクリックは引数が無いので断られる）</td></tr>
-<tr><td class="nowrap">数えるだけ</td><td><code>--dry-run</code> を付ける（置き場の明示は同じく要る）</td></tr>
+<tr><td class="nowrap">手で消したいとき</td><td><code>purge-test-data.cmd --test</code>(置き場の明示が必須。ダブルクリックは引数が無いので断られる)</td></tr>
+<tr><td class="nowrap">数えるだけ</td><td><code>--dry-run</code> を付ける (置き場の明示は同じく要る)</td></tr>
 </tbody>
 </table>
 </div>
@@ -416,7 +416,7 @@ export function freshNames(tag: string) {
 	return names;
 }</code></pre>
 
-<p>固定名（<code>sandbox-dev</code> など）は <code>register()</code> で明示的に登録する。</p>
+<p>固定名 (<code>sandbox-dev</code> など)は <code>register()</code> で明示的に登録する。</p>
 
 <h3>VACUUM は全部消すときだけ</h3>
 
@@ -510,7 +510,7 @@ expect(connectors).toBeGreaterThan(0);         // 参加者がいる前提</code
 
 <ul>
 <li>誤って本番ポートに向けて流したときの回収手段になる</li>
-<li>断り（<code>NOTICE</code>）も同じ理由で残す</li>
+<li>断り (<code>NOTICE</code>)も同じ理由で残す</li>
 <li>テスト DB を使い捨てにすれば後始末は要らなくなるが、<strong>保険として置いておく</strong></li>
 </ul>
 
@@ -529,11 +529,11 @@ expect(connectors).toBeGreaterThan(0);         // 参加者がいる前提</code
 <tr><th class="nowrap">状態</th><th>もの</th></tr>
 </thead>
 <tbody>
-<tr><td class="nowrap"><span class="badge b-ok">済</span></td><td><code>tools/40_test/purge-test-data.mjs</code> と <code>.cmd</code>（接頭辞・名前指定の両対応）</td></tr>
-<tr><td class="nowrap"><span class="badge b-ok">済</span></td><td>Playwright 側の <code>test-data.ts</code>（規約・断り文・後始末をまとめたもの）</td></tr>
-<tr><td class="nowrap"><span class="badge b-ok">済</span></td><td>4 つの spec を規約に寄せた（<code>chat-ui</code> <code>reload-leave</code> <code>leave-beacon</code> <code>leave-methods</code>）</td></tr>
+<tr><td class="nowrap"><span class="badge b-ok">済</span></td><td><code>tools/40_test/purge-test-data.mjs</code> と <code>.cmd</code>(接頭辞・名前指定の両対応)</td></tr>
+<tr><td class="nowrap"><span class="badge b-ok">済</span></td><td>Playwright 側の <code>test-data.ts</code>(規約・断り文・後始末をまとめたもの)</td></tr>
+<tr><td class="nowrap"><span class="badge b-ok">済</span></td><td>4 つの spec を規約に寄せた (<code>chat-ui</code> <code>reload-leave</code> <code>leave-beacon</code> <code>leave-methods</code>)</td></tr>
 <tr><td class="nowrap"><span class="badge b-none">未</span></td><td>この計画の承認</td></tr>
-<tr><td class="nowrap"><span class="badge b-ok">済</span></td><td><strong>テスト専用のサーバー（4 章の内容）。</strong><code>tools/40_test/start-test-server.mjs</code>（別ポート・別 DB で立て、<code>tmp/_data/server.json</code> に接続情報を書く）・<code>run-ui-tests.ps1</code>（立てる → 回す → 止めて置き場ごと捨てる）・<code>stop-test-server.cmd</code>。Playwright 側の <code>test-data.ts</code> は <code>server.json</code> を読み、立っていなければ<strong>本番へ落ちずに止まる</strong></td></tr>
+<tr><td class="nowrap"><span class="badge b-ok">済</span></td><td><strong>テスト専用のサーバー (4 章の内容)。</strong><code>tools/40_test/start-test-server.mjs</code>(別ポート・別 DB で立て、<code>tmp/_data/server.json</code> に接続情報を書く)・<code>run-ui-tests.ps1</code>(立てる → 回す → 止めて置き場ごと捨てる)・<code>stop-test-server.cmd</code>。Playwright 側の <code>test-data.ts</code> は <code>server.json</code> を読み、立っていなければ<strong>本番へ落ちずに止まる</strong></td></tr>
 </tbody>
 </table>
 </div>
@@ -548,11 +548,11 @@ expect(connectors).toBeGreaterThan(0);         // 参加者がいる前提</code
 
 <p>後始末は「自分が登録した名前」しか消さない。<strong><code>freshNames()</code> も <code>register()</code> も通さずに名前を作ると、消えずに残る。</strong>回収するには <code>purge-test-data.cmd --test</code> を手で叩く。</p>
 
-<h3>ドキュメント側のテストが古い（解消）</h3>
+<h3>ドキュメント側のテストが古い (解消)</h3>
 
 <div class="callout callout-tip">
 	<p><strong>2026-09-10 に実測したところ 0 件だった。</strong><code>run-ui-tests.ps1</code> で全 75 件を通し、<strong>74 件成功・1 skip・失敗 0</strong>。下の 6 件はいずれも、その後の作業で追随済みである。</p>
-	<p>ただし <code>issues-shot</code> は<strong>この確認の直前まで 1 件落ちていた</strong>。原因はテスト側ではなく <code>issues.html</code> の書き方で、「移動」の行が状態バッジを持たずに <code>b-moved</code> だけを先頭に置いていた（凡例は「元の行は済にし、移動 を付ける」と定めている）。<strong>テストが規約違反を捕まえていた。</strong></p>
+	<p>ただし <code>issues-shot</code> は<strong>この確認の直前まで 1 件落ちていた</strong>。原因はテスト側ではなく <code>issues.html</code> の書き方で、「移動」の行が状態バッジを持たずに <code>b-moved</code> だけを先頭に置いていた (凡例は「元の行は済にし、移動 を付ける」と定めている)。<strong>テストが規約違反を捕まえていた。</strong></p>
 </div>
 
 <p>当時落ちていたのは次の 6 件。いずれもドキュメントを書き換えたのにテストが追随していないもので、テストデータとは関係しなかった。</p>
@@ -571,7 +571,7 @@ expect(connectors).toBeGreaterThan(0);         // 参加者がいる前提</code
 </div>
 
 <div class="callout callout-caution">
-	<p><strong>プロジェクトを移したとき、Playwright 側の spec が追随していなかった。</strong>6 本が旧パス（<code>T:\2026\ai-chat-lite</code>・<code>T:\2026\PlayWright</code>）を持ったままで、<code>file:///</code> で直に開くものと外部プロセスを呼ぶものは 1 件も動かない状態だった（2026-09-10 に直した）。</p>
+	<p><strong>プロジェクトを移したとき、Playwright 側の spec が追随していなかった。</strong>6 本が旧パス (<code>T:\2026\ai-chat-lite</code>・<code>T:\2026\PlayWright</code>)を持ったままで、<code>file:///</code> で直に開くものと外部プロセスを呼ぶものは 1 件も動かない状態だった (2026-09-10 に直した)。</p>
 	<p><code>archives-ui.spec.ts</code> は<strong>コミットもされていなかった</strong>。PlayWright の <code>USAGE-FOR-PROJECTS.md</code> は「テストスクリプトは必ず commit する」と定めている。</p>
 </div>
 

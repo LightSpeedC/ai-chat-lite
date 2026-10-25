@@ -11,7 +11,7 @@
 なぜこの形にしたかは[テスト環境の分離](../10_plan/p260831-01-テスト環境の分離.md)にある。
 
 > [!IMPORTANT]
-> <strong>これは ai-chat-lite の開発者向けである。</strong>他プロジェクトはテスト用サーバーを立てない（`tmp/` を専有するため、同時に立てると衝突する）。他プロジェクトの手順は [他プロジェクトからの使い方](../../CHAT-USAGE.md) にある。
+> <strong>これは ai-chat-lite の開発者向けである。</strong>他プロジェクトはテスト用サーバーを立てない (`tmp/` を専有するため、同時に立てると衝突する)。他プロジェクトの手順は [他プロジェクトからの使い方](../../CHAT-USAGE.md) にある。
 
 ### 目次
 
@@ -47,7 +47,7 @@ tools\40_test\run-tests.cmd
 
 ### はじめに設定ファイルを置く
 
-<strong>探し始めるポートは `_secrets/test-server.json` から読む。</strong>無ければ立たない（終了コード 2）。
+<strong>探し始めるポートは `_secrets/test-server.json` から読む。</strong>無ければ立たない (終了コード 2)。
 
 ```json
 {
@@ -75,7 +75,7 @@ tools\40_test\stop-test-server.cmd
   置き場  .\tmp\_data
   環境    test
   pid     12345
-  画面    http://localhost:<テスト用のポート>/?access_token=（毎回変わる）
+  画面    http://localhost:<テスト用のポート>/?access_token= (毎回変わる)
 ```
 
 止めると**置き場ごと捨てられる**。DB も印も接続情報も一緒に消える。
@@ -84,7 +84,7 @@ tools\40_test\stop-test-server.cmd
 
 ### 置き場ひとつで決まる
 
-環境変数は `AICHAT_DATA` だけ。**これが既定（`_data`）でなければテスト用として動く。**
+環境変数は `AICHAT_DATA` だけ。**これが既定 (`_data`)でなければテスト用として動く。**
 
 | 決まるもの | どう決まるか |
 |---|---|
@@ -103,9 +103,9 @@ tools\40_test\stop-test-server.cmd
 
 | 繋ぐ側 | 渡し方 |
 |---|---|
-| 画面 | URL のクエリ（`?access_token=…`）。受け取ったらそのタブで覚える |
-| CLI | `--access-token <値>`（短い形 `-a`）。接続先は `--port`（`-p`）で `server.json` の `port` を渡す |
-| テスト | `server.json` を読み、ヘッダ（`X-AiChat-Access-Token`）に載せる |
+| 画面 | URL のクエリ (`?access_token=…`)。受け取ったらそのタブで覚える |
+| CLI | `--access-token <値>`(短い形 `-a`)。接続先は `--port`(`-p`)で `server.json` の `port` を渡す |
+| テスト | `server.json` を読み、ヘッダ (`X-AiChat-Access-Token`)に載せる |
 | SSE・sendBeacon | **ヘッダを付けられないのでクエリ** |
 
 <strong>本番は何も求めない。</strong>他プロジェクトの使い方は変わらない。
@@ -119,17 +119,17 @@ tools\40_test\stop-test-server.cmd
 
 |  | 濃い側 | 明るい側 |
 |---|---|---|
-| 本番（紺） | `#12224d` | `#2f5fbf` |
-| テスト（赤茶） | `#4d2c12` | `#c0682f` |
+| 本番 (紺) | `#12224d` | `#2f5fbf` |
+| テスト (赤茶) | `#4d2c12` | `#c0682f` |
 
-色相だけを変え、彩度と明度は揃えてある。**変数（`--navy1` / `--navy2`）を差し替えるだけ**にしているので、これを参照している箇所がまとめて変わる。
+色相だけを変え、彩度と明度は揃えてある。**変数 (`--navy1` / `--navy2`)を差し替えるだけ**にしているので、これを参照している箇所がまとめて変わる。
 
 ### テストデータ
 
 名前の決まりと後始末は[テストデータの規約](../10_plan/p260830-03-テストデータ.md)にある。参加者は `test-`、ルームは `sandbox-` で始める。
 
 ```batch
-rem 接頭辞に当たるものをまとめて消す（置き場を明示する）
+rem 接頭辞に当たるものをまとめて消す (置き場を明示する)
 tools\40_test\purge-test-data.cmd --test
 
 rem 数えるだけ
@@ -137,7 +137,7 @@ node tools\40_test\purge-test-data.mjs --test --dry-run
 ```
 
 > [!WARNING]
-> **置き場を書き忘れると断られる。**`--test` か `--production` のどちらかが要る（`exit 2` で止まる）。<strong>既定は無い。</strong>どちらを相手にするかを毎回書かせることで、本番を消す操作が黙って通らないようにしている。
+> **置き場を書き忘れると断られる。**`--test` か `--production` のどちらかが要る (`exit 2` で止まる)。<strong>既定は無い。</strong>どちらを相手にするかを毎回書かせることで、本番を消す操作が黙って通らないようにしている。
 > ダブルクリックで起動したときも同じで、引数が無いので断られる。**引数を渡して呼ぶ。**
 
 ## 3. 困ったとき
@@ -164,12 +164,12 @@ Get-NetTCPConnection -LocalPort <テスト用のポート> -State Listen |
 | 見るところ | 付け方 |
 |---|---|
 | `fetch` / `request.get` | `headers: AUTH_ACCESS_TOKEN` |
-| `page.goto` | `APP` を使う（クエリ付き）。`BASE + '/'` では付かない |
+| `page.goto` | `APP` を使う (クエリ付き)。`BASE + '/'` では付かない |
 | CLI の呼び出し | `--access-token` |
 
 ### テストデータが残る
 
-<strong>離脱は猶予（既定 5 秒）のあとに積まれる。</strong>後始末がそれより早いと、消した後から「離脱しました」だけが入る。
+<strong>離脱は猶予 (既定 5 秒)のあとに積まれる。</strong>後始末がそれより早いと、消した後から「離脱しました」だけが入る。
 
 テスト側は猶予を待ってから消しているが、異常終了すると取りこぼす。<strong>そのときは `purge-test-data.cmd --test` を手で叩く。</strong>止めれば置き場ごと消えるので、ふだんは気にしなくてよい。
 

@@ -1,14 +1,14 @@
 /*
- * 後始末の道具（tools/40_test/purge-test-data.mjs）を確かめる。
+ * 後始末の道具 (tools/40_test/purge-test-data.mjs)を確かめる。
  *
  * 【なぜ必要か】
  * これは「消す」道具である。既定の動作が削除なので、引数の解釈を 1 つ誤ると
  * そのまま消える。実際に --help と打って 48 件を消したことがある。
  *
  * とくに置き場の決め方が危ない。以前は何も指定しなければ tmp/_data を相手に
- * していたため、本番を掃除するつもりの手順（--production の付け忘れ）が
+ * していたため、本番を掃除するつもりの手順 (--production の付け忘れ)が
  * 「テスト側を掃除して成功と出す」形になり、本番の test- が残り続けた
- * （i260906-02）。いまは置き場を明示しなければ止める。
+ * (i260906-02)。いまは置き場を明示しなければ止める。
  */
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -56,7 +56,7 @@ after(() => {
 	if (existsSync(TEST_DATA)) rmSync(TEST_DATA, { recursive: true, force: true });
 });
 
-describe('置き場を明示しなければ止まる（i260906-02）', () => {
+describe('置き場を明示しなければ止まる (i260906-02)', () => {
 	/*
 	 * 【なぜ必要か】
 	 * 以前は付け忘れると黙って tmp/_data を見た。本番を掃除する手順で
@@ -70,7 +70,7 @@ describe('置き場を明示しなければ止まる（i260906-02）', () => {
 		assert.match(stderr, /--test|--production/);
 	});
 
-	test('--dry-run だけでも止まる（数えるだけでも置き場は要る）', async () => {
+	test('--dry-run だけでも止まる (数えるだけでも置き場は要る)', async () => {
 		const { code, stderr } = await failing(['--dry-run']);
 
 		assert.equal(code, 2);
@@ -94,10 +94,10 @@ describe('置き場を明示しなければ止まる（i260906-02）', () => {
 
 /*
  * 【なぜ必要か】
- * 断る接頭辞が本番（names.mjs）とここで別々だと、test- で始まるルームだけ
- * 本番に残り続ける（i260907-04）。目印を揃えたことをここで確かめる。
+ * 断る接頭辞が本番 (names.mjs)とここで別々だと、test- で始まるルームだけ
+ * 本番に残り続ける (i260907-04)。目印を揃えたことをここで確かめる。
  */
-describe('room_id は sandbox- と test- の両方が目印になる（i260907-04）', () => {
+describe('room_id は sandbox- と test- の両方が目印になる (i260907-04)', () => {
 	test('test- で始まるルームへの発言も --dry-run で数えられる', async () => {
 		const { DatabaseSync } = await import('node:sqlite');
 		const dbPath = join(TEST_DATA, 'chat.db');
@@ -132,9 +132,9 @@ describe('知らない引数は消さずに止まる', () => {
  * 本番に入り込んだ test- の参加者を archive で片付けると archives に
  * 「何を片付けたか」の行が残るが、それは消えないまま積み上がる。
  * archives の説明は aichat archives の一覧に出るので、テストの痕跡が
- * 読める状態になる。実際に本番で 5 件が残っていた（i260912-01）。
+ * 読める状態になる。実際に本番で 5 件が残っていた (i260912-01)。
  *
- * 片付けの知らせ（msg_kind = archive）も同じで、差出人は片付けを実行した
+ * 片付けの知らせ (msg_kind = archive)も同じで、差出人は片付けを実行した
  * 側なので from_connector_id では当たらない。残すと、指す先の無い番号に
  * 「戻す」ボタンだけが出る。
  */

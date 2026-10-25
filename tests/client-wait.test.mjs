@@ -14,7 +14,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const TEST_DATA = join(here, '..', 'tmp', '_data', 'unit-client-wait');
 const CLIENT = join(here, '..', 'src', 'client', 'chat.mjs');
 
-// 版を当ててから store を読み込む（store.mjs は形を作らない）
+// 版を当ててから store を読み込む (store.mjs は形を作らない)
 process.env.AICHAT_NO_EXIT = '1';
 await prepareTestDb(TEST_DATA);
 
@@ -32,7 +32,7 @@ let base;
  */
 function chat(args, connectorId = 'test-connector1') {
 	// テスト用として立っているので、アクセストークンを渡さないと 403 になる。
-	// 接続先と名乗る ID は引数で渡す（環境変数では渡せない）
+	// 接続先と名乗る ID は引数で渡す (環境変数では渡せない)
 	return run(
 		process.execPath,
 		[CLIENT, ...withId(args, connectorId), '--url', base, '--access-token', TEST_ACCESS_TOKEN],
@@ -58,9 +58,9 @@ describe('wait の待つ長さ', () => {
 		const { stdout } = await chat(['wait', '--wait-sec', '3']);
 		const elapsed = Date.now() - startedAt;
 
-		assert.match(stdout, /pid \d+ で待受け中（最大 3 秒/);
-		assert.match(stdout, /新着なし（3 秒待機/);
-		assert.ok(elapsed >= 2500, `待たずに返っている（${elapsed}ms）`);
+		assert.match(stdout, /pid \d+ で待受け中 \(最大 3 秒/);
+		assert.match(stdout, /新着なし \(3 秒待機/);
+		assert.ok(elapsed >= 2500, `待たずに返っている (${elapsed}ms)`);
 	});
 
 	test('新着があれば残りを待たずに返る', async () => {
@@ -74,7 +74,7 @@ describe('wait の待つ長さ', () => {
 
 		assert.match(stdout, /新着 1 件/);
 		assert.match(stdout, /いま届く/);
-		assert.ok(elapsed < 20000, `残りを待ってしまっている（${elapsed}ms）`);
+		assert.ok(elapsed < 20000, `残りを待ってしまっている (${elapsed}ms)`);
 	});
 
 	test('何も指定しなければ 12 時間になる', async () => {
@@ -85,7 +85,7 @@ describe('wait の待つ長さ', () => {
 		await chat(['say', '既定の確認'], 'test-connector2');
 		const { stdout } = await chat(['wait']);
 
-		assert.match(stdout, /pid \d+ で待受け中（最大 12 時間/);
+		assert.match(stdout, /pid \d+ で待受け中 \(最大 12 時間/);
 		assert.match(stdout, /新着 1 件/);
 	});
 
@@ -94,25 +94,25 @@ describe('wait の待つ長さ', () => {
 		await chat(['say', '上限なしの確認'], 'test-connector2');
 		const { stdout } = await chat(['wait', '--wait-sec', '0']);
 
-		assert.match(stdout, /pid \d+ で待受け中（最大 上限なし/);
+		assert.match(stdout, /pid \d+ で待受け中 \(最大 上限なし/);
 		assert.match(stdout, /新着 1 件/);
 	});
 
 	test('分と時でも同じ長さを指定できる', async () => {
 		await chat(['say', '単位の確認'], 'test-connector2');
 		const byMin = await chat(['wait', '--wait-min', '60']);
-		assert.match(byMin.stdout, /pid \d+ で待受け中（最大 1 時間/);
+		assert.match(byMin.stdout, /pid \d+ で待受け中 \(最大 1 時間/);
 
 		await chat(['say', '単位の確認 2'], 'test-connector2');
 		const byHour = await chat(['wait', '--wait-hour', '1']);
-		assert.match(byHour.stdout, /pid \d+ で待受け中（最大 1 時間/);
+		assert.match(byHour.stdout, /pid \d+ で待受け中 \(最大 1 時間/);
 	});
 
 	test('短い形 -w は --wait-hour と同じ', async () => {
 		await chat(['say', '短い形の確認'], 'test-connector2');
 		const { stdout } = await chat(['wait', '-w', '2']);
 
-		assert.match(stdout, /pid \d+ で待受け中（最大 2 時間/);
+		assert.match(stdout, /pid \d+ で待受け中 \(最大 2 時間/);
 	});
 });
 
@@ -162,7 +162,7 @@ describe('wait のログ', () => {
 		 * pid は aichat waiters が名指しする値と同じで、走っているかを確かめる手がかりになる。
 		 */
 		const { stdout } = await chat(['wait', '--wait-sec', '1']);
-		const pid = /^pid (\d+) で待受け中（/.exec(stdout);
+		const pid = /^pid (\d+) で待受け中 \(/.exec(stdout);
 
 		assert.ok(pid, `pid が出ていない:\n${stdout}`);
 		assert.ok(Number(pid[1]) > 0, `pid が数でない: ${pid[1]}`);
@@ -177,8 +177,8 @@ describe('wait のログ', () => {
 		const lines = stdout.trim().split('\n');
 
 		assert.equal(lines.length, 2, `2 行ではない:\n${stdout}`);
-		assert.match(lines[0], /^pid \d+ で待受け中（/);
-		assert.match(lines[1], /^新着なし（/);
+		assert.match(lines[0], /^pid \d+ で待受け中 \(/);
+		assert.match(lines[1], /^新着なし \(/);
 		assert.doesNotMatch(stdout, /回目/);
 	});
 
@@ -190,7 +190,7 @@ describe('wait のログ', () => {
 		await chat(['say', '警告の確認'], 'test-connector2');
 		const { stdout, stderr } = await chat(['wait', '--wait-min', '11']);
 
-		assert.match(stderr, /11 分（660 秒）待つ設定です。/);
+		assert.match(stderr, /11 分 \(660 秒\)待つ設定です。/);
 		assert.match(stderr, /run_in_background/);
 		// 警告を出すだけで、待つこと自体は妨げない
 		assert.match(stdout, /新着 1 件/);
@@ -205,14 +205,14 @@ describe('wait のログ', () => {
 		const { stderr } = await chat(['wait', '--wait-sec', '610']);
 
 		assert.match(stderr, /610 秒待つ設定です。/);
-		assert.doesNotMatch(stderr, /（610 秒）/);
+		assert.doesNotMatch(stderr, /\(610 秒\)/);
 	});
 
 	test('短い設定では背面実行の案内を出さない', async () => {
 		const { stderr } = await chat(['wait', '--wait-sec', '1']);
 
 		// 出るのはどちらの環境かの印だけ。案内は出ない
-		assert.match(stderr, /^テスト（/);
+		assert.match(stderr, /^テスト \(/);
 		assert.doesNotMatch(stderr, /run_in_background/);
 	});
 
@@ -222,7 +222,7 @@ describe('wait のログ', () => {
 		const { stderr } = await chat(['wait']);
 
 		// 出るのはどちらの環境かの印だけ。案内は出ない
-		assert.match(stderr, /^テスト（/);
+		assert.match(stderr, /^テスト \(/);
 		assert.doesNotMatch(stderr, /run_in_background/);
 	});
 
@@ -233,7 +233,7 @@ describe('wait のログ', () => {
 		 */
 		const { stderr } = await chat(['waiters']);
 
-		assert.doesNotMatch(stderr, /テスト（|本番（/);
+		assert.doesNotMatch(stderr, /テスト \(|本番 \(/);
 	});
 });
 
@@ -242,18 +242,18 @@ describe('複数のルームを 1 本で待つ', () => {
 	 * 【なぜ CLI を通して見るのか】
 	 * サーバー側は multi-room.test.mjs が API を直に叩いて確かめている。だが
 	 * 「複数のときは msg_seq を添えない」という応答の形を CLI が読んでおり、
-	 * その継ぎ目に穴があった（現在位置 0 と出た）。両側を別々に確かめても
+	 * その継ぎ目に穴があった (現在位置 0 と出た)。両側を別々に確かめても
 	 * 継ぎ目は見えない。CLI を動かして初めて分かる。
 	 */
 	test('1 ルームなら現在位置は数だけ', async () => {
 		const { stdout } = await chat(['wait', '--wait-sec', '1']);
 
-		assert.match(stdout, /新着なし（1 秒待機、現在位置 \d+）/);
+		assert.match(stdout, /新着なし \(1 秒待機、現在位置 \d+\)/);
 	});
 
 	test('複数ルームなら現在位置をルームごとに出す', async () => {
 		// sandbox-multi は初めて見るルームなので、まず案内を出して終わる 1 回を消費する
-		// （i260909-01）。位置の形を見たいのはその次の呼び出し
+		// (i260909-01)。位置の形を見たいのはその次の呼び出し
 		await chat(['wait', '-r', 'public,sandbox-multi', '--wait-sec', '1']);
 
 		// 1 つの数で出すと、どのルームの位置か分からない
@@ -279,19 +279,19 @@ describe('複数のルームを 1 本で待つ', () => {
 
 	/*
 	 * since を渡したときに断られることは、multi-room.test.mjs が API を直に叩いて
-	 * 確かめている。CLI には since を渡す口が無い（どこまで読んだかはサーバーが
-	 * 覚えている）ので、ここでは確かめられない。
+	 * 確かめている。CLI には since を渡す口が無い (どこまで読んだかはサーバーが
+	 * 覚えている)ので、ここでは確かめられない。
 	 */
 
 	/*
 	 * 【なぜ必要か】
-	 * 「初めての接続」判定（i260909-01）は、指定したルームのうち 1 つでも
-	 * 初めてなら true になる（server.mjs の some()）。案内を出したあとの
-	 * wait=0 の poll は、指定したルーム全部（初めてでない public も含めて）に
+	 * 「初めての接続」判定 (i260909-01)は、指定したルームのうち 1 つでも
+	 * 初めてなら true になる (server.mjs の some())。案内を出したあとの
+	 * wait=0 の poll は、指定したルーム全部 (初めてでない public も含めて)に
 	 * 対して行われる。public に既存の未読があっても、その戻り値を画面に出さず
 	 * カーソルだけ最新まで進めていたため、初めてのルームを 1 つ混ぜて wait
 	 * しただけで、既存ルームの未読が「読んだこと」にされ二度と出なくなっていた
-	 * （実際に他プロジェクトから報告があった事故）
+	 * (実際に他プロジェクトから報告があった事故)
 	 */
 	test('初めてのルームと混ぜても、既存ルームの未読は消えない', async () => {
 		const me = 'test-mixed-first';
@@ -312,44 +312,44 @@ describe('複数のルームを 1 本で待つ', () => {
 	/*
 	 * 【なぜ必要か】
 	 * i260920-01 で初回の起点を「当日 0 時・6 時間前の古い方」に広げた結果、
-	 * 初めての接続でもバックログ（参加より前の発言）が存在するようになった。
-	 * しかし案内を出したあとの wait=0 の poll（704 行目付近）は、戻り値の
+	 * 初めての接続でもバックログ (参加より前の発言)が存在するようになった。
+	 * しかし案内を出したあとの wait=0 の poll (704 行目付近)は、戻り値の
 	 * messages を画面に出さずカーソルだけ進めていたため、このバックログは
-	 * 一度も表示されないまま既読化されていた（i260922-03）。
+	 * 一度も表示されないまま既読化されていた (i260922-03)。
 	 *
 	 * server.test.mjs の同名機能のテストは /api/poll を直に叩いて確かめており
 	 * サーバー側の契約は守れている。ここで確かめたいのは、実際に使われる
-	 * CLI（chat.mjs）を通したときに、その中身が利用者の目に届くかどうかである。
+	 * CLI (chat.mjs)を通したときに、その中身が利用者の目に届くかどうかである。
 	 */
-	test('初めての接続でも、直前に投稿されたバックログが画面に出る（i260920-01・i260922-03）', async () => {
+	test('初めての接続でも、直前に投稿されたバックログが画面に出る (i260920-01・i260922-03)', async () => {
 		const me = 'test-first-backlog';
 		// me が初めて見るルームに、事前に発言を積んでおく
 		await chat(['say', 'これがバックログのはず', '-r', 'sandbox-firstbacklog'], 'test-connector2');
 
-		// 案内とバックログは、初めての 1 回目の wait 自体に出る（表示せず既読化しないよう直した）
+		// 案内とバックログは、初めての 1 回目の wait 自体に出る (表示せず既読化しないよう直した)
 		const { stdout } = await chat(['wait', '-r', 'sandbox-firstbacklog', '--wait-sec', '1'], me);
-		assert.match(stdout, /これがバックログのはず/, 'バックログが画面に出ていない（既読化されて消えている）');
+		assert.match(stdout, /これがバックログのはず/, 'バックログが画面に出ていない (既読化されて消えている)');
 	});
 
 	/*
 	 * 【なぜ必要か】
 	 * 案内の recent の見本に -r が無いと、既定の public を見ることになる。
 	 * 初めてなのが public 以外のルームだったとき、見本をそのまま写した側は
-	 * 「取れると言われた過去」が出てこない（レビュー #21 high 3）。
+	 * 「取れると言われた過去」が出てこない (レビュー #21 high 3)。
 	 * 見本は、いま初めてだと言ったルームを指していなければ意味がない。
 	 */
 	test('初回の案内の recent の見本が、初めてのルームを -r で指している', async () => {
 		const me = 'test-first-hint-room';
 		const { stdout } = await chat(['wait', '-r', 'sandbox-hintroom', '--wait-sec', '1'], me);
-		assert.match(stdout, /初めての接続です（sandbox-hintroom）/);
+		assert.match(stdout, /初めての接続です \(sandbox-hintroom\)/);
 
 		const samples = stdout.split('\n').filter((l) => l.includes('aichat recent'));
 		/*
 		 * 拾えた行数を先に確かめる。
 		 *
 		 * ループの中だけで assert していると、フィルタが 0 行を返したときに
-		 * 空回りして緑になる。見本の行が消えても気づけない（レビュー #23
-		 * medium 10）。いま出しているのはルームごとに 2 行である。
+		 * 空回りして緑になる。見本の行が消えても気づけない (レビュー #23
+		 * medium 10)。いま出しているのはルームごとに 2 行である。
 		 */
 		assert.equal(samples.length, 2, `見本の行が拾えていない\n--- 出力 ---\n${stdout}`);
 
@@ -360,13 +360,13 @@ describe('複数のルームを 1 本で待つ', () => {
 });
 
 /*
- * cursor の確定を wait から分離する（i260917-01 フェーズ2）。
+ * cursor の確定を wait から分離する (i260917-01 フェーズ2)。
  *
- * サーバー側（フェーズ1）は pending フィールドで「配信済みだが未確定」の
- * 分を返すだけで、確定（/api/ack）は呼ばない。CLI 側が「前回分」として
+ * サーバー側 (フェーズ1)は pending フィールドで「配信済みだが未確定」の
+ * 分を返すだけで、確定 (/api/ack)は呼ばない。CLI 側が「前回分」として
  * 表示し、表示し終えたら自動で ack する責務を持つ。
  */
-describe('読み飛ばしても消えない（cursor の確定を分離、i260917-01）', () => {
+describe('読み飛ばしても消えない (cursor の確定を分離、i260917-01)', () => {
 	test('配信した内容が未確定のまま次の wait を呼ぶと、前回分として出る', async () => {
 		const me = 'test-pending-cli-a';
 		await chat(['join'], me);
@@ -378,7 +378,7 @@ describe('読み飛ばしても消えない（cursor の確定を分離、i26091
 		assert.match(first.stdout, /新着 1 件/);
 		assert.match(first.stdout, /CLI pending 確認 A/);
 
-		// 確定させずに（＝新着が無い状態で）もう一度呼ぶと、前回分として出るはず
+		// 確定させずに (＝新着が無い状態で)もう一度呼ぶと、前回分として出るはず
 		const second = await chat(['wait', '--wait-sec', '1'], me);
 		assert.match(second.stdout, /前回分/, `前回分が出ていない: ${second.stdout}`);
 		assert.match(second.stdout, /CLI pending 確認 A/);

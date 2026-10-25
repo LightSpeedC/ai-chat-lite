@@ -1,6 +1,6 @@
 //! 各コマンドの中身。
 //!
-//! 出力は node 版と 1 文字ずつ同じにする。桁は表示幅で揃える（日本語は半角 2 つ分）。
+//! 出力は node 版と 1 文字ずつ同じにする。桁は表示幅で揃える (日本語は半角 2 つ分)。
 
 use crate::client::{CallError, Client};
 use crate::json::Json;
@@ -10,15 +10,15 @@ use crate::width::{pad_end, pad_start, width};
 
 /// 新着を待つときの設定
 pub struct WaitOpts {
-	/// 最大どれだけ待つか（秒）。0 は上限なし
+	/// 最大どれだけ待つか (秒)。0 は上限なし
 	pub limit_sec: i64,
 	/// 参加・離脱でも起こすか
 	pub with_joins: bool,
-	/// 1 回の long-poll の上限（定義の max_wait_sec）
+	/// 1 回の long-poll の上限 (定義の max_wait_sec)
 	pub max_wait_sec: i64,
 	/// テスト用として動いているか。記録を残すかの判断に使う
 	pub is_test: bool,
-	/// 初めての接続のときに見本へ出す接続先（`-p 8787` の形）
+	/// 初めての接続のときに見本へ出す接続先 (`-p 8787` の形)
 	pub where_: String,
 }
 
@@ -41,7 +41,7 @@ pub fn wait(client: &Client, id: &str, room: &str, opts: &WaitOpts) -> Result<()
 	let exclude = if opts.with_joins { "" } else { "&exclude=join,leave" };
 
 	/*
-	 * 初めての接続なら案内を出して終わる（課題 i260909-01）。
+	 * 初めての接続なら案内を出して終わる (課題 i260909-01)。
 	 *
 	 * wait は背面に張る運用が前提で、完了時にしか通知が来ない。案内を出しても
 	 * そのまま 12 時間待ち続けると、案内そのものが誰の目にも触れない。
@@ -68,7 +68,7 @@ pub fn wait(client: &Client, id: &str, room: &str, opts: &WaitOpts) -> Result<()
 			.collect();
 
 		println!(
-			"初めての接続です（{}）。当日 0 時・6 時間前の古い方より前の発言は待ちません。それより古い過去が必要なら recent で取ってください（例）:",
+			"初めての接続です ({})。当日 0 時・6 時間前の古い方より前の発言は待ちません。それより古い過去が必要なら recent で取ってください (例):",
 			first.join(", ")
 		);
 		/*
@@ -89,11 +89,11 @@ pub fn wait(client: &Client, id: &str, room: &str, opts: &WaitOpts) -> Result<()
 		/*
 		 * 対象は初めてのルームだけに絞る。全体に対して呼ぶと、既存カーソルを持つ
 		 * ルームの未読まで取得したうえで画面に出さず、カーソルだけ最新に進めてしまう。
-		 * 取りこぼしではなく「表示せずに既読化する」形のデータ消失になる（i260909-03）。
+		 * 取りこぼしではなく「表示せずに既読化する」形のデータ消失になる (i260909-03)。
 		 *
-		 * 【i260920-01 との組み合わせで踏んだ事故（i260922-03）】
+		 * 【i260920-01 との組み合わせで踏んだ事故 (i260922-03)】
 		 * 初回の起点が「参加時点」だった間は、この呼び出しは常に空振りだった。
-		 * i260920-01 で起点が過去（0 時・6 時間前の古い方）まで遡るようになり、
+		 * i260920-01 で起点が過去 (0 時・6 時間前の古い方)まで遡るようになり、
 		 * この呼び出し自体がバックログを持って返ってくるようになったのに、
 		 * 戻り値を捨てたままカーソルだけ進めていたため、そのバックログは
 		 * 画面に一度も出ないまま既読化されて消えていた。捨てずに表示する。
@@ -125,13 +125,13 @@ pub fn wait(client: &Client, id: &str, room: &str, opts: &WaitOpts) -> Result<()
 	 *
 	 * 「待受け中」と進行形にしてあるのは、この 1 行だけを見た相手に「終わった」と
 	 * 読ませないため。待受けを張るサブエージェントは背面のコマンドを起こした時点で
-	 * 自分の仕事を終えるので、親には「終了」の扱いで通知が届く（課題 i260905-01）。
+	 * 自分の仕事を終えるので、親には「終了」の扱いで通知が届く (課題 i260905-01)。
 	 *
 	 * pid を添えるのは、走っているかを親が確かめられるようにするため。
 	 */
 	let pid = std::process::id();
 	println!(
-		"pid {} で待受け中（最大 {}、ルーム {}、{}{}）",
+		"pid {} で待受け中 (最大 {}、ルーム {}、{}{})",
 		pid,
 		label,
 		room,
@@ -144,7 +144,7 @@ pub fn wait(client: &Client, id: &str, room: &str, opts: &WaitOpts) -> Result<()
 	log.write(
 		"INFO",
 		&format!(
-			"待受け開始（最大 {}、ルーム {}、{}、pid {}{}）",
+			"待受け開始 (最大 {}、ルーム {}、{}、pid {}{})",
 			label,
 			room,
 			id,
@@ -187,14 +187,14 @@ pub fn wait(client: &Client, id: &str, room: &str, opts: &WaitOpts) -> Result<()
 		let pending = result.get("pending").and_then(|v| v.as_arr()).unwrap_or(&empty).to_vec();
 
 		/*
-		 * 前回配信したが未確定の分（pending）を確認し、確定する（i260917-01）。
+		 * 前回配信したが未確定の分 (pending)を確認し、確定する (i260917-01)。
 		 *
-		 * wait が応答を返した時点でカーソル（配信済み位置）は進んでいるが、
+		 * wait が応答を返した時点でカーソル (配信済み位置)は進んでいるが、
 		 * 確定済み位置はまだ進んでいない。ここで表示して初めて「読んだ」ことに
 		 * する。読み飛ばしても、確定しなければ次の wait でまた pending に出る。
 		 */
 		if !pending.is_empty() {
-			println!("前回分（確認）{} 件:", pending.len());
+			println!("前回分 (確認){} 件:", pending.len());
 			print_messages(&pending);
 			ack_pending(client, id, &result, &pending)?;
 			log.write("INFO", &format!("前回分 {} 件を確認し、確定しました", pending.len()));
@@ -203,7 +203,7 @@ pub fn wait(client: &Client, id: &str, room: &str, opts: &WaitOpts) -> Result<()
 		log.write(
 			"INFO",
 			&format!(
-				"待機中（経過 {} 秒 / 上限 {}、新着 {} 件、現在位置 {}）",
+				"待機中 (経過 {} 秒 / 上限 {}、新着 {} 件、現在位置 {})",
 				waited,
 				if unlimited { "無し".to_string() } else { format!("{} 秒", opts.limit_sec) },
 				messages.len(),
@@ -221,15 +221,15 @@ pub fn wait(client: &Client, id: &str, room: &str, opts: &WaitOpts) -> Result<()
 	}
 
 	let positions = last.as_ref().map(describe_positions).unwrap_or_else(|| "0".to_string());
-	println!("新着なし（{}待機、現在位置 {}）", label, positions);
-	log.write("INFO", &format!("新着なし。上限まで待ち切って終わります（{}）", label));
+	println!("新着なし ({}待機、現在位置 {})", label, positions);
+	log.write("INFO", &format!("新着なし。上限まで待ち切って終わります ({})", label));
 	Ok(())
 }
 
 /// pending にあったルームだけ /api/ack を呼び、確定済み位置を進める。
 ///
 /// ルームごとに呼ぶのは、/api/ack が 1 ルーム分ずつしか受けないため。
-/// その回の poll で pending が無かったルームは呼ばない（無駄な呼び出しをしない）。
+/// その回の poll で pending が無かったルームは呼ばない (無駄な呼び出しをしない)。
 fn ack_pending(client: &Client, id: &str, result: &Json, pending: &[Json]) -> Result<(), CallError> {
 	let empty: Vec<Json> = Vec::new();
 	let rooms = result.get("rooms").and_then(|v| v.as_arr()).unwrap_or(&empty);
@@ -286,7 +286,7 @@ pub fn announce_env(client: &Client) {
 	if let Ok(info) = quiet.call("GET", "/api/version", None, timeout) {
 		let env = info.get("env").and_then(|v| v.as_str()).unwrap_or("");
 		let label = if env == "test" { "テスト" } else { "本番" };
-		eprintln!("{}（{}）", label, describe_place(&client.base.display));
+		eprintln!("{} ({})", label, describe_place(&client.base.display));
 	}
 }
 
@@ -295,7 +295,7 @@ const SEPARATOR: &str = "────────";
 
 /// 発言 1 件を整える。
 ///
-/// **`say` 以外（参加・離脱・知らせ）は差出人を出さない。**本文だけで意味が通り、
+/// **`say` 以外 (参加・離脱・知らせ)は差出人を出さない。**本文だけで意味が通り、
 /// 「誰が離脱したか」は本文に入っている。
 pub fn format_message(m: &Json) -> String {
 	let get = |key: &str| m.get(key).and_then(|v| v.as_str()).unwrap_or("");
@@ -328,7 +328,7 @@ pub fn print_messages(messages: &[Json]) {
 /// 絞り込みを人が読む形にする。何も無ければ「直近 」
 pub fn describe_filter(since: Option<&str>, before: Option<&str>, find: Option<&str>, from: Option<&str>) -> String {
 	let mut parts = Vec::new();
-	// 日時は分までを出す（yyyy/mm/dd HH:MM の 16 文字）
+	// 日時は分までを出す (yyyy/mm/dd HH:MM の 16 文字)
 	if let Some(s) = since {
 		parts.push(format!("{} 以降", head16(s)));
 	}
@@ -379,7 +379,7 @@ pub fn who(client: &Client) -> Result<(), CallError> {
 		return Ok(());
 	}
 
-	// ID の桁を揃える。node 版は文字数で数えている（ID は半角だけなので同じ値になる）
+	// ID の桁を揃える。node 版は文字数で数えている (ID は半角だけなので同じ値になる)
 	let id_width = connectors
 		.iter()
 		.filter_map(|c| c.get("connector_id").and_then(|v| v.as_str()))
@@ -398,7 +398,7 @@ pub fn who(client: &Client) -> Result<(), CallError> {
 		 * 桁は文字数で詰める。表示幅ではない。
 		 *
 		 * node 版が String.padEnd を使っており、あれは文字数で数える。
-		 * 「一時切断」は 4 文字（表示幅 8）なので、6 に詰めると空白が 2 つ付く。
+		 * 「一時切断」は 4 文字 (表示幅 8)なので、6 に詰めると空白が 2 つ付く。
 		 * 表示幅で数えると 8 > 6 で何も付かず、1 文字ずつの一致が崩れる。
 		 * Rust の {:<N} も文字数で数えるので、そのまま揃う。
 		 */
@@ -494,7 +494,7 @@ pub fn archives(client: &Client) -> Result<(), CallError> {
 	}
 
 	/*
-	 * 対象（種別と id）を説明とは別の列で出す。
+	 * 対象 (種別と id)を説明とは別の列で出す。
 	 * 説明は --description で書き換えられるため、そこだけ見ても対象が分からない。
 	 */
 	let targets: Vec<String> = list
@@ -557,7 +557,7 @@ pub fn say(
 
 	let message = client.call("POST", "/api/say", Some(&Json::Obj(fields).to_string()), None)?;
 	println!(
-		"送信しました（{}）",
+		"送信しました ({})",
 		message.get("msg_seq").and_then(|v| v.as_i64()).unwrap_or(0)
 	);
 	Ok(())
@@ -575,7 +575,7 @@ pub fn join(client: &Client, id: &str, room: &str, role: &str) -> Result<(), Cal
 	let empty: Vec<Json> = Vec::new();
 	let connectors = result.get("connectors").and_then(|v| v.as_arr()).unwrap_or(&empty);
 	println!(
-		"{} として {} に参加しました（現在位置 {}）",
+		"{} として {} に参加しました (現在位置 {})",
 		id,
 		result.get("room_id").and_then(|v| v.as_str()).unwrap_or(room),
 		result.get("msg_seq").and_then(|v| v.as_i64()).unwrap_or(0)
@@ -727,14 +727,14 @@ pub fn read_line(prompt: &str) -> (String, bool) {
 
 /// 取り返しのつかない操作の前に、対象の名前を打たせる。
 ///
-/// `--yes` があれば聞かない。背面（run_in_background）から実行するときの唯一の手段で、
+/// `--yes` があれば聞かない。背面 (run_in_background)から実行するときの唯一の手段で、
 /// これが無いと AI は archive ・ rename を使えない。確認を省くので、
 /// **打ち間違いは止まらない。**渡した側の責任になる。
 ///
 /// 【中止の理由を書き分ける】
 /// 打ち間違えたのか、入力が来なかったのかは、読み手にとって別の話である。
 /// 本番では背面から 2 度試して 2 度とも止まり、原因が分からないままになった
-/// （課題 i260913-02）。**詰まったその場で渡し方が読めるようにする。**
+/// (課題 i260913-02)。**詰まったその場で渡し方が読めるようにする。**
 pub fn confirm_target(yes: bool, target: &str, prompt: &str, command: &str) -> bool {
 	if yes {
 		return true;
@@ -771,7 +771,7 @@ pub fn print_preview(kind: &str, id: &str, counts: &Json) {
 			counts.get("last").and_then(|v| v.as_str()),
 		) {
 			(Some(f), Some(l)) if !f.is_empty() && !l.is_empty() => {
-				format!("（{} 〜 {}）", slice_chars(f, 5, 16), slice_chars(l, 5, 16))
+				format!("({} 〜 {})", slice_chars(f, 5, 16), slice_chars(l, 5, 16))
 			}
 			_ => String::new(),
 		};
@@ -842,7 +842,7 @@ pub fn archive(
 
 	let result = client.call("POST", "/api/admin/archive", Some(&Json::Obj(fields).to_string()), None)?;
 	let seq = result.get("archived_seq").and_then(|v| v.as_i64()).unwrap_or(0);
-	println!("片付けました（archived_seq {}）", seq);
+	println!("片付けました (archived_seq {})", seq);
 	println!("  {}", result.get("description").and_then(|v| v.as_str()).unwrap_or(""));
 	println!("戻すには: restore :{}: {}", me, seq);
 	Ok(0)
@@ -856,7 +856,7 @@ pub fn restore(client: &Client, me: &str, seq: i64) -> Result<(), CallError> {
 	]);
 	let result = client.call("POST", "/api/admin/restore", Some(&body.to_string()), None)?;
 	println!(
-		"archived_seq {} を戻しました（{} 件）",
+		"archived_seq {} を戻しました ({} 件)",
 		result.get("archived_seq").and_then(|v| v.as_i64()).unwrap_or(seq),
 		result.get("restored").and_then(|v| v.as_i64()).unwrap_or(0)
 	);
@@ -867,7 +867,7 @@ pub fn restore(client: &Client, me: &str, seq: i64) -> Result<(), CallError> {
 /// 参加者の ID を付け替える。
 ///
 /// `archive` と同じ形にする。先に件数を出し、旧 ID の入力を求めてから実行する。
-/// ID は参加者・読んだ位置・発言（差出人・宛先・本文の @旧ID）・片付けの記録に
+/// ID は参加者・読んだ位置・発言 (差出人・宛先・本文の @旧ID)・片付けの記録に
 /// 散っており、手で書くと洗い出しから毎回やり直しになる。
 pub fn rename(client: &Client, me: &str, from: &str, to: &str, yes: bool) -> Result<i32, CallError> {
 	let counts = client.call(
@@ -881,9 +881,9 @@ pub fn rename(client: &Client, me: &str, from: &str, to: &str, yes: bool) -> Res
 	println!("参加者 {} を {} に付け替えます。", from, to);
 	println!("  参加者        {:>4} 件", num("connectors"));
 	println!("  読んだ位置    {:>4} 件", num("cursors"));
-	println!("  発言（差出人）{:>4} 件", num("messages_from"));
-	println!("  発言（宛先）  {:>4} 件", num("messages_to"));
-	println!("  発言（本文の @{}）{:>4} 件", from, num("messages_body"));
+	println!("  発言 (差出人){:>4} 件", num("messages_from"));
+	println!("  発言 (宛先)  {:>4} 件", num("messages_to"));
+	println!("  発言 (本文の @{}){:>4} 件", from, num("messages_body"));
 	println!("  片付けの記録  {:>4} 件", num("archives") + num("archive_targets"));
 	println!("走っている待受けがあると断られます。先に止めてください。");
 
@@ -919,7 +919,7 @@ pub fn rename(client: &Client, me: &str, from: &str, to: &str, yes: bool) -> Res
 	.sum();
 
 	println!(
-		"付け替えました（{} → {} / {} 件）",
+		"付け替えました ({} → {} / {} 件)",
 		result.get("from").and_then(|v| v.as_str()).unwrap_or(from),
 		result.get("to").and_then(|v| v.as_str()).unwrap_or(to),
 		total
@@ -961,7 +961,7 @@ pub struct Basis {
 	pub label: String,
 	pub port: i64,
 	pub rooms: Vec<String>,
-	/// 見本に出す接続先（`-p 8787` の形）
+	/// 見本に出す接続先 (`-p 8787` の形)
 	pub where_: String,
 }
 
@@ -1067,20 +1067,20 @@ fn print_waiters(all: &[Row], basis: &Basis, me: &str) {
 	let mine: Vec<&&Row> = here.iter().filter(|h| h.id == me).collect();
 
 	println!();
-	println!("  自分（{}）: {} 本 / この場所に {} 本", me, mine.len(), here.len());
+	println!("  自分 ({}): {} 本 / この場所に {} 本", me, mine.len(), here.len());
 
 	/*
 	 * 別の場所を見ている自分の分は、pid まで出す。
 	 *
 	 * ルームを間違えた待受けは静かに動く。繋がっているので who は「接続中」と
 	 * 出すが、この場所の発言は 1 つも届かない。件数だけでは止めようがない。
-	 * 他プロジェクトの分は件数だけにする（止めてはいけないため）。
+	 * 他プロジェクトの分は件数だけにする (止めてはいけないため)。
 	 */
 	let stray: Vec<&&Row> = elsewhere.iter().filter(|h| h.id == me).collect();
 	if !stray.is_empty() {
 		let shown: Vec<String> = stray
 			.iter()
-			.map(|h| format!("pid {}（{} / {}）", h.pid, h.target.label, h.target.rooms.join(", ")))
+			.map(|h| format!("pid {} ({} / {})", h.pid, h.target.label, h.target.rooms.join(", ")))
 			.collect();
 		println!("  自分の分が別の場所に {} 本: {}", stray.len(), shown.join("、"));
 	}
@@ -1088,7 +1088,7 @@ fn print_waiters(all: &[Row], basis: &Basis, me: &str) {
 	// elsewhere は接続先が違う分だけ。同じ接続先ならルームが違っても表に出ている
 	let others = elsewhere.len() - stray.len();
 	if others > 0 {
-		println!("  他に {} 本（別の接続先）", others);
+		println!("  他に {} 本 (別の接続先)", others);
 	}
 
 	/*
@@ -1145,7 +1145,7 @@ fn print_waiters(all: &[Row], basis: &Basis, me: &str) {
 		let stopped: Vec<String> = stop.iter().map(|w| w.pid.to_string()).collect();
 		let kept: Vec<String> = keep.iter().map(|w| w.pid.to_string()).collect();
 		println!(
-			"  {} を二重に張っています。pid {} を止めてください（pid {} を残す）。",
+			"  {} を二重に張っています。pid {} を止めてください (pid {} を残す)。",
 			rooms.join(", "),
 			stopped.join(", "),
 			kept.join(", ")
@@ -1190,7 +1190,7 @@ pub fn dump(client: &Client, out: &std::path::Path) -> Result<(), CallError> {
 		.filter(|m| m.get("archived_seq").map(|v| !v.is_null()).unwrap_or(false))
 		.count();
 	println!(
-		"{} 件を書き出しました（片付けたもの {} 件を含む）: {}",
+		"{} 件を書き出しました (片付けたもの {} 件を含む): {}",
 		messages.len(),
 		archived,
 		out.display()

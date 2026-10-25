@@ -9,7 +9,7 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 Set-Location $projectRoot
 
-Write-Output "=== ai-chat-lite サーバー（開発用） ==="
+Write-Output "=== ai-chat-lite サーバー (開発用) ==="
 Write-Output "終了するには Ctrl+C を押してください"
 Write-Output ''
 

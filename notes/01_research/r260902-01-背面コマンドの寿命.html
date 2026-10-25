@@ -11,7 +11,7 @@
 
 /* ===================================================================
    ai-chat-lite 共通スタイル
-   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   章ごとのアクセント色 (.ch01〜)は各 HTML 側で定義する
    =================================================================== */
 
 :root {
@@ -334,7 +334,7 @@ pre code {
 }
 
 /*
- * 幅は文字数で決まる（固定幅にしない）。
+ * 幅は文字数で決まる (固定幅にしない)。
  * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
  * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
  */
@@ -412,7 +412,7 @@ footer a {
 }
 </style>
 <style>
-/* この資料だけのもの: 章のアクセント色（3章 / 色相 280→0 を 140 刻み）と目次の採番 */
+/* この資料だけのもの: 章のアクセント色 (3章 / 色相 280→0 を 140 刻み)と目次の採番 */
 .ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
 .ch02 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); --soft: hsl(140, 28%, 95%); }
 .ch03 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
@@ -433,7 +433,7 @@ footer a {
 
 <p class="backlink"><a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
 
-<p>待受けが <code>[killed]</code> や <code>exit 255</code> で終わる件（<a class="doclink" href="../40_issues/issues.html#i260901-07">i260901-07</a>）を調べた。<strong>約 60 分で終わる方は仕様であり、原因は分かった。</strong></p>
+<p>待受けが <code>[killed]</code> や <code>exit 255</code> で終わる件 (<a class="doclink" href="../40_issues/issues.html#i260901-07">i260901-07</a>)を調べた。<strong>約 60 分で終わる方は仕様であり、原因は分かった。</strong></p>
 
 <section class="toc md-skip">
 	<h2>目次</h2>
@@ -460,7 +460,7 @@ footer a {
 		<p>Background commands owned by a <strong>subagent</strong> are instead <strong>terminated after 60 minutes</strong>, configurable in milliseconds with <code>CLAUDE_SUBAGENT_BG_SHELL_MAX_MS</code>. A command owned by a subagent running in the foreground also ends when that subagent gives its final response.</p>
 	</div>
 
-	<p><strong>訳</strong>: サブエージェントが持つ背面のコマンドは 60 分後に止められる。長さは <code>CLAUDE_SUBAGENT_BG_SHELL_MAX_MS</code>（ミリ秒）で変えられる。前面で走るサブエージェントが持つコマンドは、そのサブエージェントが最終応答を返した時点でも終わる。</p>
+	<p><strong>訳</strong>: サブエージェントが持つ背面のコマンドは 60 分後に止められる。長さは <code>CLAUDE_SUBAGENT_BG_SHELL_MAX_MS</code>(ミリ秒)で変えられる。前面で走るサブエージェントが持つコマンドは、そのサブエージェントが最終応答を返した時点でも終わる。</p>
 
 	<h2>背面のコマンドの寿命は 4 通りある</h2>
 
@@ -476,15 +476,15 @@ footer a {
 			</tr>
 			<tr>
 				<td class="nowrap"><strong>背面のサブエージェント</strong></td>
-				<td><strong>60 分で止められる</strong>（<code>CLAUDE_SUBAGENT_BG_SHELL_MAX_MS</code>）。<strong>待受けはこれに当たる</strong></td>
+				<td><strong>60 分で止められる</strong>(<code>CLAUDE_SUBAGENT_BG_SHELL_MAX_MS</code>)。<strong>待受けはこれに当たる</strong></td>
 			</tr>
 			<tr>
 				<td class="nowrap">前面のサブエージェント</td>
 				<td>上に加えて、<strong>そのサブエージェントが最終応答を返した時点でも終わる</strong></td>
 			</tr>
 			<tr>
-				<td class="nowrap">（種類によらず）</td>
-				<td>出力が 5GB を超えたとき。macOS・Linux ではメモリ不足の合図が来たとき（30 分以上何もしていない場合）</td>
+				<td class="nowrap">(種類によらず)</td>
+				<td>出力が 5GB を超えたとき。macOS・Linux ではメモリ不足の合図が来たとき (30 分以上何もしていない場合)</td>
 			</tr>
 		</tbody>
 	</table>
@@ -492,7 +492,7 @@ footer a {
 
 	<div class="callout callout-warning">
 		<p><strong>前面のサブエージェントで待受けを張ってはいけない。</strong>「起動しました」と応答した時点でプロセスが止められる。</p>
-		<p>いまの張り方（<code>Agent</code> ツールが <code>Async agent launched</code> と返す形）は背面なので、この規則には当たらない。<strong>だから 60 分は走る。</strong></p>
+		<p>いまの張り方 (<code>Agent</code> ツールが <code>Async agent launched</code> と返す形)は背面なので、この規則には当たらない。<strong>だから 60 分は走る。</strong></p>
 	</div>
 
 	<h2>モデルやエフォートでは変わらない</h2>
@@ -507,14 +507,14 @@ footer a {
 		<tbody>
 			<tr>
 				<td class="nowrap"><code>CLAUDE_SUBAGENT_BG_SHELL_MAX_MS</code></td><td class="nowrap"><strong>60 分</strong></td>
-				<td>サブエージェントが持つ背面のコマンドの寿命。<strong>伸ばせることを実測した</strong>（12 時間に設定し、<strong>4 時間 17 分・240 秒のポーリングを 64 回、1 度も落ちずに走行</strong>）。設定を書く前に始めたセッションでも効き、ユーザー設定に入れれば全プロジェクトに効く。<strong>ただし、いまの張り方（親から背面）では当たらない</strong></td>
+				<td>サブエージェントが持つ背面のコマンドの寿命。<strong>伸ばせることを実測した</strong>(12 時間に設定し、<strong>4 時間 17 分・240 秒のポーリングを 64 回、1 度も落ちずに走行</strong>)。設定を書く前に始めたセッションでも効き、ユーザー設定に入れれば全プロジェクトに効く。<strong>ただし、いまの張り方 (親から背面)では当たらない</strong></td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>BASH_DEFAULT_TIMEOUT_MS</code></td><td class="nowrap">120000（2 分）</td>
+				<td class="nowrap"><code>BASH_DEFAULT_TIMEOUT_MS</code></td><td class="nowrap">120000 (2 分)</td>
 				<td>コマンドに時間を指定しなかったときの既定</td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>BASH_MAX_TIMEOUT_MS</code></td><td class="nowrap">600000（10 分）</td>
+				<td class="nowrap"><code>BASH_MAX_TIMEOUT_MS</code></td><td class="nowrap">600000 (10 分)</td>
 				<td>指定できる上限。<strong>超えても止まらず背面に移るだけ</strong></td>
 			</tr>
 			<tr>
@@ -566,7 +566,7 @@ footer a {
 	</div>
 
 	<div class="callout callout-important">
-		<p><strong><code>[killed]</code> と長い <code>exit 255</code> は同じものである。</strong>どちらも 60 分の規則で止められている。片方が <code>killed</code>、片方が <code>255</code> と見えるのは、止め方（シグナル）か、サブエージェント側の受け取り方の違いにすぎない。</p>
+		<p><strong><code>[killed]</code> と長い <code>exit 255</code> は同じものである。</strong>どちらも 60 分の規則で止められている。片方が <code>killed</code>、片方が <code>255</code> と見えるのは、止め方 (シグナル)か、サブエージェント側の受け取り方の違いにすぎない。</p>
 		<p>Unix では、シグナルで死んだプロセスをシェルが <code>128 + シグナル番号</code> で報告する。<code>255</code> はその形には当てはまらないので、<strong>途中の層が読み替えている</strong>と見られる。</p>
 	</div>
 
@@ -581,7 +581,7 @@ footer a {
 <section class="ch03" id="ch03">
 	<h1>残る謎と、これから</h1>
 
-	<h2>短い 255（18〜38 秒）だけが残った</h2>
+	<h2>短い 255 (18〜38 秒)だけが残った</h2>
 
 	<p>60 分の規則が分かったことで、<strong>調べる対象が絞れた</strong>。18〜38 秒で終わるものだけが本題である。</p>
 
@@ -592,9 +592,9 @@ footer a {
 		</thead>
 		<tbody>
 			<tr><td class="nowrap">60 分の規則</td><td>時間が 2 桁違う</td></tr>
-			<tr><td class="nowrap">1 回の待ち（240 秒）</td><td>短すぎる。時間切れなら「新着なし」で正常終了する</td></tr>
-			<tr><td class="nowrap">繋ぎ直しの間隔（10 秒）</td><td>繋がらないときは終了コード 3 になる</td></tr>
-			<tr><td class="nowrap">既定のコマンド時間（2 分）</td><td>時間切れでは止まらず背面に移るだけ</td></tr>
+			<tr><td class="nowrap">1 回の待ち (240 秒)</td><td>短すぎる。時間切れなら「新着なし」で正常終了する</td></tr>
+			<tr><td class="nowrap">繋ぎ直しの間隔 (10 秒)</td><td>繋がらないときは終了コード 3 になる</td></tr>
+			<tr><td class="nowrap">既定のコマンド時間 (2 分)</td><td>時間切れでは止まらず背面に移るだけ</td></tr>
 		</tbody>
 	</table>
 	</div>
@@ -603,7 +603,7 @@ footer a {
 
 	<div class="callout callout-tip">
 		<p><strong>8 時間を指定しても、実際は 60 分で終わる。</strong>これは仕様なので直せない。<code>CLAUDE_SUBAGENT_BG_SHELL_MAX_MS</code> を伸ばす手はあるが、<strong>環境変数で挙動を変えると、他のプロジェクトと前提がずれる。</strong></p>
-		<p>取りこぼしは無い（読んだ位置はサーバーが覚えている）ので、<strong>張り直しを前提にしておけば実害はない</strong>。</p>
+		<p>取りこぼしは無い (読んだ位置はサーバーが覚えている)ので、<strong>張り直しを前提にしておけば実害はない</strong>。</p>
 	</div>
 
 	<h2>やること</h2>

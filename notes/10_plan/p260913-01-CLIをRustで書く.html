@@ -11,7 +11,7 @@
 
 /* ===================================================================
    ai-chat-lite 共通スタイル
-   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   章ごとのアクセント色 (.ch01〜)は各 HTML 側で定義する
    =================================================================== */
 
 :root {
@@ -334,7 +334,7 @@ pre code {
 }
 
 /*
- * 幅は文字数で決まる（固定幅にしない）。
+ * 幅は文字数で決まる (固定幅にしない)。
  * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
  * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
  */
@@ -412,7 +412,7 @@ footer a {
 }
 </style>
 <style>
-/* この資料だけのもの: 章のアクセント色（4章 / 色相 280→0 を 93.3 刻み）と目次の採番 */
+/* この資料だけのもの: 章のアクセント色 (4章 / 色相 280→0 を 93.3 刻み)と目次の採番 */
 .ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
 .ch02 { --accent: hsl(186.7, 78%, 25%); --accent2: hsl(186.7, 58%, 55%); --soft: hsl(186.7, 28%, 95%); }
 .ch03 { --accent: hsl(93.3, 78%, 25%); --accent2: hsl(93.3, 58%, 55%); --soft: hsl(93.3, 28%, 95%); }
@@ -458,9 +458,9 @@ footer a {
 		<table>
 			<thead><tr><th>項目</th><th>中身</th></tr></thead>
 			<tbody>
-				<tr><td class="nowrap">置き場</td><td><code>src/cli-rs/</code>（Cargo プロジェクト）</td></tr>
-				<tr><td class="nowrap">出力</td><td><code>aichat-rs.exe</code>（root に置く。<code>.gitignore</code> の <code>*.exe</code> で追跡外）</td></tr>
-				<tr><td class="nowrap">コマンド</td><td><code>join</code> <code>wait</code> <code>say</code> <code>recent</code> <code>who</code> <code>waiters</code> <code>dump</code> <code>leave</code> <code>archive</code> <code>archives</code> <code>restore</code> <code>rename</code> ＋ 管理 2 つ（<code>restart</code> <code>stop</code>）</td></tr>
+				<tr><td class="nowrap">置き場</td><td><code>src/cli-rs/</code>(Cargo プロジェクト)</td></tr>
+				<tr><td class="nowrap">出力</td><td><code>aichat-rs.exe</code>(root に置く。<code>.gitignore</code> の <code>*.exe</code> で追跡外)</td></tr>
+				<tr><td class="nowrap">コマンド</td><td><code>join</code> <code>wait</code> <code>say</code> <code>recent</code> <code>who</code> <code>waiters</code> <code>dump</code> <code>leave</code> <code>archive</code> <code>archives</code> <code>restore</code> <code>rename</code> ＋ 管理 2 つ (<code>restart</code> <code>stop</code>)</td></tr>
 				<tr><td class="nowrap">外部クレート</td><td><strong>使わない</strong></td></tr>
 				<tr><td class="nowrap">定義の出どころ</td><td><code>src/client/options.mjs</code>。<code>export-options.mjs</code> の JSON を埋め込む</td></tr>
 			</tbody>
@@ -475,8 +475,8 @@ footer a {
 		<table>
 			<thead><tr><th>得るもの</th><th>引き換えるもの</th></tr></thead>
 			<tbody>
-				<tr><td>ビルドが速い（実測 457 ms）</td><td rowspan="4">JSON パーサと HTTP を自前で書く。200〜300 行ほど増える</td></tr>
-				<tr><td>実行ファイルが小さい（4.63 MB）</td></tr>
+				<tr><td>ビルドが速い (実測 457 ms)</td><td rowspan="4">JSON パーサと HTTP を自前で書く。200〜300 行ほど増える</td></tr>
+				<tr><td>実行ファイルが小さい (4.63 MB)</td></tr>
 				<tr><td>ネットワークなしでビルドできる</td></tr>
 				<tr><td>依存の版が動いて壊れることがない</td></tr>
 			</tbody>
@@ -488,7 +488,7 @@ footer a {
 	<p>ローカルルール「CLI を直したら 2 本とも直す」に従う。<strong>オプションとコマンドの表を Rust 側に書き写さない。</strong><code>export-options.mjs</code> が出す JSON を <code>include_str!</code> で埋め込み、実行時に読む。</p>
 
 	<div class="callout callout-caution">
-		<p><strong>これで CLI が 3 本になる。</strong>node ・ C# ・ Rust。食い違いは必ず出るので、<strong>突き合わせのテストを先に用意する。</strong>目で読んで気づける差ではない（実際、同じ秒に立った待受けの並び順が node と C# で食い違っていた）。</p>
+		<p><strong>これで CLI が 3 本になる。</strong>node ・ C# ・ Rust。食い違いは必ず出るので、<strong>突き合わせのテストを先に用意する。</strong>目で読んで気づける差ではない (実際、同じ秒に立った待受けの並び順が node と C# で食い違っていた)。</p>
 	</div>
 </section>
 
@@ -524,13 +524,13 @@ footer a {
 		<table>
 			<thead><tr><th>OS</th><th>使うもの</th></tr></thead>
 			<tbody>
-				<tr><td class="nowrap">Windows</td><td><code>tasklist</code>（<code>/fo csv</code> で読む）</td></tr>
-				<tr><td class="nowrap">Mac ・ Linux</td><td><code>ps</code>（<code>-eo pid,command</code>）</td></tr>
+				<tr><td class="nowrap">Windows</td><td><code>tasklist</code>(<code>/fo csv</code> で読む)</td></tr>
+				<tr><td class="nowrap">Mac ・ Linux</td><td><code>ps</code>(<code>-eo pid,command</code>)</td></tr>
 			</tbody>
 		</table>
 	</div>
 
-	<p>取り出したあとの選び方（<code>WAITER_PATTERN</code> での絞り込み・残すものと止めるものの分け方）は OS で変わらない。<strong>取り方だけを分け、選び方は 1 つにする。</strong></p>
+	<p>取り出したあとの選び方 (<code>WAITER_PATTERN</code> での絞り込み・残すものと止めるものの分け方)は OS で変わらない。<strong>取り方だけを分け、選び方は 1 つにする。</strong></p>
 
 	<h2>HTTP は fetch の轍を踏まない</h2>
 
@@ -551,11 +551,11 @@ footer a {
 		<table>
 			<thead><tr><th class="nowrap">段</th><th>作るもの</th><th>ここで確かめること</th></tr></thead>
 			<tbody>
-				<tr><td class="num">1</td><td>土台（<code>json</code> ・ <code>jst</code> ・ <code>args</code> ・ <code>definition</code>）</td><td>JSON が往復する。引数が読める。定義が埋め込まれている</td></tr>
-				<tr><td class="num">2</td><td>日時の解析（<code>since</code>）と待受けの選別（<code>waiters</code>）</td><td>存在しない日を断る。二重の待受けを正しく選ぶ</td></tr>
-				<tr><td class="num">3</td><td>HTTP と読み取り系（<code>recent</code> <code>who</code> <code>dump</code> <code>archives</code>）</td><td>サーバーに繋がる。出力が node 版と同じ</td></tr>
-				<tr><td class="num">4</td><td>書き込み系（<code>say</code> <code>join</code> <code>leave</code> <code>wait</code>）</td><td>投稿が届く。待受けが長く粘る</td></tr>
-				<tr><td class="num">5</td><td>管理系（<code>archive</code> <code>restore</code> <code>rename</code> <code>restart</code> <code>stop</code> <code>waiters</code>）</td><td>確認の入力を求める。件数を先に出す</td></tr>
+				<tr><td class="num">1</td><td>土台 (<code>json</code> ・ <code>jst</code> ・ <code>args</code> ・ <code>definition</code>)</td><td>JSON が往復する。引数が読める。定義が埋め込まれている</td></tr>
+				<tr><td class="num">2</td><td>日時の解析 (<code>since</code>)と待受けの選別 (<code>waiters</code>)</td><td>存在しない日を断る。二重の待受けを正しく選ぶ</td></tr>
+				<tr><td class="num">3</td><td>HTTP と読み取り系 (<code>recent</code> <code>who</code> <code>dump</code> <code>archives</code>)</td><td>サーバーに繋がる。出力が node 版と同じ</td></tr>
+				<tr><td class="num">4</td><td>書き込み系 (<code>say</code> <code>join</code> <code>leave</code> <code>wait</code>)</td><td>投稿が届く。待受けが長く粘る</td></tr>
+				<tr><td class="num">5</td><td>管理系 (<code>archive</code> <code>restore</code> <code>rename</code> <code>restart</code> <code>stop</code> <code>waiters</code>)</td><td>確認の入力を求める。件数を先に出す</td></tr>
 				<tr><td class="num">6</td><td>突き合わせと測り直し</td><td>node 版と 1 文字ずつ同じ。待受け中のメモリ</td></tr>
 			</tbody>
 		</table>
@@ -566,14 +566,14 @@ footer a {
 	<h2>やってみた結果</h2>
 
 	<div class="callout callout-important">
-		<p><strong>6 段すべて終わった。</strong>14 コマンドが動き、Rust 側の単体テスト 182 件と、node 版との突き合わせ（繋がない 14 通り ・ 実サーバーへ繋ぐ 54 通り）が通っている。</p>
+		<p><strong>6 段すべて終わった。</strong>14 コマンドが動き、Rust 側の単体テスト 182 件と、node 版との突き合わせ (繋がない 14 通り ・ 実サーバーへ繋ぐ 54 通り)が通っている。</p>
 	</div>
 
 	<div class="tablewrap">
 		<table>
 			<thead><tr><th class="nowrap">段</th><th>結果</th><th>見込みとの違い</th></tr></thead>
 			<tbody>
-				<tr><td class="num">1</td><td>土台（JSON ・ JST ・ 引数 ・ 定義）</td><td>暦の計算も自前になった。外部クレートを使わないので当然だが、見込みに入れていなかった</td></tr>
+				<tr><td class="num">1</td><td>土台 (JSON ・ JST ・ 引数 ・ 定義)</td><td>暦の計算も自前になった。外部クレートを使わないので当然だが、見込みに入れていなかった</td></tr>
 				<tr><td class="num">2</td><td>日時の解析と待受けの選別</td><td><strong>正規表現の代わりを手で書く量が思ったより多かった</strong></td></tr>
 				<tr><td class="num">3</td><td>HTTP と読み取り系</td><td>—</td></tr>
 				<tr><td class="num">4</td><td>書き込み系</td><td>—</td></tr>
@@ -591,14 +591,14 @@ footer a {
 			<tbody>
 				<tr>
 					<td>JSON と HTTP を自前で書くと 200〜300 行ほど増える</td>
-					<td><strong>3 本で 968 行</strong>（JSON 440 ・ HTTP 307 ・ 暦 221。テストを含む）。見込みの 3 倍以上</td>
+					<td><strong>3 本で 968 行</strong>(JSON 440 ・ HTTP 307 ・ 暦 221。テストを含む)。見込みの 3 倍以上</td>
 				</tr>
 				<tr>
 					<td>3,000 行を超える見込み</td>
-					<td><strong>5,297 行。</strong>うちテストが 1,621 行で、実装は 3,676 行（C# 版は 2,985 行）</td>
+					<td><strong>5,297 行。</strong>うちテストが 1,621 行で、実装は 3,676 行 (C# 版は 2,985 行)</td>
 				</tr>
 				<tr>
-					<td>（課題に）機能を足せば増える</td>
+					<td>(課題に)機能を足せば増える</td>
 					<td><strong>ほとんど増えなかった。</strong>待受けだけの 111 行で 4.89 MB、14 コマンドで 6.41 MB</td>
 				</tr>
 			</tbody>
@@ -613,7 +613,7 @@ footer a {
 		<table>
 			<thead><tr><th>食い違い</th><th>なぜ起きたか</th></tr></thead>
 			<tbody>
-				<tr><td class="nowrap">桁の詰め方</td><td><strong>揃え方が 2 種類あった。</strong>使い方の表示は表示幅、<code>who</code> は文字数（node の <code>padEnd</code>）。「一時切断」は 4 文字で表示幅 8 なので、6 桁に詰めると空白が 0 個と 2 個に分かれる</td></tr>
+				<tr><td class="nowrap">桁の詰め方</td><td><strong>揃え方が 2 種類あった。</strong>使い方の表示は表示幅、<code>who</code> は文字数 (node の <code>padEnd</code>)。「一時切断」は 4 文字で表示幅 8 なので、6 桁に詰めると空白が 0 個と 2 個に分かれる</td></tr>
 				<tr><td class="nowrap">終了コード</td><td>知らないコマンドは 2 ではなく <strong>1</strong>。書き間違いに気づけるようにするため</td></tr>
 				<tr><td class="nowrap">末尾の空行</td><td>node は <code>console.log</code> がもう 1 つ改行を足す</td></tr>
 				<tr><td class="nowrap">案内の順序</td><td><strong>ID の検証が環境の表示より先。</strong>逆だと、ID を書き忘れたときに案内の頭に別の行が挟まる</td></tr>
@@ -623,7 +623,7 @@ footer a {
 	</div>
 
 	<div class="callout callout-caution">
-		<p><strong>突き合わせの道具でも 2 度外した。</strong>どちらも「桁を揃えた出力から機械的に値を取る」形で、<code>waiters</code> の pid と <code>archives</code> の番号を取り損ねた。後者では<strong>両方が同じ使い方の誤りで終わったのを「一致」と読んだ</strong>（偽の一致）。取り直して確かめ直している。</p>
+		<p><strong>突き合わせの道具でも 2 度外した。</strong>どちらも「桁を揃えた出力から機械的に値を取る」形で、<code>waiters</code> の pid と <code>archives</code> の番号を取り損ねた。後者では<strong>両方が同じ使い方の誤りで終わったのを「一致」と読んだ</strong>(偽の一致)。取り直して確かめ直している。</p>
 	</div>
 
 	<h3>測った結果</h3>
@@ -656,7 +656,7 @@ footer a {
 				<tr>
 					<td class="nowrap"><code>tests/cli-rs.test.mjs</code></td>
 					<td><strong>node 版との食い違い。</strong>出力・終了コード・埋め込んだ定義</td>
-					<td>一括実行に乗る（<code>node --test tests</code>）</td>
+					<td>一括実行に乗る (<code>node --test tests</code>)</td>
 				</tr>
 			</tbody>
 		</table>

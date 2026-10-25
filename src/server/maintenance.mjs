@@ -12,8 +12,8 @@ import { log } from './log.mjs';
  * 何度落としても待機で止まり、作業が終わって印を消した時点で自分から起動する。
  *
  * 使い方:
- *   1. _data\MAINTENANCE を作る（中身に理由を書くとログに出る）
- *   2. サーバーを落とす（chat.mjs restart でよい。起動しようとして待機に入る）
+ *   1. _data\MAINTENANCE を作る (中身に理由を書くとログに出る)
+ *   2. サーバーを落とす (chat.mjs restart でよい。起動しようとして待機に入る)
  *   3. DB を好きに触る
  *   4. 印を消す → 数秒で自分から起動する
  */
@@ -40,7 +40,7 @@ export function readReason(file = MAINTENANCE_FILE) {
  * その行は理由から外す。書かれていなければ見込みは null になり、
  * 「分からないものを書かない」ことにしている。
  *
- * since は印を置いた時刻（ファイルの更新時刻）。止まっていた長さを出すために使う。
+ * since は印を置いた時刻 (ファイルの更新時刻)。止まっていた長さを出すために使う。
  */
 export function readMaintenanceInfo(file = MAINTENANCE_FILE) {
 	let text = '';

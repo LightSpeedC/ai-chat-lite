@@ -27,13 +27,13 @@ export function escapeText(src) {
  * コードブロックを退避するときの目印。
  *
  * String.fromCharCode(0) で組み立てる。バイト値 0 を 1 文字リテラルで
- * ソースに埋め込むと、git がこのファイルをバイナリ（-text）と判定する。
+ * ソースに埋め込むと、git がこのファイルをバイナリ (-text)と判定する。
  * 以後 diff は "Binary files … differ" にしかならず、ripgrep もこの定義の
  * 行を返さない。関数呼び出しにすれば、ソースには制御文字が 1 バイトも残らない。
  *
- * msg_body はこの文字をそのまま素通しする（requireBody は文字数上限だけを見る）。
+ * msg_body はこの文字をそのまま素通しする (requireBody は文字数上限だけを見る)。
  * 本文に 2 つ挟んで数字を囲む形を含めると、6 の復元処理がその位置を
- * blocks[n] に置き換えてしまう（本文はエスケープ済みなので注入にはならない）。
+ * blocks[n] に置き換えてしまう (本文はエスケープ済みなので注入にはならない)。
  */
 const PLACEHOLDER = String.fromCharCode(0);
 
@@ -53,12 +53,12 @@ export function renderBody(src) {
 	s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
 	s = s.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
 
-	// 4. 自動リンク。http と https だけを対象にする（javascript: を通さないため）。
+	// 4. 自動リンク。http と https だけを対象にする (javascript: を通さないため)。
 	//
 	//    & は &amp; の形だけ通す。エスケープ済みなので URL 内の & は &amp; に
 	//    なっており、& を丸ごと外すとクエリ付きの URL が最初の &amp; の手前で
 	//    切れる。href が投稿された URL と別のものになり、残りが「amp;b=2」と
-	//    いう文字列として本文に落ちる（クエリ付き URL はよく貼られる）。
+	//    いう文字列として本文に落ちる (クエリ付き URL はよく貼られる)。
 	//
 	//    ただし & を無条件に通すと、&quot; &lt; &gt; まで URL に入ってしまう。
 	//    エスケープ後は " < > がその形になっているので、下の「外す理由」が

@@ -16,8 +16,8 @@ const TEST_ROOT = join(ROOT, 'tmp', '_data', 'unit-restore-ps1');
 /*
  * restore.ps1 が Windows PowerShell 5.1 で通しで動くかを確かめる。
  *
- * レビュー #20 で見つかった穴（say・restart の呼び出しが 2>&1 と
- * $ErrorActionPreference = 'Stop' の組み合わせで NativeCommandError になる）は
+ * レビュー #20 で見つかった穴 (say・restart の呼び出しが 2>&1 と
+ * $ErrorActionPreference = 'Stop' の組み合わせで NativeCommandError になる)は
  * pwsh 7 では再現しない。5.1 特有の挙動なので、必ず powershell.exe で確かめる。
  *
  * -DataRoot で _data・_backup・tmp\restore-work・logs の置き場を差し替える。
@@ -55,7 +55,7 @@ async function until(check, { timeoutMs = 20000, everyMs = 200, what = '条件' 
 		}
 		await new Promise((r) => setTimeout(r, everyMs));
 	}
-	assert.fail(`${what} が満たされませんでした（${timeoutMs}ms）`);
+	assert.fail(`${what} が満たされませんでした (${timeoutMs}ms)`);
 }
 
 async function removeWhenFree(dir) {
@@ -88,7 +88,7 @@ async function makeMarkedDb(dbPath, bodyMark) {
 }
 
 /**
- * $DataRoot 配下（_data・_backup\hourly・logs）を作り、
+ * $DataRoot 配下 (_data・_backup\hourly・logs)を作り、
  * 「いまの DB」と「戻す先の zip」をそれぞれ目印つきで用意する。
  */
 async function prepareFixture() {
@@ -97,10 +97,10 @@ async function prepareFixture() {
 	mkdirSync(join(TEST_ROOT, '_backup', 'hourly'), { recursive: true });
 	mkdirSync(join(TEST_ROOT, 'logs'), { recursive: true });
 
-	// いまの DB（サーバーが握る側）
+	// いまの DB (サーバーが握る側)
 	await makeMarkedDb(join(TEST_ROOT, '_data', 'chat.db'), 'リストア前のデータ');
 
-	// 戻す先の中身（zip に固めて _backup\hourly に置く）
+	// 戻す先の中身 (zip に固めて _backup\hourly に置く)
 	const work = join(TEST_ROOT, 'zip-work');
 	mkdirSync(work, { recursive: true });
 	await makeMarkedDb(join(work, 'chat.db'), 'リストア後のデータ');
@@ -130,22 +130,22 @@ after(async () => {
 	await removeWhenFree(TEST_ROOT);
 });
 
-test('Windows PowerShell 5.1 が使える（無ければ以降は skip）', (t) => {
+test('Windows PowerShell 5.1 が使える (無ければ以降は skip)', (t) => {
 	if (!has51) t.skip('powershell.exe が無い環境');
 	assert.ok(true);
 });
 
-test('restore.ps1 が通しで動き、目印が入れ替わる（5.1・実サーバー）', async (t) => {
+test('restore.ps1 が通しで動き、目印が入れ替わる (5.1・実サーバー)', async (t) => {
 	if (!has51) return t.skip('powershell.exe が無い');
 
 	await prepareFixture();
 
 	// -Data のあるサーバーを実際に立てる。restore.ps1 の restart が
-	// このプロセスを本当に落とせることを確かめるため（AICHAT_NO_EXIT は使わない）。
+	// このプロセスを本当に落とせることを確かめるため (AICHAT_NO_EXIT は使わない)。
 	//
-	// アクセストークンは spawn した「この」プロセスが自分で振った値（起動ログの
-	// 1 行）を読む。config.mjs は randomUUID() で毎プロセス独立に決めるため、
-	// テスト側で import した config.mjs の値とは食い違う（別プロセスの別の値）
+	// アクセストークンは spawn した「この」プロセスが自分で振った値 (起動ログの
+	// 1 行)を読む。config.mjs は randomUUID() で毎プロセス独立に決めるため、
+	// テスト側で import した config.mjs の値とは食い違う (別プロセスの別の値)
 	let token = '';
 	server = spawn(process.execPath, [MAIN], {
 		env: { ...process.env, AICHAT_DATA: join(TEST_ROOT, '_data'), AICHAT_PORT: String(port) },
@@ -172,7 +172,7 @@ test('restore.ps1 が通しで動き、目印が入れ替わる（5.1・実サ�
 	result.stderr.on('data', (c) => { stderr += c; });
 	const code = await new Promise((resolve) => result.once('exit', resolve));
 
-	assert.equal(code, 0, `restore.ps1 が失敗した（exit ${code}）\n--- stdout ---\n${stdout}\n--- stderr ---\n${stderr}`);
+	assert.equal(code, 0, `restore.ps1 が失敗した (exit ${code})\n--- stdout ---\n${stdout}\n--- stderr ---\n${stderr}`);
 	assert.match(stdout, /\[5\/5\]/, '最後まで進んでいない');
 	assert.ok(!existsSync(join(TEST_ROOT, '_data', 'MAINTENANCE')), '印が残っている');
 

@@ -1,10 +1,10 @@
 /*
- * waiters（走っている待受けを数える）を確かめる。
+ * waiters (走っている待受けを数える)を確かめる。
  *
  * このコマンドは、各プロジェクトに検索式を書かせるのをやめるために作った。
  * 書き方を 1 つ守れなかっただけで結果が反転し、そのたびに事故になっていた。
  *
- *   -c で絞らない        他プロジェクトの待受けまで数え、止めてしまう（i260901-07）
+ *   -c で絞らない        他プロジェクトの待受けまで数え、止めてしまう (i260901-07)
  *   プロセス名で絞る      張り方によって aichat.exe / cmd.exe / node.exe に変わる
  *   ID を直に書く        確認コマンド自身に一致し、0 本が 1 本に見える
  *   前方一致             project-a を探すと project-aa にも当たる
@@ -20,14 +20,14 @@ import { WAITER_PATTERN, ID_WRAP } from '../src/client/options.mjs';
 /*
  * 選び方は本体と同じものを使う。写しを検査すると、本体を壊しても通ってしまう。
  * ここで実物を落とせるのは、waiters-pick.mjs から純粋な関数として出したためである
- * （i261004-01。それまでは chat.mjs とこのファイルに別々の写しがあった）。
+ * (i261004-01。それまでは chat.mjs とこのファイルに別々の写しがあった)。
  */
 /*
  * 読み取りも本体から取る。
  *
  * 以前は readArg / roomsFrom をこのファイルに写していたため、chat.mjs 側を
- * 壊してもテストは緑のままだった（レビュー #21 medium 8）。実際に readArg が
- * ダブルクォート付きの -r を読めない穴（#22 medium 7）は、写しを検査していた
+ * 壊してもテストは緑のままだった (レビュー #21 medium 8)。実際に readArg が
+ * ダブルクォート付きの -r を読めない穴 (#22 medium 7)は、写しを検査していた
  * 間ずっと見えていなかった。
  */
 import {
@@ -45,12 +45,12 @@ function proc(pid, ppid, name, cmd, at = '2026-09-03 07:00:00') {
 	return { pid, ppid, name, cmd, at };
 }
 
-/** 既定のルームを埋めた形で使う（本体の chat.mjs も同じ渡し方をする） */
+/** 既定のルームを埋めた形で使う \(本体の chat.mjs も同じ渡し方をする\) */
 function roomsFrom(value) {
 	return roomsFromRaw(value, DEFAULT_ROOM);
 }
 
-/** 本体の targetOf に既定のルームを渡して使う（chat.mjs も同じ渡し方をする） */
+/** 本体の targetOf に既定のルームを渡して使う \(chat.mjs も同じ渡し方をする\) */
 function targetOf(cmd) {
 	return targetOfRaw(cmd, DEFAULT_ROOM);
 }
@@ -72,7 +72,7 @@ function waiter(pid, rooms, at) {
 	return { pid, rooms, at };
 }
 
-/** 既定の基準（本番の既定ルーム） */
+/** 既定の基準 \(本番の既定ルーム\) */
 const PROD = { port: PORT, rooms: [DEFAULT_ROOM] };
 
 /*
@@ -84,7 +84,7 @@ function pickWaiters(rows, excludePids) {
 }
 
 describe('待受けの見つけ方', () => {
-	test('新しい形（コロンで囲んだ ID）を拾う', () => {
+	test('新しい形 (コロンで囲んだ ID)を拾う', () => {
 		const rows = [proc(100, 1, 'aichat.exe', 'aichat.exe wait :project-a: -p 8787')];
 		const found = pickWaiters(rows, []);
 
@@ -92,7 +92,7 @@ describe('待受けの見つけ方', () => {
 		assert.equal(found[0].id, 'project-a');
 	});
 
-	test('古い形（-c / --connector-id）も拾う', () => {
+	test('古い形 (-c / --connector-id)も拾う', () => {
 		/*
 		 * 切り替えの途中は新旧が混ざる。片方しか見ないと相手の待受けを
 		 * 見落とし、二重に張らせてしまう。
@@ -143,7 +143,7 @@ describe('自分自身を数えない', () => {
 		assert.equal(found[0].pid, 200);
 	});
 
-	test('親を落として 1 本に数える（aichat）', () => {
+	test('親を落として 1 本に数える (aichat)', () => {
 		/*
 		 * サブエージェントは pwsh 越しに呼ぶ。pwsh のコマンドラインにも
 		 * 「aichat wait :id:」がそのまま入っているので、放っておくと 2 本に見える。
@@ -158,7 +158,7 @@ describe('自分自身を数えない', () => {
 		assert.equal(found[0].pid, 200, '末端ではなく親を残している');
 	});
 
-	test('3 段でも 1 本に数える（aichat-node）', () => {
+	test('3 段でも 1 本に数える (aichat-node)', () => {
 		// aichat-node は cmd.exe → node.exe と 2 段になる。pwsh を足すと 3 段
 		const rows = [
 			proc(100, 1, 'pwsh.exe', 'pwsh.exe -Command "aichat-node wait :project-a: -p 8787"'),
@@ -182,7 +182,7 @@ describe('自分自身を数えない', () => {
 	});
 });
 
-describe('親子が途中で切れていても 1 本に数える（i261004-01）', () => {
+describe('親子が途中で切れていても 1 本に数える (i261004-01)', () => {
 	/*
 	 * timeout 越しに起動すると、外側の timeout.exe の親プロセスが先に終わっている。
 	 * ハーネスが起こした bash から timeout へ親子がつながらず、bash は「子を持たない末端」
@@ -196,7 +196,7 @@ describe('親子が途中で切れていても 1 本に数える（i261004-01）
 		const rows = [
 			proc(22172, 37516, 'bash.exe', SHELL_CMD('project-a')),
 			proc(38572, 22172, 'bash.exe', SHELL_CMD('project-a')),
-			// 親（8296）はすでに終わっていて、一覧に無い。bash（38572）とつながらない
+			// 親 (8296)はすでに終わっていて、一覧に無い。bash (38572)とつながらない
 			proc(26352, 8296, 'timeout.exe', 'timeout.exe 7200 aichat wait :project-a: -p 8787 -r public'),
 			proc(43092, 26352, 'timeout.exe', 'timeout.exe 7200 aichat wait :project-a: -p 8787 -r public'),
 			proc(4992, 43092, 'aichat.exe', 'C:\\work\\ai-chat-lite\\bin\\aichat.exe wait :project-a: -p 8787 -r public'),
@@ -204,12 +204,12 @@ describe('親子が途中で切れていても 1 本に数える（i261004-01）
 
 		const found = pickWaiters(rows, []);
 		assert.equal(found.length, 1, '1 本が 2 本に見えている');
-		assert.equal(found[0].pid, 4992, '実体（aichat.exe）ではなくラッパーを残している');
+		assert.equal(found[0].pid, 4992, '実体 (aichat.exe)ではなくラッパーを残している');
 		assert.deepEqual(found[0].rooms, ['public'], 'ルーム名が壊れている');
 	});
 
 	test('ラッパーは、親子がどうつながっていても末端に数えない', () => {
-		// 実体の名前だけを数える。ラッパーが何であっても（将来増えるものも）1 本にしない
+		// 実体の名前だけを数える。ラッパーが何であっても (将来増えるものも)1 本にしない
 		const rows = [
 			proc(100, 1, 'bash.exe', 'bash.exe -c "aichat wait :project-a: -p 8787"'),
 			proc(101, 1, 'sh.exe', 'sh.exe -c "aichat wait :project-a: -p 8787"'),
@@ -251,7 +251,7 @@ describe('前方一致する ID を取り違えない', () => {
 	test('project-a を数えても project-aa と project-a-b が混ざらない', () => {
 		/*
 		 * 囲みが無いと当たってしまう組み合わせ。ここが事故の元だった。
-		 * project-aa は \b でも防げるが、project-a-b は防げない（- が語の境目）。
+		 * project-aa は \b でも防げるが、project-a-b は防げない (- が語の境目)。
 		 */
 		const rows = [
 			proc(100, 1, 'aichat.exe', 'aichat.exe wait :project-a: -p 8787'),
@@ -281,7 +281,7 @@ describe('張り方を問わず拾える', () => {
 	test('3 通りの張り方すべてを数える', () => {
 		/*
 		 * プロセス名で絞ると、どれかが漏れる。式はコマンドラインだけを見る。
-		 * 従来の直呼び（node .../chat.mjs）も拾えることが要点。
+		 * 従来の直呼び (node .../chat.mjs)も拾えることが要点。
 		 * 検索式ではこれが拾えず、取りこぼしていた。
 		 */
 		const rows = [
@@ -397,7 +397,7 @@ describe('基準に合う待受けだけを数える', () => {
 	test('自分の分が別の場所にあることは pid で分かる', () => {
 		/*
 		 * 件数だけでは止めようがない。自分の分は pid まで出す。
-		 * 他プロジェクトの分は件数だけにする（止めてはいけないため）。
+		 * 他プロジェクトの分は件数だけにする (止めてはいけないため)。
 		 */
 		const rows = [proc(100, 1, 'aichat.exe', 'aichat.exe wait :project-a: -p 49999 -r dev')];
 		const found = pickWaiters(rows, []).map((h) => ({ ...h, ...targetOf(rows[0].cmd) }));
@@ -456,7 +456,7 @@ describe('覆えているかで見る', () => {
 		/*
 		 * 人が書くので、カンマの後ろに空白が入ることがある。
 		 * ただしコマンドラインから読むほうは空白で切れるため、ここに空白は来ない。
-		 * 空白が来るのは自分の -r（引用符で囲んで渡された値）を割るときである。
+		 * 空白が来るのは自分の -r (引用符で囲んで渡された値)を割るときである。
 		 */
 		assert.deepEqual(roomsFrom('public, ai-chat-lite'), ['public', 'ai-chat-lite']);
 		assert.deepEqual(roomsFrom('  public ,  dev  '), ['public', 'dev']);
@@ -651,7 +651,7 @@ describe('コマンドラインの読み取り', () => {
 	 * 2 ルーム覆っている待受けが 1 つと数えられ**、「ai-chat-lite の待受けが
 	 * ありません。張ってください」と出て、共通ルールが最も強く禁じる
 	 * 「同じルームを 2 本で見ない」を道具の出力が指示する形になっていた
-	 * （レビュー #22 medium 7）。
+	 * (レビュー #22 medium 7)。
 	 */
 	test('ダブルクォートで囲んだ -r を読める', () => {
 		const cmd = 'aichat wait :project-a: -p 8787 -r "public,ai-chat-lite"';
@@ -675,7 +675,7 @@ describe('コマンドラインの読み取り', () => {
 		assert.deepEqual(roomsFrom(readArg(cmd, 'room', 'r')), ['public', 'ai-chat-lite']);
 	});
 
-	test('長い形（--room）でも同じ', () => {
+	test('長い形 (--room)でも同じ', () => {
 		const cmd = 'aichat wait :project-a: -p 8787 --room "public,dev"';
 
 		assert.deepEqual(roomsFrom(readArg(cmd, 'room', 'r')), ['public', 'dev']);
@@ -691,10 +691,10 @@ describe('-r の値は英数字・ハイフン・下線・ピリオドだけ', (
 	 * 【なぜ必要か】
 	 * roomsFrom はカンマで分割するだけで、文字種の検証を一切していなかった。
 	 * waiters はサーバーに繋がないコマンドなので、サーバー側の room_id 検証
-	 * （英数字・ハイフン・下線・ピリオドのみ）を経由できない。シングルクォートで
-	 * 囲んで渡すと、cmd はクォート文字を値に含めてしまう（'public,ai-chat-lite'
-	 * のような壊れた値になる）が、waiters はそれをカンマで割ってそのまま
-	 * 「ルーム名」として扱い、エラーにならなかった（実際に指摘があった）。
+	 * (英数字・ハイフン・下線・ピリオドのみ)を経由できない。シングルクォートで
+	 * 囲んで渡すと、cmd はクォート文字を値に含めてしまう ('public,ai-chat-lite'
+	 * のような壊れた値になる)が、waiters はそれをカンマで割ってそのまま
+	 * 「ルーム名」として扱い、エラーにならなかった (実際に指摘があった)。
 	 */
 	test('不正な文字を含むと終了コード 2 で止まる', async () => {
 		const { execFile } = await import('node:child_process');
@@ -738,10 +738,10 @@ describe('式の置き場', () => {
  * 1 ルームだけを待つ。USAGE は「エラーは出ず、届かないことにも気づけない」と
  * 書いている。道具が割れる形の見本を出してはいけない。
  *
- * 直したとき（#22 medium 8）、この関数だけ回帰テストが無かった。chat.mjs の
- * 中にあって呼べなかったためで、当時の cli-cs.test.mjs（C# 版。i260918-01 で
- * 削除済み）の NOTE の検査も接頭辞しか見ておらず、基準が 1 ルームなので
- * 複数の枝を通っていなかった（レビュー #23 medium 9）。
+ * 直したとき (#22 medium 8)、この関数だけ回帰テストが無かった。chat.mjs の
+ * 中にあって呼べなかったためで、当時の cli-cs.test.mjs (C# 版。i260918-01 で
+ * 削除済み)の NOTE の検査も接頭辞しか見ておらず、基準が 1 ルームなので
+ * 複数の枝を通っていなかった (レビュー #23 medium 9)。
  */
 describe('張り方の見本に載せるルームの並び', () => {
 	test('複数ならダブルクォートで囲む', () => {

@@ -2,10 +2,10 @@
 	CLI のベンチマーク。
 
 	  node src/client/chat.mjs     node 版
-	  bun run src/client/chat.mjs  bun 版（同じソースを bun で動かす）
+	  bun run src/client/chat.mjs  bun 版 (同じソースを bun で動かす)
 
 	【測るもの】
-	  1. 待受け中のメモリ（最重要）… wait を起こして、そのプロセスの使用量を見る
+	  1. 待受け中のメモリ (最重要)… wait を起こして、そのプロセスの使用量を見る
 	  2. 起動の速さ                … --help を繰り返して最小値・中央値を見る
 
 	【測り方の決めごと】
@@ -18,11 +18,11 @@
 
 	結果は tmp/benchmark-cli.json に書く。HTML はそれを見て別に作る。
 
-	  benchmark-cli.ps1                 既定（起動 20 回 / メモリは 10 秒待って 5 回）
+	  benchmark-cli.ps1                 既定 (起動 20 回 / メモリは 10 秒待って 5 回)
 	  benchmark-cli.ps1 -Times 50
 #>
 param(
-	# 起動を測る回数（ウォームアップを除く）
+	# 起動を測る回数 (ウォームアップを除く)
 	[int] $Times = 20,
 
 	# 捨てる回数
@@ -31,7 +31,7 @@ param(
 	# 待受けが安定するまで待つ秒数
 	[int] $SettleSec = 10,
 
-	# メモリを何回サンプリングするか（1 回の起動の中で）
+	# メモリを何回サンプリングするか (1 回の起動の中で)
 	[int] $Samples = 5,
 
 	# 起動からやり直す回数。1 回の起動だけ見ると、たまたまの値を拾う
@@ -54,7 +54,7 @@ $sink = Join-Path $tmp 'benchmark-sink.txt'
 	CLI は繋ぎ先を毎回 stderr に出す。Windows PowerShell 5.1 は
 	$ErrorActionPreference = 'Stop' のとき、ネイティブコマンドが stderr へ
 	書いただけで NativeCommandError を投げる。ここだけ緩める
-	（restore.ps1 が同じ理由で同じ形にしている）。
+	(restore.ps1 が同じ理由で同じ形にしている)。
 #>
 function Invoke-Quiet {
 	param([string] $File, [string[]] $Arguments)
@@ -72,7 +72,7 @@ function Invoke-Quiet {
 	繋ぎ先を決める。
 
 	待受けは参加者として登録されるので、本番には繋がない。テスト用サーバーが
-	立っていれば、その接続情報（tmp/_data/server.json）から読む。
+	立っていれば、その接続情報 (tmp/_data/server.json)から読む。
 #>
 $info = Join-Path $tmp '_data/server.json'
 if (-not (Test-Path $info)) {
@@ -81,14 +81,14 @@ if (-not (Test-Path $info)) {
 $server = Get-Content -LiteralPath $info -Raw | ConvertFrom-Json
 $port = $server.port
 $token = $server.access_token
-Write-Host "繋ぎ先: localhost:$port（テスト用）"
+Write-Host "繋ぎ先: localhost:$port (テスト用)"
 Write-Host ''
 
 <#
 	比べる実装。起動の仕方だけが違う。
 
 	Rust 版と Go 版は wait だけを持つベンチマーク用の実装で、検証も表示も無い
-	（tools/40_test/wait-rs ・ wait-go）。ほかの 2 つは製品の CLI である。
+	(tools/40_test/wait-rs ・ wait-go)。ほかの 2 つは製品の CLI である。
 #>
 $impls = [ordered]@{
 	'node 版'      = @{ File = 'node'; Args = @($client) }
@@ -126,7 +126,7 @@ function Measure-WaitMemory {
 	<#
 		先に 1 回走らせて、読んだ位置を立てておく。
 
-		初めての接続は案内を出してすぐ終わる仕様なので（i260909-01）、
+		初めての接続は案内を出してすぐ終わる仕様なので (i260909-01)、
 		いきなり測ろうとすると待受けに入る前にプロセスが消える。
 	#>
 	Invoke-Quiet $Impl.File ($Impl.Args + $common + @('--wait-sec', '1'))
@@ -146,7 +146,7 @@ function Measure-WaitMemory {
 		-RedirectStandardOutput $out -RedirectStandardError "$out.err"
 
 	try {
-		Write-Host ("  {0} を起こしました（pid {1}）。{2} 秒待ちます" -f $Label, $proc.Id, $SettleSec)
+		Write-Host ("  {0} を起こしました (pid {1})。{2} 秒待ちます" -f $Label, $proc.Id, $SettleSec)
 		Start-Sleep -Seconds $SettleSec
 
 		$ws = @()
@@ -155,7 +155,7 @@ function Measure-WaitMemory {
 
 		for ($i = 0; $i -lt $Samples; $i++) {
 			$tree = Get-ProcessTree -RootId $proc.Id
-			if ($tree.Count -eq 0) { throw "$Label の待受けが落ちています（出力: $out）" }
+			if ($tree.Count -eq 0) { throw "$Label の待受けが落ちています (出力: $out)" }
 			$procCount = $tree.Count
 			$ws += ($tree | Measure-Object -Property WorkingSet64 -Sum).Sum
 			$pb += ($tree | Measure-Object -Property PrivateMemorySize64 -Sum).Sum
@@ -277,7 +277,7 @@ function Summarize {
 	}
 }
 
-Write-Host "=== 2. 起動の速さ（$Times 回 / ウォームアップ $Warmup 回） ==="
+Write-Host "=== 2. 起動の速さ ($Times 回 / ウォームアップ $Warmup 回) ==="
 Write-Host ''
 
 <#
@@ -291,8 +291,8 @@ $startupTargets = [ordered]@{
 	'bun 版'             = @{ File = 'bun'; Args = @('run', $client, '--help') }
 	'Rust 版'            = @{ File = $rs; Args = @('--help') }
 	'Go 版'              = @{ File = $go; Args = @('--help') }
-	'node -e 0（素）'    = @{ File = 'node'; Args = @('-e', '0') }
-	'bun -e 0（素）'     = @{ File = 'bun'; Args = @('-e', '0') }
+	'node -e 0 (素)'    = @{ File = 'node'; Args = @('-e', '0') }
+	'bun -e 0 (素)'     = @{ File = 'bun'; Args = @('-e', '0') }
 }
 
 Write-Host '--- 1 巡目 ---'
@@ -302,7 +302,7 @@ $first = foreach ($label in $startupTargets.Keys) {
 }
 $first | Format-Table -AutoSize
 
-Write-Host '--- 2 巡目（順序を逆にする） ---'
+Write-Host '--- 2 巡目 (順序を逆にする) ---'
 $reversed = @($startupTargets.Keys) | Sort-Object -Descending
 $second = foreach ($label in $reversed) {
 	Write-Host "  $label"
@@ -310,7 +310,7 @@ $second = foreach ($label in $reversed) {
 }
 $second | Format-Table -AutoSize
 
-# 2 巡のうち小さい方を採る（その環境の素の速さに近い）
+# 2 巡のうち小さい方を採る (その環境の素の速さに近い)
 $startup = foreach ($label in $startupTargets.Keys) {
 	$a = $first | Where-Object { $_.label -eq $label }
 	$b = $second | Where-Object { $_.label -eq $label }

@@ -10,7 +10,7 @@ import { DatabaseSync } from 'node:sqlite';
  *
  * config.mjs は読み込んだ時点で置き場を確定する。先に import すると、
  * そのあとで環境変数を変えても効かず、本番の _data を掴んだままになる。
- * バックアップの印（BACKUP-RUNNING）は置き場から決まるので、
+ * バックアップの印 (BACKUP-RUNNING)は置き場から決まるので、
  * 本番側に印を置いてしまう恐れがある。
  */
 const here = dirname(fileURLToPath(import.meta.url));
@@ -99,10 +99,10 @@ describe('バックアップ', () => {
 	/*
 	 * 【なぜ必要か】
 	 * vacuumInto は VACUUM INTO で dest にスナップショットを作った直後、
-	 * messages 件数を「同じ db 接続（＝生きている src）」に対して数えていた。
+	 * messages 件数を「同じ db 接続 (＝生きている src)」に対して数えていた。
 	 * dest 自体は数えていないため、VACUUM 中〜直後に src へ書き込みがあると、
-	 * ログの「取得 N 件」は実際に取れた dest の中身と食い違う（レビュー #19、
-	 * i260908-05）。VACUUM INTO 実行直後・count 実行前というピンポイントの
+	 * ログの「取得 N 件」は実際に取れた dest の中身と食い違う (レビュー #19、
+	 * i260908-05)。VACUUM INTO 実行直後・count 実行前というピンポイントの
 	 * タイミングに割り込む必要があるため、DatabaseSync.prototype.exec を
 	 * 差し替えて競合を確実に再現する
 	 */
@@ -130,7 +130,7 @@ describe('バックアップ', () => {
 			DatabaseSync.prototype.exec = originalExec;
 		}
 
-		assert.equal(result.messages, 30, 'src の最新値を数えてしまっている（dest の中身を数えるべき）');
+		assert.equal(result.messages, 30, 'src の最新値を数えてしまっている (dest の中身を数えるべき)');
 	});
 
 	test('複製は -wal を伴わず単体で開ける', () => {
@@ -348,7 +348,7 @@ describe('取ってはいけないときに取らない', () => {
 
 	test('同時に取り合っても 1 つしか成功しない', () => {
 		/*
-		 * wx フラグ（O_CREAT | O_EXCL）を使う理由がこれ。
+		 * wx フラグ (O_CREAT | O_EXCL)を使う理由がこれ。
 		 * 名前を変える方式は Windows では使えない。Node の renameSync は
 		 * 既にある印を黙って上書きし、2 つとも「取れた」と思い込む。
 		 * PowerShell の Rename-Item と cmd の ren は失敗するが、

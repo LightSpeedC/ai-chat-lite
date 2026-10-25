@@ -15,10 +15,10 @@
 			<rect width="1000" height="250" fill="#ffffff"/>
 
 			<rect x="40"  y="96" width="380" height="52" rx="6" fill="url(#i1)"/>
-			<text x="230" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">online（接続中）</text>
+			<text x="230" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">online (接続中)</text>
 
 			<rect x="420" y="96" width="230" height="52" rx="6" fill="url(#i2)"/>
-			<text x="535" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">grace（一時切断）</text>
+			<text x="535" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">grace (一時切断)</text>
 
 			<rect x="650" y="96" width="310" height="52" rx="6" fill="url(#i3)"/>
 			<text x="805" y="128" text-anchor="middle" fill="#fff" font-size="15" font-family="sans-serif">offline</text>

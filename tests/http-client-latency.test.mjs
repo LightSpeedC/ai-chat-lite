@@ -2,7 +2,7 @@
  * ローカルの HTTP を、クライアントの作りを変えて測る。
  *
  * 【なぜ要るか】
- * node の fetch は Windows で 1 往復ごとに 15 ms ほど待たされる（課題 i260912-02）。
+ * node の fetch は Windows で 1 往復ごとに 15 ms ほど待たされる (課題 i260912-02)。
  * 最小は 0.36 ms まで下がるので、返せないのではなく待たされている。Windows の
  * 既定のタイマー解像度 15.6 ms と一致する。
  *
@@ -27,7 +27,7 @@ const CALLS = 60;
 const WARMUP = 10;
 
 /**
- * 1 往復が異常に遅いと見なす境目（ミリ秒）。
+ * 1 往復が異常に遅いと見なす境目 (ミリ秒)。
  *
  * 速さを守るための値ではない。ローカルの往復が 1 秒かかるなら、測り方か環境が
  * 壊れている。その場合だけ落とす。
@@ -58,7 +58,7 @@ test('ローカルの HTTP は、fetch でも http.request でも同じ応答が
 		return { status: res.status, body: await res.text() };
 	};
 
-	/** node:http の http.request で 1 往復（keepAlive つき） */
+	/** node:http の http.request で 1 往復 \(keepAlive つき\) */
 	const byRequest = () =>
 		new Promise((ok, ng) => {
 			const req = httpRequest(base, { agent }, (res) => {
@@ -98,8 +98,8 @@ test('ローカルの HTTP は、fetch でも http.request でも同じ応答が
 		const runtime = process.versions.bun ? `bun ${process.versions.bun}` : `node ${process.version}`;
 		t.diagnostic(
 			`${runtime} / ${process.platform}: ` +
-				`fetch 中央値 ${results['fetch'].median} ms（最小 ${results['fetch'].min}）、` +
-				`http.request 中央値 ${results['http.request'].median} ms（最小 ${results['http.request'].min}）`
+				`fetch 中央値 ${results['fetch'].median} ms (最小 ${results['fetch'].min})、` +
+				`http.request 中央値 ${results['http.request'].median} ms (最小 ${results['http.request'].min})`
 		);
 
 		/*
@@ -107,7 +107,7 @@ test('ローカルの HTTP は、fetch でも http.request でも同じ応答が
 		 * 課題 i260912-02 が直れば 1 倍に近づく。
 		 */
 		const ratio = Math.round((results['fetch'].median / results['http.request'].median) * 10) / 10;
-		t.diagnostic(`fetch は http.request の ${ratio} 倍（1 に近いほど差が無い）`);
+		t.diagnostic(`fetch は http.request の ${ratio} 倍 (1 に近いほど差が無い)`);
 
 		for (const [name, r] of Object.entries(results)) {
 			assert.ok(

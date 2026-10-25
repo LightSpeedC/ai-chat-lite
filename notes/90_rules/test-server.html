@@ -11,7 +11,7 @@
 
 /* ===================================================================
    ai-chat-lite 共通スタイル
-   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   章ごとのアクセント色 (.ch01〜)は各 HTML 側で定義する
    =================================================================== */
 
 :root {
@@ -334,7 +334,7 @@ pre code {
 }
 
 /*
- * 幅は文字数で決まる（固定幅にしない）。
+ * 幅は文字数で決まる (固定幅にしない)。
  * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
  * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
  */
@@ -412,7 +412,7 @@ footer a {
 }
 </style>
 <style>
-/* この資料だけのもの: 章のアクセント色（4章 / 色相 280→0 を 93.3 刻み）と目次の採番 */
+/* この資料だけのもの: 章のアクセント色 (4章 / 色相 280→0 を 93.3 刻み)と目次の採番 */
 .ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
 .ch02 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); --soft: hsl(140, 28%, 95%); }
 .ch03 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
@@ -438,7 +438,7 @@ footer a {
 <p>なぜこの形にしたかは<a href="../10_plan/p260831-01-テスト環境の分離.html">テスト環境の分離</a>にある。</p>
 
 <div class="callout callout-important">
-	<p><strong>これは ai-chat-lite の開発者向けである。</strong>他プロジェクトはテスト用サーバーを立てない（<code>tmp/</code> を専有するため、同時に立てると衝突する）。他プロジェクトの手順は <a href="../../CHAT-USAGE.html">他プロジェクトからの使い方</a> にある。</p>
+	<p><strong>これは ai-chat-lite の開発者向けである。</strong>他プロジェクトはテスト用サーバーを立てない (<code>tmp/</code> を専有するため、同時に立てると衝突する)。他プロジェクトの手順は <a href="../../CHAT-USAGE.html">他プロジェクトからの使い方</a> にある。</p>
 </div>
 
 <section class="toc">
@@ -476,7 +476,7 @@ tools\40_test\run-ui-tests.cmd chat-ui</code></pre>
 
 	<h2>はじめに設定ファイルを置く</h2>
 
-	<p><strong>探し始めるポートは <code>_secrets/test-server.json</code> から読む。</strong>無ければ立たない（終了コード 2）。</p>
+	<p><strong>探し始めるポートは <code>_secrets/test-server.json</code> から読む。</strong>無ければ立たない (終了コード 2)。</p>
 
 	<pre><code class="language-json">{
     "firstPort": 8000
@@ -500,7 +500,7 @@ tools\40_test\stop-test-server.cmd</code></pre>
   置き場  .\tmp\_data
   環境    test
   pid     12345
-  画面    http://localhost:&lt;テスト用のポート&gt;/?access_token=（毎回変わる）</code></pre>
+  画面    http://localhost:&lt;テスト用のポート&gt;/?access_token= (毎回変わる)</code></pre>
 
 	<p>止めると<strong>置き場ごと捨てられる</strong>。DB も印も接続情報も一緒に消える。</p>
 </section>
@@ -511,7 +511,7 @@ tools\40_test\stop-test-server.cmd</code></pre>
 
 	<h2>置き場ひとつで決まる</h2>
 
-	<p>環境変数は <code>AICHAT_DATA</code> だけ。<strong>これが既定（<code>_data</code>）でなければテスト用として動く。</strong></p>
+	<p>環境変数は <code>AICHAT_DATA</code> だけ。<strong>これが既定 (<code>_data</code>)でなければテスト用として動く。</strong></p>
 
 	<div class="tablewrap">
 	<table>
@@ -542,9 +542,9 @@ tools\40_test\stop-test-server.cmd</code></pre>
 			<tr><th class="nowrap">繋ぐ側</th><th>渡し方</th></tr>
 		</thead>
 		<tbody>
-			<tr><td class="nowrap">画面</td><td>URL のクエリ（<code>?access_token=…</code>）。受け取ったらそのタブで覚える</td></tr>
-			<tr><td class="nowrap">CLI</td><td><code>--access-token &lt;値&gt;</code>（短い形 <code>-a</code>）。接続先は <code>--port</code>（<code>-p</code>）で <code>server.json</code> の <code>port</code> を渡す</td></tr>
-			<tr><td class="nowrap">テスト</td><td><code>server.json</code> を読み、ヘッダ（<code>X-AiChat-Access-Token</code>）に載せる</td></tr>
+			<tr><td class="nowrap">画面</td><td>URL のクエリ (<code>?access_token=…</code>)。受け取ったらそのタブで覚える</td></tr>
+			<tr><td class="nowrap">CLI</td><td><code>--access-token &lt;値&gt;</code>(短い形 <code>-a</code>)。接続先は <code>--port</code>(<code>-p</code>)で <code>server.json</code> の <code>port</code> を渡す</td></tr>
+			<tr><td class="nowrap">テスト</td><td><code>server.json</code> を読み、ヘッダ (<code>X-AiChat-Access-Token</code>)に載せる</td></tr>
 			<tr><td class="nowrap">SSE・sendBeacon</td><td><strong>ヘッダを付けられないのでクエリ</strong></td></tr>
 		</tbody>
 	</table>
@@ -566,26 +566,26 @@ tools\40_test\stop-test-server.cmd</code></pre>
 			<tr><th class="nowrap">　</th><th class="nowrap">濃い側</th><th class="nowrap">明るい側</th></tr>
 		</thead>
 		<tbody>
-			<tr><td class="nowrap">本番（紺）</td><td class="nowrap"><code>#12224d</code></td><td class="nowrap"><code>#2f5fbf</code></td></tr>
-			<tr><td class="nowrap">テスト（赤茶）</td><td class="nowrap"><code>#4d2c12</code></td><td class="nowrap"><code>#c0682f</code></td></tr>
+			<tr><td class="nowrap">本番 (紺)</td><td class="nowrap"><code>#12224d</code></td><td class="nowrap"><code>#2f5fbf</code></td></tr>
+			<tr><td class="nowrap">テスト (赤茶)</td><td class="nowrap"><code>#4d2c12</code></td><td class="nowrap"><code>#c0682f</code></td></tr>
 		</tbody>
 	</table>
 	</div>
 
-	<p>色相だけを変え、彩度と明度は揃えてある。<strong>変数（<code>--navy1</code> / <code>--navy2</code>）を差し替えるだけ</strong>にしているので、これを参照している箇所がまとめて変わる。</p>
+	<p>色相だけを変え、彩度と明度は揃えてある。<strong>変数 (<code>--navy1</code> / <code>--navy2</code>)を差し替えるだけ</strong>にしているので、これを参照している箇所がまとめて変わる。</p>
 
 	<h2>テストデータ</h2>
 
 	<p>名前の決まりと後始末は<a href="../10_plan/p260830-03-テストデータ.html">テストデータの規約</a>にある。参加者は <code>test-</code>、ルームは <code>sandbox-</code> で始める。</p>
 
-	<pre><code class="language-batch">rem 接頭辞に当たるものをまとめて消す（置き場を明示する）
+	<pre><code class="language-batch">rem 接頭辞に当たるものをまとめて消す (置き場を明示する)
 tools\40_test\purge-test-data.cmd --test
 
 rem 数えるだけ
 node tools\40_test\purge-test-data.mjs --test --dry-run</code></pre>
 
 	<div class="callout callout-warning">
-		<p><strong>置き場を書き忘れると断られる。</strong><code>--test</code> か <code>--production</code> のどちらかが要る（<code>exit 2</code> で止まる）。<strong>既定は無い。</strong>どちらを相手にするかを毎回書かせることで、本番を消す操作が黙って通らないようにしている。</p>
+		<p><strong>置き場を書き忘れると断られる。</strong><code>--test</code> か <code>--production</code> のどちらかが要る (<code>exit 2</code> で止まる)。<strong>既定は無い。</strong>どちらを相手にするかを毎回書かせることで、本番を消す操作が黙って通らないようにしている。</p>
 		<p>ダブルクリックで起動したときも同じで、引数が無いので断られる。<strong>引数を渡して呼ぶ。</strong></p>
 	</div>
 </section>
@@ -618,7 +618,7 @@ node tools\40_test\purge-test-data.mjs --test --dry-run</code></pre>
 		</thead>
 		<tbody>
 			<tr><td class="nowrap"><code>fetch</code> / <code>request.get</code></td><td><code>headers: AUTH_ACCESS_TOKEN</code></td></tr>
-			<tr><td class="nowrap"><code>page.goto</code></td><td><code>APP</code> を使う（クエリ付き）。<code>BASE + '/'</code> では付かない</td></tr>
+			<tr><td class="nowrap"><code>page.goto</code></td><td><code>APP</code> を使う (クエリ付き)。<code>BASE + '/'</code> では付かない</td></tr>
 			<tr><td class="nowrap">CLI の呼び出し</td><td><code>--access-token</code></td></tr>
 		</tbody>
 	</table>
@@ -626,7 +626,7 @@ node tools\40_test\purge-test-data.mjs --test --dry-run</code></pre>
 
 	<h2>テストデータが残る</h2>
 
-	<p><strong>離脱は猶予（既定 5 秒）のあとに積まれる。</strong>後始末がそれより早いと、消した後から「離脱しました」だけが入る。</p>
+	<p><strong>離脱は猶予 (既定 5 秒)のあとに積まれる。</strong>後始末がそれより早いと、消した後から「離脱しました」だけが入る。</p>
 
 	<p>テスト側は猶予を待ってから消しているが、異常終了すると取りこぼす。<strong>そのときは <code>purge-test-data.cmd --test</code> を手で叩く。</strong>止めれば置き場ごと消えるので、ふだんは気にしなくてよい。</p>
 

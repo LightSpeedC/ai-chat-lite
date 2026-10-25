@@ -9,7 +9,7 @@ import { prepareTestDb } from './helpers/prepare-db.mjs';
 const here = dirname(fileURLToPath(import.meta.url));
 const TEST_DATA = join(here, '..', 'tmp', '_data', 'unit-presence');
 
-// 版を当ててから store を読み込む（store.mjs は形を作らない）
+// 版を当ててから store を読み込む (store.mjs は形を作らない)
 await prepareTestDb(TEST_DATA);
 
 const store = await import('../src/server/store.mjs');
@@ -62,7 +62,7 @@ test('居ない人は offline 扱い', () => {
 });
 
 test('猶予の境界は DB と同じ書式で返る', () => {
-	// Date のパース（ローカルタイムゾーン依存）を挟まず、文字列同士で比較するため
+	// Date のパース (ローカルタイムゾーン依存)を挟まず、文字列同士で比較するため
 	assert.match(presence.graceThreshold(), /^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/);
 });
 

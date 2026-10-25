@@ -1,6 +1,6 @@
 //! コマンドラインの読み取り。
 //!
-//! node 版（`chat.mjs` の `option` ・ `hasFlag` ・ `positionals`）と同じ読み方をする。
+//! node 版 (`chat.mjs` の `option` ・ `hasFlag` ・ `positionals`)と同じ読み方をする。
 //! 定義そのものは持たない。`--名前` と `-短い名前` を渡してもらい、探すだけにする。
 //! そうすると、定義を読み込まずに単体で確かめられる。
 //!
@@ -17,7 +17,7 @@ pub struct Args {
 }
 
 impl Args {
-	/// `std::env::args()` の結果（プログラム名を含む）から作る
+	/// `std::env::args()` の結果 (プログラム名を含む)から作る
 	pub fn from_argv<I: IntoIterator<Item = String>>(argv: I) -> Args {
 		let words: Vec<String> = argv.into_iter().skip(1).collect();
 		let command = words.first().cloned();
@@ -50,7 +50,7 @@ impl Args {
 
 	/// 値を取らないオプションが渡されたか。
 	///
-	/// コマンドの位置に置かれることがある（`aichat -h`）ので、`rest` ではなく全体を見る。
+	/// コマンドの位置に置かれることがある (`aichat -h`)ので、`rest` ではなく全体を見る。
 	pub fn has_flag(&self, long: &str, short: Option<&str>) -> bool {
 		let long_flag = format!("--{}", long);
 		if self.words.iter().any(|w| *w == long_flag) {
@@ -67,7 +67,7 @@ impl Args {
 
 	/// オプションでない語を、渡された順に返す。
 	///
-	/// `flags` には値を取らないオプション（`--help` ・ `-h` など）を、
+	/// `flags` には値を取らないオプション (`--help` ・ `-h` など)を、
 	/// 先頭の記号を含めて渡す。**旗は次の語を飛ばさない。**飛ばすと
 	/// `archive room sandbox` の `sandbox` が消える。
 	pub fn positionals(&self, flags: &[String]) -> Vec<&str> {
@@ -89,7 +89,7 @@ impl Args {
 		out
 	}
 
-	/// 渡された語の全体（廃止したオプションを探すのに使う）
+	/// 渡された語の全体 (廃止したオプションを探すのに使う)
 	pub fn words(&self) -> &[String] {
 		&self.words
 	}
@@ -106,7 +106,7 @@ mod tests {
 		Args::from_argv(all)
 	}
 
-	/// 値を取らないオプションの一覧（テスト用の見本）
+	/// 値を取らないオプションの一覧 (テスト用の見本)
 	fn flags() -> Vec<String> {
 		["--help", "-h", "--with-joins", "--with-messages"]
 			.iter()

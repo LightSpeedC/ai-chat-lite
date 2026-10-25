@@ -327,15 +327,15 @@ footer {
 	<text x="24" y="182" font-size="12" fill="#fff">人が画面で取り違える</text>
 
 	<rect x="272" y="36" width="230" height="26" rx="5" fill="url(#g-p31-1c)"/>
-	<text x="284" y="54" font-size="12" fill="#fff">既定がテスト DB（2 章）</text>
+	<text x="284" y="54" font-size="12" fill="#fff">既定がテスト DB (2 章)</text>
 	<rect x="272" y="68" width="230" height="26" rx="5" fill="url(#g-p31-1c)"/>
-	<text x="284" y="86" font-size="12" fill="#fff">繋がずに止まる（2 章）</text>
+	<text x="284" y="86" font-size="12" fill="#fff">繋がずに止まる (2 章)</text>
 	<rect x="272" y="100" width="230" height="26" rx="5" fill="url(#g-p31-1c)"/>
-	<text x="284" y="118" font-size="12" fill="#fff">環境を確かめる（3 章）</text>
+	<text x="284" y="118" font-size="12" fill="#fff">環境を確かめる (3 章)</text>
 	<rect x="272" y="132" width="230" height="26" rx="5" fill="url(#g-p31-1c)"/>
-	<text x="284" y="150" font-size="12" fill="#fff">トークンを要る（5 章）</text>
+	<text x="284" y="150" font-size="12" fill="#fff">トークンを要る (5 章)</text>
 	<rect x="272" y="164" width="230" height="26" rx="5" fill="url(#g-p31-1c)"/>
-	<text x="284" y="182" font-size="12" fill="#fff">色が違う（4 章）</text>
+	<text x="284" y="182" font-size="12" fill="#fff">色が違う (4 章)</text>
 
 	<g stroke="#97a1ae" stroke-width="1.5" fill="none">
 		<path d="M212 49 L268 49"/><path d="M212 81 L268 81"/><path d="M212 113 L268 113"/>
@@ -346,7 +346,7 @@ footer {
 
 	<rect x="562" y="80" width="146" height="66" rx="6" fill="url(#g-p31-1b)"/>
 	<text x="584" y="106" font-size="13" fill="#fff">本番に届かない</text>
-	<text x="596" y="128" font-size="11" fill="#fff">（手前で止まる）</text>
+	<text x="596" y="128" font-size="11" fill="#fff">(手前で止まる)</text>
 </svg>
 <figcaption>経路ごとに別の層で止める。どれか 1 つが抜けても、他の層が残る</figcaption>
 </div>
@@ -366,7 +366,7 @@ footer {
 <tr><th class="nowrap">もの</th><th>何か</th></tr>
 </thead>
 <tbody>
-<tr><td class="nowrap"><code>chat.db</code></td><td>DB 本体（<code>-wal</code> <code>-shm</code> を含めて 3 ファイル）</td></tr>
+<tr><td class="nowrap"><code>chat.db</code></td><td>DB 本体 (<code>-wal</code> <code>-shm</code> を含めて 3 ファイル)</td></tr>
 <tr><td class="nowrap"><code>BACKUP-RUNNING</code></td><td>バックアップ中の印</td></tr>
 <tr><td class="nowrap"><code>MAINTENANCE</code></td><td>メンテナンス中の印</td></tr>
 </tbody>
@@ -422,7 +422,7 @@ export const DB_PATH  = join(DATA_DIR, 'chat.db');</code></pre>
 
 <h2>単体テストも同じ下に置く</h2>
 
-<p>単体テストは <code>tmp/</code> の直下に DB を散らしている（<code>test-store.db</code> <code>test-server.db</code> …）。これも <code>tmp/_data/</code> の下へ寄せる。</p>
+<p>単体テストは <code>tmp/</code> の直下に DB を散らしている (<code>test-store.db</code> <code>test-server.db</code> …)。これも <code>tmp/_data/</code> の下へ寄せる。</p>
 
 <pre><code class="language-javascript">// いま
 process.env.AICHAT_DB = join(here, '..', 'tmp', 'test-store.db');
@@ -486,7 +486,7 @@ throw new Error('テスト用サーバーが立っていません。run-ui-tests
 <pre><code class="language-javascript">export const IS_TEST = DATA_DIR !== join(ROOT, '_data');</code></pre>
 
 <div class="callout callout-important">
-<p><strong>既定が本番になるのが要点。</strong>何も指定しなければ本番。公開側（<code>chat.mjs</code>・サーバー本体）はいままでどおり動く。テスト用サーバーを立てるときだけ <code>AICHAT_DATA</code> を渡す。</p>
+<p><strong>既定が本番になるのが要点。</strong>何も指定しなければ本番。公開側 (<code>chat.mjs</code>・サーバー本体)はいままでどおり動く。テスト用サーバーを立てるときだけ <code>AICHAT_DATA</code> を渡す。</p>
 </div>
 
 <h2><code>/api/version</code> に含める</h2>
@@ -521,8 +521,8 @@ throw new Error('テスト用サーバーが立っていません。run-ui-tests
 <tr><th class="nowrap">　</th><th class="nowrap">濃い側</th><th class="nowrap">明るい側</th><th>色相</th></tr>
 </thead>
 <tbody>
-<tr><td class="nowrap">本番（紺）</td><td class="nowrap"><code>#12224d</code></td><td class="nowrap"><code>#2f5fbf</code></td><td>226° / 220°</td></tr>
-<tr><td class="nowrap"><strong>テスト（赤茶）</strong></td><td class="nowrap"><code>#4d2c12</code></td><td class="nowrap"><code>#c0682f</code></td><td>26° / 24°</td></tr>
+<tr><td class="nowrap">本番 (紺)</td><td class="nowrap"><code>#12224d</code></td><td class="nowrap"><code>#2f5fbf</code></td><td>226° / 220°</td></tr>
+<tr><td class="nowrap"><strong>テスト (赤茶)</strong></td><td class="nowrap"><code>#4d2c12</code></td><td class="nowrap"><code>#c0682f</code></td><td>26° / 24°</td></tr>
 </tbody>
 </table>
 </div>
@@ -558,7 +558,7 @@ throw new Error('テスト用サーバーが立っていません。run-ui-tests
 <pre><code class="language-json">{
 	"port": 8000,
 	"env": "test",
-	"token": "（毎回変わる）",
+	"token": "(毎回変わる)",
 	"data": "...\\tmp\\_data",
 	"pid": 0
 }</code></pre>
@@ -573,8 +573,8 @@ throw new Error('テスト用サーバーが立っていません。run-ui-tests
 <tr><th class="nowrap">置き場</th><th>トークン</th><th>誰が繋ぐか</th></tr>
 </thead>
 <tbody>
-<tr><td class="nowrap"><code>_data/</code>（本番）</td><td><strong>要らない</strong></td><td>他プロジェクト・人</td></tr>
-<tr><td class="nowrap"><code>tmp/_data/</code>（テスト）</td><td><strong>要る</strong></td><td>このプロジェクトのテストだけ</td></tr>
+<tr><td class="nowrap"><code>_data/</code>(本番)</td><td><strong>要らない</strong></td><td>他プロジェクト・人</td></tr>
+<tr><td class="nowrap"><code>tmp/_data/</code>(テスト)</td><td><strong>要る</strong></td><td>このプロジェクトのテストだけ</td></tr>
 </tbody>
 </table>
 </div>
@@ -646,7 +646,7 @@ npm run test:projects -- $target
 <tr><td class="nowrap"><code>tools/40_test/start-test-server.mjs</code></td><td><code>AICHAT_DATA</code>、トークン生成、<code>server.json</code></td></tr>
 <tr><td class="nowrap"><code>tools/40_test/run-ui-tests.ps1</code></td><td><code>AICHAT_DATA</code> を渡す</td></tr>
 
-<tr><td class="nowrap">テスト</td><td class="nowrap"><code>tests/*.test.mjs</code>（7 本）</td><td><code>AICHAT_DB</code> → <code>AICHAT_DATA</code>。テストごとに別フォルダ</td></tr>
+<tr><td class="nowrap">テスト</td><td class="nowrap"><code>tests/*.test.mjs</code>(7 本)</td><td><code>AICHAT_DB</code> → <code>AICHAT_DATA</code>。テストごとに別フォルダ</td></tr>
 <tr><td class="nowrap">画面テスト</td><td class="nowrap"><code>test-data.ts</code></td><td><code>server.json</code> を読む。投稿前に <code>env</code> を確かめる</td></tr>
 <tr><td class="nowrap">文書</td><td class="nowrap"><code>USAGE-FOR-PROJECTS</code> ほか</td><td>読み手で書き分け</td></tr>
 </tbody>
@@ -689,7 +689,7 @@ npm run test:projects -- $target
 <li>テスト用サーバーを立てずにテストを走らせると、<strong>投稿せずに止まる</strong></li>
 <li><code>AICHAT_URL</code> を本番に向けてテストを走らせても、<strong>投稿せずに止まる</strong></li>
 <li>トークンなしでテスト用サーバーを叩くと弾かれる</li>
-<li>本番はトークンなしで従来どおり動く（他プロジェクトに影響がない）</li>
+<li>本番はトークンなしで従来どおり動く (他プロジェクトに影響がない)</li>
 <li>画面を開くと、本番は紺・テストは赤茶になる</li>
 </ul>
 
@@ -701,7 +701,7 @@ npm run test:projects -- $target
 
 <h3>トークンの渡し方</h3>
 
-<p>ヘッダか、クエリか。<strong>ヘッダの方が記録に残りにくい</strong>が、SSE（<code>EventSource</code>）はヘッダを付けられない。画面からも繋ぐなら、クエリを併用することになる。実装のときに決める。</p>
+<p>ヘッダか、クエリか。<strong>ヘッダの方が記録に残りにくい</strong>が、SSE (<code>EventSource</code>)はヘッダを付けられない。画面からも繋ぐなら、クエリを併用することになる。実装のときに決める。</p>
 
 <h3>本番サーバーがテスト用の名前を拒むか</h3>
 

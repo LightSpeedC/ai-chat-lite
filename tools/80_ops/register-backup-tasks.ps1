@@ -19,7 +19,7 @@
 	時刻を 1 分ずつずらしてある。同時刻にすると 4 つが同じ DB を同時に読み、
 	ファイル名の秒まで一致して衝突する。
 
-	サービス（node-ai-chat-lite）とは別に動く。バックアップは読み取り専用の
+	サービス (node-ai-chat-lite)とは別に動く。バックアップは読み取り専用の
 	接続で行うため、サーバーが動いていても構わない。
 
 	タスクは \ai-chat-lite\ フォルダに作る。ルート直下には置かない。
@@ -61,7 +61,7 @@ $prefix = 'ai-chat-lite バックアップ'
 
 	名前では 00:00 ではなく 00時00分 と書く。タスクは
 	C:\Windows\System32\Tasks\ の下にタスク名と同じ名前のファイルとして
-	保存されるため、ファイル名に使えない文字（: \ / * ? " < > |）は
+	保存されるため、ファイル名に使えない文字 (: \ / * ? " < > |)は
 	名前にできない。: を入れると「パラメーターが間違っています」で
 	落ちるが、エラーからは原因が分からない。
 #>
@@ -109,7 +109,7 @@ if ($Unregister) {
 		} catch {
 			# 中身が残っている、もともと無い、など。どちらも困らない
 			Write-Host ''
-			Write-Host ('フォルダ {0} は残しました（{1}）' -f $TaskFolder, ($_.Exception.Message -replace "`r?`n", ' ').Trim())
+			Write-Host ('フォルダ {0} は残しました ({1})' -f $TaskFolder, ($_.Exception.Message -replace "`r?`n", ' ').Trim())
 		}
 	}
 	return
@@ -126,8 +126,8 @@ $settings = New-ScheduledTaskSettingsSet `
 	毎月 1 日のトリガだけは XML で作る。
 
 	New-ScheduledTaskTrigger に月次の指定が無く、CIM のクラスを組み立てても
-	「パラメーターが間違っています」で受け付けられなかった（プロパティ名を
-	MonthOfYear に直しても同じ）。XML なら通る。
+	「パラメーターが間違っています」で受け付けられなかった (プロパティ名を
+	MonthOfYear に直しても同じ)。XML なら通る。
 #>
 $monthlyXml = @'
 <?xml version="1.0" encoding="UTF-16"?>
@@ -166,7 +166,7 @@ $monthlyXml = @'
 
 foreach ($p in $plans) {
 	$argLine = '-NoProfile -ExecutionPolicy Bypass -File "{0}" -Kind {1}' -f $script, $p.Kind
-	$desc    = 'ai-chat-lite の DB を _backup\{0} へ保存する（{1}）' -f $p.Kind, $p.Desc
+	$desc    = 'ai-chat-lite の DB を _backup\{0} へ保存する ({1})' -f $p.Kind, $p.Desc
 
 	if (Get-ScheduledTask -TaskName $p.Name -TaskPath $TaskFolder -ErrorAction SilentlyContinue) {
 		Unregister-ScheduledTask -TaskName $p.Name -TaskPath $TaskFolder -Confirm:$false

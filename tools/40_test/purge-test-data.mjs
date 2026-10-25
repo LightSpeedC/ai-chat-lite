@@ -4,15 +4,15 @@
  * テストは実際に動いているサーバーへ投稿するため、走らせるたびに参加者とルームが
  * 増える。名前で見分けられるようにしておき、終わったらまとめて消す。
  *
- *   connector_id が test-  で始まるもの … connectors / cursors / messages（発言者・宛先） / archives
- *   room_id が sandbox- または test- で始まるもの … messages / cursors / archives（i260907-04）
+ *   connector_id が test-  で始まるもの … connectors / cursors / messages (発言者・宛先) / archives
+ *   room_id が sandbox- または test- で始まるもの … messages / cursors / archives (i260907-04)
  *
- * 片付け（archive）の記録と、それを指す知らせも消す。以前は 3 テーブルしか
- * 見ておらず、片付けた記録だけが本番に残り続けた（i260912-01）。
+ * 片付け (archive)の記録と、それを指す知らせも消す。以前は 3 テーブルしか
+ * 見ておらず、片付けた記録だけが本番に残り続けた (i260912-01)。
  *
  * public のように残したいルームへ投稿したものも、発言者が test- なら消える。
  *
- * 使い方（--help でも出る）:
+ * 使い方 (--help でも出る):
  *   node tools/40_test/purge-test-data.mjs --test         tmp/_data を相手にする
  *   node tools/40_test/purge-test-data.mjs --production   本番を相手にする
  *   node tools/40_test/purge-test-data.mjs --test --dry-run     数えるだけ
@@ -23,14 +23,14 @@
  * どちらとしても照合する。
  *
  * 【置き場は必ず明示する】
- *   --test か --production のどちらかが要る。付け忘れは断る（i260906-02）。
+ *   --test か --production のどちらかが要る。付け忘れは断る (i260906-02)。
  *
  *   以前は何も指定しなければ tmp/_data を相手にしていた。そのため本番を掃除する
  *   手順で --production が抜けていたとき、手順どおり実行しても本番の test- は
  *   1 件も消えず、しかも「消しました」と出た。読み手は消えたと思い込む。
  *   既定を本番にするのは論外なので、明示を求める形にした。
  *
- *   AICHAT_DATA が立っていればそれを使う（run-ui-tests から渡される）。
+ *   AICHAT_DATA が立っていればそれを使う (run-ui-tests から渡される)。
  *   立てた側が置き場を決めているので、これも「明示された」とみなす。
  *   本番のパスはこのファイルに書かない。--production から組み立てる。
  */
@@ -46,11 +46,11 @@ export const ROOM_PREFIX = 'sandbox-';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 const OPTIONS = [
-	['--test', 'tmp/_data を相手にする（AICHAT_DATA が立っていればそちら）'],
+	['--test', 'tmp/_data を相手にする (AICHAT_DATA が立っていればそちら)'],
 	['--production', '本番を相手にする'],
 	['--dry-run', '数えるだけ。消さない'],
 	['--names a,b,c', 'その名前だけ消す。connector_id と room_id のどちらとしても照合する'],
-	['--help', 'この使い方を出す（短い形 -h）'],
+	['--help', 'この使い方を出す (短い形 -h)'],
 ];
 
 /*
@@ -98,15 +98,15 @@ const toProduction = args.includes('--production');
 const toTest = args.includes('--test');
 
 /*
- * 置き場を明示しなければ断る（i260906-02）。
+ * 置き場を明示しなければ断る (i260906-02)。
  *
  * 以前は付け忘れると黙って tmp/_data を見た。本番を掃除する手順で
  * --production が抜けていたとき、手順どおり実行しても本番の test- は 1 件も
- * 消えず、しかも「消しました」と出た。数えるだけ（--dry-run）でも同じで、
+ * 消えず、しかも「消しました」と出た。数えるだけ (--dry-run)でも同じで、
  * 「0 件だった」を本番の状態として読み違える。
  *
  * AICHAT_DATA が立っているときは、立てた側が置き場を決めているので明示と
- * みなす（run-ui-tests から渡される）。
+ * みなす (run-ui-tests から渡される)。
  */
 if (toProduction && toTest) {
 	console.error('--test と --production は、どちらか一方だけを渡してください。');
@@ -127,7 +127,7 @@ if (!toProduction && !toTest && !process.env.AICHAT_DATA) {
  * 相手にする置き場。
  *
  * --production なら本番。それ以外は AICHAT_DATA があればそちら、
- * 無ければ tmp/_data（--test を渡した場合だけここに来る）。
+ * 無ければ tmp/_data (--test を渡した場合だけここに来る)。
  */
 const dataDir = toProduction
 	? join(root, '_data')
@@ -150,11 +150,11 @@ const names = namesValue
  * --names を渡したのに名前が取れないときは断る。
  *
  * 空のまま進めると names.length === 0 が「接頭辞で全部」と同じ意味になり、
- * 絞ったつもりで全部消える。値の付け忘れ（--names だけ）・空文字・
+ * 絞ったつもりで全部消える。値の付け忘れ (--names だけ)・空文字・
  * カンマだけ、のどれもここで止める。
  */
 if (wantsNames && names.length === 0) {
-	console.error('--names には消す名前を渡してください（カンマ区切り）。');
+	console.error('--names には消す名前を渡してください (カンマ区切り)。');
 	console.error('値を付けずに実行すると、接頭辞に当たるものすべてが対象になります。');
 	process.exit(2);
 }
@@ -181,9 +181,9 @@ db.exec('PRAGMA secure_delete = ON');
  * 本番に入り込んだ test- の参加者を archive で片付けると、archives に
  * 「何を片付けたか」の行が残る。以前はこの道具が 3 テーブルしか見なかった
  * ため、その行だけが残り続けた。archives の説明は aichat archives の一覧に
- * 出るので、テストの痕跡が読める状態になる（実際に 5 件が残っていた）。
+ * 出るので、テストの痕跡が読める状態になる (実際に 5 件が残っていた)。
  *
- * 片付けの知らせ（msg_kind = archive）も一緒に消す。差出人は片付けを実行した
+ * 片付けの知らせ (msg_kind = archive)も一緒に消す。差出人は片付けを実行した
  * 側なので from_connector_id では当たらないが、消す archives を指している
  * ものは残しても意味がない。番号の指す先が無くなり、画面には押しても何も
  * 起きない「戻す」ボタンだけが出る。
@@ -194,7 +194,7 @@ const build = () => {
 	if (names.length === 0) {
 		const u = `${CONNECTOR_PREFIX}%`;
 		const r = `${ROOM_PREFIX}%`;
-		// ルームの目印は sandbox- と test- の両方（i260907-04。本番が断る接頭辞に揃える）
+		// ルームの目印は sandbox- と test- の両方 (i260907-04。本番が断る接頭辞に揃える)
 		const arcCond = 'archive_id LIKE ? OR archive_id LIKE ? OR archived_connector_id LIKE ?';
 		return {
 			messages: [
@@ -236,17 +236,17 @@ const total = found.messages + found.cursors + found.connectors + found.archives
 const scope = names.length === 0 ? '接頭辞に当たる全部' : `指定された ${names.length} 件の名前`;
 
 if (total === 0) {
-	console.log(`テストデータはありません（${scope}）。`);
+	console.log(`テストデータはありません (${scope})。`);
 	db.close();
 	process.exit(0);
 }
 
 console.log(
-	`テストデータ（${scope}）: messages ${found.messages} / cursors ${found.cursors} / connectors ${found.connectors} / archives ${found.archives}`
+	`テストデータ (${scope}): messages ${found.messages} / cursors ${found.cursors} / connectors ${found.connectors} / archives ${found.archives}`
 );
 
 if (dryRun) {
-	console.log('（--dry-run のため消していません）');
+	console.log('(--dry-run のため消していません)');
 	db.close();
 	process.exit(0);
 }
@@ -268,7 +268,7 @@ db.exec('COMMIT');
  * 領域を詰めるのは、接頭辞でまとめて消したときだけにする。
  *
  * VACUUM は DB の排他ロックを取る。テストが並行して走っている最中に取ると、
- * 他のテストの読み書きが待たされて落ちる（実際に chat-ui が落ちた）。
+ * 他のテストの読み書きが待たされて落ちる (実際に chat-ui が落ちた)。
  * 中身は secure_delete で潰れているので、詰めるのは後回しでよい。
  */
 if (names.length === 0) {

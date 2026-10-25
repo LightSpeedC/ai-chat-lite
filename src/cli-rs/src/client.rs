@@ -15,7 +15,7 @@ use crate::json::{self, Json};
 pub struct Base {
 	pub host: String,
 	pub port: u16,
-	/// 案内に出すときの形（`http://localhost:8787`）
+	/// 案内に出すときの形 (`http://localhost:8787`)
 	pub display: String,
 }
 
@@ -24,7 +24,7 @@ pub struct Base {
 pub enum CallError {
 	/// 繋がらない・メンテナンスのまま諦めた。終了コードは定義の `exit_unreachable`
 	Unreachable { reason: String },
-	/// サーバーが断った（4xx ・ 5xx）。終了コードは 1
+	/// サーバーが断った (4xx ・ 5xx)。終了コードは 1
 	Rejected { status: u16, error: String, detail: Option<String> },
 }
 
@@ -44,7 +44,7 @@ pub fn resolve_base(url: Option<&str>, port: Option<&str>) -> Result<Option<Base
 			.strip_prefix("http://")
 			.ok_or_else(|| format!("--url は http:// から書いてください: {}", raw))?;
 
-		// ホストとポートに分ける。パスは持たない（API のパスは呼ぶ側が足す）
+		// ホストとポートに分ける。パスは持たない (API のパスは呼ぶ側が足す)
 		let (host, port_text) = match rest.split_once(':') {
 			Some((h, p)) => (h, Some(p)),
 			None => (rest, None),
@@ -88,7 +88,7 @@ pub enum Verdict {
 
 /// 応答の状態から、繋ぎ直すかどうかを決める。
 ///
-/// **メンテナンス中（503）は落ちているのではないので、同じように粘る。**
+/// **メンテナンス中 (503)は落ちているのではないので、同じように粘る。**
 /// 繋がらないときと同じ扱いにしないと、入れ替えのたびに待受けが落ちる。
 pub fn verdict_of(status: u16) -> Verdict {
 	match status {
@@ -111,7 +111,7 @@ impl Client {
 	/// 繋ぎ直しを何秒おきに何回するかを、人が読む形にする
 	pub fn describe_retry(&self) -> String {
 		let total = self.retry_times * self.retry_interval_sec;
-		format!("{} 秒おきに {} 回（最大 {} 秒）", self.retry_interval_sec, self.retry_times, total)
+		format!("{} 秒おきに {} 回 (最大 {} 秒)", self.retry_interval_sec, self.retry_times, total)
 	}
 
 	/// API を 1 回叩く。繋ぎ直しはしない
@@ -148,7 +148,7 @@ impl Client {
 			let res = match self.call_once(method, path, body, timeout) {
 				Ok(res) => res,
 				Err(err) => {
-					last_reason = format!("繋がりません（{}）", err.kind());
+					last_reason = format!("繋がりません ({})", err.kind());
 					if !announced && self.retry_times > 0 {
 						eprintln!("サーバーに繋がりません: {}", self.base.display);
 						eprintln!("  {}繋ぎ直します", self.describe_retry());
@@ -168,7 +168,7 @@ impl Client {
 						.and_then(|v| v.as_str())
 						.unwrap_or("理由の記載なし")
 						.to_string();
-					last_reason = format!("メンテナンス中です（{}）", detail);
+					last_reason = format!("メンテナンス中です ({})", detail);
 					if !announced && self.retry_times > 0 {
 						eprintln!("メンテナンス中です: {}", detail);
 						eprintln!("  {}繋ぎ直します", self.describe_retry());

@@ -51,7 +51,7 @@ export function listVersions(dir = MIGRATIONS_DIR) {
 	found.sort((a, b) => a.seq - b.seq);
 	found.forEach((v, i) => {
 		if (v.seq !== i + 1) {
-			throw new Error(`版の番号が連続していません: ${v.name}（${i + 1} が来るはずでした）`);
+			throw new Error(`版の番号が連続していません: ${v.name} (${i + 1} が来るはずでした)`);
 		}
 	});
 	return found;
@@ -70,7 +70,7 @@ function fingerprint(text) {
  * すでに何かテーブルがあるか。
  *
  * versions を持たない DB が空とは限らない。改名の前から動いている DB は
- * 「版 1 の形」なので、ver_000001 を当ててはいけない（すでにその形である）。
+ * 「版 1 の形」なので、ver_000001 を当ててはいけない (すでにその形である)。
  */
 function hasAnyTable(db) {
 	const row = db
@@ -82,14 +82,14 @@ function hasAnyTable(db) {
 /**
  * 当てる前の控えを取る。
  *
- * 下り（元に戻す SQL）は持たない。SQLite は列の削除もできず、下りを正しく
+ * 下り (元に戻す SQL)は持たない。SQLite は列の削除もできず、下りを正しく
  * 書き続けるのは重い。戻すならここから戻す。
  *
  * VACUUM INTO は稼働中でも 24 ミリ秒で終わることを実測している。chat.db だけを
  * 複製すると -wal 側の分が落ちるが、VACUUM INTO なら 1 つに揃う。
  *
- * 控えは当てる DB と同じフォルダに書く。設定の置き場（DATA_DIR）に書いていた頃、
- * テストの使い捨ての DB の控えが本番の _data に溜まった（i261015-01）。
+ * 控えは当てる DB と同じフォルダに書く。設定の置き場 (DATA_DIR)に書いていた頃、
+ * テストの使い捨ての DB の控えが本番の _data に溜まった (i261015-01)。
  */
 function takeBackup(db, dbPath, fromSeq) {
 	const at = nowJst().replace(/[^0-9]/g, '').slice(0, 14);
@@ -146,7 +146,7 @@ export function migrate({ dbPath = DB_PATH, dir = MIGRATIONS_DIR } = {}) {
 			db.prepare('INSERT INTO versions (version_seq, applied_at, script, sql_sha256) VALUES (?, ?, ?, ?)').run(
 				first.seq,
 				nowJst(),
-				`${first.name}（当てずに記録）`,
+				`${first.name} (当てずに記録)`,
 				fingerprint(readSql(first))
 			);
 			log.warn(`すでに使われている DB のため、${first.name} は当てずに記録しました`);
@@ -186,7 +186,7 @@ export function migrate({ dbPath = DB_PATH, dir = MIGRATIONS_DIR } = {}) {
 			const sql = readSql(v);
 			/*
 			 * 1 つの版を 1 つのトランザクションで当てる。失敗したら巻き戻す。
-			 * SQLite は DDL もトランザクションに入る（PRAGMA と VACUUM は入らない）。
+			 * SQLite は DDL もトランザクションに入る (PRAGMA と VACUUM は入らない)。
 			 */
 			db.exec('BEGIN IMMEDIATE');
 			try {
@@ -202,7 +202,7 @@ export function migrate({ dbPath = DB_PATH, dir = MIGRATIONS_DIR } = {}) {
 				db.exec('ROLLBACK');
 				throw new Error(`${v.name} を当てられませんでした: ${err?.message ?? err}`);
 			}
-			log.info(`  ${v.name} を当てました（${v.files.join(', ')}）`);
+			log.info(`  ${v.name} を当てました (${v.files.join(', ')})`);
 			applied.push(v.name);
 		}
 

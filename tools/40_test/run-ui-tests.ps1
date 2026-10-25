@@ -1,7 +1,7 @@
 ﻿<#
 	画面のテストを通しで回す。
 
-	  1. テスト用サーバーを立てる（本番とは別のポート・別の DB）
+	  1. テスト用サーバーを立てる (本番とは別のポート・別の DB)
 	  2. Playwright を回す
 	  3. サーバーを止めて DB を捨てる
 
@@ -10,7 +10,7 @@
 
 	  run-ui-tests.ps1                  すべて
 	  run-ui-tests.ps1 chat-ui          名前で絞る
-	  run-ui-tests.ps1 -KeepServer      終わってもサーバーを残す（続けて何度も回すとき）
+	  run-ui-tests.ps1 -KeepServer      終わってもサーバーを残す (続けて何度も回すとき)
 #>
 param(
 	# spec の名前の一部。省略するとすべて
@@ -31,7 +31,7 @@ $starter = Join-Path $PSScriptRoot 'start-test-server.mjs'
 
 <#
 	テストの置き場。これ 1 つで、DB も印も接続情報も決まる。
-	既定でなければテスト用として動く（config.mjs の IS_TEST）。
+	既定でなければテスト用として動く (config.mjs の IS_TEST)。
 #>
 $env:AICHAT_DATA = Join-Path $root 'tmp\_data'
 
@@ -75,7 +75,7 @@ try {
 
 	if ($KeepServer) {
 		Write-Host ''
-		Write-Host '--- サーバーは残しました（-KeepServer）---'
+		Write-Host '--- サーバーは残しました (-KeepServer)---'
 	} else {
 		Write-Host ''
 		Write-Host '--- 後始末 ---'
@@ -87,7 +87,7 @@ Write-Host ''
 if ($code -eq 0) {
 	Write-Host 'すべて通りました'
 } else {
-	Write-Host "失敗したテストがあります（終了コード $code）"
+	Write-Host "失敗したテストがあります (終了コード $code)"
 }
 
 exit $code

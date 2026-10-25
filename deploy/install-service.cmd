@@ -2,7 +2,7 @@
 setlocal
 rem ai-chat-lite をサービスとして登録して開始する。管理者として実行すること。
 rem X: のような subst の仮想ドライブから実行しないこと。サービスから見えず、登録先に記録されると起動に失敗する。
-rem 引数に nopause があれば pause しない（ガードの確認で、入力待ちで固まらないようにするため）。
+rem 引数に nopause があれば pause しない (ガードの確認で、入力待ちで固まらないようにするため)。
 rem 条件を満たさなければ、WinSW を呼ぶ前に終了コード 1 で止まる。
 
 set "PAUSE_ON=1"
@@ -22,7 +22,7 @@ for %%F in (node-ai-chat-lite-winsw.exe node-ai-chat-lite-winsw.xml node-ai-chat
 	)
 )
 
-rem 3. すでに登録されていない（古い登録先のまま入れ直すのを防ぐ）
+rem 3. すでに登録されていない (古い登録先のまま入れ直すのを防ぐ)
 sc query node-ai-chat-lite >nul 2>&1
 if not errorlevel 1 (
 	echo すでに登録されています。先に uninstall-service.cmd を実行してください。

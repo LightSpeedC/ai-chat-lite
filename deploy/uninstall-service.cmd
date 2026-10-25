@@ -1,8 +1,8 @@
 @echo off
 setlocal
 rem ai-chat-lite のサービスを停止して登録を解除する。管理者として実行すること。
-rem DB（_data）とログ（logs）は残る。
-rem 引数に nopause があれば pause しない（ガードの確認で、入力待ちで固まらないようにするため）。
+rem DB (_data)とログ (logs)は残る。
+rem 引数に nopause があれば pause しない (ガードの確認で、入力待ちで固まらないようにするため)。
 rem 条件を満たさなければ、WinSW を呼ぶ前に終了コード 1 で止まる。
 
 set "PAUSE_ON=1"

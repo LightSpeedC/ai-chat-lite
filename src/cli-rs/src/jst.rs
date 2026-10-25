@@ -1,4 +1,4 @@
-//! JST（日本標準時）の文字列を組み立てる。
+//! JST (日本標準時)の文字列を組み立てる。
 //!
 //! 書式は `yyyy/mm/dd HH:mm:ss.fff`。サーバーの `sent_at` と同じスラッシュ区切りで、
 //! node 版の `nowJst()` ・ C# 版の `JstTime` と 1 文字ずつ揃える。
@@ -6,7 +6,7 @@
 //! **OS のタイムゾーン設定を見ない。**UTC に 9 時間足すだけにする。見に行くと、
 //! 走らせた機械の設定で値が変わり、同じ発言が別の時刻に見える。
 //!
-//! 暦の計算は自前で持つ（外部クレートを使わない方針のため）。
+//! 暦の計算は自前で持つ (外部クレートを使わない方針のため)。
 
 const MS_PER_SEC: i64 = 1000;
 const MS_PER_MIN: i64 = 60 * MS_PER_SEC;
@@ -21,7 +21,7 @@ pub fn now_jst() -> String {
 	from_epoch_ms(now_epoch_ms() + JST_OFFSET_MS)
 }
 
-/// 指定ミリ秒前の JST を返す（`recent --since-day` ・ `--since-hour` 用）
+/// 指定ミリ秒前の JST を返す (`recent --since-day` ・ `--since-hour` 用)
 pub fn before(ms: i64) -> String {
 	from_epoch_ms(now_epoch_ms() + JST_OFFSET_MS - ms)
 }
@@ -105,7 +105,7 @@ fn now_epoch_ms() -> i64 {
  * 暦の計算。
  *
  * 3 月を年の初めと見なすと、閏日が年の末尾に来て場合分けが消える。
- * 400 年（146097 日）を 1 まとまりとして数え、その中の位置から年月日を割り出す。
+ * 400 年 (146097 日)を 1 まとまりとして数え、その中の位置から年月日を割り出す。
  */
 
 /// 1970-01-01 からの日数を (年, 月, 日) に直す

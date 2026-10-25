@@ -11,7 +11,7 @@
 
 /* ===================================================================
    ai-chat-lite 共通スタイル
-   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   章ごとのアクセント色 (.ch01〜)は各 HTML 側で定義する
    =================================================================== */
 
 :root {
@@ -334,7 +334,7 @@ pre code {
 }
 
 /*
- * 幅は文字数で決まる（固定幅にしない）。
+ * 幅は文字数で決まる (固定幅にしない)。
  * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
  * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
  */
@@ -412,7 +412,7 @@ footer a {
 }
 </style>
 <style>
-/* この資料だけのもの: 章のアクセント色（6章 / 色相 280→0 を 56 刻み）と目次の採番 */
+/* この資料だけのもの: 章のアクセント色 (6章 / 色相 280→0 を 56 刻み)と目次の採番 */
 .ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
 .ch02 { --accent: hsl(224, 78%, 25%); --accent2: hsl(224, 58%, 55%); --soft: hsl(224, 28%, 95%); }
 .ch03 { --accent: hsl(168, 78%, 25%); --accent2: hsl(168, 58%, 55%); --soft: hsl(168, 28%, 95%); }
@@ -438,7 +438,7 @@ footer a {
 
 <p>サーバーは Windows サービスとして常駐し、待受けの相手をしている。<strong>常駐するものなのでメモリがいちばん効く。</strong>そこに <code>say</code> ・ <code>recent</code> の往復と、発言を待受けへ配る遅れを足して測った。</p>
 
-<p>測ったのは <strong>node と bun の 2 つだけ</strong>である。サーバーは TypeScript（node ・ bun）で進めると決めたため、他の処理系は土俵に載せていない。</p>
+<p>測ったのは <strong>node と bun の 2 つだけ</strong>である。サーバーは TypeScript (node ・ bun)で進めると決めたため、他の処理系は土俵に載せていない。</p>
 
 <section class="toc md-skip">
 	<h2>目次</h2>
@@ -457,7 +457,7 @@ footer a {
 	<h1>分かったこと</h1>
 
 	<div class="callout callout-important">
-		<p><strong>メモリは、どちらを見るかで勝者が入れ替わる。</strong>待受け 10 本で、実メモリは node 56.9 MB ・ bun 37.8 MB（bun が 19 MB 軽い）。ところが<strong>確保量は node 31.1 MB ・ bun 135.1 MB で、bun が 4.3 倍を抱える。</strong><br>
+		<p><strong>メモリは、どちらを見るかで勝者が入れ替わる。</strong>待受け 10 本で、実メモリは node 56.9 MB ・ bun 37.8 MB (bun が 19 MB 軽い)。ところが<strong>確保量は node 31.1 MB ・ bun 135.1 MB で、bun が 4.3 倍を抱える。</strong><br>
 		<strong><code>say</code> ・ <code>recent</code> ・ 配信の遅れには差が無い。</strong>どれも SQLite と配信の仕組みが決めていて、処理系を替えても動かない。</p>
 	</div>
 
@@ -467,7 +467,7 @@ footer a {
 				<tr><th>項目</th><th>node</th><th>bun</th><th>読み方</th></tr>
 			</thead>
 			<tbody>
-				<tr><td class="nowrap">起動（待ち受け開始まで）</td><td class="num">152.4 ms</td><td class="num">151.0 ms</td><td>測るたびに動く。常駐するので効かない</td></tr>
+				<tr><td class="nowrap">起動 (待ち受け開始まで)</td><td class="num">152.4 ms</td><td class="num">151.0 ms</td><td>測るたびに動く。常駐するので効かない</td></tr>
 				<tr><td class="nowrap">実メモリ 待受け 0 本</td><td class="num">54.5 MB</td><td class="num">32.0 MB</td><td><strong>bun が 22.5 MB 軽い</strong></td></tr>
 				<tr><td class="nowrap">実メモリ 待受け 10 本</td><td class="num">56.9 MB</td><td class="num">37.8 MB</td><td>bun が 19.1 MB 軽い</td></tr>
 				<tr><td class="nowrap">確保量 待受け 0 本</td><td class="num">29.0 MB</td><td class="num">129.5 MB</td><td><strong>node が 100.5 MB 軽い</strong></td></tr>
@@ -515,21 +515,21 @@ footer a {
 		<table>
 			<thead><tr><th>指標</th><th>node</th><th>bun</th><th>勝つのは</th></tr></thead>
 			<tbody>
-				<tr><td class="nowrap">実メモリ（待受け 10 本）</td><td class="num">56.9 MB</td><td class="num">37.8 MB</td><td>bun（19.1 MB 差）</td></tr>
-				<tr><td class="nowrap">確保量（待受け 10 本）</td><td class="num">31.1 MB</td><td class="num">135.1 MB</td><td>node（104.0 MB 差）</td></tr>
+				<tr><td class="nowrap">実メモリ (待受け 10 本)</td><td class="num">56.9 MB</td><td class="num">37.8 MB</td><td>bun (19.1 MB 差)</td></tr>
+				<tr><td class="nowrap">確保量 (待受け 10 本)</td><td class="num">31.1 MB</td><td class="num">135.1 MB</td><td>node (104.0 MB 差)</td></tr>
 			</tbody>
 		</table>
 	</div>
 
 	<div class="callout callout-caution">
 		<p><strong>空きメモリが減ったときに効くのは確保量のほうである。</strong>実メモリはページアウトされて減るが、確保量は減らない。<br>
-		Claude Code が背面のコマンドを刈るのは空きが減ったときで、<strong>待受けが <code>[killed]</code> で落ちる原因になっている</strong>（<a class="doclink" href="../40_issues/issues.html#i260901-07">i260901-07</a>）。<strong>この観点では node のほうが安全である。</strong></p>
+		Claude Code が背面のコマンドを刈るのは空きが減ったときで、<strong>待受けが <code>[killed]</code> で落ちる原因になっている</strong>(<a class="doclink" href="../40_issues/issues.html#i260901-07">i260901-07</a>)。<strong>この観点では node のほうが安全である。</strong></p>
 	</div>
 
 	<p>CLI を測ったときも同じ傾向だった。<strong>bun は実メモリ 25.59 MB で C# と並びながら、確保量は 108.43 MB で 5 実装のうち最大</strong>だった。<strong>処理系の癖であり、サーバーでも CLI でも変わらない。</strong></p>
 
 	<div class="callout callout-note">
-		<p><strong>確保量は Windows でしか測っていない。</strong>聞き方が OS ごとに違う（Windows は <code>Get-Process</code>、Linux は <code>/proc/&lt;pid&gt;/status</code>、Mac は <code>ps</code> や <code>vmmap</code>）。<strong>実メモリのほうは <code>process.memoryUsage()</code> で揃えているので、どの OS でも同じ形で測れる。</strong></p>
+		<p><strong>確保量は Windows でしか測っていない。</strong>聞き方が OS ごとに違う (Windows は <code>Get-Process</code>、Linux は <code>/proc/&lt;pid&gt;/status</code>、Mac は <code>ps</code> や <code>vmmap</code>)。<strong>実メモリのほうは <code>process.memoryUsage()</code> で揃えているので、どの OS でも同じ形で測れる。</strong></p>
 	</div>
 </section>
 
@@ -542,7 +542,7 @@ footer a {
 	<figure class="fig">
 		<svg viewBox="0 0 760 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="待受けの本数とサーバーのメモリ">
 			<rect width="100%" height="100%" fill="#ffffff"/>
-			<text x="10" y="24" font-size="14" font-weight="700" fill="#1c2330">待受けの本数とサーバーの実メモリ（MB・小さいほど良い）</text>
+			<text x="10" y="24" font-size="14" font-weight="700" fill="#1c2330">待受けの本数とサーバーの実メモリ (MB・小さいほど良い)</text>
 			<g stroke="#d9dfe8" stroke-width="1">
 				<line x1="90" y1="270" x2="690" y2="270"/>
 				<line x1="90" y1="215" x2="690" y2="215"/>
@@ -562,13 +562,13 @@ footer a {
 			<g fill="hsl(210,78%,25%)">
 				<circle cx="90" cy="70.1" r="5"/><circle cx="150" cy="68.7" r="5"/><circle cx="390" cy="66.5" r="5"/><circle cx="690" cy="61.3" r="5"/>
 			</g>
-			<text x="100" y="58" font-size="13" font-weight="700" fill="hsl(210,78%,25%)">node 実メモリ（青）</text>
+			<text x="100" y="58" font-size="13" font-weight="700" fill="hsl(210,78%,25%)">node 実メモリ (青)</text>
 
 			<polyline points="90,152.7 150,141.3 390,136.4 690,131.4" fill="none" stroke="hsl(140,78%,25%)" stroke-width="3"/>
 			<g fill="hsl(140,78%,25%)">
 				<circle cx="90" cy="152.7" r="5"/><circle cx="150" cy="141.3" r="5"/><circle cx="390" cy="136.4" r="5"/><circle cx="690" cy="131.4" r="5"/>
 			</g>
-			<text x="100" y="174" font-size="13" font-weight="700" fill="hsl(140,78%,25%)">bun 実メモリ（緑）</text>
+			<text x="100" y="174" font-size="13" font-weight="700" fill="hsl(140,78%,25%)">bun 実メモリ (緑)</text>
 
 			<g font-size="12" fill="#1c2330" text-anchor="middle">
 				<text x="90" y="86">54.5</text><text x="690" y="52">56.9</text>
@@ -587,7 +587,7 @@ footer a {
 				<linearGradient id="g-02-1b-bn" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(140,78%,25%)"/><stop offset="1" stop-color="hsl(140,58%,55%)"/></linearGradient>
 			</defs>
 			<rect width="100%" height="100%" fill="#ffffff"/>
-			<text x="10" y="22" font-size="14" font-weight="700" fill="#1c2330">待受け 10 本のとき（MB・小さいほど良い）</text>
+			<text x="10" y="22" font-size="14" font-weight="700" fill="#1c2330">待受け 10 本のとき (MB・小さいほど良い)</text>
 			<g stroke="#d9dfe8" stroke-width="1">
 				<line x1="190" y1="36" x2="190" y2="228"/>
 				<line x1="310" y1="36" x2="310" y2="228"/>
@@ -648,7 +648,7 @@ bun    31.99 + 0.58 × n
 	<p>待受けは 1 プロジェクトにつき 1 本と決めている。<strong>66 本が並ぶことは無い。</strong></p>
 
 	<div class="callout callout-important">
-		<p><strong>確保量のほうには交差点が無い。</strong>出発点で node が 100.5 MB 少なく、伸び方もほぼ同じ（node 0.21 MB ・ bun 0.56 MB）。<strong>何本ぶら下げても node のほうが少ないままである。</strong></p>
+		<p><strong>確保量のほうには交差点が無い。</strong>出発点で node が 100.5 MB 少なく、伸び方もほぼ同じ (node 0.21 MB ・ bun 0.56 MB)。<strong>何本ぶら下げても node のほうが少ないままである。</strong></p>
 	</div>
 </section>
 
@@ -656,7 +656,7 @@ bun    31.99 + 0.58 × n
 <section class="ch03" id="ch03">
 	<h1>say と recent</h1>
 
-	<p>人が待つのはここである。<code>say</code> は 200 回、<code>recent</code>（<code>/api/history</code>）は件数を変えて 200 回ずつ測った。</p>
+	<p>人が待つのはここである。<code>say</code> は 200 回、<code>recent</code>(<code>/api/history</code>)は件数を変えて 200 回ずつ測った。</p>
 
 	<figure class="fig">
 		<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="say と recent の往復時間">
@@ -665,7 +665,7 @@ bun    31.99 + 0.58 × n
 				<linearGradient id="g-02-2-bn" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(140,78%,25%)"/><stop offset="1" stop-color="hsl(140,58%,55%)"/></linearGradient>
 			</defs>
 			<rect width="100%" height="100%" fill="#ffffff"/>
-			<text x="10" y="22" font-size="14" font-weight="700" fill="#1c2330">1 回あたりの往復（中央値 ms・小さいほど良い）</text>
+			<text x="10" y="22" font-size="14" font-weight="700" fill="#1c2330">1 回あたりの往復 (中央値 ms・小さいほど良い)</text>
 			<g stroke="#d9dfe8" stroke-width="1">
 				<line x1="170" y1="36" x2="170" y2="248"/>
 				<line x1="295" y1="36" x2="295" y2="248"/>
@@ -677,12 +677,12 @@ bun    31.99 + 0.58 × n
 				<text x="170" y="268">0</text><text x="295" y="268">1</text><text x="420" y="268">2</text><text x="545" y="268">3</text><text x="670" y="268">4</text>
 			</g>
 			<g font-size="12" fill="#1c2330" text-anchor="end" font-weight="700">
-				<text x="162" y="58">say（node）</text>
-				<text x="162" y="90">say（bun）</text>
-				<text x="162" y="128">recent 50（node）</text>
-				<text x="162" y="160">recent 50（bun）</text>
-				<text x="162" y="198">recent 500（node）</text>
-				<text x="162" y="230">recent 500（bun）</text>
+				<text x="162" y="58">say (node)</text>
+				<text x="162" y="90">say (bun)</text>
+				<text x="162" y="128">recent 50 (node)</text>
+				<text x="162" y="160">recent 50 (bun)</text>
+				<text x="162" y="198">recent 500 (node)</text>
+				<text x="162" y="230">recent 500 (bun)</text>
 			</g>
 			<rect x="170" y="42" width="397.5" height="20" rx="3" fill="url(#g-02-2-nd)"/>
 			<rect x="170" y="74" width="391.3" height="20" rx="3" fill="url(#g-02-2-bn)"/>
@@ -699,7 +699,7 @@ bun    31.99 + 0.58 × n
 				<text x="300.5" y="230">0.98</text>
 			</g>
 		</svg>
-		<figcaption>図 3: node（青）と bun（緑）で差が出ていない。決めているのは DB のほう</figcaption>
+		<figcaption>図 3: node (青)と bun (緑)で差が出ていない。決めているのは DB のほう</figcaption>
 	</figure>
 
 	<div class="tablewrap">
@@ -748,7 +748,7 @@ bun    31.99 + 0.58 × n
 	<figure class="fig">
 		<svg viewBox="0 0 760 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="待受けの本数と配信の遅れ">
 			<rect width="100%" height="100%" fill="#ffffff"/>
-			<text x="10" y="24" font-size="14" font-weight="700" fill="#1c2330">say から全員に届くまで（中央値 ms・小さいほど良い）</text>
+			<text x="10" y="24" font-size="14" font-weight="700" fill="#1c2330">say から全員に届くまで (中央値 ms・小さいほど良い)</text>
 			<g stroke="#d9dfe8" stroke-width="1">
 				<line x1="90" y1="260" x2="690" y2="260"/>
 				<line x1="90" y1="205" x2="690" y2="205"/>
@@ -768,13 +768,13 @@ bun    31.99 + 0.58 × n
 			<g fill="hsl(210,78%,25%)">
 				<circle cx="90" cy="229.5" r="5"/><circle cx="390" cy="171.3" r="5"/><circle cx="690" cy="106.3" r="5"/>
 			</g>
-			<text x="100" y="222" font-size="13" font-weight="700" fill="hsl(210,78%,25%)">node（青）</text>
+			<text x="100" y="222" font-size="13" font-weight="700" fill="hsl(210,78%,25%)">node (青)</text>
 
 			<polyline points="90,227.9 390,170.5 690,115.1" fill="none" stroke="hsl(140,78%,25%)" stroke-width="3" stroke-dasharray="7 5"/>
 			<g fill="hsl(140,78%,25%)">
 				<circle cx="90" cy="227.9" r="5"/><circle cx="390" cy="170.5" r="5"/><circle cx="690" cy="115.1" r="5"/>
 			</g>
-			<text x="560" y="140" font-size="13" font-weight="700" fill="hsl(140,78%,25%)">bun（緑・破線）</text>
+			<text x="560" y="140" font-size="13" font-weight="700" fill="hsl(140,78%,25%)">bun (緑・破線)</text>
 
 			<g font-size="12" fill="#1c2330" text-anchor="middle">
 				<text x="90" y="250">5.6</text><text x="390" y="192">16.1</text><text x="690" y="96">28.0</text>
@@ -876,8 +876,8 @@ setInterval(() =&gt; {
 			<thead><tr><th>何を</th><th>どう測ったか</th></tr></thead>
 			<tbody>
 				<tr><td class="nowrap">起動</td><td>プロセスを作ってから <code>__READY__</code> が出るまで</td></tr>
-				<tr><td class="nowrap">実メモリ</td><td>本数ごとに 2 秒落ち着かせ、3 秒ぶん（250 ms 間隔）を平均</td></tr>
-				<tr><td class="nowrap">確保量</td><td>そのあと <code>Get-Process</code> に 5 回聞いて平均。<strong>PowerShell は 1 回だけ起こす</strong>（250 ms ごとに起こすと、起動 185 ms のほうが間隔より長くなる）</td></tr>
+				<tr><td class="nowrap">実メモリ</td><td>本数ごとに 2 秒落ち着かせ、3 秒ぶん (250 ms 間隔)を平均</td></tr>
+				<tr><td class="nowrap">確保量</td><td>そのあと <code>Get-Process</code> に 5 回聞いて平均。<strong>PowerShell は 1 回だけ起こす</strong>(250 ms ごとに起こすと、起動 185 ms のほうが間隔より長くなる)</td></tr>
 				<tr><td class="nowrap"><code>say</code> ・ <code>recent</code></td><td>捨てる 20 回のあと 200 回。<code>recent</code> は先に 600 件積んでから</td></tr>
 				<tr><td class="nowrap">配信</td><td>張り直しては 1 回打つ、を 10 回</td></tr>
 			</tbody>
@@ -930,7 +930,7 @@ setInterval(() =&gt; {
 				<linearGradient id="g-02-4-c" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(140,78%,25%)"/><stop offset="1" stop-color="hsl(140,58%,55%)"/></linearGradient>
 			</defs>
 			<rect width="100%" height="100%" fill="#ffffff"/>
-			<text x="10" y="22" font-size="14" font-weight="700" fill="#1c2330">同じサーバーへの 1 往復（中央値 ms）</text>
+			<text x="10" y="22" font-size="14" font-weight="700" fill="#1c2330">同じサーバーへの 1 往復 (中央値 ms)</text>
 			<g stroke="#d9dfe8" stroke-width="1">
 				<line x1="200" y1="36" x2="200" y2="170"/>
 				<line x1="317.5" y1="36" x2="317.5" y2="170"/>
@@ -962,14 +962,14 @@ setInterval(() =&gt; {
 
 	<h2>直した形</h2>
 
-	<p>ベンチマークの側を <code>node:http</code> の <code>http.request</code>（keepAlive つき）に替えた。<strong>node で走らせても bun で走らせても同じ数字が出る</strong>ようになり、そこで初めて処理系の差が見えた。</p>
+	<p>ベンチマークの側を <code>node:http</code> の <code>http.request</code>(keepAlive つき)に替えた。<strong>node で走らせても bun で走らせても同じ数字が出る</strong>ようになり、そこで初めて処理系の差が見えた。</p>
 
 	<div class="tablewrap">
 		<table>
 			<thead><tr><th>測り方</th><th>node サーバーの say</th><th>bun サーバーの say</th><th>差が見えるか</th></tr></thead>
 			<tbody>
 				<tr><td class="nowrap">node の fetch で測る</td><td class="num">15.46 ms</td><td class="num">15.37 ms</td><td>見えない</td></tr>
-				<tr><td class="nowrap">http.request で測る</td><td class="num">3.18 ms</td><td class="num">3.13 ms</td><td>見える（そして差は無かった）</td></tr>
+				<tr><td class="nowrap">http.request で測る</td><td class="num">3.18 ms</td><td class="num">3.13 ms</td><td>見える (そして差は無かった)</td></tr>
 			</tbody>
 		</table>
 	</div>

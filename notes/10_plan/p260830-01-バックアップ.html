@@ -11,7 +11,7 @@
 
 /* ===================================================================
    ai-chat-lite 共通スタイル
-   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   章ごとのアクセント色 (.ch01〜)は各 HTML 側で定義する
    =================================================================== */
 
 :root {
@@ -334,7 +334,7 @@ pre code {
 }
 
 /*
- * 幅は文字数で決まる（固定幅にしない）。
+ * 幅は文字数で決まる (固定幅にしない)。
  * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
  * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
  */
@@ -412,7 +412,7 @@ footer a {
 }
 </style>
 <style>
-/* この資料だけのもの: 章のアクセント色（5章 / 色相 280→0 を 70 刻み）と目次の採番 */
+/* この資料だけのもの: 章のアクセント色 (5章 / 色相 280→0 を 70 刻み)と目次の採番 */
 .ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
 .ch02 { --accent: hsl(210, 78%, 25%); --accent2: hsl(210, 58%, 55%); --soft: hsl(210, 28%, 95%); }
 .ch03 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); --soft: hsl(140, 28%, 95%); }
@@ -509,7 +509,7 @@ footer a {
 
 	<div class="callout callout-caution">
 		<p><strong>本体を残して <code>-wal</code> / <code>-shm</code> だけを消してはいけない。例外はない。</strong>消した分の書き込みは戻らない。邪魔に見えても消さず、<strong>捨てるときは 3 つまとめて捨て、残すときは 3 つまとめて残す</strong>。</p>
-		<p>この 3 つを扱う場面は 2 つある。1 つは<strong>控えを取るとき</strong>。<code>VACUUM INTO</code> を使えば 3 つを織り込んだ 1 ファイルが得られる（<a href="#ch01">この章</a>）。もう 1 つは<strong>戻すときに現物を退避する</strong>とき。こちらは織り込む手段がないので、3 つまとめて移す（<a href="#ch04">戻し方</a>）。</p>
+		<p>この 3 つを扱う場面は 2 つある。1 つは<strong>控えを取るとき</strong>。<code>VACUUM INTO</code> を使えば 3 つを織り込んだ 1 ファイルが得られる (<a href="#ch01">この章</a>)。もう 1 つは<strong>戻すときに現物を退避する</strong>とき。こちらは織り込む手段がないので、3 つまとめて移す (<a href="#ch04">戻し方</a>)。</p>
 	</div>
 
 	<h2>VACUUM INTO を使う</h2>
@@ -532,7 +532,7 @@ footer a {
 
 	<h2>常に圧縮する</h2>
 
-	<p>サイズに関わらず <code>.zip</code> にする。実測では 40,960 バイトが 3,722 バイト（9.1 %）になった。</p>
+	<p>サイズに関わらず <code>.zip</code> にする。実測では 40,960 バイトが 3,722 バイト (9.1 %)になった。</p>
 
 	<p>いまは小さいので圧縮しなくても困らないが、<strong>後から方針を変えると過去の世代と形式が混ざる</strong>。戻す手順が世代によって変わるのは避けたい。最初から揃えておく。</p>
 
@@ -585,12 +585,12 @@ footer a {
 
 	<h2>どれくらいの大きさになるか</h2>
 
-	<p>実際に流れそうな本文（日本語混じりの Markdown、相槌から表やコード付きの報告まで、平均 81 文字）で作った DB を測った。</p>
+	<p>実際に流れそうな本文 (日本語混じりの Markdown、相槌から表やコード付きの報告まで、平均 81 文字)で作った DB を測った。</p>
 
 	<div class="tablewrap">
 	<table>
 		<thead>
-			<tr><th class="nowrap">発言数</th><th class="nowrap">DB</th><th class="nowrap">1 世代（zip）</th><th class="nowrap">25 世代の合計</th></tr>
+			<tr><th class="nowrap">発言数</th><th class="nowrap">DB</th><th class="nowrap">1 世代 (zip)</th><th class="nowrap">25 世代の合計</th></tr>
 		</thead>
 		<tbody>
 			<tr>
@@ -767,9 +767,9 @@ $svc.GetFolder('\').DeleteFolder('ai-chat-lite', 0)</code></pre>
 
 	<p><strong>「空くのを待ってから置く」と書いてはいけない。</strong>確認してから置くまでの間に、もう一方が入り込む。置きに行って失敗したら待つ、の順にする。</p>
 
-	<p>置くときは <code>wx</code> フラグ（<code>O_CREAT | O_EXCL</code>）を使う。「無ければ作る」を OS が一続きの操作として保証するため、同時に取り合っても 1 つしか成功しない。実測で 10 個のプロセスが取り合っても成功は 1 つだけだった。</p>
+	<p>置くときは <code>wx</code> フラグ (<code>O_CREAT | O_EXCL</code>)を使う。「無ければ作る」を OS が一続きの操作として保証するため、同時に取り合っても 1 つしか成功しない。実測で 10 個のプロセスが取り合っても成功は 1 つだけだった。</p>
 
-	<p>名前を変える方式（<code>LOCK.&lt;pid&gt;</code> を作って <code>LOCK</code> へ <code>rename</code>）は使わない。Node の <code>renameSync</code> と cmd の <code>move</code> は<strong>先客を黙って上書きし、2 つとも「取れた」と思い込む</strong>。処理系ごとの実測は<a href="../../docs/ファイルで排他する.html">ファイルで排他する</a>にある。</p>
+	<p>名前を変える方式 (<code>LOCK.&lt;pid&gt;</code> を作って <code>LOCK</code> へ <code>rename</code>)は使わない。Node の <code>renameSync</code> と cmd の <code>move</code> は<strong>先客を黙って上書きし、2 つとも「取れた」と思い込む</strong>。処理系ごとの実測は<a href="../../docs/ファイルで排他する.html">ファイルで排他する</a>にある。</p>
 
 	<h3>握ったまま終わったとき</h3>
 
@@ -840,7 +840,7 @@ $svc.GetFolder('\').DeleteFolder('ai-chat-lite', 0)</code></pre>
 			<tr>
 				<td class="nowrap">消す対象</td>
 				<td><code>yyyymm-backup-*-log.html</code> だけ</td>
-				<td>サービスのログ（WinSW が書くもの）に触れない</td>
+				<td>サービスのログ (WinSW が書くもの)に触れない</td>
 			</tr>
 		</tbody>
 	</table>
@@ -862,7 +862,7 @@ $svc.GetFolder('\').DeleteFolder('ai-chat-lite', 0)</code></pre>
 		<tbody>
 			<tr>
 				<td class="nowrap">class</td>
-				<td><code>I</code> / <code>W</code> / <code>E</code>。<strong>クォートで囲まない</strong>（<code>class=I</code>）。値に記号を含まないため省ける</td>
+				<td><code>I</code> / <code>W</code> / <code>E</code>。<strong>クォートで囲まない</strong>(<code>class=I</code>)。値に記号を含まないため省ける</td>
 			</tr>
 			<tr>
 				<td class="nowrap">閉じタグ</td>
@@ -870,7 +870,7 @@ $svc.GetFolder('\').DeleteFolder('ai-chat-lite', 0)</code></pre>
 			</tr>
 			<tr>
 				<td class="nowrap">エスケープ</td>
-				<td><code>&amp;</code> <code>&lt;</code> <code>&gt;</code> の 3 文字。<strong>この順で置き換える</strong>（<code>&amp;</code> を後にすると二重に変換される）</td>
+				<td><code>&amp;</code> <code>&lt;</code> <code>&gt;</code> の 3 文字。<strong>この順で置き換える</strong>(<code>&amp;</code> を後にすると二重に変換される)</td>
 			</tr>
 			<tr>
 				<td class="nowrap">本文の中身</td>
@@ -882,7 +882,7 @@ $svc.GetFolder('\').DeleteFolder('ai-chat-lite', 0)</code></pre>
 
 	<h3>実測</h3>
 
-	<p>ブラウザで実際に確かめた（7 件すべて通過）。</p>
+	<p>ブラウザで実際に確かめた (7 件すべて通過)。</p>
 
 	<div class="tablewrap">
 	<table>
@@ -1025,7 +1025,7 @@ $svc.GetFolder('\').DeleteFolder('ai-chat-lite', 0)</code></pre>
 		<p><strong><code>chat.db</code> だけを残しても意味がない。</strong>最初にこれをやって実害が出た。<code>-wal</code> を消したうえで本体だけを退避したところ、退避したものは<strong>読み込めても 0 件</strong>だった。発言 64 件はすべて <code>-wal</code> 側にあり、消した時点で戻す手段が失われていた。戻した中身が正しかったので事なきを得たが、違っていれば取り返しがつかなかった。</p>
 	</div>
 
-	<p>個別に名前を変える方法（<code>chat.db-wal.prev-…</code>）は採らない。<code>_data</code> 直下が散らかり、どれが同じ組なのか名前を突き合わせないと分からなくなる。フォルダに入れれば一目で揃う。</p>
+	<p>個別に名前を変える方法 (<code>chat.db-wal.prev-…</code>)は採らない。<code>_data</code> 直下が散らかり、どれが同じ組なのか名前を突き合わせないと分からなくなる。フォルダに入れれば一目で揃う。</p>
 
 	<h2>終了時に DB を閉じる</h2>
 
@@ -1070,7 +1070,7 @@ tools/80_ops/
   backup.ps1 / .cmd             … 区分を受け取り、圧縮して世代を整理する
   restore.ps1 / .cmd            … 戻す。3 つまとめて退避する
   register-backup-tasks.ps1 / .cmd  … タスクを 4 つ登録する
-  migrate-backup-layout.ps1 / .cmd  … 区分を分ける前のものを移す（1 度だけ）
+  migrate-backup-layout.ps1 / .cmd  … 区分を分ける前のものを移す (1 度だけ)
   log.ps1                       … 取得と復旧の記録を HTML で残す
 tests/backup.test.mjs           … 32 件
 notes/90_rules/backup.html      … 運用の手引き</code></pre>

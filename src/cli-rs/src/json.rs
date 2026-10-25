@@ -46,7 +46,7 @@ impl Json {
 		}
 	}
 
-	/// 整数として取り出す。小数は切り捨てない（整数でなければ `None`）
+	/// 整数として取り出す。小数は切り捨てない (整数でなければ `None`)
 	pub fn as_i64(&self) -> Option<i64> {
 		match self {
 			Json::Num(n) if n.fract() == 0.0 => Some(*n as i64),
@@ -72,7 +72,7 @@ impl Json {
 		matches!(self, Json::Null)
 	}
 
-	/// 文字列に書き出す。空白を入れない（送る用）
+	/// 文字列に書き出す。空白を入れない (送る用)
 	pub fn to_string(&self) -> String {
 		let mut out = String::new();
 		write_json(&mut out, self);
@@ -198,7 +198,7 @@ fn parse_str(chars: &mut VecDeque<char>) -> Result<String, String> {
 	}
 }
 
-/// 4 桁の 16 進で書かれた文字を読む。上位・下位の代理対（サロゲートペア）も繋ぐ
+/// 4 桁の 16 進で書かれた文字を読む。上位・下位の代理対 (サロゲートペア)も繋ぐ
 fn parse_unicode(chars: &mut VecDeque<char>) -> Result<char, String> {
 	let high = take_hex4(chars)?;
 
@@ -292,7 +292,7 @@ fn write_str(out: &mut String, s: &str) {
 			'\t' => out.push_str("\\t"),
 			'\u{0008}' => out.push_str("\\b"),
 			'\u{000C}' => out.push_str("\\f"),
-			// 残りの制御文字は 4 桁の 16 進に逃がす。日本語はそのまま出す（UTF-8 で送る）
+			// 残りの制御文字は 4 桁の 16 進に逃がす。日本語はそのまま出す (UTF-8 で送る)
 			c if (c as u32) < 0x20 => {
 				let _ = write!(out, "\\u{:04x}", c as u32);
 			}
@@ -309,12 +309,12 @@ mod tests {
 	/// 文字コードから 1 文字を作る。
 	///
 	/// **ソースに生の制御文字を置かない**ための道具。置くと、編集の道具を
-	/// 通るたびに壊れる（実際に 2 度壊れた）。
+	/// 通るたびに壊れる (実際に 2 度壊れた)。
 	fn ctrl(code: u32) -> String {
 		char::from_u32(code).unwrap().to_string()
 	}
 
-	/// 逃がした形（バックスラッシュ ＋ u ＋ 4 桁）を組み立てる。
+	/// 逃がした形 (バックスラッシュ ＋ u ＋ 4 桁)を組み立てる。
 	///
 	/// **リテラルで書かない**。その並びをソースに置くと、編集の道具が
 	/// 文字コードとして解釈して生の制御文字に変えてしまう。
@@ -368,7 +368,7 @@ mod tests {
 		let value = Json::Str(format!("x{}y", ctrl(1)));
 		assert_eq!(value.to_string(), format!("\"x{}y\"", escaped("0001")));
 
-		// 退避（0x08）と改ページ（0x0C）は専用の逃げ方を持つ
+		// 退避 (0x08)と改ページ (0x0C)は専用の逃げ方を持つ
 		assert_eq!(Json::Str(ctrl(8)).to_string(), r#""\b""#);
 		assert_eq!(Json::Str(ctrl(12)).to_string(), r#""\f""#);
 	}

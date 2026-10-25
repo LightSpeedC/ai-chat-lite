@@ -14,11 +14,11 @@ import {
 } from '../../src/server/backup.mjs';
 
 /**
- * バックアップの取得（圧縮する前まで）。
+ * バックアップの取得 (圧縮する前まで)。
  *
  * 圧縮と世代の整理は呼び出し元の PowerShell が行う。zip を作る手段が
- * Node の標準ライブラリに無いため（zlib は gzip と deflate だけで、
- * zip の容れ物は作れない）。ここは DB のスナップショットだけを引き受ける。
+ * Node の標準ライブラリに無いため (zlib は gzip と deflate だけで、
+ * zip の容れ物は作れない)。ここは DB のスナップショットだけを引き受ける。
  *
  * 出力するファイル名は chat.db で固定する。zip の中身がこの名前になり、
  * 展開してそのまま _data へ置けるようにするため。世代を区別する日時は
@@ -26,7 +26,7 @@ import {
  *
  * 終了コード:
  *   0 … 取れた
- *   2 … 印が消えず、取らずに終えた（失敗ではない）
+ *   2 … 印が消えず、取らずに終えた (失敗ではない)
  *   1 … 取得に失敗した
  */
 
@@ -47,7 +47,7 @@ const lock = await acquireWithWait({
 	onWait: ({ label, tries, maxTries, pollMs }) => {
 		// 待ち時間は環境変数で変えられる。決め打ちで書くと実際とずれる
 		const sec = pollMs >= 1000 ? `${Math.round(pollMs / 1000)} 秒` : `${pollMs} ミリ秒`;
-		console.error(`${label}の印があります。${sec}待ちます（${tries}/${maxTries}）`);
+		console.error(`${label}の印があります。${sec}待ちます (${tries}/${maxTries})`);
 	},
 });
 
@@ -60,7 +60,7 @@ if (!lock.acquired) {
 }
 
 if (lock.waitedMs >= 1000) {
-	console.error(`印が取れました（${Math.round(lock.waitedMs / 1000)} 秒待機）`);
+	console.error(`印が取れました (${Math.round(lock.waitedMs / 1000)} 秒待機)`);
 }
 
 try {

@@ -9,7 +9,7 @@
  * 【なぜ node で書くか】
  * benchmark-cli.ps1 は PowerShell で、Mac ・ Linux で動かない。Rust 版を作る
  * 動機がクロスプラットフォームなのに、測る道具が Windows 専用では筋が通らない。
- * 確保量（Private Bytes）だけは OS ごとに聞き方が違うので、取れる環境でだけ取る。
+ * 確保量 (Private Bytes)だけは OS ごとに聞き方が違うので、取れる環境でだけ取る。
  *
  *   node tools/40_test/benchmark-waiters.mjs
  *
@@ -63,7 +63,7 @@ function testServer() {
  * プロセスのメモリを測る。
  *
  * 実メモリは OS を問わず取れるが、確保量は聞き方が違う。Windows だけで取る。
- * 子プロセスも合算する（node 版が中で別のプロセスを起こすことがあるため）。
+ * 子プロセスも合算する (node 版が中で別のプロセスを起こすことがあるため)。
  */
 function memoryOf(pid) {
 	if (process.platform === 'win32') {
@@ -119,7 +119,7 @@ async function measureWait(impl, server) {
 	];
 
 	/*
-	 * 初めての接続は案内を出して終わる仕様（i260909-01）。
+	 * 初めての接続は案内を出して終わる仕様 (i260909-01)。
 	 * 先に 1 回走らせてカーソルを立てないと、測る前に消える。
 	 */
 	spawnSync(impl.file, [...impl.args, 'wait', ':bench-mem:', '-p', server.port, '-a', server.token, '--wait-sec', '1'], {
@@ -193,7 +193,7 @@ for (const impl of impls) {
 	process.stdout.write(`=== ${impl.label} ===\n`);
 
 	const mem = await measureWait(impl, server);
-	const rssText = mem.rss ? `${mem.rss.avg.toFixed(2)} MB（${mem.rss.min.toFixed(2)} 〜 ${mem.rss.max.toFixed(2)}）` : '測れず';
+	const rssText = mem.rss ? `${mem.rss.avg.toFixed(2)} MB (${mem.rss.min.toFixed(2)} 〜 ${mem.rss.max.toFixed(2)})` : '測れず';
 	const privText = mem.private ? ` / 確保 ${mem.private.avg.toFixed(2)} MB` : '';
 	process.stdout.write(`  待受け中の実メモリ  ${rssText}${privText}\n`);
 
@@ -201,7 +201,7 @@ for (const impl of impls) {
 	if (waiters.error) {
 		process.stdout.write(`  waiters             ${waiters.error}\n`);
 	} else {
-		process.stdout.write(`  waiters             中央値 ${waiters.median.toFixed(1)} ms（${waiters.min.toFixed(1)} 〜 ${waiters.max.toFixed(1)}）\n`);
+		process.stdout.write(`  waiters             中央値 ${waiters.median.toFixed(1)} ms (${waiters.min.toFixed(1)} 〜 ${waiters.max.toFixed(1)})\n`);
 	}
 
 	out.results.push({ label: impl.label, memory: mem, waiters });

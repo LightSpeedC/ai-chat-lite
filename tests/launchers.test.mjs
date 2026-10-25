@@ -1,12 +1,12 @@
 /*
- * 公開CLI（bin/）と開発用ランチャー（tools/50_run/）のテスト。
+ * 公開CLI (bin/)と開発用ランチャー (tools/50_run/)のテスト。
  *
  * 【何を守るか】
  * `aichat` という名前をどの実装が受けるかは、他プロジェクトから見える動きそのものである。
  * 待受けを張る手順は共通ルールに書かれていて、そこには `aichat` としか書いていない。
  * 受け手が入れ替わったことに気づけないと、遅い実装を全プロジェクトが使い続けることになる。
  *
- * 名前の衝突も守る。cmd.exe は PATHEXT の順（.EXE が .CMD より先）で選ぶため、
+ * 名前の衝突も守る。cmd.exe は PATHEXT の順 (.EXE が .CMD より先)で選ぶため、
  * 同じ名前の exe と cmd が両方あると、どちらが動くかがシェルによって変わる。
  */
 import { test, describe } from 'node:test';
@@ -31,10 +31,10 @@ describe('既定の aichat は Rust 版が受ける', () => {
 		 * ビルドが両方に置く。片方だけ新しくなると、`aichat` と `aichat-rs` で
 		 * 違う版が動き、突き合わせのテストが通ったまま本番だけ古いことになる。
 		 */
-		// bin/ は公開インターフェースの置き場（i260922-01）。aichat-rs.exe はビルド出力（target/）
+		// bin/ は公開インターフェースの置き場 (i260922-01)。aichat-rs.exe はビルド出力 (target/)
 		const exe = join(root, 'bin', 'aichat.exe');
 		const rs = join(root, 'target', 'aichat-rs.exe');
-		assert.ok(existsSync(rs), 'target/aichat-rs.exe が無い（先にビルドが要る）');
+		assert.ok(existsSync(rs), 'target/aichat-rs.exe が無い (先にビルドが要る)');
 		assert.ok(existsSync(exe), 'bin/aichat.exe が無い');
 		assert.equal(digestOf(exe), digestOf(rs), 'bin/aichat.exe と target/aichat-rs.exe の中身が違う');
 	});
@@ -47,7 +47,7 @@ describe('既定の aichat は Rust 版が受ける', () => {
 });
 
 describe('bun 版のランチャー', () => {
-	// 開発時の実行なので tools/50_run/ に置く（i260924-06）
+	// 開発時の実行なので tools/50_run/ に置く (i260924-06)
 	const runDir = join(root, 'tools', '50_run');
 
 	test('aichat-bun と aichat-bun.cmd が揃っている', () => {

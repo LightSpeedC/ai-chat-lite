@@ -1,11 +1,11 @@
 /*
- * Rust 版 CLI（aichat-rs）と node 版の突き合わせ。
+ * Rust 版 CLI (aichat-rs)と node 版の突き合わせ。
  *
  * 【なぜ要るか】
  * CLI が複数あると、食い違いは必ず出るし、目で読んで気づける差ではない。
  * 実際にかつての C# 版では、同じ秒に立った待受けの並び順と、say の本文
- * なしの終了コードが node 版と食い違っていた（突き合わせテストがあって
- * 初めて見つかった。C# 版は i260918-01 で削除済み）。
+ * なしの終了コードが node 版と食い違っていた (突き合わせテストがあって
+ * 初めて見つかった。C# 版は i260918-01 で削除済み)。
  *
  * ここは同じ形を Rust 版にも用意する。**出力と終了コードを 1 文字ずつ比べる。**
  *
@@ -43,9 +43,9 @@ function runBoth(args) {
 }
 
 /** 引数の並びを読みやすい名前にする */
-const label = (args) => (args.length === 0 ? '（引数なし）' : args.join(' '));
+const label = (args) => (args.length === 0 ? '(引数なし)' : args.join(' '));
 
-describe('Rust 版と node 版の突き合わせ', { skip: ready ? false : 'aichat-rs が無い（先にビルドしてください）' }, () => {
+describe('Rust 版と node 版の突き合わせ', { skip: ready ? false : 'aichat-rs が無い (先にビルドしてください)' }, () => {
 	/*
 	 * サーバーに繋がない呼び出し。
 	 *
@@ -77,11 +77,11 @@ describe('Rust 版と node 版の突き合わせ', { skip: ready ? false : 'aich
 		});
 	}
 
-	test('繋がらないときの案内が node 版と同じで、deploy/ の WinSW を指す（i260830-01）', () => {
+	test('繋がらないときの案内が node 版と同じで、deploy/ の WinSW を指す (i260830-01)', () => {
 		// 誰も待ち受けていないポート。stop は粘らないので、すぐ終わる
 		const { node, rust } = runBoth(['stop', ':test-connector1:', '--port', '1']);
 
-		// 1 行目は OS のエラー名（ECONNREFUSED と connection refused）で違うので、案内の行だけを比べる
+		// 1 行目は OS のエラー名 (ECONNREFUSED と connection refused)で違うので、案内の行だけを比べる
 		const guide = (out) => out.split(/\r?\n/).slice(1).join('\n');
 		assert.equal(guide(rust.out), guide(node.out), '案内の行が違う');
 		assert.equal(rust.code, node.code, '終了コードが違う');

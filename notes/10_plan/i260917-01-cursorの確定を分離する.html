@@ -11,7 +11,7 @@
 
 /* ===================================================================
    ai-chat-lite 共通スタイル
-   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   章ごとのアクセント色 (.ch01〜)は各 HTML 側で定義する
    =================================================================== */
 
 :root {
@@ -334,7 +334,7 @@ pre code {
 }
 
 /*
- * 幅は文字数で決まる（固定幅にしない）。
+ * 幅は文字数で決まる (固定幅にしない)。
  * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
  * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
  */
@@ -412,7 +412,7 @@ footer a {
 }
 </style>
 <style>
-/* この資料だけのもの: 章のアクセント色（4章 / 色相 280→0 を 93.3 刻み）と目次の採番 */
+/* この資料だけのもの: 章のアクセント色 (4章 / 色相 280→0 を 93.3 刻み)と目次の採番 */
 .ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
 .ch02 { --accent: hsl(186.7, 78%, 25%); --accent2: hsl(186.7, 58%, 55%); --soft: hsl(186.7, 28%, 95%); }
 .ch03 { --accent: hsl(93.3, 78%, 25%); --accent2: hsl(93.3, 58%, 55%); --soft: hsl(93.3, 28%, 95%); }
@@ -450,13 +450,13 @@ footer a {
 <section class="ch01" id="ch01">
 	<h1>現状と問題</h1>
 
-	<p><code>cursors</code> は <code>(connector_id, room_id)</code> ごとに <code>msg_seq</code> を 1 つだけ持つ。<code>wait</code>（<code>/api/poll</code>）が応答を返す直前、<strong>走査した末尾までこの値を進める</strong>（<code>server.mjs</code> の <code>handlePoll</code>）。</p>
+	<p><code>cursors</code> は <code>(connector_id, room_id)</code> ごとに <code>msg_seq</code> を 1 つだけ持つ。<code>wait</code>(<code>/api/poll</code>)が応答を返す直前、<strong>走査した末尾までこの値を進める</strong>(<code>server.mjs</code> の <code>handlePoll</code>)。</p>
 
 	<div class="callout callout-important">
-		<p><strong>「配信した」ことと「読まれた」ことを区別していない。</strong>呼び出し元（AI セッション）が応答の中身を実際に読んだかどうかは、サーバーの関知するところではない。読まずに次の <code>wait</code> を呼んでも、カーソルは既に先へ進んでいるため、<strong>その発言は二度と出てこない。</strong></p>
+		<p><strong>「配信した」ことと「読まれた」ことを区別していない。</strong>呼び出し元 (AI セッション)が応答の中身を実際に読んだかどうかは、サーバーの関知するところではない。読まずに次の <code>wait</code> を呼んでも、カーソルは既に先へ進んでいるため、<strong>その発言は二度と出てこない。</strong></p>
 	</div>
 
-	<p>発言 #902（<a href="../40_issues/issues.html#i260917-01">i260917-01</a>）はこの形で起きた。作業中に <code>wait</code> の完了通知が届いたが、出力を読まずに次の作業へ進んでしまい、新着 1 件が痕跡なく消えた。<code>aichat waiters</code> は本数しか見ないため、張り直せば見かけ上は正常に戻り、<strong>読み飛ばしたこと自体が分からない。</strong></p>
+	<p>発言 #902 (<a href="../40_issues/issues.html#i260917-01">i260917-01</a>)はこの形で起きた。作業中に <code>wait</code> の完了通知が届いたが、出力を読まずに次の作業へ進んでしまい、新着 1 件が痕跡なく消えた。<code>aichat waiters</code> は本数しか見ないため、張り直せば見かけ上は正常に戻り、<strong>読み飛ばしたこと自体が分からない。</strong></p>
 
 	<h2>検知だけでは防げない</h2>
 
@@ -475,27 +475,27 @@ footer a {
 		<table>
 			<thead><tr><th>列</th><th>意味</th><th>今との違い</th></tr></thead>
 			<tbody>
-				<tr><td class="nowrap"><code>msg_seq</code></td><td><strong>配信済み位置。</strong><code>wait</code> が応答を返した時点の走査末尾</td><td>今と同じ扱い（そのまま使う）</td></tr>
-				<tr><td class="nowrap"><code>acked_seq</code>（新規）</td><td><strong>確定済み位置。</strong>次の <code>wait</code> が前回分を再送し終えた時点で <code>msg_seq</code> に追いつく</td><td>新規追加。既存行は移行時に <code>acked_seq = msg_seq</code>（＝今ある分は確定済み扱い）で初期化する</td></tr>
+				<tr><td class="nowrap"><code>msg_seq</code></td><td><strong>配信済み位置。</strong><code>wait</code> が応答を返した時点の走査末尾</td><td>今と同じ扱い (そのまま使う)</td></tr>
+				<tr><td class="nowrap"><code>acked_seq</code>(新規)</td><td><strong>確定済み位置。</strong>次の <code>wait</code> が前回分を再送し終えた時点で <code>msg_seq</code> に追いつく</td><td>新規追加。既存行は移行時に <code>acked_seq = msg_seq</code>(＝今ある分は確定済み扱い)で初期化する</td></tr>
 			</tbody>
 		</table>
 	</div>
 
-	<p><code>ALTER TABLE cursors ADD COLUMN acked_seq INTEGER</code> で足りる（列の追加のみで、既存の型変更や削除は伴わない）。</p>
+	<p><code>ALTER TABLE cursors ADD COLUMN acked_seq INTEGER</code> で足りる (列の追加のみで、既存の型変更や削除は伴わない)。</p>
 
 	<h2>wait の流れ</h2>
 
 	<div class="callout callout-important">
-		<p><code>/api/poll</code> のレスポンスに新しいフィールド <code>pending</code> を足す。<strong><code>messages</code>（新着）の意味・動作は今まで通り一切変えない。</strong>一度 <code>messages</code> に出た内容は今まで通り二度と出ない。「前回配信したが未確定の分」は <code>messages</code> には混ぜず、<code>pending</code> という別枠で返す。</p>
+		<p><code>/api/poll</code> のレスポンスに新しいフィールド <code>pending</code> を足す。<strong><code>messages</code>(新着)の意味・動作は今まで通り一切変えない。</strong>一度 <code>messages</code> に出た内容は今まで通り二度と出ない。「前回配信したが未確定の分」は <code>messages</code> には混ぜず、<code>pending</code> という別枠で返す。</p>
 	</div>
 
 	<div class="tablewrap">
 		<table>
 			<thead><tr><th class="nowrap">段</th><th>すること</th></tr></thead>
 			<tbody>
-				<tr><td class="num">1</td><td><code>/api/poll</code> を呼ぶ。<code>acked_seq &lt; msg_seq</code>（前回配信したが未確定の分）があれば <code>pending</code> にその範囲を、新着があれば <code>messages</code> にそれを入れて返す</td></tr>
+				<tr><td class="num">1</td><td><code>/api/poll</code> を呼ぶ。<code>acked_seq &lt; msg_seq</code>(前回配信したが未確定の分)があれば <code>pending</code> にその範囲を、新着があれば <code>messages</code> にそれを入れて返す</td></tr>
 				<tr><td class="num">2</td><td><code>pending</code> に中身があれば、<strong>新着とは別枠で「前回分の確認」として先に表示する</strong></td></tr>
-				<tr><td class="num">3</td><td>2 を表示し終えた時点で、新しい API <code>/api/ack</code>（<code>connector_id</code> ・ <code>room_id</code> ・ <code>msg_seq</code> を渡す）を呼び、<code>acked_seq</code> を <code>msg_seq</code> まで進める（＝確定）</td></tr>
+				<tr><td class="num">3</td><td>2 を表示し終えた時点で、新しい API <code>/api/ack</code>(<code>connector_id</code> ・ <code>room_id</code> ・ <code>msg_seq</code> を渡す)を呼び、<code>acked_seq</code> を <code>msg_seq</code> まで進める (＝確定)</td></tr>
 				<tr><td class="num">4</td><td><code>messages</code> があれば、今まで通り新着として表示する</td></tr>
 			</tbody>
 		</table>
@@ -509,8 +509,8 @@ footer a {
 
 	<ul>
 		<li><strong>専用の <code>ack</code> コマンドは追加しない。</strong>毎回の運用に確定という追加の一手間を挟むと、通常の「wait → 読む → 張り直す」という単純な流れが崩れる。次の <code>wait</code> 自体が確定を兼ねる方が、既存の運用を変えずに済む。<code>/api/ack</code> は CLI が内部で自動的に呼ぶだけで、利用者がコマンドとして打つものではない</li>
-		<li><strong>同じ内容を 2 度読む前提を無くそうとしない。</strong>重複表示は許容する。無くそうとすると結局「読んだ」という外部からの申告が要り、今の問題（申告を信用できない）に戻る</li>
-		<li><strong><code>/api/ack</code> 自体の後方互換のための作り込みはしない。</strong>新しいエンドポイントとして素直に増やす。<strong>サーバーを先に更新してから CLI を更新する</strong>順序を徹底し、旧サーバーに新 CLI が繋ぐ組み合わせ自体を起こさない（詳細は次章「移行」）。一方 <code>pending</code> は <code>/api/poll</code> の応答に足すだけの新フィールドなので、旧 CLI は素通りする（作り込み不要の自然な後方互換）</li>
+		<li><strong>同じ内容を 2 度読む前提を無くそうとしない。</strong>重複表示は許容する。無くそうとすると結局「読んだ」という外部からの申告が要り、今の問題 (申告を信用できない)に戻る</li>
+		<li><strong><code>/api/ack</code> 自体の後方互換のための作り込みはしない。</strong>新しいエンドポイントとして素直に増やす。<strong>サーバーを先に更新してから CLI を更新する</strong>順序を徹底し、旧サーバーに新 CLI が繋ぐ組み合わせ自体を起こさない (詳細は次章「移行」)。一方 <code>pending</code> は <code>/api/poll</code> の応答に足すだけの新フィールドなので、旧 CLI は素通りする (作り込み不要の自然な後方互換)</li>
 	</ul>
 </section>
 
@@ -519,7 +519,7 @@ footer a {
 	<h1>実装ステップ</h1>
 
 	<div class="callout callout-important">
-		<p><strong>サーバー側とCLI側を、別々に実装・リリースする 2 フェーズに分ける。</strong>「サーバーを先に更新してから CLI を更新する」（次章「移行」）を開発の単位でもそのまま守る。フェーズ 1 が動いてリリースされるまで、フェーズ 2 には着手しない。</p>
+		<p><strong>サーバー側とCLI側を、別々に実装・リリースする 2 フェーズに分ける。</strong>「サーバーを先に更新してから CLI を更新する」 (次章「移行」)を開発の単位でもそのまま守る。フェーズ 1 が動いてリリースされるまで、フェーズ 2 には着手しない。</p>
 	</div>
 
 	<h2>フェーズ 1: サーバー側</h2>
@@ -528,29 +528,29 @@ footer a {
 		<table>
 			<thead><tr><th class="nowrap">段</th><th>すること</th><th>対象</th></tr></thead>
 			<tbody>
-				<tr><td class="num">1</td><td>スキーマ移行（<code>acked_seq</code> 追加、既存行の初期化）</td><td><code>src/scripts/20_migrate/</code> に新しい版を足す。<code>tables.mjs</code></td></tr>
-				<tr><td class="num">2</td><td>サーバー側の確定 API（<code>/api/ack</code>）</td><td><code>store.mjs</code>（<code>acked_seq</code> の読み書き）・<code>server.mjs</code>（<code>handlePoll</code> の分離・新エンドポイント）</td></tr>
-				<tr><td class="num">3</td><td>サーバー側のテスト（<strong>CLI は使わない</strong>）</td><td><code>tests/store.test.mjs</code>（DB 層を直接呼ぶ）・<code>tests/server.test.mjs</code> と同じ方式（テスト専用ポート・DB でサーバーを起動し、生の <code>fetch</code> で <code>/api/poll</code>・<code>/api/ack</code> を直接叩く）</td></tr>
-				<tr><td class="num">4</td><td><strong>リリース</strong>（サーバーを再起動して反映）</td><td>この時点では CLI は 3 本とも旧版のまま。<code>/api/ack</code> はまだどこからも呼ばれない</td></tr>
+				<tr><td class="num">1</td><td>スキーマ移行 (<code>acked_seq</code> 追加、既存行の初期化)</td><td><code>src/scripts/20_migrate/</code> に新しい版を足す。<code>tables.mjs</code></td></tr>
+				<tr><td class="num">2</td><td>サーバー側の確定 API (<code>/api/ack</code>)</td><td><code>store.mjs</code>(<code>acked_seq</code> の読み書き)・<code>server.mjs</code>(<code>handlePoll</code> の分離・新エンドポイント)</td></tr>
+				<tr><td class="num">3</td><td>サーバー側のテスト (<strong>CLI は使わない</strong>)</td><td><code>tests/store.test.mjs</code>(DB 層を直接呼ぶ)・<code>tests/server.test.mjs</code> と同じ方式 (テスト専用ポート・DB でサーバーを起動し、生の <code>fetch</code> で <code>/api/poll</code>・<code>/api/ack</code> を直接叩く)</td></tr>
+				<tr><td class="num">4</td><td><strong>リリース</strong>(サーバーを再起動して反映)</td><td>この時点では CLI は 3 本とも旧版のまま。<code>/api/ack</code> はまだどこからも呼ばれない</td></tr>
 			</tbody>
 		</table>
 	</div>
 
 	<h3>テストで先に落とすこと</h3>
 
-	<p><strong>TDD で進める。</strong>「読み飛ばしを模した」ケースを先に書き、直す前は落ちることを確認する。<strong>CLI を経由せず、<code>/api/poll</code>・<code>/api/ack</code> を直接叩いて確かめる。</strong>本番の8787番ポート（他プロジェクトが Rust 版 CLI で待ち受けている先）とは無関係のテスト専用ポート・DB で完結するため、本番環境や他プロジェクトの待受けには一切影響しない。</p>
+	<p><strong>TDD で進める。</strong>「読み飛ばしを模した」ケースを先に書き、直す前は落ちることを確認する。<strong>CLI を経由せず、<code>/api/poll</code>・<code>/api/ack</code> を直接叩いて確かめる。</strong>本番の8787番ポート (他プロジェクトが Rust 版 CLI で待ち受けている先)とは無関係のテスト専用ポート・DB で完結するため、本番環境や他プロジェクトの待受けには一切影響しない。</p>
 
 	<ul>
-		<li>1 回目の <code>/api/poll</code> で新着 A が <code>messages</code> に入って返ったあと、<strong>確定させずに</strong> 2 回目の <code>/api/poll</code> を呼ぶと、A が今度は <code>pending</code> に入って返ること（<code>messages</code> には出ない）</li>
-		<li>2 回目の呼び出しのあと <code>/api/ack</code> で確定し、3 回目の <code>/api/poll</code> を呼んでも A は <code>pending</code> に出ない（確定済みのため）こと</li>
-		<li>既存行（<code>acked_seq</code> が無い状態からの移行）は、移行直後は <code>pending</code> が常に空であること</li>
-		<li><strong>既存テスト「受け取ったら位置が進み、次は続きから届く」（<code>tests/server.test.mjs</code>）は無修正のまま通ること。</strong><code>messages</code> の契約を変えていないことの確認になる</li>
+		<li>1 回目の <code>/api/poll</code> で新着 A が <code>messages</code> に入って返ったあと、<strong>確定させずに</strong> 2 回目の <code>/api/poll</code> を呼ぶと、A が今度は <code>pending</code> に入って返ること (<code>messages</code> には出ない)</li>
+		<li>2 回目の呼び出しのあと <code>/api/ack</code> で確定し、3 回目の <code>/api/poll</code> を呼んでも A は <code>pending</code> に出ない (確定済みのため)こと</li>
+		<li>既存行 (<code>acked_seq</code> が無い状態からの移行)は、移行直後は <code>pending</code> が常に空であること</li>
+		<li><strong>既存テスト「受け取ったら位置が進み、次は続きから届く」 (<code>tests/server.test.mjs</code>)は無修正のまま通ること。</strong><code>messages</code> の契約を変えていないことの確認になる</li>
 	</ul>
 
 	<h2>フェーズ 2: CLI 側</h2>
 
 	<div class="callout callout-caution">
-		<p><strong>フェーズ 1 のリリースが終わったことを確認してから着手する。</strong><code>aichat</code> は全プロジェクト共有の 1 実体なので、配置すれば即座に全プロジェクトへ及ぶ（次章「移行」）。<strong>C# 版は <a href="../40_issues/issues.html#i260918-01">i260918-01</a> で既に削除済みのため、対象は node ・ Rust の 2 本になった。</strong>ローカルルールも「CLI を直したら 2 本とも直す」に更新済み。</p>
+		<p><strong>フェーズ 1 のリリースが終わったことを確認してから着手する。</strong><code>aichat</code> は全プロジェクト共有の 1 実体なので、配置すれば即座に全プロジェクトへ及ぶ (次章「移行」)。<strong>C# 版は <a href="../40_issues/issues.html#i260918-01">i260918-01</a> で既に削除済みのため、対象は node ・ Rust の 2 本になった。</strong>ローカルルールも「CLI を直したら 2 本とも直す」に更新済み。</p>
 	</div>
 
 	<div class="tablewrap">
@@ -560,7 +560,7 @@ footer a {
 				<tr><td class="num">1</td><td>node 版 CLI</td><td><code>src/client/chat.mjs</code> の <code>cmdWait</code></td></tr>
 				<tr><td class="num">2</td><td>Rust 版 CLI</td><td><code>src/cli-rs/src/commands.rs</code></td></tr>
 				<tr><td class="num">3</td><td>突き合わせテスト</td><td><code>tests/client-wait.test.mjs</code>・<code>tests/cli-rs.test.mjs</code>・<code>tools/40_test/compare-cli.mjs</code></td></tr>
-				<tr><td class="num">4</td><td><strong>リリース</strong>（2 本を再ビルド・配置）</td><td>ここで全プロジェクトが新しい挙動（前回分の再送あり）に切り替わる</td></tr>
+				<tr><td class="num">4</td><td><strong>リリース</strong>(2 本を再ビルド・配置)</td><td>ここで全プロジェクトが新しい挙動 (前回分の再送あり)に切り替わる</td></tr>
 			</tbody>
 		</table>
 	</div>
@@ -572,7 +572,7 @@ footer a {
 			<thead><tr><th>論点</th><th>いつ決めるか</th></tr></thead>
 			<tbody>
 				<tr><td class="nowrap">「前回分」の表示の見た目</td><td>実装時。新着と混同しないよう見出しを分ける必要がある</td></tr>
-				<tr><td class="nowrap">ローカルルールへの反映</td><td>実装が全テストを通ってから。「ai-chat-lite（AI 間チャット）の利用」に確定の仕組みを追記するか検討する</td></tr>
+				<tr><td class="nowrap">ローカルルールへの反映</td><td>実装が全テストを通ってから。「ai-chat-lite (AI 間チャット)の利用」に確定の仕組みを追記するか検討する</td></tr>
 			</tbody>
 		</table>
 	</div>
@@ -586,38 +586,38 @@ footer a {
 
 	<h2>サーバー再起動は避けられない</h2>
 
-	<p><code>cursors</code> のスキーマ変更はサーバー起動時のマイグレーションで適用する設計のため、反映にはサーバープロセスの再起動が要る。<strong>再起動の瞬間、そのとき張られている全ての long-poll 接続（他プロジェクト分も含めて）が切断される。</strong></p>
+	<p><code>cursors</code> のスキーマ変更はサーバー起動時のマイグレーションで適用する設計のため、反映にはサーバープロセスの再起動が要る。<strong>再起動の瞬間、そのとき張られている全ての long-poll 接続 (他プロジェクト分も含めて)が切断される。</strong></p>
 
 	<div class="callout callout-note">
-		<p>これは新しい問題ではない。既知の挙動（済 <a href="../40_issues/issues.html#i260901-03">i260901-03</a>）に乗る。待受けは <code>ECONNREFUSED</code> で終了コード 1 になり、各セッションは「サーバーに繋がりません」の案内を見て気づく。<strong>特別な移行操作は不要で、通常のメンテナンス（サーバー再起動）と同じ扱いになる。</strong>ただし切断自体は起きるので、他プロジェクトが待受け中に落ちることは事前に伝えておく。</p>
+		<p>これは新しい問題ではない。既知の挙動 (済 <a href="../40_issues/issues.html#i260901-03">i260901-03</a>)に乗る。待受けは <code>ECONNREFUSED</code> で終了コード 1 になり、各セッションは「サーバーに繋がりません」の案内を見て気づく。<strong>特別な移行操作は不要で、通常のメンテナンス (サーバー再起動)と同じ扱いになる。</strong>ただし切断自体は起きるので、他プロジェクトが待受け中に落ちることは事前に伝えておく。</p>
 	</div>
 
 	<h2>「急に同じメッセージを返す」は移行直後には起きない</h2>
 
-	<p>既存行は移行時に <code>acked_seq = msg_seq</code>（＝今ある分は確定済み扱い）で初期化するため、<strong>移行後の最初の <code>wait</code> では前回分の再送は起きない</strong>（差分がゼロだから）。</p>
+	<p>既存行は移行時に <code>acked_seq = msg_seq</code>(＝今ある分は確定済み扱い)で初期化するため、<strong>移行後の最初の <code>wait</code> では前回分の再送は起きない</strong>(差分がゼロだから)。</p>
 
 	<div class="callout callout-important">
-		<p><strong>ただし 2 回目以降の <code>wait</code> からは、常に「前回配信分の再送」が発生するようになる。</strong>これは移行直後だけの一過性の挙動ではなく、新設計そのものの恒常的な仕様（読み忘れを検知するために、意図して重複させる）。<strong>毎回のやり取りが実質 2 段階（前回分の確認 → 新規の待機）になる</strong>点は、運用インパクトとして明記しておく。頻繁に短い間隔で <code>wait</code> を繰り返す運用ほど、出力が増える形で体感しやすい。</p>
+		<p><strong>ただし 2 回目以降の <code>wait</code> からは、常に「前回配信分の再送」が発生するようになる。</strong>これは移行直後だけの一過性の挙動ではなく、新設計そのものの恒常的な仕様 (読み忘れを検知するために、意図して重複させる)。<strong>毎回のやり取りが実質 2 段階 (前回分の確認 → 新規の待機)になる</strong>点は、運用インパクトとして明記しておく。頻繁に短い間隔で <code>wait</code> を繰り返す運用ほど、出力が増える形で体感しやすい。</p>
 	</div>
 
 	<h2>サーバー先行の手順を徹底する</h2>
 
 	<div class="callout callout-caution">
-		<p><code>aichat</code> は<strong>全プロジェクトが共有する 1 つの実体</strong>（PATH 上の <code>aichat.exe</code>）である。CLI を配置すればその瞬間に全プロジェクトが新 CLI に切り替わり、一部のプロジェクトだけ段階的に更新する、ということはできない。<strong>だからこそ「サーバーの更新を終えてから CLI を配置する」という順序を徹底することが唯一の防波堤になる。</strong>後方互換の作り込みはしない（前章）。</p>
+		<p><code>aichat</code> は<strong>全プロジェクトが共有する 1 つの実体</strong>(PATH 上の <code>aichat.exe</code>)である。CLI を配置すればその瞬間に全プロジェクトが新 CLI に切り替わり、一部のプロジェクトだけ段階的に更新する、ということはできない。<strong>だからこそ「サーバーの更新を終えてから CLI を配置する」という順序を徹底することが唯一の防波堤になる。</strong>後方互換の作り込みはしない (前章)。</p>
 	</div>
 
 	<div class="tablewrap">
 		<table>
 			<thead><tr><th class="nowrap">段</th><th>すること</th></tr></thead>
 			<tbody>
-				<tr><td class="num">1</td><td>サーバー側のスキーマ・API（<code>acked_seq</code>・<code>/api/ack</code>）を更新し、再起動して反映する（メンテナンス扱い。既存の待受けは切断され、各自が張り直す）</td></tr>
-				<tr><td class="num">2</td><td><strong>サーバーの更新が完了したことを確認してから、</strong>3 本の CLI を再ビルド・配置する（<a href="../40_issues/issues.html#i260901-07">exe の差し替え手順</a>＝待受けを止めない配慮に従う）</td></tr>
-				<tr><td class="num">3</td><td>CLI 配置後、全体が新しい挙動（前回分の再送あり）に揃ったことを確認する</td></tr>
+				<tr><td class="num">1</td><td>サーバー側のスキーマ・API (<code>acked_seq</code>・<code>/api/ack</code>)を更新し、再起動して反映する (メンテナンス扱い。既存の待受けは切断され、各自が張り直す)</td></tr>
+				<tr><td class="num">2</td><td><strong>サーバーの更新が完了したことを確認してから、</strong>3 本の CLI を再ビルド・配置する (<a href="../40_issues/issues.html#i260901-07">exe の差し替え手順</a>＝待受けを止めない配慮に従う)</td></tr>
+				<tr><td class="num">3</td><td>CLI 配置後、全体が新しい挙動 (前回分の再送あり)に揃ったことを確認する</td></tr>
 			</tbody>
 		</table>
 	</div>
 
-	<p>段 1 と段 2 のそれぞれで一度、全員の待受けが切れる（段 1 はサーバー再起動、段 2 は CLI の入れ替えによる）。<strong>切れる回数を減らすことより、順序を守ることを優先する。</strong></p>
+	<p>段 1 と段 2 のそれぞれで一度、全員の待受けが切れる (段 1 はサーバー再起動、段 2 は CLI の入れ替えによる)。<strong>切れる回数を減らすことより、順序を守ることを優先する。</strong></p>
 </section>
 
 </div>

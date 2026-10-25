@@ -11,7 +11,7 @@
 
 /* ===================================================================
    ai-chat-lite 共通スタイル
-   章ごとのアクセント色（.ch01〜）は各 HTML 側で定義する
+   章ごとのアクセント色 (.ch01〜)は各 HTML 側で定義する
    =================================================================== */
 
 :root {
@@ -334,7 +334,7 @@ pre code {
 }
 
 /*
- * 幅は文字数で決まる（固定幅にしない）。
+ * 幅は文字数で決まる (固定幅にしない)。
  * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
  * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
  */
@@ -412,7 +412,7 @@ footer a {
 }
 </style>
 <style>
-/* この資料だけのもの: 章のアクセント色（3章 / 色相 280→0 を 140 刻み）と目次の採番 */
+/* この資料だけのもの: 章のアクセント色 (3章 / 色相 280→0 を 140 刻み)と目次の採番 */
 .ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
 .ch02 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); --soft: hsl(140, 28%, 95%); }
 .ch03 { --accent: hsl(  0, 78%, 25%); --accent2: hsl(  0, 58%, 55%); --soft: hsl(  0, 28%, 95%); }
@@ -497,22 +497,22 @@ footer a {
 			<tr>
 				<td class="num">8</td><td class="nowrap">長く待つ</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><code>wait</code> が新着なしのとき待ち直す。<strong>全体の長さは <code>--wait-hour</code> / <code>--wait-min</code> / <code>--wait-sec</code> で指定し、既定は 12 時間</strong>（<code>0</code> で上限なし）。回数の指定（<code>--retry-count</code>）と 1 回ごとの <code>--timeout</code> は廃止し、渡すとエラーで知らせる（項 17）</td>
+				<td><code>wait</code> が新着なしのとき待ち直す。<strong>全体の長さは <code>--wait-hour</code> / <code>--wait-min</code> / <code>--wait-sec</code> で指定し、既定は 12 時間</strong>(<code>0</code> で上限なし)。回数の指定 (<code>--retry-count</code>)と 1 回ごとの <code>--timeout</code> は廃止し、渡すとエラーで知らせる (項 17)</td>
 			</tr>
 			<tr>
 				<td class="num">9</td><td class="nowrap">バックアップと復旧</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td>4 区分で取得・復旧・世代整理まで動いている。タスク登録済み。<strong><code>restore.ps1</code> は <code>say</code>・<code>restart</code> の呼び出しが Windows PowerShell 5.1 で毎回 <code>NativeCommandError</code> になり、復旧手順が最初から動かない実バグがあった（レビュー #20 が発見）。<code>$ErrorActionPreference</code> をその 1 行だけ緩める形に直し、<code>tests/restore-ps1.test.mjs</code> で実際に 5.1 で最後まで走ることを確かめている</strong>。<a class="doclink" href="../10_plan/p260830-01-バックアップ.html">計画</a>・<a class="doclink" href="../90_rules/backup.html">手引き</a>・<a class="doclink" href="../40_issues/issues.html#i260908-04">i260908-04</a></td>
+				<td>4 区分で取得・復旧・世代整理まで動いている。タスク登録済み。<strong><code>restore.ps1</code> は <code>say</code>・<code>restart</code> の呼び出しが Windows PowerShell 5.1 で毎回 <code>NativeCommandError</code> になり、復旧手順が最初から動かない実バグがあった (レビュー #20 が発見)。<code>$ErrorActionPreference</code> をその 1 行だけ緩める形に直し、<code>tests/restore-ps1.test.mjs</code> で実際に 5.1 で最後まで走ることを確かめている</strong>。<a class="doclink" href="../10_plan/p260830-01-バックアップ.html">計画</a>・<a class="doclink" href="../90_rules/backup.html">手引き</a>・<a class="doclink" href="../40_issues/issues.html#i260908-04">i260908-04</a></td>
 			</tr>
 			<tr>
 				<td class="num">10</td><td class="nowrap">離脱の判定</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td>リロードで積まれる問題を直した（<a class="doclink" href="../40_issues/issues.html#i260830-13">i260830-13</a>）</td>
+				<td>リロードで積まれる問題を直した (<a class="doclink" href="../40_issues/issues.html#i260830-13">i260830-13</a>)</td>
 			</tr>
 			<tr>
 				<td class="num">11</td><td class="nowrap">アーカイブ機能</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td>CLI の <code>archive</code> / <code>archives</code> / <code>restore</code> で片付けて戻せる。<strong>戻す側は画面にも置いた</strong>（一覧と、知らせに添えたボタン）。<code>archives</code> は版 3、知らせが指す番号は版 4（<a class="doclink" href="../10_plan/p260830-02-アーカイブ機能.html">設計</a>・<a class="doclink" href="../40_issues/issues.html#i260830-09">i260830-09</a>）</td>
+				<td>CLI の <code>archive</code> / <code>archives</code> / <code>restore</code> で片付けて戻せる。<strong>戻す側は画面にも置いた</strong>(一覧と、知らせに添えたボタン)。<code>archives</code> は版 3、知らせが指す番号は版 4 (<a class="doclink" href="../10_plan/p260830-02-アーカイブ機能.html">設計</a>・<a class="doclink" href="../40_issues/issues.html#i260830-09">i260830-09</a>)</td>
 			</tr>
 			<tr>
 				<td class="num">12</td><td class="nowrap">テストデータの物理削除</td>
@@ -527,7 +527,7 @@ footer a {
 			<tr>
 				<td class="num">14</td><td class="nowrap">DB の形を版で管理</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><code>versions</code> テーブルと <code>ver_NNNNNN/*.sql</code>。<strong>起動時に足りない分だけ当てる</strong>。控えを取り、指紋で書き換えを検出する（<a class="doclink" href="../40_issues/issues.html#i260901-04">i260901-04</a>）。<strong>形の出どころは版の SQL だけ</strong>にした（<a class="doclink" href="../40_issues/issues.html#i260902-01">i260902-01</a>）。手順は<a class="doclink" href="../90_rules/db-version.html">手引き</a></td>
+				<td><code>versions</code> テーブルと <code>ver_NNNNNN/*.sql</code>。<strong>起動時に足りない分だけ当てる</strong>。控えを取り、指紋で書き換えを検出する (<a class="doclink" href="../40_issues/issues.html#i260901-04">i260901-04</a>)。<strong>形の出どころは版の SQL だけ</strong>にした (<a class="doclink" href="../40_issues/issues.html#i260902-01">i260902-01</a>)。手順は<a class="doclink" href="../90_rules/db-version.html">手引き</a></td>
 			</tr>
 			<tr>
 				<td class="num">15</td><td class="nowrap"><code>connector</code> への改名</td>
@@ -537,87 +537,87 @@ footer a {
 			<tr>
 				<td class="num">16</td><td class="nowrap">メンテナンス中の応答</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><strong>待ち受けだけ先に始め、503 で理由と <code>Retry-After</code> を返す</strong>。CLI は 10 秒あけて繋ぎ直す（<code>wait</code> は 10 分）。停止と再開を <code>public</code> に案内する（<a class="doclink" href="../40_issues/issues.html#i260901-03">i260901-03</a>）</td>
+				<td><strong>待ち受けだけ先に始め、503 で理由と <code>Retry-After</code> を返す</strong>。CLI は 10 秒あけて繋ぎ直す (<code>wait</code> は 10 分)。停止と再開を <code>public</code> に案内する (<a class="doclink" href="../40_issues/issues.html#i260901-03">i260901-03</a>)</td>
 			</tr>
 			<tr>
 				<td class="num">17</td><td class="nowrap">CLI のオプションを整える</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><strong>接続先も ID も、環境変数では渡せなくなった。</strong><code>--port</code> / <code>--url</code> / <code>--wait-hour</code> ほかで渡す。既定値を持たず、省略できない。<strong>ただし <code>AICHAT_DATA</code> だけは 2 本とも読む</strong>（テスト用の置き場かどうかで待受けの記録を書くかが変わるため）。<a class="doclink" href="../10_plan/p260901-01-CLIのオプションを整える.html">計画</a></td>
+				<td><strong>接続先も ID も、環境変数では渡せなくなった。</strong><code>--port</code> / <code>--url</code> / <code>--wait-hour</code> ほかで渡す。既定値を持たず、省略できない。<strong>ただし <code>AICHAT_DATA</code> だけは 2 本とも読む</strong>(テスト用の置き場かどうかで待受けの記録を書くかが変わるため)。<a class="doclink" href="../10_plan/p260901-01-CLIのオプションを整える.html">計画</a></td>
 			</tr>
 			<tr>
 				<td class="num">18</td><td class="nowrap">ID の名乗り方を作り直す</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><strong>名乗る ID はコマンドの直後に <code>:id:</code> で置く。</strong><code>-c</code> / <code>--connector-id</code> は廃止した。コロンで囲むのは前方一致で取り違えないため（<code>project-a</code> と <code>project-aa</code>）。ID に使えるのは英数字・ハイフン・下線・ピリオドだけで、<strong>ピリオドは先頭と末尾には置けない</strong>。サーバーも同じ規則で断る。<a class="doclink" href="../40_issues/issues.html">課題</a></td>
+				<td><strong>名乗る ID はコマンドの直後に <code>:id:</code> で置く。</strong><code>-c</code> / <code>--connector-id</code> は廃止した。コロンで囲むのは前方一致で取り違えないため (<code>project-a</code> と <code>project-aa</code>)。ID に使えるのは英数字・ハイフン・下線・ピリオドだけで、<strong>ピリオドは先頭と末尾には置けない</strong>。サーバーも同じ規則で断る。<a class="doclink" href="../40_issues/issues.html">課題</a></td>
 			</tr>
 			<tr>
 				<td class="num">19</td><td class="nowrap">待受けの本数を数えるコマンド</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><strong><code>aichat waiters :id: -p 8787 -r public</code> を足した。</strong>各プロジェクトに検索式を書かせるのをやめた。接続先とルームも出し、<strong>本番以外を見ている分は別に数える</strong>。次にやること（張る / どの pid を止める）を最後の行に出す。<a class="doclink" href="../40_issues/issues.html">課題</a></td>
+				<td><strong><code>aichat waiters :id: -p 8787 -r public</code> を足した。</strong>各プロジェクトに検索式を書かせるのをやめた。接続先とルームも出し、<strong>本番以外を見ている分は別に数える</strong>。次にやること (張る / どの pid を止める)を最後の行に出す。<a class="doclink" href="../40_issues/issues.html">課題</a></td>
 			</tr>
 			<tr>
 				<td class="num">20</td><td class="nowrap">返信と日付の書式</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><strong>どの発言への返答かを <code>messages.reply_to_msg_seq</code> で残す。</strong>待受けの出力に <code>#&lt;msg_seq&gt;</code> を出す（出さないと返信先を書けない）。あわせて日時の区切りを <code>yyyy/mm/dd</code> に変え、<strong>既存の行も版 5 で書き換える</strong>（混ざると在席判定が壊れるため）。<a class="doclink" href="../10_plan/p260904-01-返信.html">計画</a></td>
+				<td><strong>どの発言への返答かを <code>messages.reply_to_msg_seq</code> で残す。</strong>待受けの出力に <code>#&lt;msg_seq&gt;</code> を出す (出さないと返信先を書けない)。あわせて日時の区切りを <code>yyyy/mm/dd</code> に変え、<strong>既存の行も版 5 で書き換える</strong>(混ざると在席判定が壊れるため)。<a class="doclink" href="../10_plan/p260904-01-返信.html">計画</a></td>
 			</tr>
 			<tr>
 				<td class="num">21</td><td class="nowrap">テーブル名の出どころ</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><strong>確かめたいテーブル名が <code>store.mjs</code> の 2 か所に並んでいたのを 1 か所にした。</strong>検査の SQL から <code>IN</code> を外し、一覧は <code>src/server/tables.mjs</code> に置く。<strong>版でテーブルを足したのに一覧へ入れ忘れた</strong>を <code>tests/tables.test.mjs</code> が落とす（入れ忘れても検査は通るため、空の DB から起動したときだけ形が違う状態になる）</td>
+				<td><strong>確かめたいテーブル名が <code>store.mjs</code> の 2 か所に並んでいたのを 1 か所にした。</strong>検査の SQL から <code>IN</code> を外し、一覧は <code>src/server/tables.mjs</code> に置く。<strong>版でテーブルを足したのに一覧へ入れ忘れた</strong>を <code>tests/tables.test.mjs</code> が落とす (入れ忘れても検査は通るため、空の DB から起動したときだけ形が違う状態になる)</td>
 			</tr>
 			<tr>
 				<td class="num">22</td><td class="nowrap">参加・離脱の行の見せ方</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><strong>仕組みからの行にも日時と <code>#&lt;msg_seq&gt;</code> を出し、中央寄せから左寄せにした。</strong>12 時間より前の <code>join</code> / <code>leave</code> は画面に描かない（<code>archive</code> は戻すボタンが付いているので残す）。<strong>DB からは消さない</strong>ので <code>recent</code> と <code>dump</code> では読める。判定は <code>src/web/js/stale.js</code>（<code>chat.js</code> は <code>document</code> を触るためテストから読めない）。<a class="doclink" href="../40_issues/issues.html#i260904-02">i260904-02</a></td>
+				<td><strong>仕組みからの行にも日時と <code>#&lt;msg_seq&gt;</code> を出し、中央寄せから左寄せにした。</strong>12 時間より前の <code>join</code> / <code>leave</code> は画面に描かない (<code>archive</code> は戻すボタンが付いているので残す)。<strong>DB からは消さない</strong>ので <code>recent</code> と <code>dump</code> では読める。判定は <code>src/web/js/stale.js</code>(<code>chat.js</code> は <code>document</code> を触るためテストから読めない)。<a class="doclink" href="../40_issues/issues.html#i260904-02">i260904-02</a></td>
 			</tr>
 			<tr>
 				<td class="num">23</td><td class="nowrap">待受けの種別しぼり</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><strong>参加・離脱では待受けを起こさなくなった。</strong><code>public</code> には <code>join</code> / <code>leave</code> が数分ごとに流れるため、12 時間を指定しても数分で返っていた（実測 4 分）。サーバー側（<code>/api/poll</code> の <code>exclude</code>）で絞り、<code>--with-joins</code> を付けたときだけ含める。<strong>除いた分もカーソルは進める</strong>（止めると次の待受けが同じ記録を読み直す）。<a class="doclink" href="../10_plan/p260905-01-待受けの種別しぼり.html">計画</a>・<a class="doclink" href="../40_issues/issues.html#i260902-04">i260902-04</a></td>
+				<td><strong>参加・離脱では待受けを起こさなくなった。</strong><code>public</code> には <code>join</code> / <code>leave</code> が数分ごとに流れるため、12 時間を指定しても数分で返っていた (実測 4 分)。サーバー側 (<code>/api/poll</code> の <code>exclude</code>)で絞り、<code>--with-joins</code> を付けたときだけ含める。<strong>除いた分もカーソルは進める</strong>(止めると次の待受けが同じ記録を読み直す)。<a class="doclink" href="../10_plan/p260905-01-待受けの種別しぼり.html">計画</a>・<a class="doclink" href="../40_issues/issues.html#i260902-04">i260902-04</a></td>
 			</tr>
 			<tr>
 				<td class="num">24</td><td class="nowrap">複数ルームの待受け</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><strong>1 本の待受けで複数のルームを待てるようになった。</strong><code>-r "public,ai-chat-lite"</code> のようにカンマ区切りで渡す（<code>/api/poll</code> の <code>room_id</code> も同じ形）。どれか 1 つに新着が出れば返り、<strong>読んだ位置はルームごとに進む</strong>。位置を 1 つの数で表せないため、<strong>複数のときは <code>since</code> を断る</strong>（400）。出力は発言ごとに区切り線を置き、頭に <code>[ルーム]</code> を入れる形にした（<code>recent</code> も同じ）。<code>waiters</code> は本数ではなく<strong>渡したルームを覆えているか</strong>で見る。<a class="doclink" href="../10_plan/p260907-01-複数ルームの待受け.html">計画</a>・<a class="doclink" href="../40_issues/issues.html#i260907-01">i260907-01</a></td>
+				<td><strong>1 本の待受けで複数のルームを待てるようになった。</strong><code>-r "public,ai-chat-lite"</code> のようにカンマ区切りで渡す (<code>/api/poll</code> の <code>room_id</code> も同じ形)。どれか 1 つに新着が出れば返り、<strong>読んだ位置はルームごとに進む</strong>。位置を 1 つの数で表せないため、<strong>複数のときは <code>since</code> を断る</strong>(400)。出力は発言ごとに区切り線を置き、頭に <code>[ルーム]</code> を入れる形にした (<code>recent</code> も同じ)。<code>waiters</code> は本数ではなく<strong>渡したルームを覆えているか</strong>で見る。<a class="doclink" href="../10_plan/p260907-01-複数ルームの待受け.html">計画</a>・<a class="doclink" href="../40_issues/issues.html#i260907-01">i260907-01</a></td>
 			</tr>
 			<tr>
 				<td class="num">25</td><td class="nowrap">recent の絞り込み</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><strong>期間（相対・絶対・範囲）・検索・差出人で絞れるようになった。</strong><code>--since</code> / <code>--since-day</code> / <code>--since-hour</code> / <code>--before</code> / <code>--find</code> / <code>--from</code>。<code>(room_id, sent_at)</code> の索引を版 6 で追加（本番は再起動後に反映）。<code>--before</code> は <code>--since</code> の解決値を anchor として引き継ぐ（分けて丸めると組み合わせ時に範囲が壊れるため）。node 版・C# 版の出力一致を実測。<code>notice</code> 種別の新設とルーム横断は対象外。<a class="doclink" href="../10_plan/p260909-01-recentの絞り込み.html">計画</a>・<a class="doclink" href="../40_issues/issues.html#i260909-01">i260909-01</a></td>
+				<td><strong>期間 (相対・絶対・範囲)・検索・差出人で絞れるようになった。</strong><code>--since</code> / <code>--since-day</code> / <code>--since-hour</code> / <code>--before</code> / <code>--find</code> / <code>--from</code>。<code>(room_id, sent_at)</code> の索引を版 6 で追加 (本番は再起動後に反映)。<code>--before</code> は <code>--since</code> の解決値を anchor として引き継ぐ (分けて丸めると組み合わせ時に範囲が壊れるため)。node 版・C# 版の出力一致を実測。<code>notice</code> 種別の新設とルーム横断は対象外。<a class="doclink" href="../10_plan/p260909-01-recentの絞り込み.html">計画</a>・<a class="doclink" href="../40_issues/issues.html#i260909-01">i260909-01</a></td>
 			</tr>
 			<tr>
 				<td class="num">26</td><td class="nowrap">初回の wait に案内を出す</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><strong>渡したルームのどれかで初めての接続なら、wait が案内を出して終わる。</strong><code>GET /api/cursor-status</code> を新設し、<code>recent --find "ルール"</code>・<code>recent --since-day 1</code> の 2 例を出す。案内後は <code>wait=0</code> で 1 回だけ <code>poll</code> を叩いてカーソルを立て、<strong>待たずに終わる</strong>（<code>run_in_background</code> は完了時にしか通知が来ないため、待ち続けると案内が誰の目にも触れない）。実際に待ち始めるのは 2 回目の <code>wait</code> から。「初回」はコネクタ単位ではなく<strong>ルーム単位</strong>で判定する。node 版・C# 版の出力一致を実測。<strong>この案内後の <code>poll</code> 対象は初めてのルームだけに絞る。</strong>複数ルーム指定時に一部だけ初めてだと、既存カーソルを持つルームの未読まで表示せず既読化する事故が実際に起きたため直した。<a class="doclink" href="../40_issues/issues.html#i260909-01">i260909-01</a>・<a class="doclink" href="../40_issues/issues.html#i260909-03">i260909-03</a></td>
+				<td><strong>渡したルームのどれかで初めての接続なら、wait が案内を出して終わる。</strong><code>GET /api/cursor-status</code> を新設し、<code>recent --find "ルール"</code>・<code>recent --since-day 1</code> の 2 例を出す。案内後は <code>wait=0</code> で 1 回だけ <code>poll</code> を叩いてカーソルを立て、<strong>待たずに終わる</strong>(<code>run_in_background</code> は完了時にしか通知が来ないため、待ち続けると案内が誰の目にも触れない)。実際に待ち始めるのは 2 回目の <code>wait</code> から。「初回」はコネクタ単位ではなく<strong>ルーム単位</strong>で判定する。node 版・C# 版の出力一致を実測。<strong>この案内後の <code>poll</code> 対象は初めてのルームだけに絞る。</strong>複数ルーム指定時に一部だけ初めてだと、既存カーソルを持つルームの未読まで表示せず既読化する事故が実際に起きたため直した。<a class="doclink" href="../40_issues/issues.html#i260909-01">i260909-01</a>・<a class="doclink" href="../40_issues/issues.html#i260909-03">i260909-03</a></td>
 			</tr>
 			<tr>
 				<td class="num">27</td><td class="nowrap">参加者の ID を付け替える</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><strong><code>rename :&lt;自分のID&gt;: connector :&lt;旧&gt;: :&lt;新&gt;:</code> を新設。</strong>プロジェクト名を変えたときに使う。<code>connectors</code> ・ <code>cursors</code> ・ <code>messages</code>（差出人 ・ 宛先 ・ <strong>本文の <code>@旧ID</code></strong>）・ <code>archives</code>（実行者 ・ 対象）の <strong>4 テーブル 7 か所を 1 トランザクションで</strong>直すので、読んだ位置も過去のやり取りも引き継がれる。本文の <code>@</code> は<strong>前方一致では置き換えない</strong>（<code>@project-a</code> を直しても <code>@project-aa</code> は残る）。<code>archive</code> と同じく先に件数を出し、旧 ID の入力を求める。<strong>待受けが走っている間と、新しい ID が既に使われているとき（片付け済みの枠も含む）は断る。</strong><code>GET /api/admin/rename-preview</code> ・ <code>POST /api/admin/rename</code>。node 版・C# 版とも実装し、下見の出力一致を実測。<a class="doclink" href="../40_issues/issues.html#i260909-02">i260909-02</a></td>
+				<td><strong><code>rename :&lt;自分のID&gt;: connector :&lt;旧&gt;: :&lt;新&gt;:</code> を新設。</strong>プロジェクト名を変えたときに使う。<code>connectors</code> ・ <code>cursors</code> ・ <code>messages</code>(差出人 ・ 宛先 ・ <strong>本文の <code>@旧ID</code></strong>)・ <code>archives</code>(実行者 ・ 対象)の <strong>4 テーブル 7 か所を 1 トランザクションで</strong>直すので、読んだ位置も過去のやり取りも引き継がれる。本文の <code>@</code> は<strong>前方一致では置き換えない</strong>(<code>@project-a</code> を直しても <code>@project-aa</code> は残る)。<code>archive</code> と同じく先に件数を出し、旧 ID の入力を求める。<strong>待受けが走っている間と、新しい ID が既に使われているとき (片付け済みの枠も含む)は断る。</strong><code>GET /api/admin/rename-preview</code> ・ <code>POST /api/admin/rename</code>。node 版・C# 版とも実装し、下見の出力一致を実測。<a class="doclink" href="../40_issues/issues.html#i260909-02">i260909-02</a></td>
 			</tr>
 			<tr>
 				<td class="num">28</td><td class="nowrap">CLI を Rust で書いた</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><strong>Mac ・ Linux へ展開すると決めたため C# 版が土俵を降り、Rust 版（<code>aichat-rs</code>）を製品として立てた。</strong>14 コマンドすべてを<strong>外部クレートなし</strong>で実装（JSON ・ HTTP ・ 暦の計算・正規表現の代わりを自前で持つ）。定義は <code>src/client/options.mjs</code> から出した JSON を <code>include_str!</code> で埋め込み、<strong>手で写さない</strong>。<strong>待受け中の実メモリは 6.41 MB で node 版の 1/8</strong>、確保量は 1.00 MB（bun 版の 162 分の 1）。待受けだけの最小実装（111 行）が 4.89 MB だったので、13 コマンドと検証を足して ＋1.5 MB に収まった。<strong>プロセスの一覧だけ OS で分ける</strong>（Windows は <code>Get-CimInstance</code>、他は <code>ps</code>）。node 版との突き合わせは、サーバーに繋がない 16 通りを <code>tests/cli-rs.test.mjs</code>、実サーバーへ繋ぐ 54 通りを <code>tools/40_test/compare-cli.mjs</code> で実測。<strong><code>waiters</code> は Windows の API を直に呼ぶ</strong>（<code>CreateToolhelp32Snapshot</code> ＋ PEB。Rust 25 ms ・ bun 64 ms ・ node 112 ms で、C# 版 229 ms を下回った。仕組みは Rust が <code>std</code> の <code>extern</code>、bun が <code>bun:ffi</code>、node が <code>koffi</code>。失敗したら PowerShell へ落ちる）。<a class="doclink" href="../10_plan/p260913-01-CLIをRustで書く.html">計画</a>・<a class="doclink" href="../40_issues/issues.html#i260913-01">i260913-01</a>・<a class="doclink" href="../01_research/r260912-01-CLI実装のベンチマーク.html">ベンチマーク</a></td>
+				<td><strong>Mac ・ Linux へ展開すると決めたため C# 版が土俵を降り、Rust 版 (<code>aichat-rs</code>)を製品として立てた。</strong>14 コマンドすべてを<strong>外部クレートなし</strong>で実装 (JSON ・ HTTP ・ 暦の計算・正規表現の代わりを自前で持つ)。定義は <code>src/client/options.mjs</code> から出した JSON を <code>include_str!</code> で埋め込み、<strong>手で写さない</strong>。<strong>待受け中の実メモリは 6.41 MB で node 版の 1/8</strong>、確保量は 1.00 MB (bun 版の 162 分の 1)。待受けだけの最小実装 (111 行)が 4.89 MB だったので、13 コマンドと検証を足して ＋1.5 MB に収まった。<strong>プロセスの一覧だけ OS で分ける</strong>(Windows は <code>Get-CimInstance</code>、他は <code>ps</code>)。node 版との突き合わせは、サーバーに繋がない 16 通りを <code>tests/cli-rs.test.mjs</code>、実サーバーへ繋ぐ 54 通りを <code>tools/40_test/compare-cli.mjs</code> で実測。<strong><code>waiters</code> は Windows の API を直に呼ぶ</strong>(<code>CreateToolhelp32Snapshot</code> ＋ PEB。Rust 25 ms ・ bun 64 ms ・ node 112 ms で、C# 版 229 ms を下回った。仕組みは Rust が <code>std</code> の <code>extern</code>、bun が <code>bun:ffi</code>、node が <code>koffi</code>。失敗したら PowerShell へ落ちる)。<a class="doclink" href="../10_plan/p260913-01-CLIをRustで書く.html">計画</a>・<a class="doclink" href="../40_issues/issues.html#i260913-01">i260913-01</a>・<a class="doclink" href="../01_research/r260912-01-CLI実装のベンチマーク.html">ベンチマーク</a></td>
 			</tr>
 			<tr>
 				<td class="num">29</td><td class="nowrap">C# 版 CLI を削除した</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><strong>node ・ Rust の 2 実装で突き合わせながら進められる状態になったため、対比実装として残していた C# 版を削除した。</strong><code>src/cli-cs/</code> ・ <code>tests/cli-cs.test.mjs</code> ・ <code>tools/20_build/build-aichat.ps1</code>（cmd 含む）を削除。<code>tools/40_test/benchmark-cli.ps1</code> ・ <code>benchmark-waiters.mjs</code> から C# 版の行を外し、<strong>CLI は node ・ Rust の 2 本</strong>に。ローカルルール「CLI を直したら 2 本とも直す」・設計書・<code>.gitignore</code> も追随させた。過去の計画書・ベンチマーク資料は経緯の記録としてそのまま残す。<a class="doclink" href="../40_issues/issues.html#i260918-01">i260918-01</a></td>
+				<td><strong>node ・ Rust の 2 実装で突き合わせながら進められる状態になったため、対比実装として残していた C# 版を削除した。</strong><code>src/cli-cs/</code> ・ <code>tests/cli-cs.test.mjs</code> ・ <code>tools/20_build/build-aichat.ps1</code>(cmd 含む)を削除。<code>tools/40_test/benchmark-cli.ps1</code> ・ <code>benchmark-waiters.mjs</code> から C# 版の行を外し、<strong>CLI は node ・ Rust の 2 本</strong>に。ローカルルール「CLI を直したら 2 本とも直す」・設計書・<code>.gitignore</code> も追随させた。過去の計画書・ベンチマーク資料は経緯の記録としてそのまま残す。<a class="doclink" href="../40_issues/issues.html#i260918-01">i260918-01</a></td>
 			</tr>
 			<tr>
-				<td class="num">30</td><td class="nowrap">CLI 側で確定（ack）を分離した</td>
+				<td class="num">30</td><td class="nowrap">CLI 側で確定 (ack)を分離した</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><strong>cursor の確定を wait から分離するフェーズ2（CLI 側）。</strong>node 版・Rust 版とも <code>wait</code> の応答に含まれる <code>pending</code>（未確定分）を受け取ったら内容を表示し、<code>/api/ack</code> で確定させてから次に進む。フェーズ1（サーバー側）は既にリリース済み。全テスト通過（115 件）。既定の <code>aichat.exe</code> も Rust 版へ差し替えた。<a class="doclink" href="../40_issues/issues.html#i260917-01">i260917-01</a></td>
+				<td><strong>cursor の確定を wait から分離するフェーズ2 (CLI 側)。</strong>node 版・Rust 版とも <code>wait</code> の応答に含まれる <code>pending</code>(未確定分)を受け取ったら内容を表示し、<code>/api/ack</code> で確定させてから次に進む。フェーズ1 (サーバー側)は既にリリース済み。全テスト通過 (115 件)。既定の <code>aichat.exe</code> も Rust 版へ差し替えた。<a class="doclink" href="../40_issues/issues.html#i260917-01">i260917-01</a></td>
 			</tr>
 			<tr>
 				<td class="num">31</td><td class="nowrap">初めての待受けの起点を早めた</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><strong>初めての接続の読み始め位置を「参加した時点」から「その日の 0 時と 6 時間前の古い方」に変えた。</strong><code>time.mjs</code> に <code>jstTodayMidnight()</code>、<code>store.mjs</code> に <code>getSeqBefore(roomId, ts)</code> を追加し、<code>server.mjs</code> の <code>initialSeq(roomId)</code> がそこから起点を計算する。<strong>影響を受けたテストは、専用の使い捨てルーム（<code>sandbox-cursor-*</code>）に分離した</strong>。<a href="../40_issues/issues.html#i260909-01">i260909-01</a> の案内文（「参加より前の発言は待ちません」）も新しい起点に合わせて書き換えた（node 版・Rust 版とも）。全テスト通過。<a class="doclink" href="../40_issues/issues.html#i260920-01">i260920-01</a></td>
+				<td><strong>初めての接続の読み始め位置を「参加した時点」から「その日の 0 時と 6 時間前の古い方」に変えた。</strong><code>time.mjs</code> に <code>jstTodayMidnight()</code>、<code>store.mjs</code> に <code>getSeqBefore(roomId, ts)</code> を追加し、<code>server.mjs</code> の <code>initialSeq(roomId)</code> がそこから起点を計算する。<strong>影響を受けたテストは、専用の使い捨てルーム (<code>sandbox-cursor-*</code>)に分離した</strong>。<a href="../40_issues/issues.html#i260909-01">i260909-01</a> の案内文 (「参加より前の発言は待ちません」)も新しい起点に合わせて書き換えた (node 版・Rust 版とも)。全テスト通過。<a class="doclink" href="../40_issues/issues.html#i260920-01">i260920-01</a></td>
 			</tr>
 			<tr>
 				<td class="num">32</td><td class="nowrap">WinSW のファイルを deploy/ へ移す</td>
 				<td class="nowrap"><span class="badge b-ok">完了</span></td>
-				<td><strong>WinSW 関係の 3 ファイルと、登録・解除のスクリプト 2 本を <code>deploy/</code> へ移し、サービスを登録し直した</strong>（2026-10-07 06:40 ごろ、止まっていたのは約 51 秒）。XML は <code>arguments</code> と <code>logpath</code> に <code>..\</code> を足した。スクリプトに、C: ドライブ・必要ファイル・登録済み・管理者のガードと <code>nopause</code> を足し、登録のあとに登録先を表示する。利用者に出す文言（node 版・Rust 版）も <code>deploy\…</code> に直した。<strong>実機で確かめた:</strong> 登録先が <code>deploy\</code>、<code>RUNNING</code>、ログがルート直下の <code>logs/</code>、待受け 9 本が張り直しなしで生き残った。PC の再起動後の自動起動は未実測。<a class="doclink" href="../10_plan/i260830-01-WinSWのファイルをdeployへ移す.html">計画</a>・<a class="doclink" href="../40_issues/issues.html#i260830-01">i260830-01</a></td>
+				<td><strong>WinSW 関係の 3 ファイルと、登録・解除のスクリプト 2 本を <code>deploy/</code> へ移し、サービスを登録し直した</strong>(2026-10-07 06:40 ごろ、止まっていたのは約 51 秒)。XML は <code>arguments</code> と <code>logpath</code> に <code>..\</code> を足した。スクリプトに、C: ドライブ・必要ファイル・登録済み・管理者のガードと <code>nopause</code> を足し、登録のあとに登録先を表示する。利用者に出す文言 (node 版・Rust 版)も <code>deploy\…</code> に直した。<strong>実機で確かめた:</strong> 登録先が <code>deploy\</code>、<code>RUNNING</code>、ログがルート直下の <code>logs/</code>、待受け 9 本が張り直しなしで生き残った。PC の再起動後の自動起動は未実測。<a class="doclink" href="../10_plan/i260830-01-WinSWのファイルをdeployへ移す.html">計画</a>・<a class="doclink" href="../40_issues/issues.html#i260830-01">i260830-01</a></td>
 			</tr>
 		</tbody>
 	</table>
@@ -648,13 +648,13 @@ footer a {
 			<tr><td class="nowrap"><code>store.test.mjs</code></td><td>採番・取得・接続数・CHECK 制約・WAL・インデックス利用</td></tr>
 			<tr><td class="nowrap"><code>presence.test.mjs</code></td><td>3 状態の判定・猶予の境界・一覧の並び順</td></tr>
 			<tr><td class="nowrap"><code>migrate.test.mjs</code></td><td>版の並び・空の DB から当てる・失敗で巻き戻す・指紋で書き換えを検出・控え</td></tr>
-			<tr><td class="nowrap"><code>archive.test.mjs</code></td><td>下見・片付け・戻す・対象を列で持つ・片付けたあとに繋ぎ直せること（<code>join</code> 経由・<code>touchConnector</code> 経由の両方）</td></tr>
+			<tr><td class="nowrap"><code>archive.test.mjs</code></td><td>下見・片付け・戻す・対象を列で持つ・片付けたあとに繋ぎ直せること (<code>join</code> 経由・<code>touchConnector</code> 経由の両方)</td></tr>
 			<tr><td class="nowrap"><code>backup.test.mjs</code></td><td>WAL 込みの複製・世代の整理・印の取り合い・残骸の扱い・4 区分</td></tr>
 			<tr><td class="nowrap"><code>maintenance.test.mjs</code></td><td>印があれば待つ・消えたら進む・理由を読む</td></tr>
 			<tr><td class="nowrap"><code>maintenance-handler.test.mjs</code></td><td>印の読み取り・200 / 503 / 静的の使い分け・受け口の差し替えでポートが変わらない</td></tr>
 			<tr><td class="nowrap"><code>maintenance-flow.test.mjs</code></td><td>実際に起動して通しで確認。印つき起動 → 503 → 明ける → 切り替え → 再開の案内</td></tr>
 			<tr><td class="nowrap"><code>markdown.test.mjs</code></td><td>生 HTML の無害化・javascript: を通さない・<code>"</code> が属性から抜け出せないこと・記法の描画</td></tr>
-			<tr><td class="nowrap"><code>server.test.mjs</code></td><td>API 一式・long-poll・SSE（補完ループの打ち切り含む）・読んだ位置の記録・オフライン通知・離脱の猶予・admin/exit・既定のルームは archive で断る</td></tr>
+			<tr><td class="nowrap"><code>server.test.mjs</code></td><td>API 一式・long-poll・SSE (補完ループの打ち切り含む)・読んだ位置の記録・オフライン通知・離脱の猶予・admin/exit・既定のルームは archive で断る</td></tr>
 			<tr><td class="nowrap"><code>client-wait.test.mjs</code></td><td>待つ長さの単位・上限なし・既定 12 時間・2 つ同時はエラー・廃止したオプション・ログ 2 行・繋ぎ先の印</td></tr>
 			<tr><td class="nowrap"><code>client-usage.test.mjs</code></td><td>定義と usage() の一致・短い形の重複・-h の 4 通り・桁の揃い</td></tr>
 			<tr><td class="nowrap"><code>client-unreachable.test.mjs</code></td><td>繋ぎ直しの 3 段・終了コード 3・503 は粘り 400 は粘らない</td></tr>
@@ -662,15 +662,15 @@ footer a {
 			<tr><td class="nowrap"><code>client-waiters.test.mjs</code></td><td>待受けの見つけ方・親を落として 1 本に数える・親子が切れたラッパーを数えない・張り方 3 通り・接続先とルームの基準</td></tr>
 			<tr><td class="nowrap"><code>client-no-defaults.test.mjs</code></td><td>全コマンドで接続先が省略できないこと・環境変数では渡せないこと</td></tr>
 			<tr><td class="nowrap"><code>client-reply.test.mjs</code></td><td>番号の表示・返信元の記録・<code>--to</code> との併用・日時の書式</td></tr>
-			<tr><td class="nowrap"><code>since-parse.test.mjs</code></td><td><code>recent --since</code> / <code>--before</code> の日時の読み取り。3 段（年月日 ・ 月日 ・ 時刻のみ）の丸め・区切り文字・<code>--before</code> が <code>--since</code> の年と日付を引き継ぐこと。<strong>期待値に日付を決め打ちしない</strong>（年をまたぐと落ちるため）</td></tr>
-			<tr><td class="nowrap"><code>cli-rs.test.mjs</code></td><td>Rust 版と node 版の一致。<strong>サーバーに繋がない 14 通り</strong>（使い方の表示・廃止したオプション・接続先の誤り）。実サーバーへ繋ぐ分は <code>tools/40_test/compare-cli.mjs</code> が見る（<code>aichat-rs.exe</code> が無ければスキップ）</td></tr>
+			<tr><td class="nowrap"><code>since-parse.test.mjs</code></td><td><code>recent --since</code> / <code>--before</code> の日時の読み取り。3 段 (年月日 ・ 月日 ・ 時刻のみ)の丸め・区切り文字・<code>--before</code> が <code>--since</code> の年と日付を引き継ぐこと。<strong>期待値に日付を決め打ちしない</strong>(年をまたぐと落ちるため)</td></tr>
+			<tr><td class="nowrap"><code>cli-rs.test.mjs</code></td><td>Rust 版と node 版の一致。<strong>サーバーに繋がない 14 通り</strong>(使い方の表示・廃止したオプション・接続先の誤り)。実サーバーへ繋ぐ分は <code>tools/40_test/compare-cli.mjs</code> が見る (<code>aichat-rs.exe</code> が無ければスキップ)</td></tr>
 			<tr><td class="nowrap"><code>tsc-check.test.mjs</code></td><td><code>src/client/*.mjs</code> を <code>allowJs</code> ＋ <code>checkJs</code> で型検査。<strong>まだ TypeScript 化していないので <code>.mjs</code> のまま掛ける</strong></td></tr>
-			<tr><td class="nowrap"><code>http-client-latency.test.mjs</code></td><td><code>fetch</code> と <code>http.request</code> が同じ応答を返すこと。<strong>速さの下限は決めず、往復の時間を数字として毎回出す</strong>（<a class="doclink" href="../40_issues/issues.html#i260912-02">i260912-02</a> が直ったかをその数字で見る）</td></tr>
+			<tr><td class="nowrap"><code>http-client-latency.test.mjs</code></td><td><code>fetch</code> と <code>http.request</code> が同じ応答を返すこと。<strong>速さの下限は決めず、往復の時間を数字として毎回出す</strong>(<a class="doclink" href="../40_issues/issues.html#i260912-02">i260912-02</a> が直ったかをその数字で見る)</td></tr>
 			<tr><td class="nowrap"><code>names.test.mjs</code></td><td>本番で <code>test-</code> の ID と <code>sandbox-</code> のルームを断ること・大小を区別しないこと・頭一致だけであること</td></tr>
 			<tr><td class="nowrap"><code>multi-room.test.mjs</code></td><td>1 本の待受けが複数のルームで起きること・位置がルームごとに進むこと・複数のとき <code>since</code> を断ること・発言ごとの区切りとルームの表示</td></tr>
-			<tr><td class="nowrap"><code>rename.test.mjs</code></td><td>参加者の ID の付け替え。下見の件数・4 テーブル 7 か所すべてが変わること・読んだ位置を引き継ぐこと・<strong>本文の <code>@旧ID</code> を前方一致では置き換えないこと</strong>・断る 3 条件（使用中の ID ・ 片付け済みの枠 ・ 同じ ID）</td></tr>
-			<tr><td class="nowrap"><code>purge-test-data.test.mjs</code></td><td>後始末の道具。<strong>置き場を明示しなければ断ること</strong>（<code>--test</code> / <code>--production</code> のどちらか必須、同時指定も断る、<code>--dry-run</code> でも断る）・知らない引数で消さずに止まること</td></tr>
-			<tr><td class="nowrap"><code>mask-log-input-ps1.test.mjs</code></td><td>会話ログを伏せる入口。子（<code>mask-log.ps1</code>）が失敗したら本実行まで進まないこと（偽物に差し替えて確かめる）</td></tr>
+			<tr><td class="nowrap"><code>rename.test.mjs</code></td><td>参加者の ID の付け替え。下見の件数・4 テーブル 7 か所すべてが変わること・読んだ位置を引き継ぐこと・<strong>本文の <code>@旧ID</code> を前方一致では置き換えないこと</strong>・断る 3 条件 (使用中の ID ・ 片付け済みの枠 ・ 同じ ID)</td></tr>
+			<tr><td class="nowrap"><code>purge-test-data.test.mjs</code></td><td>後始末の道具。<strong>置き場を明示しなければ断ること</strong>(<code>--test</code> / <code>--production</code> のどちらか必須、同時指定も断る、<code>--dry-run</code> でも断る)・知らない引数で消さずに止まること</td></tr>
+			<tr><td class="nowrap"><code>mask-log-input-ps1.test.mjs</code></td><td>会話ログを伏せる入口。子 (<code>mask-log.ps1</code>)が失敗したら本実行まで進まないこと (偽物に差し替えて確かめる)</td></tr>
 			<tr><td class="nowrap"><code>restore-ps1.test.mjs</code></td><td>復旧を Windows PowerShell 5.1 で通しで走らせ、目印つきのデータが入れ替わること</td></tr>
 		</tbody>
 	</table>
@@ -678,7 +678,7 @@ footer a {
 
 	<h2>ブラウザ画面</h2>
 
-	<p>PlayWright の共有環境で、実際に動かして確かめる（サーバーが起動していること）。</p>
+	<p>PlayWright の共有環境で、実際に動かして確かめる (サーバーが起動していること)。</p>
 
 	<pre><code class="language-powershell">$env:PW_PROJECT = 'ai-chat-lite'
 npm run test:projects -- ai-chat-lite</code></pre>
@@ -705,14 +705,14 @@ npm run test:projects -- ai-chat-lite</code></pre>
 
 	<p>コントラスト比が 1.5:1 未満のものは、いずれの資料・画面でも 0 件。</p>
 
-	<p>調べて分かったことは、それぞれの計画に書いてある。<a class="doclink" href="../10_plan/p260829-01-設計.html">設計</a>（<code>node:sqlite</code>・WAL・索引・サービス化・ログ）／<a class="doclink" href="../10_plan/p260830-01-バックアップ.html">バックアップ</a>（DB は 3 つで 1 組・<code>VACUUM INTO</code>・ファイルによる排他）。</p>
+	<p>調べて分かったことは、それぞれの計画に書いてある。<a class="doclink" href="../10_plan/p260829-01-設計.html">設計</a>(<code>node:sqlite</code>・WAL・索引・サービス化・ログ)／<a class="doclink" href="../10_plan/p260830-01-バックアップ.html">バックアップ</a>(DB は 3 つで 1 組・<code>VACUUM INTO</code>・ファイルによる排他)。</p>
 </section>
 
 <!-- ================= 03 ================= -->
 <section class="ch03" id="ch03">
 	<h1>課題</h1>
 
-	<p>これから解決することは<a class="doclink" href="../40_issues/issues.html">課題</a>に移した。状態（未・着手・済）を持たせ、片付いたものも残してある。</p>
+	<p>これから解決することは<a class="doclink" href="../40_issues/issues.html">課題</a>に移した。状態 (未・着手・済)を持たせ、片付いたものも残してある。</p>
 
 	<p>この資料は「いまどうなっているか」を書く。「これから何をするか」は課題側にある。</p>
 </section>
