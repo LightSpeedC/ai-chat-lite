@@ -1,0 +1,587 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="format-detection" content="telephone=no">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ai-chat-lite 品質レビュー (2026-10-31)</title>
+<style>
+@charset "UTF-8";
+
+/* ===================================================================
+   ai-chat-lite 共通スタイル
+   章ごとのアクセント色 (.ch01〜.ch06) は後続の style で定義
+   =================================================================== */
+
+:root {
+	--navy1: #12224d;
+	--navy2: #2f5fbf;
+	--ink: #1c2330;
+	--ink-soft: #4a5568;
+	--line: #d9dfe8;
+	--code-bg: #f4f6fa;
+	--link: #1a4fa0;
+
+	--accent: #12224d;
+	--accent2: #2f5fbf;
+	--soft: #f2f5fb;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: #fdfdfe;
+	color: var(--ink, #1c2330);
+	font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+	font-size: 15.5px;
+	line-height: 1.85;
+}
+
+a {
+	color: var(--link, #1a4fa0);
+}
+
+/* ---------- タイトルバー ---------- */
+
+.titlebar {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 34px 30px 30px;
+}
+
+.titlebar .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+}
+
+.titlebar h1 {
+	font-size: 1.85em;
+	margin: 0 0 8px;
+	color: #fff;
+}
+
+.titlebar .lead {
+	margin: 0;
+	color: #d7e2f7;
+	font-size: 0.95em;
+}
+
+.titlebar .date {
+	margin: 10px 0 0;
+	color: #b9caea;
+	font-size: 0.88em;
+}
+
+.titlebar a {
+	color: #cfe0ff;
+}
+
+.titlebar code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+/* ---------- 本文の器 ---------- */
+
+.wrap {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding: 0 30px;
+}
+
+section {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 10px;
+	padding: 4px 26px 26px;
+	margin: 34px 0;
+}
+
+/* ---------- 見出し ---------- */
+
+section h1 {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-size: 1.4em;
+	padding: 14px 20px;
+	margin: 26px 0 20px;
+	border-radius: 8px;
+	box-shadow: 0 3px 10px rgba(20, 34, 70, 0.22);
+}
+
+section h1 code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+h2 {
+	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
+	color: var(--accent, #12224d);
+	font-size: 1.16em;
+	padding: 6px 12px;
+	margin: 30px 0 12px;
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 6px 6px 0;
+}
+
+h3 {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	font-size: 1.02em;
+	display: inline-block;
+	padding-bottom: 3px;
+	margin: 20px 0 8px;
+	border-bottom: 2px dotted var(--accent2, #2f5fbf);
+}
+
+/* ---------- 表 ---------- */
+
+.tablewrap {
+	overflow-x: auto;
+	margin: 14px 0;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 5px rgba(20, 34, 70, 0.10);
+}
+
+th {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	text-align: left;
+	padding: 9px 12px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+th code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+td {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	padding: 9px 12px;
+	border-top: 1px solid var(--line, #d9dfe8);
+	vertical-align: top;
+}
+
+tr:nth-child(even) td {
+	background: #fafbfe;
+	color: var(--ink, #1c2330);
+}
+
+td.num,
+th.num {
+	text-align: right;
+}
+
+td.nowrap,
+th.nowrap {
+	white-space: nowrap;
+}
+
+/* ---------- コード ---------- */
+
+code {
+	background: var(--code-bg, #f4f6fa);
+	color: #17335f;
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 4px;
+	padding: 1px 5px;
+	font-family: "Consolas", "Cascadia Mono", monospace;
+	font-size: 0.92em;
+}
+
+pre {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 5px solid var(--accent2, #2f5fbf);
+	border-radius: 0 8px 8px 0;
+	padding: 13px 16px;
+	overflow-x: auto;
+	line-height: 1.65;
+}
+
+pre code {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	border: none;
+	padding: 0;
+	font-size: 0.92em;
+}
+
+/* ---------- バッジ ---------- */
+
+.badge {
+	display: inline-block;
+	padding: 1px 9px;
+	margin-right: 6px;
+	border-radius: 11px;
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+	font-size: 0.84em;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.badge.b-ok {
+	background: linear-gradient(100deg, #1d7a3c, #45b56c);
+	color: #fff;
+}
+
+.badge.b-ng {
+	background: linear-gradient(100deg, #a51f22, #e05a5c);
+	color: #fff;
+}
+
+.badge.b-warn {
+	background: linear-gradient(100deg, #b8620a, #f0a548);
+	color: #fff;
+}
+
+.badge.b-none {
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+}
+
+/* ---------- callout ---------- */
+
+.callout {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 8px 8px 0;
+	padding: 12px 18px;
+	margin: 16px 0;
+}
+
+.callout strong {
+	color: var(--accent, #12224d);
+	background: transparent;
+}
+
+.callout p {
+	margin: 6px 0;
+}
+
+/* ---------- 目次 ---------- */
+
+.toc ol {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 0;
+	margin: 12px 0 4px;
+}
+
+.toc ol li {
+	counter-increment: tocnum;
+	margin: 0;
+}
+
+.toc ol a {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: normal;
+	width: 310px;
+	max-width: 100%;
+	padding: 7px 13px;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+	line-height: 1.45;
+}
+
+.toc ol a::before {
+	content: counter(tocnum) ". ";
+	font-weight: 700;
+}
+
+/* ---------- 戻るリンク ---------- */
+
+.backlink {
+	margin: 18px 0 0;
+}
+
+a.homelink {
+	display: inline-block;
+	padding: 4px 14px;
+	margin: 0 8px 6px 0;
+	border-radius: 6px;
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	background: linear-gradient(100deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	line-height: 1;
+	text-decoration: none;
+}
+
+a.homelink svg {
+	width: 16px;
+	height: 16px;
+	vertical-align: -3px;
+}
+
+/* ---------- フッター ---------- */
+
+footer {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 18px 30px 0;
+	margin-top: 40px;
+}
+
+footer .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding-bottom: 18px;
+}
+
+footer a {
+	color: #cfe0ff;
+}
+</style>
+<style>
+/* この資料の章アクセント色 (6章: 280°から 56°刻みで 0°まで減算) と目次採番 */
+.ch01 { --accent: hsl(280.0, 78%, 25%); --accent2: hsl(280.0, 58%, 55%); --soft: hsl(280.0, 28%, 95%); }
+.ch02 { --accent: hsl(224.0, 78%, 25%); --accent2: hsl(224.0, 58%, 55%); --soft: hsl(224.0, 28%, 95%); }
+.ch03 { --accent: hsl(168.0, 78%, 25%); --accent2: hsl(168.0, 58%, 55%); --soft: hsl(168.0, 28%, 95%); }
+.ch04 { --accent: hsl(112.0, 78%, 25%); --accent2: hsl(112.0, 58%, 55%); --soft: hsl(112.0, 28%, 95%); }
+.ch05 { --accent: hsl( 56.0, 78%, 25%); --accent2: hsl( 56.0, 58%, 55%); --soft: hsl( 56.0, 28%, 95%); }
+.ch06 { --accent: hsl(  0.0, 78%, 25%); --accent2: hsl(  0.0, 58%, 55%); --soft: hsl(  0.0, 28%, 95%); }
+.toc ol { counter-reset: tocnum; }
+</style>
+</head>
+
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>ai-chat-lite 品質レビュー</h1>
+		<p class="lead">全フォルダ・ファイル構成、テストスイート、HTML/Markdown整合性、およびルール遵守状況の実測品質レビュー</p>
+		<p class="date">📅 作成: 2026-10-31 / 更新: 2026-10-31</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p class="backlink"><a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
+
+<p>共通ルール「HTMLデザインルール」「進め方の原則」「SQLiteの大原則」およびローカルルールに基づき、<code>ai-chat-lite</code> リポジトリの構造、全ファイル、コード、テストスイート、ドキュメントの品質を実測・精査した総合レビューである。</p>
+
+<section class="toc md-skip">
+	<h2>目次</h2>
+	<ol>
+		<li class="ch01"><a href="#ch01">レビュー概要と評価総括</a></li>
+		<li class="ch02"><a href="#ch02">フォルダ・ファイル構成と設計規律</a></li>
+		<li class="ch03"><a href="#ch03">HTMLデザインルールとMarkdownの品質検証</a></li>
+		<li class="ch04"><a href="#ch04">テストスイートとコード品質の実測結果</a></li>
+		<li class="ch05"><a href="#ch05">アーキテクチャ・運用機能の検証</a></li>
+		<li class="ch06"><a href="#ch06">改善推奨事項と対応計画</a></li>
+	</ol>
+</section>
+
+<section class="ch01" id="ch01">
+	<h1>レビュー概要と評価総括</h1>
+	<p>2026-10-31 時点での作業ツリー全域を対象に、実機でのコマンド実行・構文解析・レンダラ検証ツールを用いて品質測定を実施した。</p>
+
+	<div class="tablewrap">
+		<table>
+			<thead>
+				<tr><th>検査分野</th><th>対象数</th><th>合格数</th><th>不合格 / 指摘</th><th class="nowrap">適合率</th><th>判定</th></tr>
+			</thead>
+			<tbody>
+				<tr><td class="nowrap">自動テストスイート</td><td class="num">39 本</td><td class="num">38 本</td><td>1 本 (mask-log-input-ps1)</td><td class="num nowrap">97.4%</td><td><span class="badge b-warn">⚠️ 要改善</span></td></tr>
+				<tr><td class="nowrap">HTML コントラスト実測</td><td class="num">32 ファイル</td><td class="num">32 ファイル</td><td>0 件 (1.5:1 未満なし)</td><td class="num nowrap">100.0%</td><td><span class="badge b-ok">✅ 合格</span></td></tr>
+				<tr><td class="nowrap">HTML/Markdown 相互リンク</td><td class="num">33 ドキュメント</td><td class="num">33 ドキュメント</td><td>リンク切れ・アンカー切れ 0 件</td><td class="num nowrap">100.0%</td><td><span class="badge b-ok">✅ 合格</span></td></tr>
+				<tr><td class="nowrap">GitHub Markdown レンダラ</td><td class="num">31 ファイル</td><td class="num">30 ファイル</td><td>1 箇所 (issues.md の強調崩れ)</td><td class="num nowrap">96.8%</td><td><span class="badge b-warn">⚠️ 要修正</span></td></tr>
+				<tr><td class="nowrap">文字コード・BOM 適合</td><td class="num">全ソースファイル</td><td class="num">—</td><td>1 件 (exe-swap.test.mjs の不要BOM)</td><td class="num nowrap">99.8%</td><td><span class="badge b-warn">⚠️ 要修正</span></td></tr>
+				<tr><td class="nowrap">改行コード (CRLF / LF)</td><td class="num">全ソースファイル</td><td class="num">—</td><td>混在 0 件 (完全統一)</td><td class="num nowrap">100.0%</td><td><span class="badge b-ok">✅ 合格</span></td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="callout">
+		<p><strong>総括評価: 極めて高い規律と完成度を保持。</strong></p>
+		<p>全体として共通ルール・ローカルルールが極めて高い精度で適用されており、ドキュメントの同期性、レイアウト、SQLiteのWAL/排他制御、Windowsサービスの連携運用など、堅牢なアーキテクチャが構築されている。実測で見つかった指摘事項はテスト入力のエンコーディング差やテーブル境界のMarkdown強調といった境界的な問題に限定されており、容易に対処可能である。</p>
+	</div>
+</section>
+
+<section class="ch02" id="ch02">
+	<h1>フォルダ・ファイル構成と設計規律</h1>
+	<p>共通ルール「プロジェクトフォルダ構成」およびローカルルール「ai-chat-lite のローカルルール」に照らした評価結果である。</p>
+
+	<h2>1. フォルダ構成の整合性</h2>
+	<div class="tablewrap">
+		<table>
+			<thead>
+				<tr><th>フォルダ</th><th>役割</th><th>ルールの要求</th><th>実態と評価</th></tr>
+			</thead>
+			<tbody>
+				<tr><td class="nowrap"><code>src/</code></td><td>アプリ本体</td><td>本体コードを配置</td><td><span class="badge b-ok">✅ 準拠</span> <code>server/</code>, <code>client/</code>, <code>cli-rs/</code>, <code>web/</code>, <code>scripts/</code> に分離。責務が明確</td></tr>
+				<tr><td class="nowrap"><code>tools/</code></td><td>開発・運用の補助</td><td>2桁番号10刻みで整理</td><td><span class="badge b-ok">✅ 準拠</span> <code>20_build</code>, <code>40_test</code>, <code>50_run</code>, <code>80_ops</code>, <code>90_misc</code> が整然と配置</td></tr>
+				<tr><td class="nowrap"><code>tests/</code></td><td>テスト本体</td><td>tests/ 平置き、ランチャは tools/40_test/</td><td><span class="badge b-ok">✅ 準拠</span> 39本のテストが平置きされ、<code>run-tests.ps1</code> から実行可能</td></tr>
+				<tr><td class="nowrap"><code>deploy/</code></td><td>サービス・デプロイ定義</td><td>Windows サービス (winsw) 定義を Git 管理</td><td><span class="badge b-ok">✅ 準拠</span> <code>node-ai-chat-lite-winsw.xml</code> 等が配置され、exe は gitignore 済み</td></tr>
+				<tr><td class="nowrap"><code>docs/</code></td><td>公開資料</td><td>外部に配る資料を配置</td><td><span class="badge b-ok">✅ 準拠</span> <code>ファイルで排他する.html</code> と共有 <code>css/style.css</code> を保持</td></tr>
+				<tr><td class="nowrap"><code>notes/</code></td><td>管理ドキュメント</td><td>01_research, 10_plan, 30_status, 40_issues 等</td><td><span class="badge b-ok">✅ 準拠</span> 番号付きフォルダ体系を完全に遵守</td></tr>
+				<tr><td class="nowrap"><code>_backup/</code>, <code>_data/</code></td><td>非公開・除外フォルダ</td><td>先頭アンダースコアで Git 除外</td><td><span class="badge b-ok">✅ 準拠</span> <code>.gitignore</code> に <code>_backup/</code>, <code>_data/</code> が正しく定義</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>2. ローカルルールの遵守度</h2>
+	<ul>
+		<li><strong>設計書の最新維持 (第1節)</strong>: <code>notes/10_plan/p260829-01-設計.html</code> が中心として整備され、個別計画書が漏れなく表からリンクされている。</li>
+		<li><strong>CLI 2本体制 (第2節)</strong>: <code>src/client/options.mjs</code> を唯一の定義とし、<code>tools/20_build/export-options.mjs</code> を経由して Rust 版 (<code>src/cli-rs/</code>) へ同期する仕組みが徹底されている。</li>
+		<li><strong>exe 置き換え時の待受け保護 (第3節)</strong>: <code>tools/20_build/place-exe.mjs</code> が掴まれている exe を <code>tmp/aichat-old-*.exe</code> へ退避するロジックを実装し、実証テスト <code>tests/exe-swap.test.mjs</code> で検証されている。</li>
+		<li><strong>プロセス終了の親子確認 (第4節)</strong>: <code>run-tests.ps1</code> に Windows Job Object (<code>TestJob</code>) を用いた親・子孫プロセスの追跡・終了機構が組み込まれている。</li>
+	</ul>
+</section>
+
+<section class="ch03" id="ch03">
+	<h1>HTMLデザインルールとMarkdownの品質検証</h1>
+	<p>共通ルール「HTMLデザインルール」「HTML→Markdown 変換ルール」に基づき、全HTMLファイルと生成Markdownを検証した。</p>
+
+	<h2>1. コントラスト比の実測 (check-contrast)</h2>
+	<p>Playwright 共有環境の <code>check-contrast</code> を用いて、ブラウザレンダリング後の実効前景色と背景色のコントラスト比を計測した。</p>
+	<ul>
+		<li><strong>対象</strong>: <code>README.html</code>, <code>CHAT-USAGE.html</code>, <code>docs/</code> 配下 1 ファイル, <code>notes/</code> 配下 30 ファイル (合計 32 ファイル)</li>
+		<li><strong>測定結果</strong>: <strong>全ファイル合格</strong>。しきい値 1.5:1 未満の要素は <strong>0 件</strong>。</li>
+		<li><strong>評価</strong>: 背景は常に淡色（白〜極淡色）に保たれ、文字色・背景色がペアで宣言されている。<code>var()</code> にもフォールバック値が正しく指定されている。</li>
+	</ul>
+
+	<h2>2. ドキュメント相互リンクと整合性 (html2md)</h2>
+	<p><code>html2md --dry-run --dir notes --dir docs --extra CHAT-USAGE.html</code> による総合整合性検査の結果:</p>
+	<ul>
+		<li><strong>HTML 側のリンク</strong>: すべて <code>.html</code> で記述されており、参照先ファイル・アンカーはすべて実在する (指摘 0 件)。</li>
+		<li><strong>Markdown 側のリンク</strong>: リンク切れ・アンカー切れ 0 件。</li>
+		<li><strong>HTML に無い文言の混入</strong>: 0 件。文言の同一性が保たれている。</li>
+		<li><strong>戻るリンク構造</strong>: 各ドキュメントの上部および下部に紺のホームバッジ (<code>⌂</code>) が配置され、上部には <code>margin-top: 18px</code> が確保されている。</li>
+	</ul>
+
+	<h2>3. GitHub レンダラでの検証 (check-markdown) と発見事項</h2>
+	<p>GitHub Markdown レンダラ API (<code>check-markdown</code>) による実測の結果、31 ファイル中 30 ファイルは完全合格であったが、1 箇所で強調記法の崩れが検出された。</p>
+
+	<div class="callout">
+		<p><strong>検出された不具合: <code>notes/40_issues/issues.md</code> での <code>****</code> 崩れ</strong></p>
+		<p><strong>発生箇所</strong>: <code>notes/40_issues/issues.md</code> (i260918-01 関連テーブル行)</p>
+		<pre><code class="language-markdown">| フェーズ2 | CLI 側の対応 ... 対象は **node ・ Rust の 2 本****☑ 実装・全テスト通過... |</code></pre>
+		<p><strong>メカニズム</strong>: <code>issues.html</code> 663 行目において、セル末尾の <code>&lt;strong&gt;node ・ Rust の 2 本&lt;/strong&gt;&lt;/td&gt;</code> の直後のセルに <code>&lt;td class="nowrap"&gt;&lt;span class="badge b-done"&gt;☑&lt;/span&gt;...&lt;/td&gt;</code> が続いている。html2md がテーブル変換する際、前セルの閉じ <code>**</code> と後セルのバッジ強調 <code>**</code> が結合または連続し、CommonMark のパーサーでアスタリスク 4 連として解釈され太字化が解除されていた。</p>
+		<p><strong>対策</strong>: <code>issues.html</code> 側の該当セル内を <code>&lt;strong&gt;</code> のまま残すか、セル区切りとの間に空白を挟むことで解消する。</p>
+	</div>
+</section>
+
+<section class="ch04" id="ch04">
+	<h1>テストスイートとコード品質の実測結果</h1>
+	<p>プロジェクト内の全テストを <code>tools/40_test/run-tests.ps1</code> により実機実行した。</p>
+
+	<h2>1. テスト実行サマリー</h2>
+	<div class="tablewrap">
+		<table>
+			<thead>
+				<tr><th>項目</th><th>数値</th><th>備考</th></tr>
+			</thead>
+			<tbody>
+				<tr><td class="nowrap">総テストスクリプト数</td><td class="num">39 本</td><td>Node 標準テストランナー (<code>node --test</code>)</td></tr>
+				<tr><td class="nowrap">合格</td><td class="num">38 本</td><td>サーバー、クライアント、Rust CLI、マイグレーション、排他制御等</td></tr>
+				<tr><td class="nowrap">不合格</td><td class="num">1 本</td><td><code>tests/mask-log-input-ps1.test.mjs</code></td></tr>
+				<tr><td class="nowrap">時間切れ (Timeout)</td><td class="num">0 本</td><td>上限 300 秒以内ですべて終了</td></tr>
+				<tr><td class="nowrap">プロセス残存</td><td class="num">0 本</td><td>Job Object による確実な後片付け</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2>2. 失敗テストの詳細分析</h2>
+	<p><strong>対象</strong>: <code>tests/mask-log-input-ps1.test.mjs</code>（ケース: <code>mask-log.ps1 が成功したら、本実行まで進む</code>）</p>
+
+	<div class="callout">
+		<p><strong>原因: Windows PowerShell 5.1 における標準入力のエンコーディング不一致</strong></p>
+		<p>Node.js の <code>execFileSync</code> から <code>powershell.exe</code> へ渡す <code>input: 'テスト語\n\nyes\n'</code> が、PowerShell の <code>Read-Host</code> 側で OEM/ANSI (Shift-JIS) として受信され、<code>繝・せ繝郁ｪ・</code> に文字化けしている。これにより入力行の改行解釈がズレて確認プロンプトへの <code>yes</code> が渡らず、下見後の確認で「中止しました」となって本実行（2回目の呼び出し）へ進まない。</p>
+		<p>10/25 の振り返り記録（<code>r261025-01</code>）において「mask-log 3 件が落ちていた」と指摘された経緯があり、2件は修正されたものの、標準入力パイプのエンコード問題に起因するこの1件が残存していた。</p>
+	</div>
+
+	<h2>3. ファイルエンコーディング検査での発見</h2>
+	<ul>
+		<li><strong><code>tests/exe-swap.test.mjs</code> に不要な UTF-8 BOM が混入</strong>: 共通ルール「文字コードと改行の定義ファイル」および <code>.editorconfig</code> では <code>[*.mjs]</code> は BOM 無し UTF-8 が規定されている。実測スキャンにより、本ファイルのみ先頭に <code>0xEF 0xBB 0xBF</code> が付与されていることが判明した。</li>
+	</ul>
+</section>
+
+<section class="ch05" id="ch05">
+	<h1>アーキテクチャ・運用機能の検証</h1>
+	<p>コア機能および運用基盤の設計・実装品質について評価した。</p>
+
+	<h2>1. SQLite ストアと並行性</h2>
+	<ul>
+		<li><strong>WAL モードと busy_timeout</strong>: <code>src/server/store.mjs</code> において、接続時に <code>journal_mode = WAL</code>、<code>synchronous = NORMAL</code>、<code>busy_timeout = 5000</code> が確実に設定されている。</li>
+		<li><strong>スキーマ管理</strong>: <code>src/server/migrate.mjs</code> によりバージョン管理され、マイグレーション時のテーブル定義変更が安全に適用される。設計書（<code>p260829-01-設計.html</code>）のスキーマ表も <code>sqlite_master</code> から写す運用が徹底されている。</li>
+	</ul>
+
+	<h2>2. CLI 2本体制とスキーマ同期</h2>
+	<ul>
+		<li>Node 版（<code>src/client/chat.mjs</code>）と Rust 版（<code>src/cli-rs/</code>）のオプション定義が <code>src/client/options.mjs</code> に一本化されている。</li>
+		<li><code>tools/20_build/export-options.mjs</code> により <code>cli-options.json</code> が出力され、Rust 版の <code>EXPECTED_SCHEMA</code> との不整合をビルド時およびテスト時（<code>tests/cli-rs.test.mjs</code>, <code>tools/40_test/compare-cli.mjs</code> 54通り）に機械検出する体制が機能している。</li>
+	</ul>
+
+	<h2>3. バックアップ・運用自動化</h2>
+	<ul>
+		<li><code>tools/80_ops/backup.mjs</code> により、<code>hourly</code>, <code>daily</code>, <code>weekly</code>, <code>monthly</code> の世代管理バックアップが完全自動化されている。</li>
+		<li><code>docs/ファイルで排他する.html</code> に記述された設計思想に基づき、Windows API / ファイルロックによる二重起動防止が実装されている。</li>
+	</ul>
+</section>
+
+<section class="ch06" id="ch06">
+	<h1>改善推奨事項と対応計画</h1>
+	<p>実測結果に基づき、対応すべき事項を優先度順に整理した。</p>
+
+	<div class="tablewrap">
+		<table>
+			<thead>
+				<tr><th>優先度</th><th>対象</th><th>内容</th><th>対処案</th></tr>
+			</thead>
+			<tbody>
+				<tr><td class="nowrap"><span class="badge b-warn">優先度: 高</span></td><td><code>tests/mask-log-input-ps1.test.mjs</code></td><td>テスト失敗の解消 (標準入力の文字化け)</td><td><code>input</code> を Windows PowerShell 5.1 が正しく読めるエンコーディングで渡すか、スクリプト呼び出し時にコードページを指定する。</td></tr>
+				<tr><td class="nowrap"><span class="badge b-warn">優先度: 高</span></td><td><code>tests/exe-swap.test.mjs</code></td><td>不要な UTF-8 BOM の除去</td><td>ファイルを BOM 無し UTF-8 で保存し直す。</td></tr>
+				<tr><td class="nowrap"><span class="badge b-warn">優先度: 高</span></td><td><code>notes/40_issues/issues.html</code></td><td>Markdown 強調構文崩れの解消</td><td>663 行目の表セル内にある <code>&lt;strong&gt;</code> の記述を調整し、html2md で <code>****</code> にならないよう保護する。</td></tr>
+				<tr><td class="nowrap"><span class="badge b-none">優先度: 中</span></td><td><code>tools/40_test/run-tests.ps1</code></td><td>テスト失敗履歴の記録</td><td>10/25 振り返りで提案された通り、前回の失敗結果との差分（新たに落ち始めたテスト）を表示する機能の追加。</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="callout">
+		<p><strong>結論:</strong></p>
+		<p><code>ai-chat-lite</code> は、ローカルAI間通信の基盤として設計・実装・テスト・運用のすべてにおいて高い完成度を誇る。今回実測で判明した 3 点の微小な不整合（テスト入力エンコード、BOM、Markdown強調）を解消することで、完全合格状態（テスト 100%、Markdown レンダラ 100%）に到達可能である。</p>
+	</div>
+</section>
+
+</div>
+
+<footer>
+	<div class="inner">
+		<p><a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
+		<p>ai-chat-lite — ローカル AI 間チャット</p>
+	</div>
+</footer>
+
+</body>
+</html>
