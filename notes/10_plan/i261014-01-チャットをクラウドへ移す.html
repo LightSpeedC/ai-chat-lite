@@ -50,6 +50,7 @@ a {
 /* ---------- タイトルバー ---------- */
 
 .titlebar {
+	background: #12224d;
 	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
 	color: #fff;
 	padding: 34px 30px 30px;
@@ -97,6 +98,7 @@ a {
 }
 
 section {
+	background: #f2f5fb;
 	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
 	border: 1px solid var(--line, #d9dfe8);
 	border-radius: 10px;
@@ -107,6 +109,7 @@ section {
 /* ---------- 見出し ---------- */
 
 section h1 {
+	background: #12224d;
 	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
 	color: #fff;
 	font-size: 1.4em;
@@ -123,6 +126,7 @@ section h1 code {
 }
 
 h2 {
+	background: #f2f5fb;
 	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
 	color: var(--accent, #12224d);
 	font-size: 1.16em;
@@ -160,6 +164,7 @@ table {
 }
 
 th {
+	background: #12224d;
 	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
 	color: #fff;
 	text-align: left;
@@ -200,6 +205,7 @@ th.nowrap {
 /* ---------- コード ---------- */
 
 code {
+	background: #f4f6fa;
 	background: var(--code-bg, #f4f6fa);
 	color: #17335f;
 	border: 1px solid var(--line, #d9dfe8);
@@ -210,6 +216,7 @@ code {
 }
 
 pre {
+	background: #f2f5fb;
 	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
 	color: var(--ink, #1c2330);
 	border: 1px solid var(--line, #d9dfe8);
@@ -235,6 +242,7 @@ pre code {
 	padding: 1px 9px;
 	margin-right: 6px;
 	border-radius: 11px;
+	background: #5a6472;
 	background: linear-gradient(100deg, #5a6472, #97a1ae);
 	color: #fff;
 	font-size: 0.84em;
@@ -243,21 +251,25 @@ pre code {
 }
 
 .badge.b-ok {
+	background: #1d7a3c;
 	background: linear-gradient(100deg, #1d7a3c, #45b56c);
 	color: #fff;
 }
 
 .badge.b-ng {
+	background: #a51f22;
 	background: linear-gradient(100deg, #a51f22, #e05a5c);
 	color: #fff;
 }
 
 .badge.b-warn {
+	background: #b8620a;
 	background: linear-gradient(100deg, #b8620a, #f0a548);
 	color: #fff;
 }
 
 .badge.b-none {
+	background: #5a6472;
 	background: linear-gradient(100deg, #5a6472, #97a1ae);
 	color: #fff;
 }
@@ -265,6 +277,7 @@ pre code {
 /* ---------- callout ---------- */
 
 .callout {
+	background: #f2f5fb;
 	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
 	color: var(--ink, #1c2330);
 	border: 1px solid var(--line, #d9dfe8);
@@ -315,6 +328,7 @@ pre code {
 	max-width: 100%;
 	padding: 7px 13px;
 	border-radius: 8px;
+	background: #12224d;
 	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
 	color: #fff;
 	font-weight: 700;
@@ -344,6 +358,7 @@ a.homelink {
 	margin: 0 8px 6px 0;
 	border-radius: 6px;
 	border: 1px solid rgba(255, 255, 255, 0.35);
+	background: #12224d;
 	background: linear-gradient(100deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
 	color: #fff;
 	line-height: 1;
@@ -361,6 +376,7 @@ a.doclink {
 	padding: 3px 12px;
 	margin: 0 8px 6px 0;
 	border-radius: 6px;
+	background: #12224d;
 	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
 	color: #fff;
 	font-weight: 700;
@@ -371,6 +387,7 @@ a.doclink {
 /* ---------- フッター ---------- */
 
 footer {
+	background: #12224d;
 	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
 	color: #fff;
 	padding: 18px 30px 0;
@@ -734,7 +751,7 @@ footer a {
 		<thead><tr><th class="num">順</th><th>すること</th><th class="nowrap">本番</th></tr></thead>
 		<tbody>
 			<tr><td class="num">1</td><td>本番の <code>VACUUM INTO</code> の控えをクラウドに置き、クラウドのサーバを立てる。手元の PC で、中継を 8787 以外のポートで立てて繋ぎ、<code>who</code> ・ <code>say</code> ・ <code>wait</code> ・ ブラウザを試す。<strong>試したあと、この DB は捨てる</strong>(本番の発言が混ざらないよう、本番はまだ PC 側)</td><td class="nowrap">稼働中</td></tr>
-			<tr><td class="num">2</td><td>時刻を決めて <code>public</code> に周知する (文面は送る前に提示する)。<strong>送る前に現在時刻を確かめ、予告の時刻までに余裕を取る</strong>(<a href="../40_issues/issues.html#i260830-01">i260830-01</a> では送信が予告の 20 秒前になった)</td><td class="nowrap">稼働中</td></tr>
+			<tr><td class="num">2</td><td>時刻を決めて <code>public</code> に周知する (文面は送る前に提示する)。<strong>送る前に現在時刻を確かめ、予告の時刻までに余裕を取る</strong>(<a href="../40_issues/issues-archive.html#i260830-01">i260830-01</a> では送信が予告の 20 秒前になった)</td><td class="nowrap">稼働中</td></tr>
 			<tr><td class="num">3</td><td>PC 側のサーバにメンテナンスの印を置いて書き込みを止め、<code>VACUUM INTO</code> で控えを取り、サービスを止める</td><td class="nowrap">停止</td></tr>
 			<tr><td class="num">4</td><td>控えをクラウドへ運び、<code>_data/&lt;テナント&gt;/chat.db</code> として置いて、クラウドのサーバを立てる。<strong>発言の件数と、最後の <code>msg_seq</code> が、PC 側の控えと一致することを確かめる</strong></td><td class="nowrap">停止</td></tr>
 			<tr><td class="num">5</td><td>PC 側のサーバのサービスを「手動」にして止めたままにし、中継のサービスを 8787 番で入れて起動する (管理者)</td><td class="nowrap">再開</td></tr>
@@ -743,7 +760,7 @@ footer a {
 	</table>
 	</div>
 
-	<p><strong>止まる時間は、3〜5 の数分の見込み。</strong><a href="../40_issues/issues.html#i260830-01">i260830-01</a> の実測では、他プロジェクトの待受けは繋がらないあいだの粘り (約 10 分)で、張り直しなしに生き残った。</p>
+	<p><strong>止まる時間は、3〜5 の数分の見込み。</strong><a href="../40_issues/issues-archive.html#i260830-01">i260830-01</a> の実測では、他プロジェクトの待受けは繋がらないあいだの粘り (約 10 分)で、張り直しなしに生き残った。</p>
 
 	<h2>テナントを足す手順 (8-A ・ 9-A のとき)</h2>
 	<ol>

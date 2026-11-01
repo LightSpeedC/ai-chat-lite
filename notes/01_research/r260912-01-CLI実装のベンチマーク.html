@@ -50,6 +50,7 @@ a {
 /* ---------- タイトルバー ---------- */
 
 .titlebar {
+	background: #12224d;
 	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
 	color: #fff;
 	padding: 34px 30px 30px;
@@ -97,6 +98,7 @@ a {
 }
 
 section {
+	background: #f2f5fb;
 	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
 	border: 1px solid var(--line, #d9dfe8);
 	border-radius: 10px;
@@ -107,6 +109,7 @@ section {
 /* ---------- 見出し ---------- */
 
 section h1 {
+	background: #12224d;
 	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
 	color: #fff;
 	font-size: 1.4em;
@@ -123,6 +126,7 @@ section h1 code {
 }
 
 h2 {
+	background: #f2f5fb;
 	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
 	color: var(--accent, #12224d);
 	font-size: 1.16em;
@@ -160,6 +164,7 @@ table {
 }
 
 th {
+	background: #12224d;
 	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
 	color: #fff;
 	text-align: left;
@@ -200,6 +205,7 @@ th.nowrap {
 /* ---------- コード ---------- */
 
 code {
+	background: #f4f6fa;
 	background: var(--code-bg, #f4f6fa);
 	color: #17335f;
 	border: 1px solid var(--line, #d9dfe8);
@@ -210,6 +216,7 @@ code {
 }
 
 pre {
+	background: #f2f5fb;
 	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
 	color: var(--ink, #1c2330);
 	border: 1px solid var(--line, #d9dfe8);
@@ -235,6 +242,7 @@ pre code {
 	padding: 1px 9px;
 	margin-right: 6px;
 	border-radius: 11px;
+	background: #5a6472;
 	background: linear-gradient(100deg, #5a6472, #97a1ae);
 	color: #fff;
 	font-size: 0.84em;
@@ -243,21 +251,25 @@ pre code {
 }
 
 .badge.b-ok {
+	background: #1d7a3c;
 	background: linear-gradient(100deg, #1d7a3c, #45b56c);
 	color: #fff;
 }
 
 .badge.b-ng {
+	background: #a51f22;
 	background: linear-gradient(100deg, #a51f22, #e05a5c);
 	color: #fff;
 }
 
 .badge.b-warn {
+	background: #b8620a;
 	background: linear-gradient(100deg, #b8620a, #f0a548);
 	color: #fff;
 }
 
 .badge.b-none {
+	background: #5a6472;
 	background: linear-gradient(100deg, #5a6472, #97a1ae);
 	color: #fff;
 }
@@ -265,6 +277,7 @@ pre code {
 /* ---------- callout ---------- */
 
 .callout {
+	background: #f2f5fb;
 	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
 	color: var(--ink, #1c2330);
 	border: 1px solid var(--line, #d9dfe8);
@@ -315,6 +328,7 @@ pre code {
 	max-width: 100%;
 	padding: 7px 13px;
 	border-radius: 8px;
+	background: #12224d;
 	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
 	color: #fff;
 	font-weight: 700;
@@ -349,6 +363,7 @@ a.homelink {
 	margin: 0 8px 6px 0;
 	border-radius: 6px;
 	border: 1px solid rgba(255, 255, 255, 0.35);
+	background: #12224d;
 	background: linear-gradient(100deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
 	color: #fff;
 	line-height: 1;
@@ -366,6 +381,7 @@ a.doclink {
 	padding: 3px 12px;
 	margin: 0 8px 6px 0;
 	border-radius: 6px;
+	background: #12224d;
 	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
 	color: #fff;
 	font-weight: 700;
@@ -395,6 +411,7 @@ a.doclink {
 /* ---------- フッター ---------- */
 
 footer {
+	background: #12224d;
 	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
 	color: #fff;
 	padding: 18px 30px 0;
@@ -443,7 +460,7 @@ footer a {
 <div class="callout callout-important">
 	<p><strong>測ったあとで前提が変わった。Mac ・ Linux にも展開すると決めたため、C# は土俵を降りる。</strong>PowerShell で書いた道具も同じである。<br>
 	<strong>CLI は TypeScript (node ・ bun)と Rust の 2 系統で進める。</strong>この資料の数字はそのまま使えるが、<strong>読む順番が変わる</strong>。C# が最小だった項目は、比べる相手がいなくなったという意味になる。<br>
-	その後 <strong>Rust 版を製品として作り、14 コマンドすべてが揃った</strong>(<a class="doclink" href="../40_issues/issues.html#i260913-01">i260913-01</a>)。測り直した数字は「<a href="#ch01">分かったこと</a>」の後半にある。</p>
+	その後 <strong>Rust 版を製品として作り、14 コマンドすべてが揃った</strong>(<a class="doclink" href="../40_issues/issues-archive.html#i260913-01">i260913-01</a>)。測り直した数字は「<a href="#ch01">分かったこと</a>」の後半にある。</p>
 </div>
 
 <p>サーバー側は別に測った。<a class="doclink" href="r260912-02-サーバーのベンチマーク.html">サーバーのベンチマーク</a>にある。</p>

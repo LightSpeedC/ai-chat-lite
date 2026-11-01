@@ -47,6 +47,7 @@ a {
 /* ---------- タイトルバー ---------- */
 
 .titlebar {
+	background: #12224d;
 	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
 	color: #fff;
 	padding: 34px 30px 30px;
@@ -94,6 +95,7 @@ a {
 }
 
 section {
+	background: #f2f5fb;
 	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
 	border: 1px solid var(--line, #d9dfe8);
 	border-radius: 10px;
@@ -104,6 +106,7 @@ section {
 /* ---------- 見出し ---------- */
 
 section h1 {
+	background: #12224d;
 	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
 	color: #fff;
 	font-size: 1.4em;
@@ -120,6 +123,7 @@ section h1 code {
 }
 
 h2 {
+	background: #f2f5fb;
 	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
 	color: var(--accent, #12224d);
 	font-size: 1.16em;
@@ -157,6 +161,7 @@ table {
 }
 
 th {
+	background: #12224d;
 	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
 	color: #fff;
 	text-align: left;
@@ -197,6 +202,7 @@ th.nowrap {
 /* ---------- コード ---------- */
 
 code {
+	background: #f4f6fa;
 	background: var(--code-bg, #f4f6fa);
 	color: #17335f;
 	border: 1px solid var(--line, #d9dfe8);
@@ -207,6 +213,7 @@ code {
 }
 
 pre {
+	background: #f2f5fb;
 	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
 	color: var(--ink, #1c2330);
 	border: 1px solid var(--line, #d9dfe8);
@@ -232,6 +239,7 @@ pre code {
 	padding: 1px 9px;
 	margin-right: 6px;
 	border-radius: 11px;
+	background: #5a6472;
 	background: linear-gradient(100deg, #5a6472, #97a1ae);
 	color: #fff;
 	font-size: 0.84em;
@@ -240,21 +248,25 @@ pre code {
 }
 
 .badge.b-ok {
+	background: #1d7a3c;
 	background: linear-gradient(100deg, #1d7a3c, #45b56c);
 	color: #fff;
 }
 
 .badge.b-ng {
+	background: #a51f22;
 	background: linear-gradient(100deg, #a51f22, #e05a5c);
 	color: #fff;
 }
 
 .badge.b-warn {
+	background: #b8620a;
 	background: linear-gradient(100deg, #b8620a, #f0a548);
 	color: #fff;
 }
 
 .badge.b-none {
+	background: #5a6472;
 	background: linear-gradient(100deg, #5a6472, #97a1ae);
 	color: #fff;
 }
@@ -262,6 +274,7 @@ pre code {
 /* ---------- callout ---------- */
 
 .callout {
+	background: #f2f5fb;
 	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
 	color: var(--ink, #1c2330);
 	border: 1px solid var(--line, #d9dfe8);
@@ -307,6 +320,7 @@ pre code {
 	max-width: 100%;
 	padding: 7px 13px;
 	border-radius: 8px;
+	background: #12224d;
 	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
 	color: #fff;
 	font-weight: 700;
@@ -331,6 +345,7 @@ a.homelink {
 	margin: 0 8px 6px 0;
 	border-radius: 6px;
 	border: 1px solid rgba(255, 255, 255, 0.35);
+	background: #12224d;
 	background: linear-gradient(100deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
 	color: #fff;
 	line-height: 1;
@@ -346,6 +361,7 @@ a.homelink svg {
 /* ---------- フッター ---------- */
 
 footer {
+	background: #12224d;
 	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
 	color: #fff;
 	padding: 18px 30px 0;
@@ -412,12 +428,12 @@ footer a {
 				<tr><th>検査分野</th><th>対象数</th><th>合格数</th><th>不合格 / 指摘</th><th class="nowrap">適合率</th><th>判定</th></tr>
 			</thead>
 			<tbody>
-				<tr><td class="nowrap">自動テストスイート</td><td class="num">39 本</td><td class="num">38 本</td><td>1 本 (mask-log-input-ps1)</td><td class="num nowrap">97.4%</td><td><span class="badge b-warn">⚠️ 要改善</span></td></tr>
-				<tr><td class="nowrap">HTML コントラスト実測</td><td class="num">32 ファイル</td><td class="num">32 ファイル</td><td>0 件 (1.5:1 未満なし)</td><td class="num nowrap">100.0%</td><td><span class="badge b-ok">✅ 合格</span></td></tr>
-				<tr><td class="nowrap">HTML/Markdown 相互リンク</td><td class="num">33 ドキュメント</td><td class="num">33 ドキュメント</td><td>リンク切れ・アンカー切れ 0 件</td><td class="num nowrap">100.0%</td><td><span class="badge b-ok">✅ 合格</span></td></tr>
-				<tr><td class="nowrap">GitHub Markdown レンダラ</td><td class="num">31 ファイル</td><td class="num">30 ファイル</td><td>1 箇所 (issues.md の強調崩れ)</td><td class="num nowrap">96.8%</td><td><span class="badge b-warn">⚠️ 要修正</span></td></tr>
-				<tr><td class="nowrap">文字コード・BOM 適合</td><td class="num">全ソースファイル</td><td class="num">—</td><td>1 件 (exe-swap.test.mjs の不要BOM)</td><td class="num nowrap">99.8%</td><td><span class="badge b-warn">⚠️ 要修正</span></td></tr>
-				<tr><td class="nowrap">改行コード (CRLF / LF)</td><td class="num">全ソースファイル</td><td class="num">—</td><td>混在 0 件 (完全統一)</td><td class="num nowrap">100.0%</td><td><span class="badge b-ok">✅ 合格</span></td></tr>
+				<tr><td class="nowrap">自動テストスイート</td><td class="num">39 本</td><td class="num">38 本</td><td>1 本 (mask-log-input-ps1)</td><td class="num nowrap">97.4%</td><td><span class="badge b-warn">要改善</span></td></tr>
+				<tr><td class="nowrap">HTML コントラスト実測</td><td class="num">32 ファイル</td><td class="num">32 ファイル</td><td>0 件 (1.5:1 未満なし)</td><td class="num nowrap">100.0%</td><td><span class="badge b-ok">合格</span></td></tr>
+				<tr><td class="nowrap">HTML/Markdown 相互リンク</td><td class="num">33 ドキュメント</td><td class="num">33 ドキュメント</td><td>リンク切れ・アンカー切れ 0 件</td><td class="num nowrap">100.0%</td><td><span class="badge b-ok">合格</span></td></tr>
+				<tr><td class="nowrap">GitHub Markdown レンダラ</td><td class="num">31 ファイル</td><td class="num">30 ファイル</td><td>1 箇所 (issues.md の強調崩れ)</td><td class="num nowrap">96.8%</td><td><span class="badge b-warn">要修正</span></td></tr>
+				<tr><td class="nowrap">文字コード・BOM 適合</td><td class="num">全ソースファイル</td><td class="num">—</td><td>1 件 (exe-swap.test.mjs の不要BOM)</td><td class="num nowrap">99.8%</td><td><span class="badge b-warn">要修正</span></td></tr>
+				<tr><td class="nowrap">改行コード (CRLF / LF)</td><td class="num">全ソースファイル</td><td class="num">—</td><td>混在 0 件 (完全統一)</td><td class="num nowrap">100.0%</td><td><span class="badge b-ok">合格</span></td></tr>
 			</tbody>
 		</table>
 	</div>
@@ -439,13 +455,13 @@ footer a {
 				<tr><th>フォルダ</th><th>役割</th><th>ルールの要求</th><th>実態と評価</th></tr>
 			</thead>
 			<tbody>
-				<tr><td class="nowrap"><code>src/</code></td><td>アプリ本体</td><td>本体コードを配置</td><td><span class="badge b-ok">✅ 準拠</span> <code>server/</code>, <code>client/</code>, <code>cli-rs/</code>, <code>web/</code>, <code>scripts/</code> に分離。責務が明確</td></tr>
-				<tr><td class="nowrap"><code>tools/</code></td><td>開発・運用の補助</td><td>2桁番号10刻みで整理</td><td><span class="badge b-ok">✅ 準拠</span> <code>20_build</code>, <code>40_test</code>, <code>50_run</code>, <code>80_ops</code>, <code>90_misc</code> が整然と配置</td></tr>
-				<tr><td class="nowrap"><code>tests/</code></td><td>テスト本体</td><td>tests/ 平置き、ランチャは tools/40_test/</td><td><span class="badge b-ok">✅ 準拠</span> 39本のテストが平置きされ、<code>run-tests.ps1</code> から実行可能</td></tr>
-				<tr><td class="nowrap"><code>deploy/</code></td><td>サービス・デプロイ定義</td><td>Windows サービス (winsw) 定義を Git 管理</td><td><span class="badge b-ok">✅ 準拠</span> <code>node-ai-chat-lite-winsw.xml</code> 等が配置され、exe は gitignore 済み</td></tr>
-				<tr><td class="nowrap"><code>docs/</code></td><td>公開資料</td><td>外部に配る資料を配置</td><td><span class="badge b-ok">✅ 準拠</span> <code>ファイルで排他する.html</code> と共有 <code>css/style.css</code> を保持</td></tr>
-				<tr><td class="nowrap"><code>notes/</code></td><td>管理ドキュメント</td><td>01_research, 10_plan, 30_status, 40_issues 等</td><td><span class="badge b-ok">✅ 準拠</span> 番号付きフォルダ体系を完全に遵守</td></tr>
-				<tr><td class="nowrap"><code>_backup/</code>, <code>_data/</code></td><td>非公開・除外フォルダ</td><td>先頭アンダースコアで Git 除外</td><td><span class="badge b-ok">✅ 準拠</span> <code>.gitignore</code> に <code>_backup/</code>, <code>_data/</code> が正しく定義</td></tr>
+				<tr><td class="nowrap"><code>src/</code></td><td>アプリ本体</td><td>本体コードを配置</td><td><span class="badge b-ok">準拠</span> <code>server/</code>, <code>client/</code>, <code>cli-rs/</code>, <code>web/</code>, <code>scripts/</code> に分離。責務が明確</td></tr>
+				<tr><td class="nowrap"><code>tools/</code></td><td>開発・運用の補助</td><td>2桁番号10刻みで整理</td><td><span class="badge b-ok">準拠</span> <code>20_build</code>, <code>40_test</code>, <code>50_run</code>, <code>80_ops</code>, <code>90_misc</code> が整然と配置</td></tr>
+				<tr><td class="nowrap"><code>tests/</code></td><td>テスト本体</td><td>tests/ 平置き、ランチャは tools/40_test/</td><td><span class="badge b-ok">準拠</span> 39本のテストが平置きされ、<code>run-tests.ps1</code> から実行可能</td></tr>
+				<tr><td class="nowrap"><code>deploy/</code></td><td>サービス・デプロイ定義</td><td>Windows サービス (winsw) 定義を Git 管理</td><td><span class="badge b-ok">準拠</span> <code>node-ai-chat-lite-winsw.xml</code> 等が配置され、exe は gitignore 済み</td></tr>
+				<tr><td class="nowrap"><code>docs/</code></td><td>公開資料</td><td>外部に配る資料を配置</td><td><span class="badge b-ok">準拠</span> <code>ファイルで排他する.html</code> と共有 <code>css/style.css</code> を保持</td></tr>
+				<tr><td class="nowrap"><code>notes/</code></td><td>管理ドキュメント</td><td>01_research, 10_plan, 30_status, 40_issues 等</td><td><span class="badge b-ok">準拠</span> 番号付きフォルダ体系を完全に遵守</td></tr>
+				<tr><td class="nowrap"><code>_backup/</code>, <code>_data/</code></td><td>非公開・除外フォルダ</td><td>先頭アンダースコアで Git 除外</td><td><span class="badge b-ok">準拠</span> <code>.gitignore</code> に <code>_backup/</code>, <code>_data/</code> が正しく定義</td></tr>
 			</tbody>
 		</table>
 	</div>
