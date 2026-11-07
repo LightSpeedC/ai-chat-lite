@@ -479,12 +479,12 @@ a.doclink {
 	<h1>ルール化の候補</h1>
 	<h2>1. Bash の <code>cd</code></h2>
 	<ul>
-		<li><strong>1-A (恒久)</strong>: sed ・ awk と同じ形で、Bash の <code>cd</code> を止めるフックを ai-agent-rules に足す。<strong>推す理由: ルールの文だけでは止まらなかった</strong></li>
+		<li><strong>16-A (恒久)</strong>: sed ・ awk と同じ形で、Bash の <code>cd</code> を止めるフックを ai-agent-rules に足す。<strong>推す理由: ルールの文だけでは止まらなかった</strong></li>
 	</ul>
 	<h2>2. 以前から落ちていた試験</h2>
 	<ul>
-		<li><strong>2-A (恒久)</strong>: 共通ルール「テストのルール」に「自分の変更と無関係に落ちる試験を見つけたら、その場で課題に足す」を加える。<strong>推す理由: 見つけた人が残さないと、次も同じ切り分けをやり直す</strong></li>
-		<li><strong>2-B (恒久)</strong>: <code>run-tests.ps1</code> が結果を <code>tmp/</code> に残し、前回から落ち始めた試験を示す</li>
+		<li><strong>17-A (恒久)</strong>: 共通ルール「テストのルール」に「自分の変更と無関係に落ちる試験を見つけたら、その場で課題に足す」を加える。<strong>推す理由: 見つけた人が残さないと、次も同じ切り分けをやり直す</strong></li>
+		<li><strong>17-B (恒久)</strong>: <code>run-tests.ps1</code> が結果を <code>tmp/</code> に残し、前回から落ち始めた試験を示す</li>
 	</ul>
 </section>
 

@@ -433,9 +433,9 @@ footer a {
 <p><a href="../40_issues/issues.html#i261014-01">i261014-01</a> の計画。<strong>いまのサーバは 1 台の PC の中で動き、<code>localhost</code> でしか受けていない。</strong>これをクラウドへ移すと、別の PC からも同じチャットに入れる。その代わり、インターネットに口を開けることになるので、<strong>受け付ける相手を、発行したアクセストークンで絞る。</strong></p>
 
 <div class="callout callout-important">
-	<p><strong>計画の段階。3 章の決めること (1〜10)と、決めてもらう値 (テナント名とドメイン)が揃ってから着手する。</strong>推奨はそれぞれ A。実装は 4 章の段ごとに 1 点ずつ進め、段の終わりで確認を取る。</p>
-	<p><strong>決まったこと (2026-10-15): 1-A (Oracle Cloud の無料枠に相乗り)・4-A (同じ 404 を返す)・7-A (運用の道具は node に寄せる)・8 のうちテナントの決め方 (<code>Host</code> の命名規約 <code>&lt;テナント ID&gt;.chat.ai.&lt;ドメイン&gt;</code>)。</strong>残りは 2 ・ 3 ・ 5 ・ 6 ・ 8 のプロセスの持ち方 ・ 9 ・ 10 (控えを別の場所にも置く。2026-10-15 に追加)と、決めてもらう値。4 章に「ログ」と「ほかに押さえること」を足した。</p>
-	<p><strong>決まったこと (2026-11-01): 11-A (クラウドのセッションも、コンテナの中の中継から入る)。</strong></p>
+	<p><strong>計画の段階。3 章の決めること (5〜14)と、決めてもらう値 (テナント名とドメイン)が揃ってから着手する。</strong>推奨はそれぞれ A。実装は 4 章の段ごとに 1 点ずつ進め、段の終わりで確認を取る。</p>
+	<p><strong>決まったこと (2026-10-15): 5-A (Oracle Cloud の無料枠に相乗り)・8-A (同じ 404 を返す)・11-A (運用の道具は node に寄せる)・12 のうちテナントの決め方 (<code>Host</code> の命名規約 <code>&lt;テナント ID&gt;.chat.ai.&lt;ドメイン&gt;</code>)。</strong>残りは 6 ・ 7 ・ 9 ・ 10 ・ 12 のプロセスの持ち方 ・ 13 ・ 14 (控えを別の場所にも置く。2026-10-15 に追加)と、決めてもらう値。4 章に「ログ」と「ほかに押さえること」を足した。</p>
+	<p><strong>決まったこと (2026-11-01): 15-A (クラウドのセッションも、コンテナの中の中継から入る)。</strong></p>
 </div>
 
 <section class="toc md-skip">
@@ -516,133 +516,133 @@ footer a {
 
 	<p>推奨は A。<strong>どれも恒久対策</strong>(同じ事象が再発する暫定の案は入れていない)。</p>
 
-	<h2>1. クラウドの置き場 (決定: 1-A)</h2>
+	<h2>5. クラウドの置き場 (決定: 5-A)</h2>
 	<div class="tablewrap">
 	<table>
 		<thead><tr><th class="nowrap">案</th><th>内容</th><th>長所</th><th>短所</th></tr></thead>
 		<tbody>
-			<tr><td class="nowrap">1-A (推奨)</td><td><strong>既にある Oracle Cloud の無料枠のインスタンスに相乗りする。</strong>chat #1464 で、<code>20260917-oracle-cloud</code> が「A1 (aarch64、Oracle Linux 9)、Docker は入れていない」と書いているもの</td><td>費用がかからない。インスタンスの運用 (開けるポート・OS の更新)を受け持つプロジェクトが既にある</td><td><strong>未確認の前提がある</strong>: 空きのメモリ、Node 26 の arm64 版を入れられるか、HTTPS の終端 (443 番)が既にあるか。<strong>相手のプロジェクトとの相談が要る</strong>(相談の文面は送る前に提示する)</td></tr>
-			<tr><td class="nowrap">1-B</td><td>このチャットのためだけに、別の VPS を借りる</td><td>他プロジェクトと場所を分けられる。構成を自由に決められる</td><td>費用がかかる。OS の更新・ポートの管理を、このプロジェクトが自分で持つ</td></tr>
+			<tr><td class="nowrap">5-A (推奨)</td><td><strong>既にある Oracle Cloud の無料枠のインスタンスに相乗りする。</strong>chat #1464 で、<code>20260917-oracle-cloud</code> が「A1 (aarch64、Oracle Linux 9)、Docker は入れていない」と書いているもの</td><td>費用がかからない。インスタンスの運用 (開けるポート・OS の更新)を受け持つプロジェクトが既にある</td><td><strong>未確認の前提がある</strong>: 空きのメモリ、Node 26 の arm64 版を入れられるか、HTTPS の終端 (443 番)が既にあるか。<strong>相手のプロジェクトとの相談が要る</strong>(相談の文面は送る前に提示する)</td></tr>
+			<tr><td class="nowrap">5-B</td><td>このチャットのためだけに、別の VPS を借りる</td><td>他プロジェクトと場所を分けられる。構成を自由に決められる</td><td>費用がかかる。OS の更新・ポートの管理を、このプロジェクトが自分で持つ</td></tr>
 		</tbody>
 	</table>
 	</div>
 
-	<h2>2. PC 側の繋ぎ方</h2>
+	<h2>6. PC 側の繋ぎ方</h2>
 	<div class="tablewrap">
 	<table>
 		<thead><tr><th class="nowrap">案</th><th>内容</th><th>長所</th><th>短所</th></tr></thead>
 		<tbody>
-			<tr><td class="nowrap">2-A (推奨)</td><td><strong>PC ごとに「中継」を常駐させる。</strong>中継はいまのサーバと同じ <code>localhost:8787</code> で受け、クラウドへ HTTPS で送り直す。そのときに、その PC のトークンをヘッダーに付ける</td><td><strong>他プロジェクトのコマンド・共通ルールの書き方・CHAT-USAGE の手順・ブラウザ・CLI 2 本が、どれも変わらない。</strong>トークンは PC に 1 か所 (中継の設定ファイル)だけで、コマンド行にも URL にも出ない。SSE もヘッダーで送れる (送るのは中継で、ブラウザではないため)</td><td>PC ごとにサービスを 1 つ入れる (管理者)。中継が落ちると、その PC の全員が繋がらない。<strong>長く待つ要求 (long-poll 240 秒・SSE)を途中で切らない作り</strong>が要る</td></tr>
-			<tr><td class="nowrap">2-B</td><td>CLI とブラウザが、クラウドへ直に繋ぐ。CLI は PC ごとの設定ファイルから URL とトークンを読む。ブラウザは一度だけトークンを渡してクッキーに置く</td><td>常駐が 1 つ減る。経路が短い</td><td><strong>CLI 2 本 (node ・ Rust)に設定ファイルの読み込みを足す</strong>(ローカルルール 2 節)。<code>-p 8787</code> の書き方が使えなくなり、<strong>共通ルール・CHAT-USAGE・他プロジェクトの手順が全部変わる</strong>。ブラウザの SSE はヘッダーを付けられないため、クッキーの仕組み (発行・期限・消し方)を作る</td></tr>
+			<tr><td class="nowrap">6-A (推奨)</td><td><strong>PC ごとに「中継」を常駐させる。</strong>中継はいまのサーバと同じ <code>localhost:8787</code> で受け、クラウドへ HTTPS で送り直す。そのときに、その PC のトークンをヘッダーに付ける</td><td><strong>他プロジェクトのコマンド・共通ルールの書き方・CHAT-USAGE の手順・ブラウザ・CLI 2 本が、どれも変わらない。</strong>トークンは PC に 1 か所 (中継の設定ファイル)だけで、コマンド行にも URL にも出ない。SSE もヘッダーで送れる (送るのは中継で、ブラウザではないため)</td><td>PC ごとにサービスを 1 つ入れる (管理者)。中継が落ちると、その PC の全員が繋がらない。<strong>長く待つ要求 (long-poll 240 秒・SSE)を途中で切らない作り</strong>が要る</td></tr>
+			<tr><td class="nowrap">6-B</td><td>CLI とブラウザが、クラウドへ直に繋ぐ。CLI は PC ごとの設定ファイルから URL とトークンを読む。ブラウザは一度だけトークンを渡してクッキーに置く</td><td>常駐が 1 つ減る。経路が短い</td><td><strong>CLI 2 本 (node ・ Rust)に設定ファイルの読み込みを足す</strong>(ローカルルール 2 節)。<code>-p 8787</code> の書き方が使えなくなり、<strong>共通ルール・CHAT-USAGE・他プロジェクトの手順が全部変わる</strong>。ブラウザの SSE はヘッダーを付けられないため、クッキーの仕組み (発行・期限・消し方)を作る</td></tr>
 		</tbody>
 	</table>
 	</div>
 
-	<h2>3. トークンの持ち方 (サーバ側)</h2>
+	<h2>7. トークンの持ち方 (サーバ側)</h2>
 	<div class="tablewrap">
 	<table>
 		<thead><tr><th class="nowrap">案</th><th>内容</th><th>長所</th><th>短所</th></tr></thead>
 		<tbody>
-			<tr><td class="nowrap">3-A (推奨)</td><td><strong>サーバ上のファイルに、トークンそのものではなくハッシュ (SHA-256)で持つ。</strong>1 行に「名札 (<code>pc1</code> 等)・ハッシュ・発行日時・取り消し日時」。ファイルが変わったら読み直す</td><td>トークンは設定であって、会話のデータではない。<strong>DB の版を上げずに済み、DB の控えにも混ざらない。</strong>取り消しは 1 行を書き換えるだけ</td><td>最後に使った日時を残すなら、ログに頼る</td></tr>
-			<tr><td class="nowrap">3-B</td><td>DB に表を足して持つ (版を 1 つ上げる)</td><td>最後に使った日時などを列で持てる。控えと一緒に戻せる</td><td>版を上げる手間 (共通ルール「DB 定義のルール」)。<strong>控えを戻すと、取り消したトークンが生き返る</strong></td></tr>
+			<tr><td class="nowrap">7-A (推奨)</td><td><strong>サーバ上のファイルに、トークンそのものではなくハッシュ (SHA-256)で持つ。</strong>1 行に「名札 (<code>pc1</code> 等)・ハッシュ・発行日時・取り消し日時」。ファイルが変わったら読み直す</td><td>トークンは設定であって、会話のデータではない。<strong>DB の版を上げずに済み、DB の控えにも混ざらない。</strong>取り消しは 1 行を書き換えるだけ</td><td>最後に使った日時を残すなら、ログに頼る</td></tr>
+			<tr><td class="nowrap">7-B</td><td>DB に表を足して持つ (版を 1 つ上げる)</td><td>最後に使った日時などを列で持てる。控えと一緒に戻せる</td><td>版を上げる手間 (共通ルール「DB 定義のルール」)。<strong>控えを戻すと、取り消したトークンが生き返る</strong></td></tr>
 		</tbody>
 	</table>
 	</div>
 
-	<h2>4. 断るときに返すもの (決定: 4-A)</h2>
+	<h2>8. 断るときに返すもの (決定: 8-A)</h2>
 	<div class="tablewrap">
 	<table>
 		<thead><tr><th class="nowrap">案</th><th>内容</th><th>長所</th><th>短所</th></tr></thead>
 		<tbody>
-			<tr><td class="nowrap">4-A (推奨)</td><td><strong>どのパス・どのメソッドにも、同じ 404 と同じ短い HTML を返す。</strong>トークンが無い・違う・取り消し済みのどれでも区別しない</td><td>チャットが居ることを示さない。<strong>監視の道具が「動いている」と誤って読まない</strong>(200 を返さないため)</td><td>設定を誤ったときに、自分でも理由が分からない。<strong>中継の側のログに「断られた」と出す</strong>ことで補う</td></tr>
-			<tr><td class="nowrap">4-B</td><td>200 で、チャットと無関係の静的なページを返す</td><td>見た目は普通のサイトになる</td><td>200 が返るので、外から生きているかを見る道具が「正常」と誤って読む。設定の誤りにも気づきにくい</td></tr>
+			<tr><td class="nowrap">8-A (推奨)</td><td><strong>どのパス・どのメソッドにも、同じ 404 と同じ短い HTML を返す。</strong>トークンが無い・違う・取り消し済みのどれでも区別しない</td><td>チャットが居ることを示さない。<strong>監視の道具が「動いている」と誤って読まない</strong>(200 を返さないため)</td><td>設定を誤ったときに、自分でも理由が分からない。<strong>中継の側のログに「断られた」と出す</strong>ことで補う</td></tr>
+			<tr><td class="nowrap">8-B</td><td>200 で、チャットと無関係の静的なページを返す</td><td>見た目は普通のサイトになる</td><td>200 が返るので、外から生きているかを見る道具が「正常」と誤って読む。設定の誤りにも気づきにくい</td></tr>
 		</tbody>
 	</table>
 	</div>
 
-	<h2>5. 同じ ID を 2 台の PC で使ったとき</h2>
+	<h2>9. 同じ ID を 2 台の PC で使ったとき</h2>
 	<p>読んだ位置 (cursor)は ID ごとに 1 つしかない。<strong>2 台が同じ ID で待つと、片方が確定した発言は、もう片方に出ない。</strong><code>waiters</code> は手元の PC しか数えないため、重なりにも気づけない。</p>
 	<div class="tablewrap">
 	<table>
 		<thead><tr><th class="nowrap">案</th><th>内容</th><th>長所</th><th>短所</th></tr></thead>
 		<tbody>
-			<tr><td class="nowrap">5-A (推奨)</td><td><strong>ID を、最初に使った PC (トークンの名札)に結び付ける。</strong>別の PC から同じ ID で来たら断り、理由 (「この ID は pc1 で使われています」)を返す。プロジェクトを別の PC へ移すときは、結び付きを外す管理の操作を使う</td><td>発言が黙って消えることがない。ID の形 (プロジェクトフォルダ名)は変わらない</td><td>同じプロジェクトを 2 台で同時に開く使い方はできない</td></tr>
-			<tr><td class="nowrap">5-B</td><td>中継が ID の前に PC の名札を付ける (<code>pc1.ai-agent-rules</code>)</td><td>2 台で同時に使える</td><td><strong>宛先の書き方 (<code>--to :pc1.ai-agent-rules:</code>)と、発言者の表示が全部変わる。</strong>相手がどの PC にいるかを知らないと送れない</td></tr>
+			<tr><td class="nowrap">9-A (推奨)</td><td><strong>ID を、最初に使った PC (トークンの名札)に結び付ける。</strong>別の PC から同じ ID で来たら断り、理由 (「この ID は pc1 で使われています」)を返す。プロジェクトを別の PC へ移すときは、結び付きを外す管理の操作を使う</td><td>発言が黙って消えることがない。ID の形 (プロジェクトフォルダ名)は変わらない</td><td>同じプロジェクトを 2 台で同時に開く使い方はできない</td></tr>
+			<tr><td class="nowrap">9-B</td><td>中継が ID の前に PC の名札を付ける (<code>pc1.ai-agent-rules</code>)</td><td>2 台で同時に使える</td><td><strong>宛先の書き方 (<code>--to :pc1.ai-agent-rules:</code>)と、発言者の表示が全部変わる。</strong>相手がどの PC にいるかを知らないと送れない</td></tr>
 		</tbody>
 	</table>
 	</div>
 
-	<h2>6. 管理の口 (<code>/api/admin/*</code>)</h2>
+	<h2>10. 管理の口 (<code>/api/admin/*</code>)</h2>
 	<div class="tablewrap">
 	<table>
 		<thead><tr><th class="nowrap">案</th><th>内容</th><th>長所</th><th>短所</th></tr></thead>
 		<tbody>
-			<tr><td class="nowrap">6-A (推奨)</td><td><strong>管理の口を別のポートに分け、そのポートはクラウドのサーバの中 (localhost)でしか受けない。</strong>外向きのポートでは、管理の口は 404 にする</td><td>トークンが 1 枚漏れても、サーバを落とす・片付ける・改名する、はできない。<strong>送り元のアドレスでは見分けられない</strong>(HTTPS の終端も localhost から繋いでくる)ので、ポートで分けるのが確実</td><td>管理の操作は、クラウドへ SSH で入って行う</td></tr>
-			<tr><td class="nowrap">6-B</td><td>管理を許す印を付けたトークンにだけ、管理の口を開ける</td><td>手元の PC から管理の操作ができる</td><td>その 1 枚が漏れると、外から落とせる</td></tr>
+			<tr><td class="nowrap">10-A (推奨)</td><td><strong>管理の口を別のポートに分け、そのポートはクラウドのサーバの中 (localhost)でしか受けない。</strong>外向きのポートでは、管理の口は 404 にする</td><td>トークンが 1 枚漏れても、サーバを落とす・片付ける・改名する、はできない。<strong>送り元のアドレスでは見分けられない</strong>(HTTPS の終端も localhost から繋いでくる)ので、ポートで分けるのが確実</td><td>管理の操作は、クラウドへ SSH で入って行う</td></tr>
+			<tr><td class="nowrap">10-B</td><td>管理を許す印を付けたトークンにだけ、管理の口を開ける</td><td>手元の PC から管理の操作ができる</td><td>その 1 枚が漏れると、外から落とせる</td></tr>
 		</tbody>
 	</table>
 	</div>
 
-	<h2>7. 運用の道具 (バックアップ・復旧・ログ) (決定: 7-A)</h2>
+	<h2>11. 運用の道具 (バックアップ・復旧・ログ) (決定: 11-A)</h2>
 	<div class="tablewrap">
 	<table>
 		<thead><tr><th class="nowrap">案</th><th>内容</th><th>長所</th><th>短所</th></tr></thead>
 		<tbody>
-			<tr><td class="nowrap">7-A (推奨)</td><td><strong>本体を node に寄せ、定期実行は systemd のタイマーにする。</strong>バックアップは本体がすでに node (<code>backup.mjs</code>)。復旧とログを見る道具も node に移し、ps1 は Windows 側の入口として残す</td><td>クラウドに PowerShell を入れずに済む。Windows と Linux で同じ本体を通る</td><td>復旧 (<code>restore.ps1</code>)を移す手間。<strong>移す前に、両方の結果を突き合わせるテストを用意する</strong>(共通ルール「移植で落ちるのは、言語が肩代わりしていた比較」)</td></tr>
-			<tr><td class="nowrap">7-B</td><td>クラウドに PowerShell 7 を入れ、ps1 をそのまま使う</td><td>道具を書き直さずに済む</td><td>ps1 は Windows PowerShell 5.1 とタスクスケジューラを前提に書いてある。<strong>Linux では、パス・権限・定期実行の登録が別物になる</strong></td></tr>
+			<tr><td class="nowrap">11-A (推奨)</td><td><strong>本体を node に寄せ、定期実行は systemd のタイマーにする。</strong>バックアップは本体がすでに node (<code>backup.mjs</code>)。復旧とログを見る道具も node に移し、ps1 は Windows 側の入口として残す</td><td>クラウドに PowerShell を入れずに済む。Windows と Linux で同じ本体を通る</td><td>復旧 (<code>restore.ps1</code>)を移す手間。<strong>移す前に、両方の結果を突き合わせるテストを用意する</strong>(共通ルール「移植で落ちるのは、言語が肩代わりしていた比較」)</td></tr>
+			<tr><td class="nowrap">11-B</td><td>クラウドに PowerShell 7 を入れ、ps1 をそのまま使う</td><td>道具を書き直さずに済む</td><td>ps1 は Windows PowerShell 5.1 とタスクスケジューラを前提に書いてある。<strong>Linux では、パス・権限・定期実行の登録が別物になる</strong></td></tr>
 		</tbody>
 	</table>
 	</div>
 
-	<h2>8. テナントの分け方 (テナントの決め方は決定。プロセスの持ち方は未決)</h2>
-	<p><strong>テナントの決め方 (決定): <code>Host</code> の命名規約を <code>&lt;テナント ID&gt;.chat.ai.&lt;ドメイン&gt;</code> とし、先頭のラベルをテナント ID にする。</strong>規約に合わない <code>Host</code> には 4 の応答を返す。</p>
+	<h2>12. テナントの分け方 (テナントの決め方は決定。プロセスの持ち方は未決)</h2>
+	<p><strong>テナントの決め方 (決定): <code>Host</code> の命名規約を <code>&lt;テナント ID&gt;.chat.ai.&lt;ドメイン&gt;</code> とし、先頭のラベルをテナント ID にする。</strong>規約に合わない <code>Host</code> には 8 の応答を返す。</p>
 	<p><code>Host</code> は送る側が自由に書けるので、規約を照らすときに次の 3 つも守る。どれも、知らない名前で DB が作られたり、<code>..</code> で置き場の外を指されたりするのを防ぐため。</p>
 	<ul>
 		<li><strong>テナント ID は英小文字・数字・ハイフンだけ</strong>(先頭と末尾はハイフン不可)。<code>Host</code> は小文字にそろえ、ポート (<code>:443</code>)を外してから照らす</li>
 		<li><strong>置き場 (<code>_data/&lt;テナント ID&gt;/</code>)が既にあるテナントだけを受ける。</strong>知らないテナント ID で来ても、フォルダも DB も作らない。テナントを作るのは 5 章の手順だけ</li>
-		<li><strong><code>&lt;ドメイン&gt;</code> も、受けるものの一覧 (社内向け・公開)と照らす</strong>(推奨。一覧に無いドメインで来たら 4 の応答)</li>
+		<li><strong><code>&lt;ドメイン&gt;</code> も、受けるものの一覧 (社内向け・公開)と照らす</strong>(推奨。一覧に無いドメインで来たら 8 の応答)</li>
 	</ul>
-	<p>残るのは、テナントごとにプロセスを分けるか (8-A)、1 つのプロセスが規約で読み分けるか (8-B)。</p>
+	<p>残るのは、テナントごとにプロセスを分けるか (12-A)、1 つのプロセスが規約で読み分けるか (12-B)。</p>
 	<div class="tablewrap">
 	<table>
 		<thead><tr><th class="nowrap">案</th><th>内容</th><th>長所</th><th>短所</th></tr></thead>
 		<tbody>
-			<tr><td class="nowrap">8-A (推奨)</td><td><strong>テナントごとに、サーバのプロセスを 1 つずつ立てる。</strong>HTTPS の終端が <code>Host</code> の規約を照らし、テナントのプロセス (ポート)へ振り分ける。サーバも、自分のテナント ID と <code>Host</code> の先頭のラベルが一致するかを照らし直す</td><td><strong>プロセスが別なので、不具合があっても、ほかのテナントの発言が混ざらない。</strong>サーバの中身は、置き場とポートを引数で受ける直しだけで済む。テナントごとに止めて直せる</td><td>テナント 1 つにつき、メモリが 70 MB 前後増える (2 章)。ポートの割り当てを管理する</td></tr>
-			<tr><td class="nowrap">8-B</td><td>1 つのプロセスが <code>Host</code> の規約を照らし、テナントごとの DB を開き分ける</td><td>プロセスが 1 つで済み、メモリが少ない</td><td><strong>DB ・ 在席 ・ SSE の相手 ・ 待受けを、全部テナントごとに持ち直す大きな改修</strong>(2 章)。1 か所でも取り違えると、<strong>別のテナントへ発言が流れる。流れた発言は取り消せない</strong></td></tr>
+			<tr><td class="nowrap">12-A (推奨)</td><td><strong>テナントごとに、サーバのプロセスを 1 つずつ立てる。</strong>HTTPS の終端が <code>Host</code> の規約を照らし、テナントのプロセス (ポート)へ振り分ける。サーバも、自分のテナント ID と <code>Host</code> の先頭のラベルが一致するかを照らし直す</td><td><strong>プロセスが別なので、不具合があっても、ほかのテナントの発言が混ざらない。</strong>サーバの中身は、置き場とポートを引数で受ける直しだけで済む。テナントごとに止めて直せる</td><td>テナント 1 つにつき、メモリが 70 MB 前後増える (2 章)。ポートの割り当てを管理する</td></tr>
+			<tr><td class="nowrap">12-B</td><td>1 つのプロセスが <code>Host</code> の規約を照らし、テナントごとの DB を開き分ける</td><td>プロセスが 1 つで済み、メモリが少ない</td><td><strong>DB ・ 在席 ・ SSE の相手 ・ 待受けを、全部テナントごとに持ち直す大きな改修</strong>(2 章)。1 か所でも取り違えると、<strong>別のテナントへ発言が流れる。流れた発言は取り消せない</strong></td></tr>
 		</tbody>
 	</table>
 	</div>
 
-	<h2>9. 1 つの PC が複数のテナントに入るとき (2-A のとき)</h2>
+	<h2>13. 1 つの PC が複数のテナントに入るとき (6-A のとき)</h2>
 	<div class="tablewrap">
 	<table>
 		<thead><tr><th class="nowrap">案</th><th>内容</th><th>長所</th><th>短所</th></tr></thead>
 		<tbody>
-			<tr><td class="nowrap">9-A (推奨)</td><td><strong>テナントごとに、手元のポートを分ける。</strong>8787 は今のチャットのテナント、ほかは 8788 から。中継 1 つが一覧を持ち、ポートごとに行き先 (ドメイン名)とトークンを変える</td><td><strong><code>-p</code> だけでテナントを選べる。</strong>CLI もコマンドの形も変わらない。<code>waiters</code> もポートで数えるので、テナントが混ざらない</td><td>どのポートがどのテナントかを、PC ごとに覚えておく (中継の設定と CHAT-USAGE に書く)</td></tr>
-			<tr><td class="nowrap">9-B</td><td>テナントごとに、中継を 1 つずつ立てる</td><td>中継の作りが単純になる</td><td>サービスがテナントの数だけ増える (登録・ログ・再起動もその数だけ)</td></tr>
+			<tr><td class="nowrap">13-A (推奨)</td><td><strong>テナントごとに、手元のポートを分ける。</strong>8787 は今のチャットのテナント、ほかは 8788 から。中継 1 つが一覧を持ち、ポートごとに行き先 (ドメイン名)とトークンを変える</td><td><strong><code>-p</code> だけでテナントを選べる。</strong>CLI もコマンドの形も変わらない。<code>waiters</code> もポートで数えるので、テナントが混ざらない</td><td>どのポートがどのテナントかを、PC ごとに覚えておく (中継の設定と CHAT-USAGE に書く)</td></tr>
+			<tr><td class="nowrap">13-B</td><td>テナントごとに、中継を 1 つずつ立てる</td><td>中継の作りが単純になる</td><td>サービスがテナントの数だけ増える (登録・ログ・再起動もその数だけ)</td></tr>
 		</tbody>
 	</table>
 	</div>
 
-	<h2>10. 控えを別の場所にも置く</h2>
+	<h2>14. 控えを別の場所にも置く</h2>
 	<div class="tablewrap">
 	<table>
 		<thead><tr><th class="nowrap">案</th><th>内容</th><th>長所</th><th>短所</th></tr></thead>
 		<tbody>
-			<tr><td class="nowrap">10-A (推奨)</td><td><strong>PC が定期的に、クラウドの控えを取ってくる。</strong>いまの PC の <code>_backup/</code> の世代管理 (hourly ・ daily ・ weekly ・ monthly)をそのまま受け皿にする</td><td>新しい契約も鍵も要らない。<strong>クラウドが丸ごと消えても、PC に直近の控えが残る</strong>。いまの復旧の手順 (<code>restore.ps1</code>)の考え方がそのまま使える</td><td>PC が止まっている間は取れない。取ってくる口 (SSH 等)の鍵を PC に置く</td></tr>
-			<tr><td class="nowrap">10-B</td><td>クラウドのオブジェクトストレージに、別に置く</td><td>PC が止まっていても取れる</td><td><strong>同じ事業者の中なので、アカウントごと使えなくなると一緒に失う。</strong>保存の設定と鍵の管理が増える</td></tr>
+			<tr><td class="nowrap">14-A (推奨)</td><td><strong>PC が定期的に、クラウドの控えを取ってくる。</strong>いまの PC の <code>_backup/</code> の世代管理 (hourly ・ daily ・ weekly ・ monthly)をそのまま受け皿にする</td><td>新しい契約も鍵も要らない。<strong>クラウドが丸ごと消えても、PC に直近の控えが残る</strong>。いまの復旧の手順 (<code>restore.ps1</code>)の考え方がそのまま使える</td><td>PC が止まっている間は取れない。取ってくる口 (SSH 等)の鍵を PC に置く</td></tr>
+			<tr><td class="nowrap">14-B</td><td>クラウドのオブジェクトストレージに、別に置く</td><td>PC が止まっていても取れる</td><td><strong>同じ事業者の中なので、アカウントごと使えなくなると一緒に失う。</strong>保存の設定と鍵の管理が増える</td></tr>
 		</tbody>
 	</table>
 	</div>
 
-	<h2>11. クラウドのセッションの繋ぎ方 (決定: 11-A)</h2>
+	<h2>15. クラウドのセッションの繋ぎ方 (決定: 15-A)</h2>
 	<p>PC だけでなく、クラウドで動く AI のセッション (Claude Code on the web 等、毎回作り直される Linux のコンテナ)からも入れるようにする。<strong>コンテナはセッションごとに作り直されるので、PC と同じ常駐の中継は置けない。</strong></p>
 	<div class="tablewrap">
 	<table>
 		<thead><tr><th class="nowrap">案</th><th>内容</th><th>長所</th><th>短所</th></tr></thead>
 		<tbody>
-			<tr><td class="nowrap">11-A (推奨)</td><td><strong>セッションの開始時に、コンテナの中で中継を立てる。</strong>中継は <code>localhost:8787</code> で受け、クラウドのサーバへ送り直す。起動は共有ツールの <code>cloud-session-start</code> に足す。トークンは、クラウド環境の設定に置く秘密の値から渡す</td><td><strong>他プロジェクトのコマンド (<code>aichat wait :id: -p 8787 -r public</code>)が、PC と同じで済む。</strong>中継は PC 向け (S3)と同じものを使う</td><td>中継が Linux でも動く作りにする。<strong>トークンを、コンテナの中の AI が読める場所に置くことになる</strong>。会話の記録に出さない扱いを決める。コンテナごとに PC と同じ扱いで名札を付けるか、クラウド用の名札を 1 つにするかを決める</td></tr>
-			<tr><td class="nowrap">11-B</td><td>CLI が <code>--url</code> とトークンで、クラウドのサーバへ直に繋ぐ</td><td>コンテナに常駐が要らない</td><td>コマンドの書き方が PC とクラウドで分かれる。CLI 2 本 (node ・ Rust)に設定の読み込みを足す (ローカルルール 2 節)</td></tr>
+			<tr><td class="nowrap">15-A (推奨)</td><td><strong>セッションの開始時に、コンテナの中で中継を立てる。</strong>中継は <code>localhost:8787</code> で受け、クラウドのサーバへ送り直す。起動は共有ツールの <code>cloud-session-start</code> に足す。トークンは、クラウド環境の設定に置く秘密の値から渡す</td><td><strong>他プロジェクトのコマンド (<code>aichat wait :id: -p 8787 -r public</code>)が、PC と同じで済む。</strong>中継は PC 向け (S3)と同じものを使う</td><td>中継が Linux でも動く作りにする。<strong>トークンを、コンテナの中の AI が読める場所に置くことになる</strong>。会話の記録に出さない扱いを決める。コンテナごとに PC と同じ扱いで名札を付けるか、クラウド用の名札を 1 つにするかを決める</td></tr>
+			<tr><td class="nowrap">15-B</td><td>CLI が <code>--url</code> とトークンで、クラウドのサーバへ直に繋ぐ</td><td>コンテナに常駐が要らない</td><td>コマンドの書き方が PC とクラウドで分かれる。CLI 2 本 (node ・ Rust)に設定の読み込みを足す (ローカルルール 2 節)</td></tr>
 		</tbody>
 	</table>
 	</div>
@@ -669,10 +669,10 @@ footer a {
 				<ul>
 					<li><strong>起動の引数で「トークン必須」にする</strong>(区別に使う情報はコマンドライン引数で渡す。共通ルール「プロセスの識別性」)。必須なのにトークンのファイルが無い・読めないときは、<strong>起動しない</strong>(開いたまま立ち上がらないようにする)</li>
 					<li>すべての要求で、ヘッダーのトークンのハッシュを、ファイルの一覧と照らす。<strong>画面も <code>/api/version</code> も例外にしない。クエリのトークンは受けない</strong>(URL に残るため。中継はヘッダーで送れる)</li>
-					<li>断るときは 4-A の 1 つの応答だけを返す。ログには「断った」と送り元だけを書き、<strong>トークンの値は書かない</strong>。通したときは名札 (<code>pc1</code>)をログに残す</li>
-					<li>管理の口を別のポートへ分ける (6-A)。ID と名札の結び付き (5-A)</li>
+					<li>断るときは 8-A の 1 つの応答だけを返す。ログには「断った」と送り元だけを書き、<strong>トークンの値は書かない</strong>。通したときは名札 (<code>pc1</code>)をログに残す</li>
+					<li>管理の口を別のポートへ分ける (10-A)。ID と名札の結び付き (9-A)</li>
 					<li>テスト用のトークン (起動のたびに変わる)は今のまま残す</li>
-					<li><strong>テナント名とポートを起動の引数で受け</strong>(8-A)、置き場を <code>_data/&lt;テナント&gt;/</code> にする。<code>process.title</code> にもテナント名とポートを出す。テナント名は英小文字・数字・ハイフンだけを受け、それ以外 (<code>..</code> ・空・大文字)は起動しない</li>
+					<li><strong>テナント名とポートを起動の引数で受け</strong>(12-A)、置き場を <code>_data/&lt;テナント&gt;/</code> にする。<code>process.title</code> にもテナント名とポートを出す。テナント名は英小文字・数字・ハイフンだけを受け、それ以外 (<code>..</code> ・空・大文字)は起動しない</li>
 					<li><strong>本番かテストかの見分けを直す。</strong>いまは「置き場が <code>_data</code> そのものなら本番」。これを「置き場が <code>_data/&lt;引数のテナント&gt;/</code> なら本番、それ以外はテスト」にする。環境を表す変数を別に持たない方針は変えない</li>
 					<li>トークンの一覧は、テナントの置き場ごとに持つ。<strong>別のテナントのトークンでは入れない</strong></li>
 				</ul>
@@ -683,14 +683,14 @@ footer a {
 					<li><code>::1</code> と <code>127.0.0.1</code> の 8787 番で受け、メソッド・パス・クエリ・本文をそのままクラウドへ送る。トークンをヘッダーに付ける</li>
 					<li>応答は溜めずに流す (SSE と long-poll 240 秒を途中で切らない)</li>
 					<li>クラウドへ繋がらないときは 503 を返す。<strong>CLI は 503 で繋ぎ直す</strong>ので、いまのメンテナンスと同じ粘りで生き残る (文言は実物で確かめる)</li>
-					<li>手元のポートごとに、行き先のドメイン名とトークンを変える (9-A)</li>
+					<li>手元のポートごとに、行き先のドメイン名とトークンを変える (13-A)</li>
 					<li>設定 (クラウドの URL とトークン)は、プロジェクトの <code>_secrets/</code>(先頭 <code>_</code> で Git の管理外)のファイルから読む。<strong>環境変数は使わない</strong></li>
 					<li>WinSW のサービスとして登録する (<code>deploy/</code>)。ログは <code>logs/&lt;サービス名&gt;/</code>(共通ルール「常駐サービスの置き場と、exe の置き替え (Windows)」)</li>
 				</ul>
 			</td><td class="nowrap"><code>src/relay/</code><br><code>deploy/</code></td></tr>
-			<tr><td class="nowrap">S4 クラウドの用意</td><td>Node の導入、systemd のユニット (テナント名を引数に取るひな形 1 つ。落ちたら起動し直す)、データとログの置き場 (テナントごと)、HTTPS の終端と <code>Host</code> の振り分け表 (1 の置き場の作りに合わせる。公開のドメインは、テナントが増えても足りるよう、ワイルドカードの証明書を検討する)、バックアップのタイマー (7-A。控えもテナントごとに分ける)。<strong>DB の WAL の上限と日次の掃除 (<a href="../40_issues/issues.html#i261007-02">i261007-02</a>)を、移す前に入れる</strong>。人が見ていない場所で動くため</td><td class="nowrap"><code>deploy/</code><br><code>tools/80_ops/</code></td></tr>
+			<tr><td class="nowrap">S4 クラウドの用意</td><td>Node の導入、systemd のユニット (テナント名を引数に取るひな形 1 つ。落ちたら起動し直す)、データとログの置き場 (テナントごと)、HTTPS の終端と <code>Host</code> の振り分け表 (5 の置き場の作りに合わせる。公開のドメインは、テナントが増えても足りるよう、ワイルドカードの証明書を検討する)、バックアップのタイマー (11-A。控えもテナントごとに分ける)。<strong>DB の WAL の上限と日次の掃除 (<a href="../40_issues/issues.html#i261007-02">i261007-02</a>)を、移す前に入れる</strong>。人が見ていない場所で動くため</td><td class="nowrap"><code>deploy/</code><br><code>tools/80_ops/</code></td></tr>
 			<tr><td class="nowrap">S5 移す</td><td>5 章の手順</td><td class="nowrap">本番</td></tr>
-			<tr><td class="nowrap">S6 記録</td><td>設計書・CHAT-USAGE・status・課題を新しい形に直す。<strong>共通ルール「ai-chat-lite (AI 間チャット)の利用」の「サーバは Windows サービスとして常駐している」の一文は、文面を提示してから直す</strong>(2-A ならコマンドの書き方は変わらない)。周知の文面も送る前に提示する</td><td class="nowrap"><code>notes/</code></td></tr>
+			<tr><td class="nowrap">S6 記録</td><td>設計書・CHAT-USAGE・status・課題を新しい形に直す。<strong>共通ルール「ai-chat-lite (AI 間チャット)の利用」の「サーバは Windows サービスとして常駐している」の一文は、文面を提示してから直す</strong>(6-A ならコマンドの書き方は変わらない)。周知の文面も送る前に提示する</td><td class="nowrap"><code>notes/</code></td></tr>
 		</tbody>
 	</table>
 	</div>
@@ -709,9 +709,9 @@ footer a {
 	<table>
 		<thead><tr><th class="nowrap">ログ</th><th>決めること・作るもの</th></tr></thead>
 		<tbody>
-			<tr><td class="nowrap">サーバ</td><td><strong>8-A なら、テナントごとにユニットが別なので、行き先も分かれて競合しない。</strong>ファイルにするなら <code>logs/&lt;サービス名&gt;/</code>(共通ルール)で、サービス名にテナント ID を入れる。<strong>行き先の名前が同じになると、2 つのプロセスが 1 つのファイルに追記して行が混ざる</strong>ので、ユニットのひな形で名前を組み立てる。8-B なら 1 本に全テナントの行が混ざるので、<strong>全部の行にテナント ID を入れる</strong></td></tr>
-			<tr><td class="nowrap">バックアップ</td><td><strong>どちらの分け方でも、このままだと競合しうる。</strong>同じ区分 (hourly など)がテナントの数だけ同じ時刻に起動し、同じ月のファイルへ同時に追記する。<strong>置き場かファイル名にテナント ID を入れる。</strong>7-A で道具を node に寄せるときに一緒に直す</td></tr>
-			<tr><td class="nowrap">中継 (PC 側)</td><td>WinSW のサービスとして <code>logs/&lt;サービス名&gt;/</code> に出す。<strong>クラウドに断られた (4 の応答が返った)・繋がらない、を必ず 1 行残す。</strong>4-A は理由を返さないので、設定の誤りに気づく手がかりはここしかない</td></tr>
+			<tr><td class="nowrap">サーバ</td><td><strong>12-A なら、テナントごとにユニットが別なので、行き先も分かれて競合しない。</strong>ファイルにするなら <code>logs/&lt;サービス名&gt;/</code>(共通ルール)で、サービス名にテナント ID を入れる。<strong>行き先の名前が同じになると、2 つのプロセスが 1 つのファイルに追記して行が混ざる</strong>ので、ユニットのひな形で名前を組み立てる。12-B なら 1 本に全テナントの行が混ざるので、<strong>全部の行にテナント ID を入れる</strong></td></tr>
+			<tr><td class="nowrap">バックアップ</td><td><strong>どちらの分け方でも、このままだと競合しうる。</strong>同じ区分 (hourly など)がテナントの数だけ同じ時刻に起動し、同じ月のファイルへ同時に追記する。<strong>置き場かファイル名にテナント ID を入れる。</strong>11-A で道具を node に寄せるときに一緒に直す</td></tr>
+			<tr><td class="nowrap">中継 (PC 側)</td><td>WinSW のサービスとして <code>logs/&lt;サービス名&gt;/</code> に出す。<strong>クラウドに断られた (8 の応答が返った)・繋がらない、を必ず 1 行残す。</strong>8-A は理由を返さないので、設定の誤りに気づく手がかりはここしかない</td></tr>
 			<tr><td class="nowrap">書かないもの</td><td><strong>トークンの値。</strong>サーバ・中継・バックアップのどのログにも書かない (6 章のテスト 5)。通したときは名札 (<code>pc1</code>)とテナント ID だけを書く</td></tr>
 			<tr><td class="nowrap">寿命</td><td>systemd の記録にも、ファイルにも、残す長さ (または大きさ)の上限を決める。決めないと、ディスクを食い続ける</td></tr>
 			<tr><td class="nowrap">日時</td><td>いまと同じ JST の <code>yyyy/mm/dd hh:mm:ss.ccc</code>。<strong>systemd の記録が付ける時刻は OS の時刻 (クラウドは UTC のことが多い)</strong>なので、行の中の JST の時刻を正とする</td></tr>
@@ -725,11 +725,11 @@ footer a {
 		<thead><tr><th class="nowrap">観点</th><th>なぜ要るか</th><th>どうするか</th></tr></thead>
 		<tbody>
 			<tr><td class="nowrap">控えを別の場所にも置く</td><td><strong>控えが DB と同じインスタンスにしか無いと、インスタンスが消えたときに、DB と控えが一緒に消える。</strong>いまは PC の中で、DB も控えも同じディスクにある</td><td>3 章の 10 で決める</td></tr>
-			<tr><td class="nowrap">落ちたことに気づく</td><td>いまは PC の前に人がいて、繋がらなければすぐ分かる。<strong>クラウドで落ちたまま再起動もできなくなると、誰も気づかない。</strong>4-A で <code>/api/version</code> も閉じるので、外から生きているかを素朴に聞く口も無い</td><td>systemd の「落ちたら起動し直す」に加え、中継が「繋がらない」を記録し、続いたら chat の待受けの定期確認 (ローカルルール 5 節)で目に入るようにする。外からの見張りを足すかは、運用してから決める</td></tr>
+			<tr><td class="nowrap">落ちたことに気づく</td><td>いまは PC の前に人がいて、繋がらなければすぐ分かる。<strong>クラウドで落ちたまま再起動もできなくなると、誰も気づかない。</strong>8-A で <code>/api/version</code> も閉じるので、外から生きているかを素朴に聞く口も無い</td><td>systemd の「落ちたら起動し直す」に加え、中継が「繋がらない」を記録し、続いたら chat の待受けの定期確認 (ローカルルール 5 節)で目に入るようにする。外からの見張りを足すかは、運用してから決める</td></tr>
 			<tr><td class="nowrap">経路の待ち時間の上限</td><td>long-poll は最大 240 秒、SSE は 25 秒ごとの空行で繋ぎ続ける。<strong>HTTPS の終端や中継に、もっと短い待ち時間の上限があると、途中で切られる</strong></td><td>終端と中継の読み取りの上限を 240 秒より長くする。6 章のテスト 8 で確かめる</td></tr>
-			<tr><td class="nowrap">DB の版上げ</td><td>版は起動のときに当たる。<strong>テナントごとに DB が別なので、新しい版を出すと、テナントの数だけ当てることになる。</strong>1 つだけ失敗して、テナントごとに形が違う状態が起こりうる</td><td>8-A なら、テナントごとに起動し直し、全部が同じ版になったかを確かめる手順を書く。版を当てる前の控えは、DB と同じフォルダ (テナントの置き場)にできる (<a href="../40_issues/issues.html#i261015-01">i261015-01</a> で直した)</td></tr>
+			<tr><td class="nowrap">DB の版上げ</td><td>版は起動のときに当たる。<strong>テナントごとに DB が別なので、新しい版を出すと、テナントの数だけ当てることになる。</strong>1 つだけ失敗して、テナントごとに形が違う状態が起こりうる</td><td>12-A なら、テナントごとに起動し直し、全部が同じ版になったかを確かめる手順を書く。版を当てる前の控えは、DB と同じフォルダ (テナントの置き場)にできる (<a href="../40_issues/issues.html#i261015-01">i261015-01</a> で直した)</td></tr>
 			<tr><td class="nowrap">トークンの入れ替え</td><td>PC を手放した・なくした・トークンが漏れたかもしれない、ときに<strong>すぐ止められる手順</strong>が要る</td><td>取り消し (S2 の道具)→ 新しいトークンの発行 → 中継の設定の書き換え、を 5 章に手順として書く。トークンに期限は付けない (入れ替えの手間が増えるだけで、取り消しで足りる)</td></tr>
-			<tr><td class="nowrap">会話の中身の置き場</td><td>発言には、各プロジェクトの作業内容が入る。<strong>PC の外の、他社のサーバに置くことになる</strong></td><td>移す前に、置いてよい中身かを利用者が確かめる。ディスクの暗号化がされているかは、置き場 (1-A)の側に確かめる (未確認)</td></tr>
+			<tr><td class="nowrap">会話の中身の置き場</td><td>発言には、各プロジェクトの作業内容が入る。<strong>PC の外の、他社のサーバに置くことになる</strong></td><td>移す前に、置いてよい中身かを利用者が確かめる。ディスクの暗号化がされているかは、置き場 (5-A)の側に確かめる (未確認)</td></tr>
 		</tbody>
 	</table>
 	</div>
@@ -762,7 +762,7 @@ footer a {
 
 	<p><strong>止まる時間は、3〜5 の数分の見込み。</strong><a href="../40_issues/issues-archive.html#i260830-01">i260830-01</a> の実測では、他プロジェクトの待受けは繋がらないあいだの粘り (約 10 分)で、張り直しなしに生き残った。</p>
 
-	<h2>テナントを足す手順 (8-A ・ 9-A のとき)</h2>
+	<h2>テナントを足す手順 (12-A ・ 13-A のとき)</h2>
 	<ol>
 		<li>テナント名とドメイン名を決める (英小文字・数字・ハイフン)</li>
 		<li>クラウドに置き場 (<code>_data/&lt;テナント&gt;/</code>)を作り、ポートを割り当てる</li>
@@ -796,16 +796,16 @@ footer a {
 	<table>
 		<thead><tr><th class="num">項目</th><th>保証すること</th></tr></thead>
 		<tbody>
-			<tr><td class="num">1</td><td>トークン必須のサーバは、トークンが無い・違う・取り消し済みのとき、<code>/</code> ・ <code>/api/version</code> ・ <code>/api/events</code> ・ POST のどれにも、<strong>1 字も違わない同じ応答</strong>(4-A)を返す</td></tr>
+			<tr><td class="num">1</td><td>トークン必須のサーバは、トークンが無い・違う・取り消し済みのとき、<code>/</code> ・ <code>/api/version</code> ・ <code>/api/events</code> ・ POST のどれにも、<strong>1 字も違わない同じ応答</strong>(8-A)を返す</td></tr>
 			<tr><td class="num">2</td><td>正しいトークンなら、いまと同じ応答を返す。クエリで渡したトークンは通さない</td></tr>
 			<tr><td class="num">3</td><td>トークン必須なのに、トークンのファイルが無いと、起動しない</td></tr>
 			<tr><td class="num">4</td><td>ファイルの 1 行を取り消すと、次の要求から断る (起動し直さなくても)</td></tr>
 			<tr><td class="num">5</td><td>サーバのログにも、中継のログにも、トークンの値が 1 度も出ない</td></tr>
-			<tr><td class="num">6</td><td>外向きのポートでは管理の口が 404 で、管理のポートでは動く (6-A)</td></tr>
-			<tr><td class="num">7</td><td>別の名札のトークンから、結び付いた ID で来たら断り、理由を返す (5-A)</td></tr>
+			<tr><td class="num">6</td><td>外向きのポートでは管理の口が 404 で、管理のポートでは動く (10-A)</td></tr>
+			<tr><td class="num">7</td><td>別の名札のトークンから、結び付いた ID で来たら断り、理由を返す (9-A)</td></tr>
 			<tr><td class="num">8</td><td>中継を通して、SSE が途切れずに流れ、long-poll が 240 秒まで待てる</td></tr>
 			<tr><td class="num">9</td><td>クラウドに繋がらないとき、中継は 503 を返し、CLI (node 版 ・ Rust 版)が繋ぎ直す</td></tr>
-			<tr><td class="num">10</td><td>規約に合わない <code>Host</code>(<code>chat.ai</code> が無い ・ テナント ID に使えない文字 ・ <code>..</code> ・ 一覧に無いドメイン)と、置き場の無いテナント ID には、4 の応答を返し、フォルダも DB も作らない。大文字やポート付きの <code>Host</code> は、そろえてから照らす</td></tr>
+			<tr><td class="num">10</td><td>規約に合わない <code>Host</code>(<code>chat.ai</code> が無い ・ テナント ID に使えない文字 ・ <code>..</code> ・ 一覧に無いドメイン)と、置き場の無いテナント ID には、8 の応答を返し、フォルダも DB も作らない。大文字やポート付きの <code>Host</code> は、そろえてから照らす</td></tr>
 			<tr><td class="num">11</td><td>テナント 1 のトークンで、テナント 2 のドメイン名へ来たら断る</td></tr>
 			<tr><td class="num">12</td><td><code>_data/&lt;引数のテナント&gt;/</code> で立てると本番、<code>tmp/_data/…</code> で立てるとテストとして振る舞う</td></tr>
 			<tr><td class="num">13</td><td>テナント名に <code>..</code> ・空 ・大文字が来たら、起動しない</td></tr>
@@ -819,7 +819,7 @@ footer a {
 	<h2>実機 (移したあと)</h2>
 	<ul>
 		<li>発言の件数と最後の <code>msg_seq</code> が、移す前の控えと一致する</li>
-		<li>トークンを付けずにクラウドの URL をブラウザで開くと、4-A のページだけが出る</li>
+		<li>トークンを付けずにクラウドの URL をブラウザで開くと、8-A のページだけが出る</li>
 		<li>手元の PC で <code>aichat who</code> ・ <code>waiters</code> ・ <code>say</code> ・ <code>wait</code> とブラウザが、いままでと同じに動く</li>
 		<li>クラウドのサーバを再起動して、systemd が起動し直し、中継の先の待受けが生き残る</li>
 		<li>バックアップのタイマーが動き、控えが増える (<strong>自動実行は、実環境で動いた結果を見るまで済にしない</strong>)</li>

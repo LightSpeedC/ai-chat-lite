@@ -3505,7 +3505,7 @@ purge-test-data.mjs                # 断る (どちらの置き場かが指定�
 					<p><strong>node 版 (<code>chat.mjs</code> の <code>pickWaiters</code>)と Rust 版 (<code>waiters.rs</code>)の両方に同じ作りがある。</strong>どちらかだけ直すと、突き合わせテスト (<code>tests/cli-rs.test.mjs</code>・<code>tools/40_test/compare-cli.mjs</code>)が食い違いを落とす。</p>
 				</div>
 
-				<h3>直し方 (1-A で決定)</h3>
+				<h3>直し方 (4-A で決定)</h3>
 				<p><strong>末端に数えるのを、待受けの実体 (<code>aichat</code>・<code>aichat-rs</code>・<code>node</code>・<code>bun</code>)だけにした。</strong><code>bash</code>・<code>timeout</code>・<code>pwsh</code> 等のラッパーは、親子がどうつながっていても数えない。ラッパーは親の判定と張り方の判定 (<code>cmd.exe</code> 越しの <code>node</code> は <code>aichat-node</code>)には使い続ける。実体の名前が増えたら <code>WAITER_RUNTIMES</code>(node 版)・<code>is_waiter_runtime</code>(Rust 版)へ足す。足し忘れても本数が少なく見えるだけで、二重に数えて「張らなくてよい」と読み違える向きには外れない。</p>
 				<p><strong>テストの写しも解消した。</strong><code>tests/client-waiters.test.mjs</code> は <code>pickWaiters</code> と <code>targetOf</code> を自分の中に写して検査していた (本体を壊しても緑のまま)。選び方を <code>waiters-pick.mjs</code> へ出して、<code>chat.mjs</code> とテストが同じ実物を使う形にした。</p>
 
@@ -3541,7 +3541,7 @@ purge-test-data.mjs                # 断る (どちらの置き場かが指定�
 			<div class="issuebody">
 				<p><strong>定期レビュー (chat #1088)で指摘され、実測で確認した。</strong><a href="issues.html#i260922-01">i260922-01</a> は「公開インターフェースは <code>aichat.exe</code> だけ。<code>aichat-*.cmd</code> は開発・突き合わせ用で、他プロジェクトのセッションが名前で呼ぶものではないため対象外」としている。一方 <code>CHAT-USAGE.html</code> は他プロジェクト向けに <code>aichat-node</code> を名前で呼ぶよう案内し、これも PATH に入っているのでパスは書かない、としている。<a href="issues.html#i260922-01">i260922-01</a> に残る「未」の項目 (PATH からプロジェクトルート自体を外す)を実施すると、この案内は動かなくなる。</p>
 				<p>あわせて、ルート直下のランチャーは <code>aichat-bun</code>(拡張子なし)・<code>aichat-bun.cmd</code>・<code>aichat-node.cmd</code> の 3 本で、<code>aichat-node</code> には拡張子なしの版が無く、Bash からは解決できない (実測で確認済み)。</p>
-				<p><strong>選んだ案 (1-A): <code>aichat-node</code> を <code>bin/</code> へ移す。</strong>フォールバック用の CLI という役割を残したまま、<a href="issues.html#i260922-01">i260922-01</a> の「公開インターフェースは <code>bin/</code> だけに置く」に揃えた。</p>
+				<p><strong>選んだ案 (4-A): <code>aichat-node</code> を <code>bin/</code> へ移す。</strong>フォールバック用の CLI という役割を残したまま、<a href="issues.html#i260922-01">i260922-01</a> の「公開インターフェースは <code>bin/</code> だけに置く」に揃えた。</p>
 				<ul class="todos">
 					<li class="done"><span class="badge b-done">☑</span> <code>bin/aichat-node</code>(拡張子なし・Bash 用)・<code>bin/aichat-node.cmd</code>(PowerShell/cmd 用)を新設し、両方とも実機で動作確認した</li>
 					<li class="done"><span class="badge b-done">☑</span> ルート直下の <code>aichat-node.cmd</code> を削除した</li>
