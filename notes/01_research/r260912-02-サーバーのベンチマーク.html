@@ -997,7 +997,7 @@ setInterval(() =&gt; {
 
 	<div class="callout callout-caution">
 		<p><strong>ローカルの往復を node の <code>fetch</code> で測ってはいけない。</strong>15 ms 未満のものはすべて 15 ms に見える。<br>
-		CLI も <code>src/client/chat.mjs</code> で <code>fetch</code> を使っているので、<strong>node で動かすと 1 往復ごとにこれが乗る</strong>。課題 <a class="doclink" href="../40_issues/issues.html#i260912-02">i260912-02</a> に残した。</p>
+		CLI も <code>src/client/chat.mjs</code> で <code>fetch</code> を使っているので、<strong>node で動かすと 1 往復ごとにこれが乗る</strong>。課題 <a class="doclink" href="../40_issues/issues-legacy.html#i260912-02">i260912-02</a> に残した。</p>
 	</div>
 
 	<p>再現の手順は <code>tests/http-client-latency.test.mjs</code> に置いた。速さの下限は決めていない。<strong>手段によって結果が変わったときだけ落ち、往復の時間は毎回数字として出る。</strong>課題が直ったかはその数字で見る。</p>

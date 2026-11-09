@@ -100,7 +100,7 @@
 
 | 順 | すること | 実行する人 |
 |---:|---|---|
-| P1 | 全テストを実行する (既知の失敗は [i260928-02](../40_issues/issues.md#未-i260928-02-n-ドライブ廃止-chat-1249への追随) の 3 件と、`bun test` の [i260916-01](../40_issues/issues.md#未-i260916-01-bun-test-が既存の状態と非決定的に落ちる-33-件)) | AI |
+| P1 | 全テストを実行する (既知の失敗は [i260928-02](../40_issues/issues-legacy.md#未-i260928-02-n-ドライブ廃止-chat-1249への追随) の 3 件と、`bun test` の [i260916-01](../40_issues/issues-legacy.md#未-i260916-01-bun-test-が既存の状態と非決定的に落ちる-33-件)) | AI |
 | P2 | `tools/80_ops/backup.ps1 -Kind daily` で控えを取る。サービスを止めずに実行でき、`_backup/daily/chat-yyyymmdd-hhmmss.db.zip` に出る | AI |
 | P3 | `deploy/node-ai-chat-lite-winsw.xml` を新規に作る (2-B の `arguments`・`logpath`・コメント) | AI |
 | P4 | `deploy/install-service.cmd` と `deploy/uninstall-service.cmd` を新規に作る (ガード付き。下の表)。`deploy/` に exe が無いあいだは、必要ファイルのガードで止まるので、間違えて動かしても何も起きない | AI |

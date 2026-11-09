@@ -551,7 +551,7 @@ a.doclink {
 	<table>
 		<thead><tr><th class="nowrap">変数</th><th class="nowrap">やめた時期</th><th>代わり</th><th>見張っているテスト</th></tr></thead>
 		<tbody>
-			<tr><td class="nowrap"><code>AICHAT_DB</code></td><td class="nowrap">2026-08-31</td><td><code>AICHAT_DATA</code>(DB だけでなく、印も含めて置き場ごと分ける)。<a href="../10_plan/p260831-01-テスト環境の分離.html">テスト環境の分離</a></td><td rowspan="3">名前は書かず、<code>AICHAT_</code> で始まる語をまとめて見張る (<a href="../40_issues/issues.html#i261015-02">i261015-02</a>)。<code>tests/client-usage.test.mjs</code>(使い方の表示に出ない)・ <code>tests/client-no-defaults.test.mjs</code>(CLI に読む口が無い)</td></tr>
+			<tr><td class="nowrap"><code>AICHAT_DB</code></td><td class="nowrap">2026-08-31</td><td><code>AICHAT_DATA</code>(DB だけでなく、印も含めて置き場ごと分ける)。<a href="../10_plan/p260831-01-テスト環境の分離.html">テスト環境の分離</a></td><td rowspan="3">名前は書かず、<code>AICHAT_</code> で始まる語をまとめて見張る (<a href="../40_issues/issues-legacy.html#i261015-02">i261015-02</a>)。<code>tests/client-usage.test.mjs</code>(使い方の表示に出ない)・ <code>tests/client-no-defaults.test.mjs</code>(CLI に読む口が無い)</td></tr>
 			<tr><td class="nowrap"><code>AICHAT_ID</code></td><td class="nowrap">2026-09-01</td><td>名乗る ID は、コマンドの直後にコロンで囲んで渡す (<code>:project-a:</code>)。<a href="../10_plan/p260901-01-CLIのオプションを整える.html">CLI のオプションを整える</a></td></tr>
 			<tr><td class="nowrap"><code>AICHAT_URL</code></td><td class="nowrap">2026-09-04</td><td>接続先は <code>-p</code>(ポート)か <code>-u</code>(URL)で毎回渡す</td></tr>
 		</tbody>
@@ -573,7 +573,7 @@ a.doclink {
 		<tbody>
 			<tr><td class="num">1</td><td><strong><code>AICHAT_LOCK_POLL_MS</code> ・ <code>AICHAT_LOCK_MAX_TRIES</code> は、誰も渡していない。</strong>コメントには「既定のままでは動作を確かめるのに 5 分かかるため、短くできる」とあるが、テストは関数の引数で縮めている。入れた日 (2026-08-30)から一度も渡されていない</td><td><code>src/server/backup.mjs:115-120</code></td></tr>
 			<tr><td class="num">2</td><td><strong>本番のポートを、環境変数で渡している。</strong>共通ルール「プロセスの識別性」は、本番とテストを見分けるための情報 (ポート等)を<strong>コマンドライン引数で渡す</strong>としている。環境変数はプロセスの一覧に出ないため。テスト用サーバのポートと置き場も、環境変数で渡している。<strong>しかも本番で渡している 8787 は、既定と同じ値</strong></td><td><code>deploy/node-ai-chat-lite-winsw.xml:20</code><br><code>src/server/config.mjs:66</code></td></tr>
-			<tr><td class="num">3</td><td><strong>テナントごとにサーバを並べると (<a href="../10_plan/i261014-01-チャットをクラウドへ移す.html">i261014-01</a> の計画)、2 が強く効く。</strong>同じサーバが、置き場とポートだけを変えて何本も並ぶ。どれがどのテナントかは、引数で見分けられるようにする</td><td><a href="../40_issues/issues.html#i261014-01">i261014-01</a></td></tr>
+			<tr><td class="num">3</td><td><strong>テナントごとにサーバを並べると (<a href="../10_plan/i261014-01-チャットをクラウドへ移す.html">i261014-01</a> の計画)、2 が強く効く。</strong>同じサーバが、置き場とポートだけを変えて何本も並ぶ。どれがどのテナントかは、引数で見分けられるようにする</td><td><a href="../40_issues/issues-legacy.html#i261014-01">i261014-01</a></td></tr>
 		</tbody>
 	</table>
 	</div>

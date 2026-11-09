@@ -430,7 +430,7 @@ footer a {
 
 <p class="backlink"><a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
 
-<p><a href="../40_issues/issues.html#i261014-01">i261014-01</a> の計画。<strong>いまのサーバは 1 台の PC の中で動き、<code>localhost</code> でしか受けていない。</strong>これをクラウドへ移すと、別の PC からも同じチャットに入れる。その代わり、インターネットに口を開けることになるので、<strong>受け付ける相手を、発行したアクセストークンで絞る。</strong></p>
+<p><a href="../40_issues/issues-legacy.html#i261014-01">i261014-01</a> の計画。<strong>いまのサーバは 1 台の PC の中で動き、<code>localhost</code> でしか受けていない。</strong>これをクラウドへ移すと、別の PC からも同じチャットに入れる。その代わり、インターネットに口を開けることになるので、<strong>受け付ける相手を、発行したアクセストークンで絞る。</strong></p>
 
 <div class="callout callout-important">
 	<p><strong>計画の段階。3 章の決めること (5〜14)と、決めてもらう値 (テナント名とドメイン)が揃ってから着手する。</strong>推奨はそれぞれ A。実装は 4 章の段ごとに 1 点ずつ進め、段の終わりで確認を取る。</p>
@@ -688,7 +688,7 @@ footer a {
 					<li>WinSW のサービスとして登録する (<code>deploy/</code>)。ログは <code>logs/&lt;サービス名&gt;/</code>(共通ルール「常駐サービスの置き場と、exe の置き替え (Windows)」)</li>
 				</ul>
 			</td><td class="nowrap"><code>src/relay/</code><br><code>deploy/</code></td></tr>
-			<tr><td class="nowrap">S4 クラウドの用意</td><td>Node の導入、systemd のユニット (テナント名を引数に取るひな形 1 つ。落ちたら起動し直す)、データとログの置き場 (テナントごと)、HTTPS の終端と <code>Host</code> の振り分け表 (5 の置き場の作りに合わせる。公開のドメインは、テナントが増えても足りるよう、ワイルドカードの証明書を検討する)、バックアップのタイマー (11-A。控えもテナントごとに分ける)。<strong>DB の WAL の上限と日次の掃除 (<a href="../40_issues/issues.html#i261007-02">i261007-02</a>)を、移す前に入れる</strong>。人が見ていない場所で動くため</td><td class="nowrap"><code>deploy/</code><br><code>tools/80_ops/</code></td></tr>
+			<tr><td class="nowrap">S4 クラウドの用意</td><td>Node の導入、systemd のユニット (テナント名を引数に取るひな形 1 つ。落ちたら起動し直す)、データとログの置き場 (テナントごと)、HTTPS の終端と <code>Host</code> の振り分け表 (5 の置き場の作りに合わせる。公開のドメインは、テナントが増えても足りるよう、ワイルドカードの証明書を検討する)、バックアップのタイマー (11-A。控えもテナントごとに分ける)。<strong>DB の WAL の上限と日次の掃除 (<a href="../40_issues/issues-legacy.html#i261007-02">i261007-02</a>)を、移す前に入れる</strong>。人が見ていない場所で動くため</td><td class="nowrap"><code>deploy/</code><br><code>tools/80_ops/</code></td></tr>
 			<tr><td class="nowrap">S5 移す</td><td>5 章の手順</td><td class="nowrap">本番</td></tr>
 			<tr><td class="nowrap">S6 記録</td><td>設計書・CHAT-USAGE・status・課題を新しい形に直す。<strong>共通ルール「ai-chat-lite (AI 間チャット)の利用」の「サーバは Windows サービスとして常駐している」の一文は、文面を提示してから直す</strong>(6-A ならコマンドの書き方は変わらない)。周知の文面も送る前に提示する</td><td class="nowrap"><code>notes/</code></td></tr>
 		</tbody>
@@ -727,7 +727,7 @@ footer a {
 			<tr><td class="nowrap">控えを別の場所にも置く</td><td><strong>控えが DB と同じインスタンスにしか無いと、インスタンスが消えたときに、DB と控えが一緒に消える。</strong>いまは PC の中で、DB も控えも同じディスクにある</td><td>3 章の 10 で決める</td></tr>
 			<tr><td class="nowrap">落ちたことに気づく</td><td>いまは PC の前に人がいて、繋がらなければすぐ分かる。<strong>クラウドで落ちたまま再起動もできなくなると、誰も気づかない。</strong>8-A で <code>/api/version</code> も閉じるので、外から生きているかを素朴に聞く口も無い</td><td>systemd の「落ちたら起動し直す」に加え、中継が「繋がらない」を記録し、続いたら chat の待受けの定期確認 (ローカルルール 5 節)で目に入るようにする。外からの見張りを足すかは、運用してから決める</td></tr>
 			<tr><td class="nowrap">経路の待ち時間の上限</td><td>long-poll は最大 240 秒、SSE は 25 秒ごとの空行で繋ぎ続ける。<strong>HTTPS の終端や中継に、もっと短い待ち時間の上限があると、途中で切られる</strong></td><td>終端と中継の読み取りの上限を 240 秒より長くする。6 章のテスト 8 で確かめる</td></tr>
-			<tr><td class="nowrap">DB の版上げ</td><td>版は起動のときに当たる。<strong>テナントごとに DB が別なので、新しい版を出すと、テナントの数だけ当てることになる。</strong>1 つだけ失敗して、テナントごとに形が違う状態が起こりうる</td><td>12-A なら、テナントごとに起動し直し、全部が同じ版になったかを確かめる手順を書く。版を当てる前の控えは、DB と同じフォルダ (テナントの置き場)にできる (<a href="../40_issues/issues.html#i261015-01">i261015-01</a> で直した)</td></tr>
+			<tr><td class="nowrap">DB の版上げ</td><td>版は起動のときに当たる。<strong>テナントごとに DB が別なので、新しい版を出すと、テナントの数だけ当てることになる。</strong>1 つだけ失敗して、テナントごとに形が違う状態が起こりうる</td><td>12-A なら、テナントごとに起動し直し、全部が同じ版になったかを確かめる手順を書く。版を当てる前の控えは、DB と同じフォルダ (テナントの置き場)にできる (<a href="../40_issues/issues-legacy.html#i261015-01">i261015-01</a> で直した)</td></tr>
 			<tr><td class="nowrap">トークンの入れ替え</td><td>PC を手放した・なくした・トークンが漏れたかもしれない、ときに<strong>すぐ止められる手順</strong>が要る</td><td>取り消し (S2 の道具)→ 新しいトークンの発行 → 中継の設定の書き換え、を 5 章に手順として書く。トークンに期限は付けない (入れ替えの手間が増えるだけで、取り消しで足りる)</td></tr>
 			<tr><td class="nowrap">会話の中身の置き場</td><td>発言には、各プロジェクトの作業内容が入る。<strong>PC の外の、他社のサーバに置くことになる</strong></td><td>移す前に、置いてよい中身かを利用者が確かめる。ディスクの暗号化がされているかは、置き場 (5-A)の側に確かめる (未確認)</td></tr>
 		</tbody>
@@ -736,9 +736,9 @@ footer a {
 
 	<h2>関係する課題</h2>
 	<ul>
-		<li><a href="../40_issues/issues.html#i261007-01">i261007-01</a>(サービスのログの置き場): サーバが Linux へ移ると、WinSW のサービスは中継になる。<strong>中継は最初から共通ルールの置き場 (<code>logs/&lt;サービス名&gt;/</code>)で作る</strong></li>
-		<li><a href="../40_issues/issues.html#i260830-02">i260830-02</a>(サービス回復の段数と delay): 中継と、systemd のユニットの両方で決め直す</li>
-		<li><a href="../40_issues/issues.html#i261007-02">i261007-02</a>(WAL の上限と掃除): S4 で先に済ませる</li>
+		<li><a href="../40_issues/issues-legacy.html#i261007-01">i261007-01</a>(サービスのログの置き場): サーバが Linux へ移ると、WinSW のサービスは中継になる。<strong>中継は最初から共通ルールの置き場 (<code>logs/&lt;サービス名&gt;/</code>)で作る</strong></li>
+		<li><a href="../40_issues/issues-legacy.html#i260830-02">i260830-02</a>(サービス回復の段数と delay): 中継と、systemd のユニットの両方で決め直す</li>
+		<li><a href="../40_issues/issues-legacy.html#i261007-02">i261007-02</a>(WAL の上限と掃除): S4 で先に済ませる</li>
 	</ul>
 </section>
 

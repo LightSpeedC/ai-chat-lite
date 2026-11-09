@@ -631,7 +631,7 @@ footer a {
 
 <p class="backlink"><a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
 
-<p>これから解決する課題は <a href="issues.html">課題</a> にあります。</p>
+<p>これから解決する課題は <a href="issues-legacy.html">課題</a> にあります。</p>
 
 <!--
 	目次は開閉と組みの機能で、飛び先は details。Markdown にすると見出しにならず
@@ -1506,7 +1506,7 @@ UPDATE messages    SET from_connector_id = 'ai-agent-rules' WHERE from_connector
 					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>日時の解析 (<code>--since</code> ・ <code>--before</code>)と待受けの選別を移した。</strong>正規表現を使わずに書いた</td></tr>
 					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>HTTP と 14 コマンドを実装した。</strong>Rust 側の単体テストは 182 件</td></tr>
 					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>node 版との突き合わせを通した。</strong><code>tests/cli-rs.test.mjs</code> が繋がない 16 通り、<code>tools/40_test/compare-cli.mjs</code> が実サーバーへ繋ぐ 54 通り</td></tr>
-					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>待受け中のメモリを測り直し、資料に反映した。</strong>全 14 コマンドで 6.41 MB (最小実装 4.89 MB から ＋1.5 MB、node 版 54.20 MB の 1/8)。<strong>関連: <a href="issues.html#i260905-04">i260905-04</a></strong>(待受けが逼迫で刈られる)。この削減も、2026-09-13 のメモリ増設とあわせて発生条件を遠のかせた一因</td></tr>
+					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>待受け中のメモリを測り直し、資料に反映した。</strong>全 14 コマンドで 6.41 MB (最小実装 4.89 MB から ＋1.5 MB、node 版 54.20 MB の 1/8)。<strong>関連: <a href="issues-legacy.html#i260905-04">i260905-04</a></strong>(待受けが逼迫で刈られる)。この削減も、2026-09-13 のメモリ増設とあわせて発生条件を遠のかせた一因</td></tr>
 					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong><code>waiters</code> は Windows の API を直に呼ぶ形にした。</strong>PowerShell (523〜673 ms)から <strong>Rust 25 ms ・ bun 64 ms ・ node 112 ms</strong> になり、C# 版 (229 ms)を下回った。<code>CreateToolhelp32Snapshot</code> で一覧を取り、<code>NtQueryInformationProcess</code> と <code>ReadProcessMemory</code> で PEB を辿ってコマンドラインを読む。仕組みは Rust が <code>std</code> の <code>extern</code>、bun が <code>bun:ffi</code>、node が <code>koffi</code>。<strong>PEB の並びは公開されていない</strong>ので、失敗したら黙って PowerShell へ落ちる。<strong>C# 版への依存は切れた</strong></td></tr>
 					<tr><td class="nowrap"><span class="badge b-done">☑</span></td><td><strong>PowerShell へ落ちたときの式から、<code>wait</code> という並びを外した。</strong>置くと、その PowerShell 自身のコマンドラインが条件に当たり、数えているプロセスが数に入る。<code>('* wa' + 'it *')</code> と割って繋ぐ。これまでは <code>WAITER_PATTERN</code> と除外 pid の二重の守りで表面化していなかった</td></tr>
 					<tr><td class="nowrap"><span class="badge b-moved">→</span></td><td>C# 版をどうするかは <a href="#i260918-01">i260918-01</a> へ切り出し、削除した</td></tr>
@@ -2263,7 +2263,7 @@ $cmdlines | Where-Object { $_ -like "*-c $me*" }
 
 				<p><strong>これで <code>i260902-02</code> は片付いた。</strong>設定は効き、セッションの起動も要らず、12 時間まで走る。「240 秒境界で落ちる」という見立ても <strong>179 回の通過</strong>で否定された。</p>
 
-				<p><strong>関連: <a href="issues.html#i260905-04">i260905-04</a></strong>(待受けが逼迫で刈られる)。<strong>止め方はもう 1 つある。</strong>こちらは経過時間 (60 分)で止まる話で、あちらはメモリの逼迫で刈られる話。<strong>対象も違い、親の背面コマンドも刈られる。</strong></p>
+				<p><strong>関連: <a href="issues-legacy.html#i260905-04">i260905-04</a></strong>(待受けが逼迫で刈られる)。<strong>止め方はもう 1 つある。</strong>こちらは経過時間 (60 分)で止まる話で、あちらはメモリの逼迫で刈られる話。<strong>対象も違い、親の背面コマンドも刈られる。</strong></p>
 			</div>
 		</details>
 
@@ -3243,7 +3243,7 @@ purge-test-data.mjs                # 断る (どちらの置き場かが指定�
 				伏せ字にする道具が、本体のログを触っていない
 			</summary>
 			<div class="issuebody">
-				<p><code>tools/80_ops/mask-log.ps1</code> 32 行の <code>$projectKey</code> が <strong>移す前のフォルダ名のまま</strong>である (<a href="issues.html#i260905-02">i260905-02</a> でプロジェクトを移したときに追随していない)。</p>
+				<p><code>tools/80_ops/mask-log.ps1</code> 32 行の <code>$projectKey</code> が <strong>移す前のフォルダ名のまま</strong>である (<a href="issues-legacy.html#i260905-02">i260905-02</a> でプロジェクトを移したときに追随していない)。</p>
 
 				<p>34-37 行の対象は 2 つあり、<strong>本体側は常に存在しない</strong>。57-59 行の <code>Test-Path</code> で「対象がありません」を 1 行出して飛ばす。伏せられるのは <code>etc/history/jsonl</code> のコピーだけになる。</p>
 
@@ -3536,12 +3536,12 @@ purge-test-data.mjs                # 断る (どちらの置き場かが指定�
 			<summary>
 				<span class="badge b-done">☑</span>
 				<span class="no">i260924-06</span>
-				<code>CHAT-USAGE.html</code> の <code>aichat-node</code> 案内が <a href="issues.html#i260922-01">i260922-01</a> の判断と食い違う
+				<code>CHAT-USAGE.html</code> の <code>aichat-node</code> 案内が <a href="issues-legacy.html#i260922-01">i260922-01</a> の判断と食い違う
 			</summary>
 			<div class="issuebody">
-				<p><strong>定期レビュー (chat #1088)で指摘され、実測で確認した。</strong><a href="issues.html#i260922-01">i260922-01</a> は「公開インターフェースは <code>aichat.exe</code> だけ。<code>aichat-*.cmd</code> は開発・突き合わせ用で、他プロジェクトのセッションが名前で呼ぶものではないため対象外」としている。一方 <code>CHAT-USAGE.html</code> は他プロジェクト向けに <code>aichat-node</code> を名前で呼ぶよう案内し、これも PATH に入っているのでパスは書かない、としている。<a href="issues.html#i260922-01">i260922-01</a> に残る「未」の項目 (PATH からプロジェクトルート自体を外す)を実施すると、この案内は動かなくなる。</p>
+				<p><strong>定期レビュー (chat #1088)で指摘され、実測で確認した。</strong><a href="issues-legacy.html#i260922-01">i260922-01</a> は「公開インターフェースは <code>aichat.exe</code> だけ。<code>aichat-*.cmd</code> は開発・突き合わせ用で、他プロジェクトのセッションが名前で呼ぶものではないため対象外」としている。一方 <code>CHAT-USAGE.html</code> は他プロジェクト向けに <code>aichat-node</code> を名前で呼ぶよう案内し、これも PATH に入っているのでパスは書かない、としている。<a href="issues-legacy.html#i260922-01">i260922-01</a> に残る「未」の項目 (PATH からプロジェクトルート自体を外す)を実施すると、この案内は動かなくなる。</p>
 				<p>あわせて、ルート直下のランチャーは <code>aichat-bun</code>(拡張子なし)・<code>aichat-bun.cmd</code>・<code>aichat-node.cmd</code> の 3 本で、<code>aichat-node</code> には拡張子なしの版が無く、Bash からは解決できない (実測で確認済み)。</p>
-				<p><strong>選んだ案 (4-A): <code>aichat-node</code> を <code>bin/</code> へ移す。</strong>フォールバック用の CLI という役割を残したまま、<a href="issues.html#i260922-01">i260922-01</a> の「公開インターフェースは <code>bin/</code> だけに置く」に揃えた。</p>
+				<p><strong>選んだ案 (4-A): <code>aichat-node</code> を <code>bin/</code> へ移す。</strong>フォールバック用の CLI という役割を残したまま、<a href="issues-legacy.html#i260922-01">i260922-01</a> の「公開インターフェースは <code>bin/</code> だけに置く」に揃えた。</p>
 				<ul class="todos">
 					<li class="done"><span class="badge b-done">☑</span> <code>bin/aichat-node</code>(拡張子なし・Bash 用)・<code>bin/aichat-node.cmd</code>(PowerShell/cmd 用)を新設し、両方とも実機で動作確認した</li>
 					<li class="done"><span class="badge b-done">☑</span> ルート直下の <code>aichat-node.cmd</code> を削除した</li>
@@ -4008,7 +4008,7 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 					<li class="done"><span class="badge b-done">☑</span> 実ブラウザで確かめる (claude-in-chrome でリロード 3 回 → 0 件、閉じる → 1 件)</li>
 					<li class="done"><span class="badge b-done">☑</span> 回帰テストを書く (<code>reload-leave.spec.ts</code> 4 件)</li>
 					<li class="done"><span class="badge b-done">☑</span> 既に積まれている分 → <strong>DB を作り直したので残っていない</strong></li>
-					<li class="done"><span class="badge b-done">☑</span> <span class="badge b-moved">移動</span> <code>sweepOffline()</code> の記録と役割が重なっている点は<a href="issues.html#i260830-16">i260830-16</a>へ切り出した</li>
+					<li class="done"><span class="badge b-done">☑</span> <span class="badge b-moved">移動</span> <code>sweepOffline()</code> の記録と役割が重なっている点は<a href="issues-legacy.html#i260830-16">i260830-16</a>へ切り出した</li>
 				</ul>
 			</div>
 		</details>
@@ -4022,7 +4022,7 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 			<div class="issuebody">
 				<p>いま持っているのは <code>to_connector_id</code>(誰に)だけで、<strong>「どの発言に」を持つ列がない</strong>。話題が並行すると、どれへの返答か分からなくなる。実際に「callout の分類」と「md-skip の扱い」が同時に流れ、宛先が読み取りにくい場面があった。</p>
 
-				<p><a href="issues.html#i260831-01">i260831-01</a>(リアクション・返信・投票)から<strong>返信だけを分けた</strong>。返信は列を 1 つ足せば済み、既存の配信の仕組みに手を入れない。リアクションは「画面には流すが待受けは終わらせない」経路を新しく作ることになるため、返信を待たせる理由がなかった。</p>
+				<p><a href="issues-legacy.html#i260831-01">i260831-01</a>(リアクション・返信・投票)から<strong>返信だけを分けた</strong>。返信は列を 1 つ足せば済み、既存の配信の仕組みに手を入れない。リアクションは「画面には流すが待受けは終わらせない」経路を新しく作ることになるため、返信を待たせる理由がなかった。</p>
 
 				<div class="callout callout-caution">
 					<p><strong>いまの待受けの出力には <code>msg_seq</code> が出ていない。</strong>受け取った発言の番号が分からないので、返信しようにも指す先を書けない。<strong>列とオプションだけ足しても使えない。</strong></p>
@@ -4158,7 +4158,7 @@ node src\client\chat.mjs who --access-token &lt;トークン&gt;</code></pre>
 
 				<h3>他の課題との関係</h3>
 
-				<p><a href="#i260830-09">i260830-09</a>(アーカイブ機能)は <code>archived_user_id</code> を新設する。<a href="issues.html#i260831-01">i260831-01</a>(返信・リアクション)も列を足す。<strong>名前を変えるならこれらより先が良い</strong>。あとから変えると、足した分も変えることになる。</p>
+				<p><a href="#i260830-09">i260830-09</a>(アーカイブ機能)は <code>archived_user_id</code> を新設する。<a href="issues-legacy.html#i260831-01">i260831-01</a>(返信・リアクション)も列を足す。<strong>名前を変えるならこれらより先が良い</strong>。あとから変えると、足した分も変えることになる。</p>
 
 				<h3>やること</h3>
 

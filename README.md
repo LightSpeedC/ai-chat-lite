@@ -20,7 +20,9 @@
 
 ### 資料
 
-[他プロジェクトからの使い方](CHAT-USAGE.md) [設計](notes/10_plan/p260829-01-設計.md) [バックアップの手引き](notes/90_rules/backup.md) [DB の版を上げる手引き](notes/90_rules/db-version.md) [バックアップ設計](notes/10_plan/p260830-01-バックアップ.md) [テスト用サーバーの手引き](notes/90_rules/test-server.md) [ローカルルール](notes/90_rules/local-rules.md) [テスト環境の分離](notes/10_plan/p260831-01-テスト環境の分離.md) [アーカイブ機能の設計](notes/10_plan/p260830-02-アーカイブ機能.md) [ファイルで排他する](docs/ファイルで排他する.md) [背面のコマンドの寿命](notes/01_research/r260902-01-背面コマンドの寿命.md) [CLI 実装のベンチマーク](notes/01_research/r260912-01-CLI実装のベンチマーク.md) [サーバーのベンチマーク](notes/01_research/r260912-02-サーバーのベンチマーク.md) [環境変数の使い方](notes/01_research/r261015-01-環境変数.md) [振り返り (10/24〜10/25)](notes/01_research/r261025-01-振り返り.md) [品質レビュー (2026-10-31)](notes/80_quality_review/q261031-01-品質レビュー.md) [開発状況](notes/30_status/status.md) [課題](notes/40_issues/issues.md) [変わったこと](notes/60_releases/20260903-01-変わったこと.md)
+[他プロジェクトからの使い方](CHAT-USAGE.md) [設計](notes/10_plan/p260829-01-設計.md) [バックアップの手引き](notes/90_rules/backup.md) [DB の版を上げる手引き](notes/90_rules/db-version.md) [バックアップ設計](notes/10_plan/p260830-01-バックアップ.md) [テスト用サーバーの手引き](notes/90_rules/test-server.md) [ローカルルール](notes/90_rules/local-rules.md) [テスト環境の分離](notes/10_plan/p260831-01-テスト環境の分離.md) [アーカイブ機能の設計](notes/10_plan/p260830-02-アーカイブ機能.md) [ファイルで排他する](docs/ファイルで排他する.md) [背面のコマンドの寿命](notes/01_research/r260902-01-背面コマンドの寿命.md) [CLI 実装のベンチマーク](notes/01_research/r260912-01-CLI実装のベンチマーク.md) [サーバーのベンチマーク](notes/01_research/r260912-02-サーバーのベンチマーク.md) [環境変数の使い方](notes/01_research/r261015-01-環境変数.md) [振り返り (10/24〜10/25)](notes/01_research/r261025-01-振り返り.md) [品質レビュー (2026-10-31)](notes/80_quality_review/q261031-01-品質レビュー.md) [開発状況](notes/30_status/status.md) [旧方式の課題](notes/40_issues/issues-legacy.md) [変わったこと](notes/60_releases/20260903-01-変わったこと.md)
+
+<strong>課題は `notes/40_issues/items/` に 1 件 1 ファイルで置いています。</strong>一覧は `issue view` で開きます。旧方式の課題は「旧方式の課題」から読めます。
 
 <strong>設計は全体を示す資料で、実装のあとに必ず最新へ更新します。</strong>大きな変更は個別の計画書に残し、設計から参照します。
 

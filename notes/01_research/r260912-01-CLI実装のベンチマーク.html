@@ -663,7 +663,7 @@ footer a {
 	<div class="callout callout-caution">
 		<p><strong>node の <code>fetch</code> は Windows で 1 往復ごとに 15 ms ほど待たされる。</strong>同じ node の <code>http.request</code> は 0.18 ms で、85 倍の開きがある。<br>
 		<code>src/client/chat.mjs</code> は <code>fetch</code> を使っているので、<strong><code>say</code> ・ <code>who</code> ・ <code>recent</code> はこれを踏む</strong>。bun で動かすと乗らない。<br>
-		待受け (<code>wait</code>)には効かない。1 往復が 240 秒なので埋もれる。課題 <a class="doclink" href="../40_issues/issues.html#i260912-02">i260912-02</a> に残した。</p>
+		待受け (<code>wait</code>)には効かない。1 往復が 240 秒なので埋もれる。課題 <a class="doclink" href="../40_issues/issues-legacy.html#i260912-02">i260912-02</a> に残した。</p>
 	</div>
 
 	<p>つまり <strong>node 版の <code>say</code> は、起動 43.6 ms に 15 ms を足した値</strong>になる。bun 版なら 16.9 ms のままである。<strong>起動の表だけを見て node と bun の差を 27 ms と読むと、実際より小さく見積もることになる。</strong></p>
@@ -1226,7 +1226,7 @@ footer a {
 
 	<h3>待受けが起動直後に落ちる</h3>
 
-	<p>初めて繋ぐ相手には<strong>案内だけ出して終わる仕様</strong>になっている (<a class="doclink" href="../40_issues/issues.html">課題</a>の i260909-01)。そのままだとメモリを測る前に消える。</p>
+	<p>初めて繋ぐ相手には<strong>案内だけ出して終わる仕様</strong>になっている (<a class="doclink" href="../40_issues/issues-legacy.html">課題</a>の i260909-01)。そのままだとメモリを測る前に消える。</p>
 
 	<p><strong>先に <code>--wait-sec 1</code> で 1 回走らせてカーソルを立ててから、本番の <code>--wait-sec 600</code> を立てる。</strong>2 回目以降は普通にぶら下がる。</p>
 
