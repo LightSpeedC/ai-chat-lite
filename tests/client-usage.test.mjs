@@ -90,10 +90,10 @@ describe('usage() とオプションの定義', () => {
 		}
 	});
 
-	test('廃止した環境変数の案内が残っていない', () => {
-		// AICHAT_ID と AICHAT_URL は引数に置き換えた。案内が残ると古い形を試させてしまう
-		assert.doesNotMatch(HELP, /AICHAT_ID/);
-		assert.doesNotMatch(HELP, /AICHAT_URL/);
+	test('使い方の表示に AICHAT_ で始まる語が 1 つも出ない', () => {
+		// CLI が読む環境変数は 0 で、名乗る ID と接続先は引数で渡す。
+		// 案内が残ると古い形を試させてしまう。やめた変数の名前は書かない (i261015-02)
+		assert.doesNotMatch(HELP, /AICHAT_/);
 	});
 
 	test('待つ長さの単位はオプションとしても定義されている', () => {

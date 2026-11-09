@@ -623,7 +623,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 課題</h1>
 		<p class="lead">これから解決すること。片付いたら閉じて残す</p>
-		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-11-01</p>
+		<p class="date">📅 作成: 2026-08-30 / 更新: 2026-11-07</p>
 	</div>
 </div>
 
@@ -641,7 +641,7 @@ footer a {
 	<ol>
 		<li class="g01"><a href="#g01">サービスの運用 (4 件 / 未 4 / 着手 0 / 済 0)</a></li>
 		<li class="g02"><a href="#g02">データ (3 件 / 未 3 / 着手 0 / 済 0)</a></li>
-		<li class="g03"><a href="#g03">開発環境・記録 (19 件 / 未 11 / 着手 7 / 済 1)</a></li>
+		<li class="g03"><a href="#g03">開発環境・記録 (19 件 / 未 10 / 着手 7 / 済 2)</a></li>
 		<li class="g04"><a href="#g04">チャットの機能 (13 件 / 未 11 / 着手 2 / 済 0)</a></li>
 	</ol>
 </section>
@@ -861,7 +861,7 @@ footer a {
 	<summary>
 		<span class="badge b-doing">着手</span>
 		開発環境・記録
-		<span class="count">19 件 / 未 11 / 着手 7 / 済 1</span>
+		<span class="count">19 件 / 未 10 / 着手 7 / 済 2</span>
 	</summary>
 
 	<div class="groupbody">
@@ -914,9 +914,9 @@ footer a {
 			</div>
 		</details>
 
-		<details class="issue md-flat" id="i261015-02" open>
+		<details class="issue done md-flat" id="i261015-02">
 			<summary>
-				<span class="badge b-todo">未</span>
+				<span class="badge b-done">☑</span>
 				<span class="no">i261015-02</span>
 				やめた環境変数 (<code>AICHAT_DB</code> ・ <code>AICHAT_ID</code> ・ <code>AICHAT_URL</code>)の名前を、テストからも消す
 			</summary>
@@ -928,9 +928,9 @@ footer a {
 					<li><code>tests/client-no-defaults.test.mjs</code>: 「<code>AICHAT_URL</code> のような変数は定義そのものが無い」のテスト</li>
 				</ul>
 				<ul class="todos">
-					<li><span class="badge b-todo">未</span> 上の 2 本のテストから、3 つの名前を消す。<strong>見張りを消すか、名前を使わない形 (例: 使い方の表示に <code>AICHAT_</code> で始まる語が 1 つも出ない)に書き換えるかを決める</strong></li>
-					<li><span class="badge b-todo">未</span> 消したあと、<code>text find</code> で 3 つの名前がソース (<code>src</code> ・ <code>tools</code> ・ <code>tests</code> ・ <code>deploy</code> ・ <code>bin</code>)に 0 件であることを確かめる</li>
-					<li><span class="badge b-todo">未</span> 資料 (環境変数の調査資料の 3 章「やめた変数」・計画書・設計書など)に残る名前を、この課題へのリンクに置き換えるかを決める</li>
+					<li><span class="badge b-done">済</span> 上の 2 本のテストから、3 つの名前を消す。<strong>見張りを消すか、名前を使わない形 (例: 使い方の表示に <code>AICHAT_</code> で始まる語が 1 つも出ない)に書き換えるかを決める</strong>(2026-11-07、案 20-A: 名前を使わない形に書き換えた。<code>client-usage</code> は <code>/AICHAT_/</code> を見る 1 行に、<code>client-no-defaults</code> はテスト名を「<code>AICHAT_</code> で始まる環境変数を読む口が無い」に。全 40 本合格)</li>
+					<li><span class="badge b-done">済</span> 消したあと、<code>text find</code> で 3 つの名前がソース (<code>src</code> ・ <code>tools</code> ・ <code>tests</code> ・ <code>deploy</code> ・ <code>bin</code>)に 0 件であることを確かめる (2026-11-07、Grep で 0 件)</li>
+					<li><span class="badge b-done">済</span> 資料 (環境変数の調査資料の 3 章「やめた変数」・計画書・設計書など)に残る名前を、この課題へのリンクに置き換えるかを決める (2026-11-07、案 21-A: 当時の記録として残す。消すのはソースだけ)</li>
 				</ul>
 			</div>
 		</details>

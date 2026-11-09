@@ -125,7 +125,7 @@ describe('環境変数では渡せない', () => {
 	 * i260908-05)。読む口が無いことは、ソース自体に process.env.AICHAT_*
 	 * が現れないことでしか確かめられない
 	 */
-	test('AICHAT_URL のような変数は定義そのものが無い', () => {
+	test('AICHAT_ で始まる環境変数を読む口が無い', () => {
 		const clientSrc = readFileSync(CLIENT, 'utf8');
 		const optionsSrc = readFileSync(OPTIONS_SRC, 'utf8');
 		assert.doesNotMatch(clientSrc, /process\.env\.AICHAT_/, 'chat.mjs が AICHAT_ 系の環境変数を読んでいる');
