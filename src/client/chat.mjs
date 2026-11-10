@@ -1466,7 +1466,13 @@ async function cmdRename() {
 
 	const counts = await call(`/api/admin/rename-preview?from=${encodeURIComponent(from)}`);
 
-	console.log(`参加者 ${from} を ${to} に付け替えます。`);
+	// --merge: 新しい ID が既にあれば、そこへまとめる (i261110-02)。無ければふつうに付け替える
+	const merge = hasFlag('merge');
+	console.log(
+		merge
+			? `参加者 ${from} を ${to} に付け替えます。${to} が既にあれば、そこへまとめます。`
+			: `参加者 ${from} を ${to} に付け替えます。`
+	);
 	console.log(`  参加者        ${String(counts.connectors).padStart(4)} 件`);
 	console.log(`  読んだ位置    ${String(counts.cursors).padStart(4)} 件`);
 	console.log(`  発言 (差出人)${String(counts.messages_from).padStart(4)} 件`);
@@ -1484,12 +1490,13 @@ async function cmdRename() {
 		to,
 		connector_id: requireConnectorId(),
 		confirm: from,
+		...(merge ? { merge: true } : {}),
 	});
 
 	const total =
 		result.connectors + result.cursors + result.messages_from + result.messages_to +
 		result.messages_body + result.archives + result.archive_targets;
-	console.log(`付け替えました (${result.from} → ${result.to} / ${total} 件)`);
+	console.log(`${result.merged ? 'まとめました' : '付け替えました'} (${result.from} → ${result.to} / ${total} 件)`);
 	console.log('  待受けを張り直すときは、新しい ID で張ってください。');
 }
 

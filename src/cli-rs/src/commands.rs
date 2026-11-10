@@ -869,7 +869,10 @@ pub fn restore(client: &Client, me: &str, seq: i64) -> Result<(), CallError> {
 /// `archive` と同じ形にする。先に件数を出し、旧 ID の入力を求めてから実行する。
 /// ID は参加者・読んだ位置・発言 (差出人・宛先・本文の @旧ID)・片付けの記録に
 /// 散っており、手で書くと洗い出しから毎回やり直しになる。
-pub fn rename(client: &Client, me: &str, from: &str, to: &str, yes: bool) -> Result<i32, CallError> {
+///
+/// `merge` は `--merge`。新しい ID が既にあれば、そこへまとめる (i261110-02)。
+/// 付けなければ、サーバーは使われている ID への付け替えを断る。
+pub fn rename(client: &Client, me: &str, from: &str, to: &str, yes: bool, merge: bool) -> Result<i32, CallError> {
 	let counts = client.call(
 		"GET",
 		&format!("/api/admin/rename-preview?from={}", encode_query(from)),
@@ -878,7 +881,11 @@ pub fn rename(client: &Client, me: &str, from: &str, to: &str, yes: bool) -> Res
 	)?;
 	let num = |key: &str| counts.get(key).and_then(|v| v.as_i64()).unwrap_or(0);
 
-	println!("参加者 {} を {} に付け替えます。", from, to);
+	if merge {
+		println!("参加者 {} を {} に付け替えます。{} が既にあれば、そこへまとめます。", from, to, to);
+	} else {
+		println!("参加者 {} を {} に付け替えます。", from, to);
+	}
 	println!("  参加者        {:>4} 件", num("connectors"));
 	println!("  読んだ位置    {:>4} 件", num("cursors"));
 	println!("  発言 (差出人){:>4} 件", num("messages_from"));
@@ -896,13 +903,19 @@ pub fn rename(client: &Client, me: &str, from: &str, to: &str, yes: bool) -> Res
 		return Ok(1);
 	}
 
-	let body = Json::Obj(vec![
+	let mut fields = vec![
 		("from".to_string(), Json::Str(from.to_string())),
 		("to".to_string(), Json::Str(to.to_string())),
 		("connector_id".to_string(), Json::Str(me.to_string())),
 		("confirm".to_string(), Json::Str(from.to_string())),
-	]);
+	];
+	// node 版と同じく、付けたときだけ送る
+	if merge {
+		fields.push(("merge".to_string(), Json::Bool(true)));
+	}
+	let body = Json::Obj(fields);
 	let result = client.call("POST", "/api/admin/rename", Some(&body.to_string()), None)?;
+	let merged = result.get("merged").and_then(|v| v.as_bool()).unwrap_or(false);
 
 	// 散っている置き場をすべて足す。1 つでも漏れると「直したつもり」になる
 	let total: i64 = [
@@ -919,7 +932,8 @@ pub fn rename(client: &Client, me: &str, from: &str, to: &str, yes: bool) -> Res
 	.sum();
 
 	println!(
-		"付け替えました ({} → {} / {} 件)",
+		"{} ({} → {} / {} 件)",
+		if merged { "まとめました" } else { "付け替えました" },
 		result.get("from").and_then(|v| v.as_str()).unwrap_or(from),
 		result.get("to").and_then(|v| v.as_str()).unwrap_or(to),
 		total

@@ -824,12 +824,28 @@ async function handleRename(req, res) {
 	 * カーソルを見ない。サーバーは古い ID の位置を進めないので、届いているつもりで
 	 * 届かない状態になる。先に止めてもらう。
 	 */
-	const connector = getConnector(from);
-	if (connector && Number(connector.active_connection_count) > 0) {
-		throw new BadRequest(
-			`${from} は待受け (または接続)が ${connector.active_connection_count} 本走っています。止めてから付け替えてください`
-		);
+	/*
+	 * merge は真偽値だけを受ける。"false" のような文字列を真と読むと、
+	 * 断るはずの付け替えが黙ってまとめになる (i261110-02、23-A)。
+	 */
+	if (input.merge !== undefined && typeof input.merge !== 'boolean') {
+		throw new BadRequest('merge は true か false で渡してください');
 	}
+	const merge = input.merge === true;
+
+	/*
+	 * まとめ先の待受けも見る。走らせたまままとめると、その待受けはまとめる前の
+	 * 読んだ位置で動き続け、寄せた位置を見ない。
+	 */
+	for (const id of merge ? [from, to] : [from]) {
+		const connector = getConnector(id);
+		if (connector && Number(connector.active_connection_count) > 0) {
+			throw new BadRequest(
+				`${id} は待受け (または接続)が ${connector.active_connection_count} 本走っています。止めてから付け替えてください`
+			);
+		}
+	}
+	const mergeTarget = merge ? getConnector(to) : undefined;
 
 	/*
 	 * store が投げるのは入力の誤り (新しい ID が使われている・同じ ID)なので、
@@ -837,14 +853,15 @@ async function handleRename(req, res) {
 	 */
 	let result;
 	try {
-		result = renameConnector(from, to);
+		result = renameConnector(from, to, { merge });
 	} catch (err) {
 		throw new BadRequest(err.message);
 	}
 	if (!result) throw new BadRequest(`その ID の記録がありません: ${from}`);
+	const merged = Boolean(mergeTarget);
 
 	// 後から「名前が変わっている」と気づいたときに経緯を追えるようにする
-	log.warn(`付け替えました (${from} → ${to})`);
+	log.warn(`${merged ? 'まとめました' : '付け替えました'} (${from} → ${to})`);
 
 	/*
 	 * 黙って変わると、他の参加者は同じ相手だと分からない。
@@ -865,11 +882,11 @@ async function handleRename(req, res) {
 		DEFAULT_ROOM,
 		noticeFrom,
 		'archive',
-		`${nowJst().slice(0, 16)} に ${noticeFrom} が 参加者 ${from} を ${to} に付け替えた`
+		`${nowJst().slice(0, 16)} に ${noticeFrom} が 参加者 ${from} を ${to} に${merged ? 'まとめた' : '付け替えた'}`
 	);
 	broadcastPresence();
 
-	sendJson(res, 200, { from, to, ...result });
+	sendJson(res, 200, { from, to, merged, ...result });
 }
 
 async function handleExit(req, res) {

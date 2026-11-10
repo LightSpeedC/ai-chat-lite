@@ -364,6 +364,55 @@ describe('参加者の ID を付け替える (i260909-02)', () => {
 		await post('/api/say', { from_connector_id: 'test-connector1', msg_body: '起こす' });
 		await polling;
 	});
+
+	// i261110-02: 既にある ID へまとめる。merge を明示したときだけ受ける
+	test('merge を付ければ、既にある ID へまとめる', async () => {
+		await post('/api/join', { connector_id: 'test-rn-m-old', connector_role: 'ai' });
+		await post('/api/join', { connector_id: 'test-rn-m-new', connector_role: 'ai' });
+		await post('/api/say', { from_connector_id: 'test-rn-m-old', msg_body: '旧 ID の発言' });
+
+		const { status, json } = await post('/api/admin/rename', {
+			from: 'test-rn-m-old',
+			to: 'test-rn-m-new',
+			connector_id: 'test-connector1',
+			confirm: 'test-rn-m-old',
+			merge: true,
+		});
+
+		assert.equal(status, 200, JSON.stringify(json));
+		assert.equal(json.merged, true, 'まとめたことが返っていない');
+		assert.equal(store.getConnector('test-rn-m-old'), undefined, '旧 ID が残っている');
+		assert.ok(store.getConnector('test-rn-m-new'), 'まとめ先が消えている');
+	});
+
+	/*
+	 * 【なぜ必要か】
+	 * まとめ先の待受けが走っていると、その待受けはまとめる前の読んだ位置で
+	 * 動き続け、寄せた位置を見ない。旧 ID と同じく、先に止めてもらう。
+	 */
+	test('まとめ先の待受けが走っている間も断る', async () => {
+		await post('/api/join', { connector_id: 'test-rn-mb-old', connector_role: 'ai' });
+		await post('/api/join', { connector_id: 'test-rn-mb-new', connector_role: 'ai' });
+		await post('/api/say', { from_connector_id: 'test-rn-mb-old', msg_body: 'まとめる前' });
+
+		const polling = get('/api/poll?connector_id=test-rn-mb-new&room_id=public&since=99999&wait=3');
+		await new Promise((r) => setTimeout(r, 300));
+
+		const { status, json } = await post('/api/admin/rename', {
+			from: 'test-rn-mb-old',
+			to: 'test-rn-mb-new',
+			connector_id: 'test-connector1',
+			confirm: 'test-rn-mb-old',
+			merge: true,
+		});
+
+		assert.equal(status, 400);
+		assert.match(json.error, /待受け|接続/);
+		assert.ok(store.getConnector('test-rn-mb-old'), '断ったのに旧 ID が消えている');
+
+		await post('/api/say', { from_connector_id: 'test-connector1', msg_body: '起こす' });
+		await polling;
+	});
 });
 
 describe('片付けたものの見え方', () => {

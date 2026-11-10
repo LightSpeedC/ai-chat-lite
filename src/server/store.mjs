@@ -577,10 +577,25 @@ function countBodyMentions(fromId) {
  * (archived_seq が入るだけ)。読み出しには出ないので空いて見えるが、
  * そこへ付け替えると主キーが衝突する。
  *
+ * 【merge: 既にある ID へまとめる (i261110-02)】
+ * プロジェクトの置き場を移すと、新しい置き場のセッションが先に新しい ID で
+ * 発言する。そのあとで古い ID の記録を寄せるには、使われている ID へ
+ * まとめるしかない。打ち間違えた ID に黙ってまとまらないよう、merge を
+ * 明示したときだけ行う (23-A)。まとめるときは
+ *
+ *   connectors … 旧 ID の行を消す。参加した時刻は古いほう、最後に動いた
+ *                時刻は新しいほうを新しい ID の行に残す
+ *   cursors    … 同じルームに両方あれば、進んでいるほうを残す (24-A)。
+ *                遅れているほうを残すと、読んだ発言がまとめて届き直す
+ *
+ * 片付け済みの ID へはまとめない。片付けた記録の中へ生きた発言を混ぜると、
+ * restore したときの戻り方が読めなくなる。
+ *
+ * @param {{merge?: boolean}} [options]
  * @returns {object | null} 旧 ID がどこにも無ければ null
- * @throws 新しい ID が既に使われているとき、旧と新が同じとき
+ * @throws 新しい ID が既に使われているとき (merge なし、または片付け済み)、旧と新が同じとき
  */
-export function renameConnector(fromId, toId) {
+export function renameConnector(fromId, toId, { merge = false } = {}) {
 	if (fromId === toId) throw new Error(`同じ ID には付け替えられません: ${fromId}`);
 
 	const counts = previewRename(fromId);
@@ -590,15 +605,18 @@ export function renameConnector(fromId, toId) {
 	if (total === 0) return null;
 
 	// 片付け済みも含めて見る。archived_seq IS NULL では枠を見落とす
-	const taken = db.prepare('SELECT COUNT(*) AS n FROM connectors WHERE connector_id = ?').get(toId);
-	if (Number(taken.n) > 0) throw new Error(`その ID は既に使われています: ${toId}`);
+	const target = db.prepare('SELECT archived_seq FROM connectors WHERE connector_id = ?').get(toId);
+	if (target && !merge) throw new Error(`その ID は既に使われています: ${toId}`);
+	if (target && target.archived_seq != null) {
+		throw new Error(`その ID は片付け済みなので、まとめられません: ${toId}`);
+	}
 
 	db.exec('BEGIN IMMEDIATE');
 	try {
 		const run = (sql) => Number(db.prepare(sql).run(toId, fromId).changes);
 		const result = {
-			connectors: run('UPDATE connectors SET connector_id = ? WHERE connector_id = ?'),
-			cursors: run('UPDATE cursors SET connector_id = ? WHERE connector_id = ?'),
+			connectors: target ? mergeConnectorRow(fromId, toId) : run('UPDATE connectors SET connector_id = ? WHERE connector_id = ?'),
+			cursors: target ? mergeCursors(fromId, toId) : run('UPDATE cursors SET connector_id = ? WHERE connector_id = ?'),
 			messages_from: run('UPDATE messages SET from_connector_id = ? WHERE from_connector_id = ?'),
 			messages_to: run('UPDATE messages SET to_connector_id = ? WHERE to_connector_id = ?'),
 			messages_body: renameInBodies(fromId, toId),
@@ -613,6 +631,51 @@ export function renameConnector(fromId, toId) {
 		db.exec('ROLLBACK');
 		throw err;
 	}
+}
+
+/**
+ * まとめるときの connectors。旧 ID の行を消し、時刻だけを新しい ID の行へ寄せる。
+ * 時刻は yyyy/mm/dd hh:mm:ss.mmm の固定長なので、文字列の大小がそのまま前後になる。
+ * @returns {number} 消した旧 ID の行の数
+ */
+function mergeConnectorRow(fromId, toId) {
+	db.prepare(
+		`UPDATE connectors AS n
+		 SET first_joined_at = MIN(n.first_joined_at, o.first_joined_at),
+		     last_active_at  = MAX(n.last_active_at,  o.last_active_at)
+		 FROM connectors AS o
+		 WHERE n.connector_id = ? AND o.connector_id = ?`
+	).run(toId, fromId);
+	return Number(db.prepare('DELETE FROM connectors WHERE connector_id = ?').run(fromId).changes);
+}
+
+/**
+ * まとめるときの cursors。同じルームに両方あれば進んでいるほうを残し、
+ * 旧 ID にしか無いルームは付け替える。
+ *
+ * acked_seq の NULL は「まだ確定していない」を表すので、MAX() に渡さない
+ * (SQLite の MAX は引数に NULL があると NULL を返し、確定済み位置を失う)。
+ * @returns {number} 旧 ID の行のうち、寄せた ・ 付け替えた数
+ */
+function mergeCursors(fromId, toId) {
+	db.prepare(
+		`UPDATE cursors AS n
+		 SET msg_seq    = MAX(n.msg_seq, o.msg_seq),
+		     acked_seq  = CASE WHEN n.acked_seq IS NULL THEN o.acked_seq
+		                       WHEN o.acked_seq IS NULL THEN n.acked_seq
+		                       ELSE MAX(n.acked_seq, o.acked_seq) END,
+		     updated_at = MAX(n.updated_at, o.updated_at)
+		 FROM cursors AS o
+		 WHERE n.connector_id = ? AND o.connector_id = ? AND o.room_id = n.room_id`
+	).run(toId, fromId);
+	const merged = Number(
+		db.prepare(
+			`DELETE FROM cursors
+			 WHERE connector_id = ? AND room_id IN (SELECT room_id FROM cursors WHERE connector_id = ?)`
+		).run(fromId, toId).changes
+	);
+	const moved = Number(db.prepare('UPDATE cursors SET connector_id = ? WHERE connector_id = ?').run(toId, fromId).changes);
+	return merged + moved;
 }
 
 /**

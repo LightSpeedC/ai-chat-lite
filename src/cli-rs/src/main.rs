@@ -318,7 +318,7 @@ fn run() -> i32 {
 				eprintln!("同じ ID には付け替えられません: {}", from);
 				return EXIT_USAGE;
 			}
-			match commands::rename(&cli, &me, &from, &to, a.has_flag("yes", None)) {
+			match commands::rename(&cli, &me, &from, &to, a.has_flag("yes", None), a.has_flag("merge", None)) {
 				Ok(0) => Ok(()),
 				Ok(code) => return code,
 				Err(e) => Err(e),

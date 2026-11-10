@@ -447,7 +447,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 設計</h1>
 		<p class="lead">ローカルPC内で AI セッションと人間が同席する簡易チャットの設計</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-10-14</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-11-10</p>
 	</div>
 </div>
 
@@ -650,6 +650,12 @@ footer a {
 				<td>サーバと DB を PC からクラウドへ移し、<strong>PC ごとに発行したアクセストークンをヘッダーで渡した相手にだけ応答する</strong>。それ以外には意味のないページだけを返す。ドメイン名でテナントを分け、置き場を <code>_data/&lt;テナント&gt;/</code> にする。<strong>計画の段階 (9 つの決めることが未決)</strong></td>
 				<td class="nowrap"><span class="badge b-todo">未</span></td>
 				<td class="nowrap"><a href="#ch02">全体構成</a> / <a href="#ch04">API</a> / <a href="#ch07">作るものと実装ステップ</a></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><a href="i261110-02-rename-既にあるIDへまとめる.html">i261110-02 rename で既にある ID へまとめる</a></td>
+				<td>置き場を移したプロジェクトの古い ID を、先に発言していた新しい ID へまとめる。<code>rename --merge</code> を付けたときだけまとめ、読んだ位置は進んでいるほうを残す</td>
+				<td class="nowrap"><span class="badge b-warn">着手</span></td>
+				<td class="nowrap"><a href="#ch04">API</a> / <a href="#ch06">クライアントと待受け</a></td>
 			</tr>
 		</tbody>
 	</table>
@@ -1445,8 +1451,8 @@ if (mode.journal_mode !== 'wal') {
 			</tr>
 			<tr>
 				<td class="nowrap">POST</td><td class="nowrap"><code>/api/admin/rename</code></td>
-				<td class="nowrap"><code>from</code> / <code>to</code><br><code>connector_id</code> / <code>confirm</code></td>
-				<td><strong>参加者の ID を付け替える。</strong>上の 7 か所を 1 つのトランザクションで直す。<code>confirm</code> に旧 ID を求める。<strong>待受け (接続)が走っている間は断る</strong>——付け替えても、その待受けは古い ID で poll し続けて新しいカーソルを見ないため。新しい ID が既に使われていれば断る (<strong>片付け済みの行も主キーの枠を占めるので「使われている」とみなす</strong>)。既定のルームへ知らせを積む (<a href="../40_issues/issues-archive.html#i260909-02">i260909-02</a>)</td>
+				<td class="nowrap"><code>from</code> / <code>to</code><br><code>connector_id</code> / <code>confirm</code><br><code>merge</code> (省略可)</td>
+				<td><strong>参加者の ID を付け替える。</strong>上の 7 か所を 1 つのトランザクションで直す。<code>confirm</code> に旧 ID を求める。<strong>待受け (接続)が走っている間は断る</strong>——付け替えても、その待受けは古い ID で poll し続けて新しいカーソルを見ないため。新しい ID が既に使われていれば断る (<strong>片付け済みの行も主キーの枠を占めるので「使われている」とみなす</strong>)。既定のルームへ知らせを積む (<a href="../40_issues/issues-archive.html#i260909-02">i260909-02</a>)。<strong><code>merge: true</code> なら、使われている ID へまとめる</strong>: 旧 ID の参加者の行を消し、参加した時刻は古いほう、最後に動いた時刻は新しいほうを残す。同じルームの読んだ位置は進んでいるほうを残す。まとめ先の待受けが走っているとき・まとめ先が片付け済みのときは断る。応答の <code>merged</code> でまとめたかを返す (<a href="i261110-02-rename-既にあるIDへまとめる.html">i261110-02</a>)</td>
 			</tr>
 			<tr>
 				<td class="nowrap">GET</td><td class="nowrap"><code>/api/connectors</code></td><td class="nowrap">—</td>
@@ -1938,7 +1944,7 @@ LIMIT ?;</code></pre>
 			<tr><td class="nowrap"><code>archive</code></td><td>発言・参加者・ルームを片付ける。先に件数を出し、対象名の入力を求める (<a class="doclink" href="p260830-02-アーカイブ機能.html">アーカイブ機能の設計</a>)</td></tr>
 			<tr><td class="nowrap"><code>archives</code></td><td>片付けたものの一覧を出す</td></tr>
 			<tr><td class="nowrap"><code>restore</code></td><td>片付けたものをまとめて戻す</td></tr>
-			<tr><td class="nowrap"><code>rename</code></td><td>参加者の ID を付け替える。<code>connectors</code> ・ <code>cursors</code> ・ <code>messages</code>(発言者 ・ 宛先 ・ 本文の <code>@旧ID</code>)・ <code>archives</code> を横断して直す。先に件数を出し、旧 ID の入力を求める。<strong>待受けが走っている間は断る</strong>(<a href="../40_issues/issues-archive.html#i260909-02">i260909-02</a>)</td></tr>
+			<tr><td class="nowrap"><code>rename</code></td><td>参加者の ID を付け替える。<code>connectors</code> ・ <code>cursors</code> ・ <code>messages</code>(発言者 ・ 宛先 ・ 本文の <code>@旧ID</code>)・ <code>archives</code> を横断して直す。先に件数を出し、旧 ID の入力を求める。<strong>待受けが走っている間は断る</strong>(<a href="../40_issues/issues-archive.html#i260909-02">i260909-02</a>)。<code>--merge</code> を付けると、新しい ID が既にあればそこへまとめる (<a href="i261110-02-rename-既にあるIDへまとめる.html">i261110-02</a>)</td></tr>
 		</tbody>
 	</table>
 	</div>

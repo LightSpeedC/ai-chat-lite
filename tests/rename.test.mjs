@@ -222,3 +222,136 @@ describe('断る条件', () => {
 		assert.throws(() => store.renameConnector('test-rename-g', 'test-rename-g'), /同じ/);
 	});
 });
+
+/*
+ * 既にある ID へまとめる (merge)。i261110-02。
+ *
+ * 【なぜ要るのか】
+ * プロジェクトの置き場を移すと、新しい置き場のセッションが先に新しい ID で
+ * 発言してしまう。そのあとで古い ID の記録を寄せようとすると、新しい ID が
+ * 「既に使われている」ので、ふつうの rename は断る (上の試験のとおり)。
+ * merge を明示したときだけ、両方の記録を新しい ID の 1 つにまとめる。
+ */
+describe('既にある ID へまとめる (merge)', () => {
+	test('merge を付けると、旧 ID の発言 ・ 宛先 ・ 本文が新しい ID に寄り、旧 ID の参加者は消える', () => {
+		store.joinConnector('test-merge-old', 'ai');
+		store.joinConnector('test-merge-new', 'ai');
+		say('sandbox-merge', 'test-merge-old', '旧 ID の発言');
+		say('sandbox-merge', 'test-merge-new', '新しい ID の発言');
+		say('sandbox-merge', 'test-rename-watcher', '@test-merge-old へ', 'test-merge-old');
+
+		const result = store.renameConnector('test-merge-old', 'test-merge-new', { merge: true });
+
+		assert.ok(result, '結果が返っていない');
+		assert.equal(result.messages_from, 1);
+		assert.equal(result.messages_to, 1);
+		assert.equal(result.messages_body, 1);
+
+		assert.equal(store.getConnector('test-merge-old'), undefined, '旧 ID の参加者が残っている');
+		assert.ok(store.getConnector('test-merge-new'), '新しい ID の参加者が消えている');
+
+		const messages = store.getLatest('sandbox-merge', 50);
+		assert.equal(messages.filter((m) => m.from_connector_id === 'test-merge-new').length, 2, '発言が 1 つにまとまっていない');
+		assert.ok(!messages.some((m) => m.from_connector_id === 'test-merge-old'), '旧 ID の発言者が残っている');
+		assert.ok(messages.some((m) => m.to_connector_id === 'test-merge-new'), '宛先が寄っていない');
+		assert.ok(messages.some((m) => m.msg_body.includes('@test-merge-new')), '本文の @旧ID が寄っていない');
+	});
+
+	/*
+	 * 参加した時刻は古いほう、最後に動いた時刻は新しいほうを残す。
+	 * どちらか片方の行をそのまま残すと、参加の古さか、最後の動きのどちらかを失う。
+	 */
+	test('参加した時刻は古いほう、最後に動いた時刻は新しいほうを残す', () => {
+		store.joinConnector('test-merge-t-old', 'ai');
+		store.joinConnector('test-merge-t-new', 'ai');
+		// 旧 ID のほうが最後に動いた形にする (移した直後に旧 ID がまだ動いていた場合)
+		store.setLastActiveAt('test-merge-t-new', '2026/11/10 10:00:00.000');
+		store.setLastActiveAt('test-merge-t-old', '2026/11/10 11:00:00.000');
+		const oldRow = store.getConnector('test-merge-t-old');
+		const newRow = store.getConnector('test-merge-t-new');
+		const firstJoined = [oldRow.first_joined_at, newRow.first_joined_at].sort()[0];
+
+		store.renameConnector('test-merge-t-old', 'test-merge-t-new', { merge: true });
+
+		const merged = store.getConnector('test-merge-t-new');
+		assert.equal(merged.first_joined_at, firstJoined, '参加した時刻が古いほうになっていない');
+		assert.equal(merged.last_active_at, '2026/11/10 11:00:00.000', '最後に動いた時刻が新しいほうになっていない');
+	});
+
+	/*
+	 * 読んだ位置は進んでいるほうを残す (24-A)。遅れているほうを残すと、
+	 * もう一方の ID で読んだ発言がまとめて届き直す。
+	 */
+	test('同じルームの読んだ位置は、旧 ID が進んでいれば旧 ID の位置を残す', () => {
+		store.joinConnector('test-merge-c-old', 'ai');
+		store.joinConnector('test-merge-c-new', 'ai');
+		const m1 = say('sandbox-merge-c', 'test-rename-watcher', '1 件目');
+		const m2 = say('sandbox-merge-c', 'test-rename-watcher', '2 件目');
+		store.setCursor('test-merge-c-new', 'sandbox-merge-c', m1.msg_seq);
+		store.setCursor('test-merge-c-old', 'sandbox-merge-c', m2.msg_seq);
+
+		store.renameConnector('test-merge-c-old', 'test-merge-c-new', { merge: true });
+
+		assert.equal(store.getCursor('test-merge-c-new', 'sandbox-merge-c'), m2.msg_seq, '進んでいる位置を失った');
+		assert.equal(store.getAckedSeq('test-merge-c-new', 'sandbox-merge-c'), m2.msg_seq, '確定済み位置を失った');
+		assert.equal(store.getCursor('test-merge-c-old', 'sandbox-merge-c'), null, '旧 ID の位置が残っている');
+	});
+
+	test('同じルームの読んだ位置は、新しい ID が進んでいれば新しい ID の位置を残す', () => {
+		store.joinConnector('test-merge-d-old', 'ai');
+		store.joinConnector('test-merge-d-new', 'ai');
+		const m1 = say('sandbox-merge-d', 'test-rename-watcher', '1 件目');
+		const m2 = say('sandbox-merge-d', 'test-rename-watcher', '2 件目');
+		store.setCursor('test-merge-d-old', 'sandbox-merge-d', m1.msg_seq);
+		store.setCursor('test-merge-d-new', 'sandbox-merge-d', m2.msg_seq);
+
+		store.renameConnector('test-merge-d-old', 'test-merge-d-new', { merge: true });
+
+		assert.equal(store.getCursor('test-merge-d-new', 'sandbox-merge-d'), m2.msg_seq, '後退した');
+		assert.equal(store.getAckedSeq('test-merge-d-new', 'sandbox-merge-d'), m2.msg_seq, '確定済み位置が後退した');
+	});
+
+	test('旧 ID にしか読んだ位置が無いルームは、そのまま新しい ID へ移る', () => {
+		store.joinConnector('test-merge-e-old', 'ai');
+		store.joinConnector('test-merge-e-new', 'ai');
+		const m = say('sandbox-merge-e', 'test-rename-watcher', '旧 ID だけが読んだ');
+		store.setCursor('test-merge-e-old', 'sandbox-merge-e', m.msg_seq);
+
+		store.renameConnector('test-merge-e-old', 'test-merge-e-new', { merge: true });
+
+		assert.equal(store.getCursor('test-merge-e-new', 'sandbox-merge-e'), m.msg_seq, '位置が移っていない');
+	});
+
+	test('まとめ先が無ければ、merge を付けてもふつうに付け替える', () => {
+		store.joinConnector('test-merge-f-old', 'ai');
+		say('sandbox-merge-f', 'test-merge-f-old', '付け替える');
+
+		const result = store.renameConnector('test-merge-f-old', 'test-merge-f-new', { merge: true });
+
+		assert.equal(result.connectors, 1);
+		assert.ok(store.getConnector('test-merge-f-new'), '新しい ID で見えない');
+		assert.equal(store.getConnector('test-merge-f-old'), undefined, '古い ID が残っている');
+	});
+
+	/*
+	 * 片付けた参加者へまとめると、片付けた記録 (archived_seq)の中へ生きた発言を
+	 * 混ぜることになり、restore したときの戻り方が読めなくなる。断る。
+	 */
+	test('まとめ先が片付け済みなら、merge を付けても断る', () => {
+		store.joinConnector('test-merge-g-old', 'ai');
+		store.joinConnector('test-merge-g-archived', 'ai');
+		say('public', 'test-merge-g-archived', '片付けられる');
+		store.archive({
+			kind: 'connector',
+			id: 'test-merge-g-archived',
+			byConnectorId: 'test-rename-watcher',
+			description: 'まとめ先にしない',
+		});
+
+		assert.throws(
+			() => store.renameConnector('test-merge-g-old', 'test-merge-g-archived', { merge: true }),
+			/片付け/
+		);
+		assert.ok(store.getConnector('test-merge-g-old'), '断ったのに元が消えている');
+	});
+});

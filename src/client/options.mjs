@@ -124,6 +124,7 @@ export const OPTIONS = [
 	{ long: 'description', short: null, arg: '<説明>', cmd: 'archive', desc: '何をなぜ片付けたか。省略すると自動で組み立てる' },
 	{ long: 'yes', short: null, arg: '', cmd: 'archive', desc: '確認を省く。標準入力が無い背面から実行するとき用' },
 	{ long: 'yes', short: null, arg: '', cmd: 'rename', desc: '確認を省く。標準入力が無い背面から実行するとき用' },
+	{ long: 'merge', short: null, arg: '', cmd: 'rename', desc: '新しい ID が既にあれば、そこへまとめる。付けなければ断る' },
 	{ long: 'port', short: 'p', arg: '<ポート>', cmd: null, desc: 'localhost のポートだけを変える' },
 	{ long: 'url', short: 'u', arg: '<URL>', cmd: null, desc: '接続先。ホストごと変える (--port とは併用できない)' },
 	{ long: 'room', short: 'r', arg: '<id[,id]>', cmd: null, desc: 'ルームを変える。カンマ区切りは wait と waiters だけ' },
