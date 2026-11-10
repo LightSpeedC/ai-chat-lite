@@ -27,7 +27,13 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+
+# リダイレクトされている分だけ、出力を UTF-8 に差し替える (窓のコードページは変えない。i260928-02)
+$utf8 = New-Object System.Text.UTF8Encoding $false
+if ([Console]::IsOutputRedirected) { [Console]::SetOut((New-Object System.IO.StreamWriter ([Console]::OpenStandardOutput()), $utf8 -Property @{ AutoFlush = $true })) }
+if ([Console]::IsErrorRedirected) { [Console]::SetError((New-Object System.IO.StreamWriter ([Console]::OpenStandardError()), $utf8 -Property @{ AutoFlush = $true })) }
+
+$root =Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 
 <#
 	会話ログの置き場は、プロジェクトのパスから決まる。区切り (: と \)を - に

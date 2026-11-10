@@ -11,6 +11,10 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# リダイレクトされている分だけ、読み書きを UTF-8 に差し替える (窓のコードページは変えない。i260928-02)
+$utf8 = New-Object System.Text.UTF8Encoding $false
+if ([Console]::IsOutputRedirected) { [Console]::SetOut((New-Object System.IO.StreamWriter ([Console]::OpenStandardOutput()), $utf8 -Property @{ AutoFlush = $true })) }
+if ([Console]::IsErrorRedirected) { [Console]::SetError((New-Object System.IO.StreamWriter ([Console]::OpenStandardError()), $utf8 -Property @{ AutoFlush = $true })) }
 Write-Host '会話ログから語を伏せます。'
 Write-Host '  カンマ区切りで複数指定できます。何も入れずに Enter で中止します。'
 Write-Host ''

@@ -31,7 +31,14 @@ const CALL_LOG = join(ROOT, 'tmp', 'mask-log-input-ps1-calls.txt');
  * spawn + stdin.write() では、この PowerShell 版の Read-Host がリダイレクトされた
  * パイプを読み切れず、そのまま止まったままになった (実測。子プロセスが残らないことは
  * 確かめてある)。execFileSync の input オプションなら同じ入力で正しく動く
+ *
+ * 入力の語は ASCII にする (i260928-02)。Read-Host はリダイレクトされた標準入力を
+ * 窓のコードページ (CP932)で読み、[Console]::SetIn の差し替えにも従わない (実測)。
+ * UTF-8 の「テスト語」を渡すと、末尾のバイトが次の改行を食って行がずれ、確認の yes が
+ * 3 つ目の Read-Host に届かなかった。ここで確かめたいのは終了コードの扱いで、
+ * 日本語の入力ではない。人が窓から使うときは入力がリダイレクトされないので化けない
  */
+const WORD_INPUT = 'testword\n\nyes\n';
 
 /** Windows PowerShell 5.1 が無ければ以降は全部スキップする */
 let has51 = false;
@@ -62,7 +69,7 @@ test('mask-log.ps1 が「数えるだけ」で失敗したら、本実行まで�
 		], {
 			env: { ...process.env, MASK_LOG_TEST_CALL_LOG: CALL_LOG },
 			// 1: 伏せたい語 / 2: 置き換え後の文字列 (既定を使う) / 3: 確認 (直っていれば読まれない)
-			input: 'テスト語\n\nyes\n',
+			input: WORD_INPUT,
 			encoding: 'utf8',
 			timeout: 15000,
 		});
@@ -98,7 +105,7 @@ test('mask-log.ps1 が成功したら、本実行まで進む', (t) => {
 		], {
 			env: { ...process.env, MASK_LOG_TEST_CALL_LOG: CALL_LOG },
 			// 1: 伏せたい語 / 2: 置き換え後の文字列 (既定を使う) / 3: 確認に yes
-			input: 'テスト語\n\nyes\n',
+			input: WORD_INPUT,
 			encoding: 'utf8',
 			timeout: 15000,
 		});
@@ -137,7 +144,7 @@ test('claude が走っていたら、下見の時点で止まり、原因が分�
 		], {
 			env: { ...process.env, MASK_LOG_TEST_CALL_LOG: CALL_LOG },
 			// 確認まで進んでしまったときに備えて yes も渡す。進めば呼ばれた回数で分かる
-			input: 'テスト語\n\nyes\n',
+			input: WORD_INPUT,
 			encoding: 'utf8',
 			timeout: 15000,
 		});
