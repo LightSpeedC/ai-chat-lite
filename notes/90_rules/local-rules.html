@@ -431,11 +431,12 @@ footer a {
 <style>
 /* この資料だけのもの: 章のアクセント色 (3章 / 色相 280→0 を 140 刻み)と目次の採番 */
 .ch01 { --accent: hsl(280.0, 78%, 25%); --accent2: hsl(280.0, 58%, 55%); --soft: hsl(280.0, 28%, 95%); }
-.ch02 { --accent: hsl(224.0, 78%, 25%); --accent2: hsl(224.0, 58%, 55%); --soft: hsl(224.0, 28%, 95%); }
-.ch03 { --accent: hsl(168.0, 78%, 25%); --accent2: hsl(168.0, 58%, 55%); --soft: hsl(168.0, 28%, 95%); }
-.ch04 { --accent: hsl(112.0, 78%, 25%); --accent2: hsl(112.0, 58%, 55%); --soft: hsl(112.0, 28%, 95%); }
-.ch05 { --accent: hsl( 56.0, 78%, 25%); --accent2: hsl( 56.0, 58%, 55%); --soft: hsl( 56.0, 28%, 95%); }
-.ch06 { --accent: hsl(  0.0, 78%, 25%); --accent2: hsl(  0.0, 58%, 55%); --soft: hsl(  0.0, 28%, 95%); }
+.ch02 { --accent: hsl(233.3, 78%, 25%); --accent2: hsl(233.3, 58%, 55%); --soft: hsl(233.3, 28%, 95%); }
+.ch03 { --accent: hsl(186.7, 78%, 25%); --accent2: hsl(186.7, 58%, 55%); --soft: hsl(186.7, 28%, 95%); }
+.ch04 { --accent: hsl(140.0, 78%, 25%); --accent2: hsl(140.0, 58%, 55%); --soft: hsl(140.0, 28%, 95%); }
+.ch05 { --accent: hsl( 93.3, 78%, 25%); --accent2: hsl( 93.3, 58%, 55%); --soft: hsl( 93.3, 28%, 95%); }
+.ch06 { --accent: hsl( 46.7, 78%, 25%); --accent2: hsl( 46.7, 58%, 55%); --soft: hsl( 46.7, 28%, 95%); }
+.ch07 { --accent: hsl(  0.0, 78%, 25%); --accent2: hsl(  0.0, 58%, 55%); --soft: hsl(  0.0, 28%, 95%); }
 .toc ol { counter-reset: tocnum; }
 </style>
 </head>
@@ -446,7 +447,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite のローカルルール</h1>
 		<p class="lead">このプロジェクトでだけ言えることを書く。全プロジェクト共通の決めごとは別にある</p>
-		<p class="date">📅 作成: 2026-09-04 / 更新: 2026-11-07</p>
+		<p class="date">📅 作成: 2026-09-04 / 更新: 2026-11-10</p>
 	</div>
 </div>
 
@@ -457,7 +458,7 @@ footer a {
 <p>ここに書くのは<strong>このプロジェクトでしか言えないこと</strong>だけである。全プロジェクトに通る決めごとは共通のルールにあり、同じ文を両方に書かない。</p>
 
 <div class="callout callout-important">
-	<p><strong>1〜4 節は、実際に踏んだ落とし穴である。</strong>次のセッションが同じ順路を辿らないようにするのが目的で、一般論を並べる場所ではない。<strong>5・6 節は、このプロジェクトだけで行う運用手順である。</strong></p>
+	<p><strong>1〜4 節は、実際に踏んだ落とし穴である。</strong>次のセッションが同じ順路を辿らないようにするのが目的で、一般論を並べる場所ではない。<strong>5〜7 節は、このプロジェクトだけで行う運用手順である。</strong></p>
 	<p>root の <code>AGENTS.md</code> はこの資料から生成した Markdown を 1 行で取り込んでいる。<strong>セッションを開くと本文が読み込まれる。</strong></p>
 </div>
 
@@ -470,6 +471,7 @@ footer a {
 		<li class="ch04"><a href="#ch04">プロセスを止めるときは子まで見る</a></li>
 		<li class="ch05"><a href="#ch05">chat 待受けの定期確認は cron で行う</a></li>
 		<li class="ch06"><a href="#ch06">環境変数の調査資料を最新に保つ</a></li>
+		<li class="ch07"><a href="#ch07">一区切りついたら commit と push まで行う</a></li>
 	</ol>
 </section>
 
@@ -678,6 +680,22 @@ footer a {
 	<p><strong>理由:</strong> 環境変数はプロセスの一覧に出ず、渡し損ねても既定値で静かに動く。読むコードだけが残り、誰も渡していない口 (2026-10-15 時点で 2 つ)にも気づけない。</p>
 
 	<p>探し方は資料の 5 章に置き、ここには写さない。</p>
+</section>
+
+<!-- ================= 07 ================= -->
+<section class="ch07" id="ch07">
+	<h1>一区切りついたら commit と push まで行う</h1>
+
+	<p>適用条件: このプロジェクトで、作業が一区切りついたとき (課題 1 件・決定のまとまり・依頼 1 件が片付いたとき)。</p>
+
+	<p><strong>一区切りごとに、指示を待たずに commit し、push まで行う。</strong>commit は、1 つの課題・1 つのまとまった決定ごとに分ける。載せるファイルは名指しし、commit する前に <code>git diff --cached --name-only</code> で一覧を見る (共通ルール「進め方の原則」)。</p>
+
+	<div class="callout callout-important">
+		<p><strong>この節は、共通ルールの「重大な操作の確認方法」を 1 点だけ上書きする。</strong>共通ルールは、commit と push のたびに「commitして」「pushして」と指示を受けることを求める。<strong>このプロジェクトでは、利用者の指示 (2026-11-10)により、一区切りごとの commit と push を、毎回の指示なしで行う。</strong></p>
+		<p>次のときは、これまでどおり指示を待つ: 最初の commit、<code>--amend</code>・<code>reset</code> などの履歴の書き換え、<code>master</code>・<code>release</code> への merge、タグ、試験が落ちているとき。</p>
+	</div>
+
+	<p><strong>理由:</strong> push していない commit がたまると、他プロジェクトのセッションや別の PC から、最新の決定と課題が見えない。</p>
 </section>
 
 </div>
