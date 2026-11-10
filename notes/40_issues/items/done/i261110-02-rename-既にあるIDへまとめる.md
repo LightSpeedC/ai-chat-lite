@@ -5,7 +5,7 @@ title: rename で、既にある ID へまとめられるようにする (file-m
 group: チャットの機能
 created: 2026-11-10
 from: ai-boss
-confirmed: false
+confirmed: true
 ---
 
 ai-boss から、利用者の指示として依頼があった (11/10 16:43)。file-manager の置き場が W:/2026/20261019-file-manager から C:/work/file-manager へ移ったので、旧 ID 20261019-file-manager (public に発言 59 件、#1614 から) を、新しい ID file-manager (すでに発言 2 件、#1883 まで) へまとめてほしい、というもの。
@@ -22,4 +22,4 @@ aichat rename は、新しい ID がすでに使われていると断る (src/se
 - [済] Rust 版を既定の aichat.exe へ写し、サーバを起動し直す (利用者の指示を受けてから)
 - [済] 本番で 20261019-file-manager を file-manager にまとめる (両方の待受けを止めてもらってから。利用者の指示を受けてから)
 - [済] ai-boss に結果を返し、確かめてもらう
-- [未] ai-boss の確認を受けて、課題を済にする
+- [済] ai-boss の確認を受けて、課題を済にする
