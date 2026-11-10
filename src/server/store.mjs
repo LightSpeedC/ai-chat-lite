@@ -1,5 +1,5 @@
 import { DatabaseSync } from 'node:sqlite';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, statSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 import { DB_PATH, MAX_HISTORY_LIMIT, DEFAULT_ROOM } from './config.mjs';
@@ -18,6 +18,11 @@ const journalMode = db.prepare('PRAGMA journal_mode = WAL').get();
 if (journalMode.journal_mode !== 'wal') {
 	log.warn(`WAL に切り替わりませんでした (現在: ${journalMode.journal_mode})`);
 }
+
+// 常駐で開いたままなので、統合のあとに残す -wal の大きさに上限を決める (i261007-02)。
+// 開いたままの読み取りがあると統合が進まず、大きくなった -wal がそのまま残るため
+const JOURNAL_SIZE_LIMIT = 64 * 1024 * 1024;
+db.exec(`PRAGMA journal_size_limit = ${JOURNAL_SIZE_LIMIT}`);
 
 /*
  * 形は作らない。版の SQL (src/scripts/20_migrate/)だけが形の出どころである。
@@ -747,6 +752,42 @@ export function setLastActiveAt(connectorId, at) {
 }
 
 /** 現在のジャーナルモード。WAL に切り替わっていることの確認に使う */
+export function getJournalSizeLimit() {
+	return db.prepare('PRAGMA journal_size_limit').get().journal_size_limit;
+}
+
+/** -wal の大きさ (バイト)。無ければ 0 */
+export function walSize() {
+	try {
+		return statSync(`${DB_PATH}-wal`).size;
+	} catch {
+		return 0;
+	}
+}
+
+/**
+ * -wal を本体へ統合し、0 に縮める (日次の掃除。i261007-02)。
+ * 読み取りが開いたままだと統合しきれず、戻り値の先頭 (busy)が 0 にならない。そのときは失敗を返す。
+ * 掃除で本処理を止めないよう、例外は投げず、待ちは短くする (終わったら戻す)。
+ */
+export function truncateWal() {
+	const before = db.prepare('PRAGMA busy_timeout').get().timeout;
+	try {
+		db.exec('PRAGMA busy_timeout = 1000');
+		const r = db.prepare('PRAGMA wal_checkpoint(TRUNCATE)').get();
+		return { ok: r.busy === 0, busy: r.busy, log: r.log, checkpointed: r.checkpointed };
+	} catch (err) {
+		return { ok: false, error: String(err?.message ?? err) };
+	} finally {
+		db.exec(`PRAGMA busy_timeout = ${before}`);
+	}
+}
+
+/** 試験だけが使う。同じ DB を別の接続で開く (読み取りを開いたままにする再現のため) */
+export function openReaderForTest() {
+	return new DatabaseSync(DB_PATH);
+}
+
 export function getJournalMode() {
 	return db.prepare('PRAGMA journal_mode').get().journal_mode;
 }

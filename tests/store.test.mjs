@@ -152,6 +152,37 @@ test('WAL モードで開いている', () => {
 	assert.equal(store.getJournalMode(), 'wal');
 });
 
+/*
+ * 【なぜ必要か】(i261007-02、共通ルール「常駐プロセスでは、WAL の大きさに上限を決める」)
+ * サーバは DB を開いたまま常駐する。開いたままの読み取りがあると -wal の統合が進まず、
+ * いったん大きくなった -wal はそのままの大きさで残る。開くときに統合のあとに残す
+ * 上限を決め、日次の掃除で 0 に縮める。
+ */
+test('WAL の統合のあとに残す大きさに上限 (64 MB) を決めている', () => {
+	assert.equal(store.getJournalSizeLimit(), 64 * 1024 * 1024);
+});
+
+test('WAL の掃除は -wal を 0 に縮め、成功を返す', () => {
+	store.addMessage({ roomId: 'public', fromConnectorId: 'test-wal', body: 'WAL に書く' });
+	const r = store.truncateWal();
+	assert.equal(r.ok, true, `掃除が失敗した: ${JSON.stringify(r)}`);
+	assert.equal(store.walSize(), 0);
+});
+
+test('WAL の掃除は、読み取りが開いたままなら失敗を返し、例外は投げない', () => {
+	const reader = store.openReaderForTest();
+	try {
+		reader.exec('BEGIN');
+		reader.prepare('SELECT count(*) FROM messages').get();
+		store.addMessage({ roomId: 'public', fromConnectorId: 'test-wal', body: '読み取り中に書く' });
+		const r = store.truncateWal();
+		assert.equal(r.ok, false, '読み取りが開いているのに成功と読んでいる');
+	} finally {
+		reader.exec('ROLLBACK');
+		reader.close();
+	}
+});
+
 test('検索がインデックスを使う', () => {
 	// (room_id, msg_seq) でレンジスキャンできていること。テーブル全体を舐めていない
 	const plan = store.explainSince();

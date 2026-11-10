@@ -13,7 +13,7 @@ import {
 	joinConnector, touchConnector, addConnection, removeConnection, listRooms,
 	getCursor, setCursor, getAckedSeq, setAcked, getRange, closeDb, getConnector,
 	previewArchive, archive, restore, listArchives, getAllMessages,
-	previewRename, renameConnector,
+	previewRename, renameConnector, truncateWal,
 } from './store.mjs';
 import { listPresence, getPresence, STATUS } from './presence.mjs';
 import { ID_PATTERN } from '../client/options.mjs';
@@ -1152,14 +1152,29 @@ function startSweeping() {
 	if (offlineTimer) return;
 	offlineTimer = setInterval(sweepOffline, OFFLINE_CHECK_MS);
 	offlineTimer.unref?.();
+	walTimer = setInterval(cleanWal, WAL_CLEAN_MS);
+	walTimer.unref?.();
+}
+
+/** 日に 1 度、-wal を 0 に縮める (i261007-02)。失敗しても本処理は止めず、記録に残す */
+const WAL_CLEAN_MS = 24 * 60 * 60 * 1000;
+function cleanWal() {
+	const r = truncateWal();
+	if (r.ok) log.info('WAL を掃除しました');
+	else log.error(`WAL の掃除に失敗しました (読み取りが開いたままの見込み): ${JSON.stringify(r)}`);
 }
 
 let offlineTimer = null;
+let walTimer = null;
 
 export function stopServers(servers) {
 	if (offlineTimer) {
 		clearInterval(offlineTimer);
 		offlineTimer = null;
+	}
+	if (walTimer) {
+		clearInterval(walTimer);
+		walTimer = null;
 	}
 	releaseAll();
 	return closeListening(servers);
