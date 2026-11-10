@@ -422,7 +422,7 @@ footer a {
 	<div class="inner">
 		<h1>チャットを DB ごとクラウドへ移し、テナントで分ける</h1>
 		<p class="lead">サーバと DB を PC からクラウドへ移す。PC ごとにアクセストークンを発行し、HTTP のヘッダーで正しいトークンを渡したときだけ応答する。それ以外には意味のないページだけを返す。あわせて、ドメイン名でテナントを分け、DB の置き場を <code>_data/&lt;テナント&gt;/</code> に分ける</p>
-		<p class="date">📅 作成: 2026-10-14 / 更新: 2026-11-01</p>
+		<p class="date">📅 作成: 2026-10-14 / 更新: 2026-11-10</p>
 	</div>
 </div>
 
@@ -436,6 +436,7 @@ footer a {
 	<p><strong>計画の段階。3 章の決めること (5〜14)と、決めてもらう値 (テナント名とドメイン)が揃ってから着手する。</strong>推奨はそれぞれ A。実装は 4 章の段ごとに 1 点ずつ進め、段の終わりで確認を取る。</p>
 	<p><strong>決まったこと (2026-10-15): 5-A (Oracle Cloud の無料枠に相乗り)・8-A (同じ 404 を返す)・11-A (運用の道具は node に寄せる)・12 のうちテナントの決め方 (<code>Host</code> の命名規約 <code>&lt;テナント ID&gt;.chat.ai.&lt;ドメイン&gt;</code>)。</strong>残りは 6 ・ 7 ・ 9 ・ 10 ・ 12 のプロセスの持ち方 ・ 13 ・ 14 (控えを別の場所にも置く。2026-10-15 に追加)と、決めてもらう値。4 章に「ログ」と「ほかに押さえること」を足した。</p>
 	<p><strong>決まったこと (2026-11-01): 15-A (クラウドのセッションも、コンテナの中の中継から入る)。</strong></p>
+	<p><strong>決まったこと (2026-11-10): 6-B (中継を立てず、<code>aichat</code> が環境変数 <code>AICHAT_URL</code>・<code>AICHAT_TOKEN</code> で直に繋ぐ)・7-A ・ 12-A ・ 14-A ・ 26-A (<code>AICHAT_URL</code> は <code>-p</code> より優先)。15 は 27-A で 15-B に変えた。13 は 28-A で取り下げた。</strong>残りは 9 ・ 10 と、決めてもらう値。<strong>4 章までの本文には、中継 (6-A)を前提にした記述が残っている</strong>(書き直しは未)。</p>
 </div>
 
 <section class="toc md-skip">
@@ -527,7 +528,8 @@ footer a {
 	</table>
 	</div>
 
-	<h2>6. PC 側の繋ぎ方</h2>
+	<h2>6. PC 側の繋ぎ方 (決定: 6-B)</h2>
+	<p><strong>決定 (2026-11-10): 6-B。PC にサービス (中継)は立てない。</strong>ただし設定ファイルではなく、<strong>ユーザの環境変数 <code>AICHAT_URL</code>(接続先)と <code>AICHAT_TOKEN</code>(トークン)</strong>から読む。<code>AICHAT_URL</code> があれば <code>-p</code> より優先する (26-A)ので、他プロジェクトのコマンド (<code>-p 8787</code>)と共通ルールは書き換えずに済む。<strong>トークンの値は、ファイル・発言・ログに書かない。</strong>下の表の 6-B の短所のうち、「<code>-p 8787</code> が使えなくなる」は 26-A で解消する。</p>
 	<div class="tablewrap">
 	<table>
 		<thead><tr><th class="nowrap">案</th><th>内容</th><th>長所</th><th>短所</th></tr></thead>
@@ -538,7 +540,7 @@ footer a {
 	</table>
 	</div>
 
-	<h2>7. トークンの持ち方 (サーバ側)</h2>
+	<h2>7. トークンの持ち方 (サーバ側) (決定: 7-A)</h2>
 	<div class="tablewrap">
 	<table>
 		<thead><tr><th class="nowrap">案</th><th>内容</th><th>長所</th><th>短所</th></tr></thead>
@@ -594,7 +596,7 @@ footer a {
 	</table>
 	</div>
 
-	<h2>12. テナントの分け方 (テナントの決め方は決定。プロセスの持ち方は未決)</h2>
+	<h2>12. テナントの分け方 (決定: 12-A)</h2>
 	<p><strong>テナントの決め方 (決定): <code>Host</code> の命名規約を <code>&lt;テナント ID&gt;.chat.ai.&lt;ドメイン&gt;</code> とし、先頭のラベルをテナント ID にする。</strong>規約に合わない <code>Host</code> には 8 の応答を返す。</p>
 	<p><code>Host</code> は送る側が自由に書けるので、規約を照らすときに次の 3 つも守る。どれも、知らない名前で DB が作られたり、<code>..</code> で置き場の外を指されたりするのを防ぐため。</p>
 	<ul>
@@ -613,7 +615,8 @@ footer a {
 	</table>
 	</div>
 
-	<h2>13. 1 つの PC が複数のテナントに入るとき (6-A のとき)</h2>
+	<h2>13. 1 つの PC が複数のテナントに入るとき (取り下げ)</h2>
+	<p><strong>取り下げ (2026-11-10、28-A): この問いは 6-A (中継)を前提にしていた。6-B にしたため前提が無くなった。</strong>今は 1 台の PC から入るテナントを 1 つにする。複数のテナントが要るときに、環境変数の持ち方として問いを立て直す。</p>
 	<div class="tablewrap">
 	<table>
 		<thead><tr><th class="nowrap">案</th><th>内容</th><th>長所</th><th>短所</th></tr></thead>
@@ -624,7 +627,7 @@ footer a {
 	</table>
 	</div>
 
-	<h2>14. 控えを別の場所にも置く</h2>
+	<h2>14. 控えを別の場所にも置く (決定: 14-A)</h2>
 	<div class="tablewrap">
 	<table>
 		<thead><tr><th class="nowrap">案</th><th>内容</th><th>長所</th><th>短所</th></tr></thead>
@@ -635,7 +638,8 @@ footer a {
 	</table>
 	</div>
 
-	<h2>15. クラウドのセッションの繋ぎ方 (決定: 15-A)</h2>
+	<h2>15. クラウドのセッションの繋ぎ方 (決定: 15-B)</h2>
+	<p><strong>決定を変えた (2026-11-10、27-A): 15-A から 15-B へ。</strong>15-A は PC 向けの中継 (6-A)を前提にしていた。6-B にしたので、コンテナにも PC と同じ環境変数 (<code>AICHAT_URL</code>・<code>AICHAT_TOKEN</code>)を置き、CLI が直に繋ぐ。下の表の 15-B の短所「コマンドの書き方が分かれる」は、26-A で解消する。</p>
 	<p>PC だけでなく、クラウドで動く AI のセッション (Claude Code on the web 等、毎回作り直される Linux のコンテナ)からも入れるようにする。<strong>コンテナはセッションごとに作り直されるので、PC と同じ常駐の中継は置けない。</strong></p>
 	<div class="tablewrap">
 	<table>
