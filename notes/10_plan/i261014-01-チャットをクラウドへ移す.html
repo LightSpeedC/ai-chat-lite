@@ -422,7 +422,7 @@ footer a {
 	<div class="inner">
 		<h1>チャットを DB ごとクラウドへ移し、テナントで分ける</h1>
 		<p class="lead">サーバと DB を PC からクラウドへ移す。PC ごとにアクセストークンを発行し、HTTP のヘッダーで正しいトークンを渡したときだけ応答する。それ以外には意味のないページだけを返す。あわせて、ドメイン名でテナントを分け、DB の置き場を <code>_data/&lt;テナント&gt;/</code> に分ける</p>
-		<p class="date">📅 作成: 2026-10-14 / 更新: 2026-11-10</p>
+		<p class="date">📅 作成: 2026-10-14 / 更新: 2026-11-13</p>
 	</div>
 </div>
 
@@ -435,6 +435,7 @@ footer a {
 <div class="callout callout-important">
 	<p><strong>計画の段階。3 章の決めること (5〜14)と、決めてもらう値 (テナント名とドメイン)が揃ってから着手する。</strong>推奨はそれぞれ A。実装は 4 章の段ごとに 1 点ずつ進め、段の終わりで確認を取る。</p>
 	<p><strong>決まったこと (2026-10-15): 5-A (Oracle Cloud の無料枠に相乗り)・8-A (同じ 404 を返す)・11-A (運用の道具は node に寄せる)・12 のうちテナントの決め方 (<code>Host</code> の命名規約 <code>&lt;テナント ID&gt;.chat.ai.&lt;ドメイン&gt;</code>)。</strong>残りは 6 ・ 7 ・ 9 ・ 10 ・ 12 のプロセスの持ち方 ・ 13 ・ 14 (控えを別の場所にも置く。2026-10-15 に追加)と、決めてもらう値。4 章に「ログ」と「ほかに押さえること」を足した。</p>
+	<p><strong>決まったこと (2026-11-13): 9-A (ID を最初の PC の名札に結び付ける。33-A)・10-B (管理の口は印付きのトークンにだけ開ける。34-B)。</strong>これで問いは、決めてもらう値だけになった。</p>
 	<p><strong>決まったこと (2026-11-01): 15-A (クラウドのセッションも、コンテナの中の中継から入る)。</strong></p>
 	<p><strong>決まったこと (2026-11-10): 6-B (中継を立てず、<code>aichat</code> が環境変数 <code>AICHAT_URL</code>・<code>AICHAT_TOKEN</code> で直に繋ぐ)・7-A ・ 12-A ・ 14-A ・ 26-A (<code>AICHAT_URL</code> は <code>-p</code> より優先)。15 は 27-A で 15-B に変えた。13 は 28-A で取り下げた。</strong>残りは 9 ・ 10 と、決めてもらう値。1〜6 章の本文を 6-B (中継なし・環境変数)に合わせて書き直した。<strong>6-B では、移すときに全プロジェクトの AI のセッションを開き直す必要がある</strong>(5 章)。</p>
 </div>
@@ -564,7 +565,7 @@ footer a {
 	</table>
 	</div>
 
-	<h2>9. 同じ ID を 2 台の PC で使ったとき</h2>
+	<h2>9. 同じ ID を 2 台の PC で使ったとき (決定: 9-A)</h2>
 	<p>読んだ位置 (cursor)は ID ごとに 1 つしかない。<strong>2 台が同じ ID で待つと、片方が確定した発言は、もう片方に出ない。</strong><code>waiters</code> は手元の PC しか数えないため、重なりにも気づけない。</p>
 	<div class="tablewrap">
 	<table>
@@ -576,7 +577,8 @@ footer a {
 	</table>
 	</div>
 
-	<h2>10. 管理の口 (<code>/api/admin/*</code>)</h2>
+	<h2>10. 管理の口 (<code>/api/admin/*</code>) (決定: 10-B)</h2>
+	<p><strong>10-B に決めた (2026-11-13)。</strong>手元の PC から今と同じ手軽さで管理を打てるほうを取った。<strong>印付きのトークンは配る範囲を絞る</strong> (漏れると外からサーバを落とせ、ID のまとめもできるため)。</p>
 	<div class="tablewrap">
 	<table>
 		<thead><tr><th class="nowrap">案</th><th>内容</th><th>長所</th><th>短所</th></tr></thead>
@@ -677,7 +679,7 @@ footer a {
 					<li>すべての要求で、ヘッダーのトークンのハッシュを、ファイルの一覧と照らす。<strong>画面も <code>/api/version</code> も例外にしない。クエリのトークンは受けない</strong>(URL に残るため。CLI はヘッダーで送る)</li>
 					<li><strong>ブラウザ用のクッキー (6-B)</strong>: トークンを一度だけ受ける入力の口を作り、通ったら <code>HttpOnly</code>・<code>Secure</code>・<code>SameSite=Strict</code> のクッキーを返す。クッキーの値もハッシュで照らし、トークンを取り消したら、そのトークンで出したクッキーも通さない</li>
 					<li>断るときは 8-A の 1 つの応答だけを返す。ログには「断った」と送り元だけを書き、<strong>トークンの値は書かない</strong>。通したときは名札 (<code>pc1</code>)をログに残す</li>
-					<li>管理の口を別のポートへ分ける (10-A)。ID と名札の結び付き (9-A)</li>
+					<li>管理の口を、印付きのトークンにだけ開ける (10-B)。ID と名札の結び付き (9-A)</li>
 					<li>テスト用のトークン (起動のたびに変わる)は今のまま残す</li>
 					<li><strong>テナント名とポートを起動の引数で受け</strong>(12-A)、置き場を <code>_data/&lt;テナント&gt;/</code> にする。<code>process.title</code> にもテナント名とポートを出す。テナント名は英小文字・数字・ハイフンだけを受け、それ以外 (<code>..</code> ・空・大文字)は起動しない</li>
 					<li><strong>本番かテストかの見分けを直す。</strong>いまは「置き場が <code>_data</code> そのものなら本番」。これを「置き場が <code>_data/&lt;引数のテナント&gt;/</code> なら本番、それ以外はテスト」にする。環境を表す変数を別に持たない方針は変えない</li>
@@ -810,7 +812,7 @@ footer a {
 			<tr><td class="num">3</td><td>トークン必須なのに、トークンのファイルが無いと、起動しない</td></tr>
 			<tr><td class="num">4</td><td>ファイルの 1 行を取り消すと、次の要求から断る (起動し直さなくても)</td></tr>
 			<tr><td class="num">5</td><td>サーバのログにも、CLI のエラー・待受けの出力・<code>--help</code> にも、トークンの値が 1 度も出ない</td></tr>
-			<tr><td class="num">6</td><td>外向きのポートでは管理の口が 404 で、管理のポートでは動く (10-A)</td></tr>
+			<tr><td class="num">6</td><td>印の無いトークンでは管理の口が 404 で、印付きのトークンでは動く (10-B)</td></tr>
 			<tr><td class="num">7</td><td>別の名札のトークンから、結び付いた ID で来たら断り、理由を返す (9-A)</td></tr>
 			<tr><td class="num">8</td><td>HTTPS の終端を通して、SSE が途切れずに流れ、long-poll が 240 秒まで待てる</td></tr>
 			<tr><td class="num">9</td><td>クラウドに繋がらないとき、CLI (node 版 ・ Rust 版)が繋ぎ直す。断られた (404)ときは繋ぎ直さずに 1 行出して止まる</td></tr>
