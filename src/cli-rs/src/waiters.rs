@@ -464,9 +464,99 @@ pub fn split_redundant(mine: &[Waiter], basis_rooms: &[String]) -> (Vec<Waiter>,
 	(keep, stop)
 }
 
+/// 見つけた待受け 1 本。表に出す形まで持つ
+#[derive(Debug, Clone, PartialEq)]
+pub struct Found {
+	pub pid: i64,
+	pub id: String,
+	pub via: String,
+	/// 立った時刻 (`yyyy-MM-dd HH:mm:ss`)
+	pub at: String,
+	pub target: Target,
+}
+
+/// `unwait` が止める相手の選び方
+#[derive(Debug, Clone, PartialEq)]
+pub struct UnwaitPlan {
+	/// 止める分
+	pub targets: Vec<Found>,
+	/// 自分の ID だが止めない分と、その理由
+	pub strays: Vec<(Found, String)>,
+	/// 他の ID の分の本数
+	pub others: usize,
+}
+
+/// `unwait` で止める相手を選ぶ。node 版の `planUnwait` と同じ規則にする。
+///
+/// 止めるのは、**自分の ID で、接続先とルームが基準 (`-p` ・ `-r`)と完全に一致した待受けだけ。**
+/// 「含む」では止めない。`public,dev` を見ている待受けを `-r public` で止めると、
+/// `dev` の通知まで一緒に切れる (決定 37-A)。ルームは並びを見ず、集合で比べる。
+///
+/// 自分の ID でも一致しなかった分は、止めずに理由を添えて返す。他の ID の分は件数だけ
+/// を数える (止めると、相手は原因不明の `exit 255` で落ちる。i260901-07)。
+pub fn plan_unwait(found: &[Found], me: &str, basis_port: i64, basis_rooms: &[String]) -> UnwaitPlan {
+	let same_rooms = |rooms: &[String]| {
+		rooms.iter().all(|r| basis_rooms.contains(r)) && basis_rooms.iter().all(|r| rooms.contains(r))
+	};
+
+	let mut targets = Vec::new();
+	let mut strays = Vec::new();
+	for h in found {
+		if h.id != me {
+			continue;
+		}
+		if h.target.port != basis_port {
+			strays.push((h.clone(), format!("別の場所 ({})", h.target.label)));
+		} else if !same_rooms(&h.target.rooms) {
+			strays.push((h.clone(), format!("ルームが違う ({})", h.target.rooms.join(", "))));
+		} else {
+			targets.push(h.clone());
+		}
+	}
+
+	let others = found.iter().filter(|h| h.id != me).count();
+	UnwaitPlan { targets, strays, others }
+}
+
+/// `unwait` の終了コード。**正常 (0) は 2 つだけ。**それ以外は異常 (1)。node 版と同じにする。
+///
+///   最初からいない … 止める待受けも、止めていない待受けも無い
+///   止められた    … 止める待受けの全部が「止めた」で、止めていない待受けが無い
+///
+/// 止められなかった・残っている・止めていない (接続先かルームが違う自分の待受け)が
+/// 1 本でもあれば 1。止めたつもりにさせない (利用者の指示)。
+pub fn unwait_exit_code(results: &[&str], stray_count: usize) -> i32 {
+	if stray_count > 0 {
+		return 1;
+	}
+	if results.iter().all(|r| *r == "止めた") {
+		0
+	} else {
+		1
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
+
+	fn found(pid: i64, id: &str, port: i64, rooms: &[&str]) -> Found {
+		Found {
+			pid,
+			id: id.to_string(),
+			via: "aichat".to_string(),
+			at: "2026-11-15 10:00:00".to_string(),
+			target: Target {
+				label: format!(":{}", port),
+				rooms: rooms.iter().map(|s| s.to_string()).collect(),
+				port,
+			},
+		}
+	}
+
+	fn target_pids(plan: &UnwaitPlan) -> Vec<i64> {
+		plan.targets.iter().map(|h| h.pid).collect()
+	}
 
 	fn waiter(pid: i64, rooms: &[&str], at: &str) -> Waiter {
 		Waiter {
@@ -931,5 +1021,80 @@ mod tests {
 		let (keep, stop) = split_redundant(&mine, &strs(&["a", "b"]));
 		assert_eq!(pids(&keep), vec![1, 2]);
 		assert!(stop.is_empty());
+	}
+
+	// ---- unwait (i261115-01)。node 版 tests/client-unwait.test.mjs と同じ場面 ----
+
+	#[test]
+	fn unwait_自分のIDで接続先とルームが完全に一致した分だけが対象になる() {
+		let all = vec![found(100, "me", 8787, &["public"]), found(200, "me", 8787, &["public"])];
+		let plan = plan_unwait(&all, "me", 8787, &strs(&["public"]));
+		assert_eq!(target_pids(&plan), vec![100, 200]);
+		assert!(plan.strays.is_empty());
+	}
+
+	#[test]
+	fn unwait_他のIDは対象にせず件数だけを数える() {
+		// 他プロジェクトの分を止めると、相手は原因不明の exit 255 で落ちる
+		let all = vec![
+			found(100, "me", 8787, &["public"]),
+			found(300, "other", 8787, &["public"]),
+			found(301, "other-2", 8787, &["public"]),
+		];
+		let plan = plan_unwait(&all, "me", 8787, &strs(&["public"]));
+		assert_eq!(target_pids(&plan), vec![100]);
+		assert_eq!(plan.others, 2);
+	}
+
+	#[test]
+	fn unwait_前方一致するIDを取り違えない() {
+		let all = vec![found(100, "me", 8787, &["public"]), found(200, "me-2", 8787, &["public"])];
+		assert_eq!(target_pids(&plan_unwait(&all, "me", 8787, &strs(&["public"]))), vec![100]);
+	}
+
+	#[test]
+	fn unwait_ルームが違う分は止めず理由を添える() {
+		let all = vec![found(100, "me", 8787, &["dev"])];
+		let plan = plan_unwait(&all, "me", 8787, &strs(&["public"]));
+		assert!(plan.targets.is_empty());
+		assert_eq!(plan.strays.len(), 1);
+		assert_eq!(plan.strays[0].0.pid, 100);
+		assert!(plan.strays[0].1.contains("ルームが違う"));
+	}
+
+	#[test]
+	fn unwait_渡したルームを含むだけの待受けは止めない() {
+		// 完全一致だけ。他のルームの通知まで巻き込んで切らない
+		let all = vec![found(100, "me", 8787, &["public", "dev"])];
+		let plan = plan_unwait(&all, "me", 8787, &strs(&["public"]));
+		assert!(plan.targets.is_empty(), "含むだけの待受けを止めようとしている");
+		assert_eq!(plan.strays[0].0.pid, 100);
+	}
+
+	#[test]
+	fn unwait_ルームの並びが違っても同じ集合なら一致とみなす() {
+		let all = vec![found(100, "me", 8787, &["dev", "public"])];
+		let plan = plan_unwait(&all, "me", 8787, &strs(&["public", "dev"]));
+		assert_eq!(target_pids(&plan), vec![100]);
+	}
+
+	#[test]
+	fn unwait_接続先が違う分は止めず理由を添える() {
+		let all = vec![found(100, "me", 49999, &["public"])];
+		let plan = plan_unwait(&all, "me", 8787, &strs(&["public"]));
+		assert!(plan.targets.is_empty());
+		assert!(plan.strays[0].1.contains("別の場所"));
+	}
+
+	#[test]
+	fn unwait_終了コードは最初からいないときと止められたときだけ0() {
+		// 正常 (0) は 2 つだけ。第 2 引数は「止めていない」自分の待受けの本数
+		assert_eq!(unwait_exit_code(&["止めた", "止めた"], 0), 0, "止められた");
+		assert_eq!(unwait_exit_code(&[], 0), 0, "最初からいない");
+		assert_eq!(unwait_exit_code(&["止めた", "止められなかった"], 0), 1);
+		assert_eq!(unwait_exit_code(&["止めた", "残っている"], 0), 1);
+		// 自分の待受けがまだ別の場所で走っている。止めたつもりにさせない
+		assert_eq!(unwait_exit_code(&["止めた"], 1), 1);
+		assert_eq!(unwait_exit_code(&[], 1), 1);
 	}
 }

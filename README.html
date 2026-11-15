@@ -552,6 +552,7 @@ aichat say     :project-a: "テストが通りました" -p 8787 -r public</code
 			<tr><td class="nowrap"><code>recent</code></td><td>直近の履歴を表示する</td></tr>
 			<tr><td class="nowrap"><code>who</code></td><td>参加者一覧とオンライン状態を表示する</td></tr>
 			<tr><td class="nowrap"><code>waiters :&lt;id&gt;:</code></td><td>走っている待受けの本数を数える。<strong>サーバーには繋がない</strong></td></tr>
+			<tr><td class="nowrap"><code>unwait :&lt;id&gt;:</code></td><td>自分の待受けを止める。<code>-p</code> ・ <code>-r</code> と完全に一致した分だけ。止めたもの ・ 止めていないもの ・ 残っているものを表で出し、<strong>終了コード 0 は「最初からいない」と「止められた」だけ</strong>。<strong>サーバーには繋がない</strong></td></tr>
 			<tr><td class="nowrap"><code>dump</code></td><td>全メッセージを JSONL に書き出す</td></tr>
 			<tr><td class="nowrap"><code>leave</code></td><td>離脱を知らせる</td></tr>
 			<tr><td class="nowrap"><code>archive</code></td><td>片付ける (<code>message</code> / <code>connector</code> / <code>room</code>)。先に件数を出し、対象名の入力を求める</td></tr>
@@ -559,7 +560,7 @@ aichat say     :project-a: "テストが通りました" -p 8787 -r public</code
 			<tr><td class="nowrap"><code>restore</code></td><td>片付けたものをまとめて戻す</td></tr>
 			<tr><td class="nowrap"><code>rename</code></td><td>参加者の ID を付け替える。先に件数を出し、旧 ID の入力を求める</td></tr>
 			<tr><td class="nowrap"><code>restart</code></td><td>サーバーを落として起動し直させる</td></tr>
-			<tr><td class="nowrap"><code>stop</code></td><td>サーバーを止める</td></tr>
+			<tr><td class="nowrap"><code>shutdown</code></td><td>サーバーを落とす。<code>--yes</code> が無ければ落とさない。<strong>待受けを止めるコマンドではない</strong> (待受けは <code>unwait</code>)</td></tr>
 		</tbody>
 	</table>
 	</div>
@@ -590,7 +591,7 @@ aichat say     :project-a: "テストが通りました" -p 8787 -r public</code
 				<td>異常終了として扱われ、10 秒後に起動し直す</td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>stop</code></td><td class="nowrap">0</td>
+				<td class="nowrap"><code>shutdown</code></td><td class="nowrap">0</td>
 				<td>正常終了として扱われ、止まったまま。動かすには管理者権限が要る</td>
 			</tr>
 		</tbody>
@@ -601,7 +602,7 @@ aichat say     :project-a: "テストが通りました" -p 8787 -r public</code
 
 	<p>サービスと同じポートを使うため、先にサービスを停止してから起動します。</p>
 
-	<pre><code class="language-batch">node src/client/chat.mjs stop :project-a: -p 8787
+	<pre><code class="language-batch">node src/client/chat.mjs shutdown :project-a: -p 8787 --yes
 tools\50_run\start-server.cmd</code></pre>
 
 	<p><strong>名乗る ID (<code>:project-a:</code>)と接続先 (<code>-p</code> か <code>-u</code>)は省略できません。</strong>既定値を持たないので、付けずに叩くとエラーで止まります。<code>project-a</code> のところは自分の project フォルダ名にしてください。</p>

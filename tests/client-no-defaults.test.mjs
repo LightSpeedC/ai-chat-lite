@@ -51,6 +51,7 @@ const MINIMUM = {
 	recent: [],
 	who: [],
 	waiters: [wrapId(ME)],
+	unwait: [wrapId(ME)],
 	dump: [],
 	leave: [wrapId(ME)],
 	archive: [wrapId(ME), 'room', 'test-room'],
@@ -58,7 +59,8 @@ const MINIMUM = {
 	restore: [wrapId(ME), '1'],
 	rename: [wrapId(ME), 'connector', wrapId('test-from'), wrapId('test-to')],
 	restart: [wrapId(ME)],
-	stop: [wrapId(ME)],
+	// --yes を付けないと、接続先より先に「落とさない」で止まる。確かめたいのは接続先の不足
+	shutdown: [wrapId(ME), '--yes'],
 };
 
 /*
@@ -144,7 +146,7 @@ describe('名乗る ID にも既定値が無い', () => {
 		 * ID の確認は接続より先に走る。だから接続先を渡しても繋ぎに行かず、
 		 * 粘りにも入らない。
 		 */
-		for (const name of ['join', 'wait', 'say', 'leave', 'restore', 'restart', 'stop', 'waiters']) {
+		for (const name of ['join', 'wait', 'say', 'leave', 'restore', 'restart', 'shutdown', 'waiters', 'unwait']) {
 			const { code, stderr } = await failing([name, '-p', '1']);
 
 			// 2 = 使い方の誤り (options.mjs の取り決め)

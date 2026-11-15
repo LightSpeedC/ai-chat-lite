@@ -26,6 +26,7 @@ import {
 	COMMANDS,
 	ADMIN_COMMANDS,
 	REMOVED,
+	REMOVED_COMMANDS,
 	RETRY_INTERVAL_SEC,
 	RETRY_TIMES,
 	EXIT_UNREACHABLE,
@@ -71,8 +72,9 @@ const definition = {
 	 *       (--connector-id を廃止し、コマンドの直後に :id: を置く形へ)
 	 *   3 … waiter_pattern を足した (waiters コマンド)
 	 *   4 … commands に offline を足した (サーバーに繋がないコマンドの印)
+	 *   5 … removed_commands を足した (廃止したコマンド stop の案内。i261115-01)
 	 */
-	schema: 4,
+	schema: 5,
 	generated_from: 'src/client/options.mjs',
 
 	id_wrap: ID_WRAP,
@@ -92,6 +94,7 @@ const definition = {
 	commands: COMMANDS,
 	admin_commands: ADMIN_COMMANDS,
 	removed: [...REMOVED].map(([name, { short, hint }]) => ({ name, short, hint })),
+	removed_commands: [...REMOVED_COMMANDS].map(([name, { hint }]) => ({ name, hint })),
 };
 
 const json = JSON.stringify(definition, null, '\t') + '\n';

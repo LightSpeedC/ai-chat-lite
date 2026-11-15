@@ -15,7 +15,7 @@ use crate::json::{self, Json};
 ///
 /// 形が変わったら、ここと `tests/cli-rs.test.mjs` の期待値も上げる。
 /// 上げ忘れたまま動くと、古い形を新しい形として読んでしまう。
-pub const EXPECTED_SCHEMA: i64 = 4;
+pub const EXPECTED_SCHEMA: i64 = 5;
 
 const RAW: &str = include_str!("../cli-options.json");
 
@@ -63,6 +63,13 @@ pub struct RemovedDef {
 	pub hint: String,
 }
 
+/// 廃止したコマンド。渡されたら何も実行せず、案内を出して終わる
+#[derive(Debug, Clone)]
+pub struct RemovedCommandDef {
+	pub name: String,
+	pub hint: String,
+}
+
 #[derive(Debug, Clone)]
 pub struct WaitUnit {
 	pub long: String,
@@ -87,6 +94,7 @@ pub struct Definition {
 	pub commands: Vec<CommandDef>,
 	pub admin_commands: Vec<CommandDef>,
 	pub removed: Vec<RemovedDef>,
+	pub removed_commands: Vec<RemovedCommandDef>,
 }
 
 impl Definition {
@@ -148,6 +156,16 @@ impl Definition {
 			})
 			.collect::<Result<Vec<_>, String>>()?;
 
+		let removed_commands = take_arr(&root, "removed_commands")?
+			.iter()
+			.map(|r| {
+				Ok(RemovedCommandDef {
+					name: take_str(r, "name")?,
+					hint: take_str(r, "hint")?,
+				})
+			})
+			.collect::<Result<Vec<_>, String>>()?;
+
 		Ok(Definition {
 			schema,
 			id_wrap: take_str(&root, "id_wrap")?,
@@ -165,6 +183,7 @@ impl Definition {
 			commands,
 			admin_commands,
 			removed,
+			removed_commands,
 		})
 	}
 
@@ -270,18 +289,35 @@ mod tests {
 	}
 
 	#[test]
-	fn コマンドが12件と管理2件ある() {
+	fn コマンドが13件と管理2件ある() {
 		let def = Definition::load().unwrap();
-		assert_eq!(def.commands.len(), 12, "コマンドの数");
+		// unwait (i261115-01)を足して 13 件
+		assert_eq!(def.commands.len(), 13, "コマンドの数");
 		assert_eq!(def.admin_commands.len(), 2, "管理コマンドの数");
 	}
 
 	#[test]
-	fn オプションが25件ある() {
+	fn オプションが26件ある() {
 		let def = Definition::load().unwrap();
-		// --yes は archive と rename の両方に出るので 2 件を数える。
-		// rename の --merge (i261110-02)を足して 25 件
-		assert_eq!(def.options.len(), 25);
+		// --yes は archive ・ rename ・ shutdown の 3 つに出るので 3 件を数える。
+		// rename の --merge (i261110-02)を足して 25 件、shutdown の --yes (i261115-01)で 26 件
+		assert_eq!(def.options.len(), 26);
+	}
+
+	#[test]
+	fn 廃止したコマンドのstopは案内だけを持つ() {
+		let def = Definition::load().unwrap();
+		assert_eq!(def.removed_commands.len(), 1);
+		let stop = def.removed_commands.iter().find(|r| r.name == "stop").expect("stop がありません");
+		assert!(stop.hint.contains("unwait"), "待受けを止める道具を案内する");
+		assert!(!stop.hint.contains("shutdown"), "サーバーを落とす案内は出さない");
+		assert!(def.command("stop").is_none(), "実行できるコマンドには残さない");
+	}
+
+	#[test]
+	fn unwaitはサーバーに繋がない印を持つ() {
+		let def = Definition::load().unwrap();
+		assert!(def.command("unwait").expect("unwait がありません").offline);
 	}
 
 	#[test]
@@ -298,7 +334,7 @@ mod tests {
 	fn 管理コマンドも名前で引ける() {
 		let def = Definition::load().unwrap();
 		assert!(def.command("restart").is_some());
-		assert!(def.command("stop").is_some());
+		assert!(def.command("shutdown").is_some());
 		assert!(def.command("無いコマンド").is_none());
 	}
 
@@ -336,7 +372,7 @@ mod tests {
 		assert_eq!(def.retry_times("wait"), 60);
 		// 止めに行くコマンドが繋がらない＝すでに止まっている
 		assert_eq!(def.retry_times("restart"), 0);
-		assert_eq!(def.retry_times("stop"), 0);
+		assert_eq!(def.retry_times("shutdown"), 0);
 		// 人が打つものは 60 秒で諦める
 		assert_eq!(def.retry_times("say"), 6);
 		assert_eq!(def.retry_times("知らないコマンド"), 6);

@@ -386,5 +386,69 @@
 			"stop",
 			":使えない文字 入り:"
 		]
+	},
+	{
+		"args": [
+			"stop",
+			":rust-check:",
+			"-p",
+			"1"
+		]
+	},
+	{
+		"args": [
+			"shutdown"
+		]
+	},
+	{
+		"args": [
+			"shutdown",
+			":rust-check:"
+		]
+	},
+	{
+		"args": [
+			"shutdown",
+			":rust-check:",
+			"-p",
+			"1"
+		]
+	},
+	{
+		"args": [
+			"unwait"
+		]
+	},
+	{
+		"args": [
+			"unwait",
+			"囲みなし"
+		]
+	},
+	{
+		"args": [
+			"unwait",
+			":rust-check:"
+		]
+	},
+	{
+		"args": [
+			"unwait",
+			":rust-check-none:",
+			"-p",
+			"59999",
+			"-r",
+			"public"
+		]
+	},
+	{
+		"args": [
+			"unwait",
+			":rust-check-none:",
+			"-p",
+			"59999",
+			"-r",
+			"'bad,room'"
+		]
 	}
 ]

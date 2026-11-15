@@ -16,12 +16,20 @@ import {
 	COMMANDS,
 	ADMIN_COMMANDS,
 	REMOVED,
+	REMOVED_COMMANDS,
 	RETRY_INTERVAL_SEC,
 	RETRY_TIMES,
 	EXIT_UNREACHABLE,
 	FLAGS,
 } from './options.mjs';
-import { splitRedundant, pickWaiters, roomsFrom as roomsFromShared, roomsArg } from './waiters-pick.mjs';
+import {
+	splitRedundant,
+	pickWaiters,
+	planUnwait,
+	unwaitExitCode,
+	roomsFrom as roomsFromShared,
+	roomsArg,
+} from './waiters-pick.mjs';
 import { listProcesses } from './proc-list.mjs';
 
 /**
@@ -67,6 +75,17 @@ for (const [name, { short, hint }] of REMOVED) {
 		console.error(`  ${hint}`);
 		process.exit(2);
 	}
+}
+
+/*
+ * 廃止したコマンドは、何も実行せず案内だけを出して終わる。
+ * ID も接続先も要らない。繋ぎに行く前に止めるので、サーバーが止まっていても同じ答えになる。
+ */
+const removedCommand = REMOVED_COMMANDS.get(command);
+if (removedCommand) {
+	console.error(`${command} は廃止されました。`);
+	console.error(`  ${removedCommand.hint}`);
+	process.exit(2);
 }
 
 /**
@@ -992,7 +1011,7 @@ function basisOf() {
 	if (port === null && url === null) {
 		console.error('どこを見ている待受けを数えるかが指定されていません。');
 		console.error('');
-		console.error(`  本番: waiters ${ID_WRAP}<自分のID>${ID_WRAP} -p ${PORT} -r ${DEFAULT_ROOM}`);
+		console.error(`  本番: ${command} ${ID_WRAP}<自分のID>${ID_WRAP} -p ${PORT} -r ${DEFAULT_ROOM}`);
 		console.error('');
 		console.error('  既定値は持ちません。テストのつもりで数えた本数を本番の本数と読み違えるのを防ぐためです。');
 		process.exit(2);
@@ -1186,6 +1205,83 @@ function printWaiters(all, basis, me) {
 	}
 }
 
+/**
+ * 自分の待受けを止める。
+ *
+ * 止めるのは、自分の ID で、接続先とルームが -p ・ -r と完全に一致した分だけ
+ * (決定 37-A。選び方は waiters-pick.mjs の planUnwait)。サーバーには繋がない。
+ *
+ * 止めたつもりで残る、を見逃さないよう、止めたあとで数え直して結果を出す。
+ * 終了コードが 0 なのは、最初からいないときと、全部が止まったときだけ。それ以外は 1。
+ */
+async function cmdUnwait() {
+	const basis = basisOf();
+	const me = CONNECTOR_ID;
+
+	const plan = planUnwait(await listWaiters(), me, basis);
+
+	// 子のプロセス (bun など)まで止める。親だけを止めても、子は道連れにならない
+	const rows = plan.targets.map((h) => {
+		const r = spawnSync('taskkill', ['/PID', String(h.pid), '/T', '/F'], { encoding: 'utf8', windowsHide: true });
+		// taskkill の文言は OS の言語で変わり、文字コードも合わないので、終了コードだけを出す
+		const note = r.status === 0 ? '' : `taskkill が失敗しました (終了コード ${r.status})`;
+		return { h, killed: r.status === 0, note, result: '' };
+	});
+
+	// 止めたあとで数え直す。強制終了が通っても、残っていることがある
+	if (rows.length > 0) {
+		await new Promise((resolve) => setTimeout(resolve, 300));
+		const alive = new Set((await listWaiters()).map((h) => h.pid));
+		for (const row of rows) {
+			row.result = !row.killed ? '止められなかった' : alive.has(row.h.pid) ? '残っている' : '止めた';
+		}
+	}
+
+	printUnwait(rows, plan, basis);
+
+	const count = (name) => rows.filter((row) => row.result === name).length;
+	console.log('');
+	console.log(
+		`  止めた ${count('止めた')} 本 / 止められなかった ${count('止められなかった')} 本 / ` +
+			`残っている ${count('残っている')} 本 / 止めていない ${plan.strays.length} 本`
+	);
+	if (plan.others > 0) console.log(`  他に ${plan.others} 本 (他の ID。触っていません)`);
+
+	process.exitCode = unwaitExitCode(
+		rows.map((row) => row.result),
+		plan.strays.length
+	);
+}
+
+/** unwait の結果を表で出す。waiters と同じ列に「結果」を足す */
+function printUnwait(rows, plan, basis) {
+	console.log(`  ${basis.label} の待受けを止めます (ルーム: ${basis.rooms.join(', ')})`);
+	console.log('');
+
+	if (plan.targets.length === 0) console.log('  止める待受けは見つかりませんでした。');
+
+	const lines = [
+		...rows.map((row) => ({ h: row.h, text: row.note ? `${row.result}: ${row.note}` : row.result })),
+		...plan.strays.map((h) => ({ h, text: `止めていない: ${h.reason}` })),
+	];
+	if (lines.length === 0) return;
+
+	const idWidth = Math.max(width('ID'), ...lines.map((l) => width(l.h.id)));
+	const viaWidth = Math.max(width('張り方'), ...lines.map((l) => width(l.h.via)));
+	const roomWidth = Math.max(width('ルーム'), ...lines.map((l) => width(l.h.rooms.join(', '))));
+
+	console.log(
+		`  ${padEndW('ID', idWidth)}  ${padEndW('張り方', viaWidth)}  ${padEndW('いつから', 8)}  ` +
+			`${padEndW('ルーム', roomWidth)}  ${padStartW('pid', 6)}  結果`
+	);
+	for (const { h, text } of lines) {
+		console.log(
+			`  ${padEndW(h.id, idWidth)}  ${padEndW(h.via, viaWidth)}  ${h.at.slice(11)}  ` +
+				`${padEndW(h.rooms.join(', '), roomWidth)}  ${padStartW(String(h.pid), 6)}  ${text}`
+		);
+	}
+}
+
 async function cmdDump() {
 	const out = option('out', join(ROOT, 'tmp', 'messages.jsonl'));
 	/*
@@ -1205,9 +1301,28 @@ async function cmdLeave() {
 }
 
 /**
+ * サーバーを落とす。--yes が無ければ落とさない。
+ *
+ * 待受けを止めたつもりで打つ取り違えを防ぐため、承知した印を求める (決定 35-A)。
+ * 繋ぎに行く前に断る。
+ */
+async function cmdShutdown() {
+	// 接続先が無いときの案内を、Rust 版と同じ順にする (接続先 → 承知の印)
+	requireBase();
+	if (!hasFlag('yes')) {
+		console.error('サーバーを落とそうとしています。落としません。');
+		console.error('  落とすと、winsw の start で起動し直すまで、全員が繋がらなくなります。');
+		console.error('  待受けを止めたいのなら、unwait を使ってください。');
+		console.error('  承知の上で落とすなら、--yes を付けてください。');
+		process.exit(2);
+	}
+	await cmdExit(0);
+}
+
+/**
  * 落とす。再起動されるかどうかは終了コードで決まる。
- *   restart … 終了コード 1。異常終了として扱われ、10 秒後に起動し直す
- *   stop    … 終了コード 0。正常終了として扱われ、止まったまま
+ *   restart  … 終了コード 1。異常終了として扱われ、10 秒後に起動し直す
+ *   shutdown … 終了コード 0。正常終了として扱われ、止まったまま
  *
  * サービスの再起動と違い管理者権限が要らないため、ソースを直したあとの反映に使える。
  */
@@ -1587,6 +1702,7 @@ const commands = {
 	recent: cmdRecent,
 	who: cmdWho,
 	waiters: cmdWaiters,
+	unwait: cmdUnwait,
 	dump: cmdDump,
 	leave: cmdLeave,
 	archive: cmdArchive,
@@ -1594,7 +1710,7 @@ const commands = {
 	restore: cmdRestore,
 	rename: cmdRename,
 	restart: () => cmdExit(1),
-	stop: () => cmdExit(0),
+	shutdown: cmdShutdown,
 };
 
 /*

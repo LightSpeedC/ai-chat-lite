@@ -657,6 +657,12 @@ footer a {
 				<td class="nowrap"><span class="badge b-ok">済</span></td>
 				<td class="nowrap"><a href="#ch04">API</a> / <a href="#ch06">クライアントと待受け</a></td>
 			</tr>
+			<tr>
+				<td class="nowrap"><a href="i261115-01-unwait-shutdown.html">i261115-01 待受けを止める unwait を足し、stop を shutdown に変える</a></td>
+				<td>待受けを止めたつもりで、サーバーを落とす <code>stop</code> を打つ取り違えを防ぐ。<code>unwait</code> が、自分の ID で接続先とルームが完全に一致した待受けだけを止め、結果を表で出す (終了コード 0 は「最初からいない」と「止められた」だけ)。<code>stop</code> は <code>shutdown</code> (<code>--yes</code> が要る) に変え、古い名前は <code>unwait</code> を案内するだけにした</td>
+				<td class="nowrap"><span class="badge b-ok">済</span></td>
+				<td class="nowrap"><a href="#ch06">クライアントと待受け</a></td>
+			</tr>
 		</tbody>
 	</table>
 	</div>
@@ -1939,6 +1945,7 @@ LIMIT ?;</code></pre>
 			<tr><td class="nowrap"><code>recent</code></td><td>直近の履歴を表示する。<code>--since</code> / <code>--since-day</code> / <code>--since-hour</code> / <code>--before</code>(期間)・<code>--find</code>(検索)・<code>--from</code>(差出人)でも絞れる (<a href="p260909-01-recentの絞り込み.html">計画</a>)</td></tr>
 			<tr><td class="nowrap"><code>who</code></td><td>参加者一覧とオンライン状態を表示する</td></tr>
 			<tr><td class="nowrap"><code>waiters</code></td><td>走っている待受けの本数を数える。<strong>サーバーには繋がず、手元のプロセスだけを見る</strong></td></tr>
+			<tr><td class="nowrap"><code>unwait</code></td><td>自分の待受けを止める。<strong>自分の ID で、接続先とルームが <code>-p</code> ・ <code>-r</code> と完全に一致した分だけ</strong>。止めたあとで数え直し、止めた ・ 止められなかった ・ 残っている ・ 止めていない、を表で出す。終了コード 0 は「最初からいない」と「止められた」だけ。サーバーには繋がない (<a href="i261115-01-unwait-shutdown.html">計画</a>)</td></tr>
 			<tr><td class="nowrap"><code>dump</code></td><td>全メッセージを JSONL に書き出す</td></tr>
 			<tr><td class="nowrap"><code>leave</code></td><td>離脱を知らせる。打たなくても、待受けが消えれば猶予のあとサーバーが流す</td></tr>
 			<tr><td class="nowrap"><code>archive</code></td><td>発言・参加者・ルームを片付ける。先に件数を出し、対象名の入力を求める (<a class="doclink" href="p260830-02-アーカイブ機能.html">アーカイブ機能の設計</a>)</td></tr>
@@ -2868,8 +2875,8 @@ C:\ (実体のパス)\ai-chat-lite\deploy\install-service.cmd</code></pre>
 				<td>異常終了として扱われ、<strong>10 秒後に新しいコードで起動する</strong></td>
 			</tr>
 			<tr>
-				<td class="nowrap"><code>chat.mjs stop</code></td><td class="nowrap">0</td>
-				<td>正常終了として扱われ、止まったまま。動かすには管理者権限が要る</td>
+				<td class="nowrap"><code>chat.mjs shutdown ... --yes</code></td><td class="nowrap">0</td>
+				<td>正常終了として扱われ、止まったまま。動かすには管理者権限が要る。<strong><code>--yes</code> が無ければ落とさない</strong>。古い名前の <code>stop</code> は廃止し、何も実行せず <code>unwait</code> を案内する (待受けを止めたつもりで打つ取り違えを防ぐ。<a href="i261115-01-unwait-shutdown.html">計画</a>)</td>
 			</tr>
 		</tbody>
 	</table>

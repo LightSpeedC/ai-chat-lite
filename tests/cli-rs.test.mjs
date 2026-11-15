@@ -78,8 +78,8 @@ describe('Rust 版と node 版の突き合わせ', { skip: ready ? false : 'aich
 	}
 
 	test('繋がらないときの案内が node 版と同じで、deploy/ の WinSW を指す (i260830-01)', () => {
-		// 誰も待ち受けていないポート。stop は粘らないので、すぐ終わる
-		const { node, rust } = runBoth(['stop', ':test-connector1:', '--port', '1']);
+		// 誰も待ち受けていないポート。shutdown は粘らないので、すぐ終わる (--yes が無いと繋ぐ前に断る)
+		const { node, rust } = runBoth(['shutdown', ':test-connector1:', '--port', '1', '--yes']);
 
 		// 1 行目は OS のエラー名 (ECONNREFUSED と connection refused)で違うので、案内の行だけを比べる
 		const guide = (out) => out.split(/\r?\n/).slice(1).join('\n');

@@ -46,14 +46,15 @@ describe('繋ぎ直す回数の決め', () => {
 	test('止めに行くコマンドは粘らない', () => {
 		// 止めに行くコマンドが繋がらない＝すでに止まっている
 		assert.equal(RETRY_TIMES.restart, 0);
-		assert.equal(RETRY_TIMES.stop, 0);
+		assert.equal(RETRY_TIMES.shutdown, 0);
 	});
 });
 
 describe('繋がらないとき', () => {
 	test('粘らないコマンドは即座に終了コード 3 で終わる', async () => {
 		// 誰も待ち受けていないポートを使う
-		const { code, stderr } = await failing(withId(['stop', '--port', '1'], 'test-connector1'));
+		// --yes を付けないと、繋ぎに行く前に断る。粘り方を見たいので付ける
+		const { code, stderr } = await failing(withId(['shutdown', '--port', '1', '--yes'], 'test-connector1'));
 
 		assert.equal(code, EXIT_UNREACHABLE, '終了コードが 3 でない');
 		assert.match(stderr, /諦めました/);
@@ -65,7 +66,7 @@ describe('繋がらないとき', () => {
 		 * WinSW 本体はルート直下から deploy/ へ移した。パスなしの名前だけで案内すると、
 		 * ルートでは見つからず、案内どおりに打っても動かない。
 		 */
-		const { stderr } = await failing(withId(['stop', '--port', '1'], 'test-connector1'));
+		const { stderr } = await failing(withId(['shutdown', '--port', '1', '--yes'], 'test-connector1'));
 
 		assert.match(stderr, /deploy\\node-ai-chat-lite-winsw\.exe status/);
 	});
@@ -99,7 +100,7 @@ describe('メンテナンス中に叩いたとき', () => {
 	});
 
 	test('503 は「繋がらない」と同じ扱いで、理由が出る', async () => {
-		const { code, stderr } = await failing(withId(['stop', '--port', String(port)], 'test-connector1'));
+		const { code, stderr } = await failing(withId(['shutdown', '--port', String(port), '--yes'], 'test-connector1'));
 
 		assert.equal(code, EXIT_UNREACHABLE);
 		assert.match(stderr, /メンテナンス中です/);

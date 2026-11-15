@@ -65,6 +65,13 @@ fn run() -> i32 {
 		}
 	}
 
+	// 廃止したコマンドは、何も実行せず案内だけを出して終わる。ID も接続先も要らない
+	if let Some(r) = a.command().and_then(|c| def.removed_commands.iter().find(|r| r.name == c)) {
+		eprintln!("{} は廃止されました。", r.name);
+		eprintln!("  {}", r.hint);
+		return EXIT_USAGE;
+	}
+
 	let base = match client::resolve_base(a.option("url", Some("u")), a.option("port", Some("p"))) {
 		Ok(b) => b,
 		Err(e) => {
@@ -115,7 +122,7 @@ fn run() -> i32 {
 			Ok(id) => id,
 			Err(code) => return code,
 		};
-		let basis = match basis_of(&def, &a, &base, &room) {
+		let basis = match basis_of(&def, &a, &base, &room, command) {
 			Ok(b) => b,
 			Err(code) => return code,
 		};
@@ -127,8 +134,14 @@ fn run() -> i32 {
 		 * 落ちる。C# 版へ委譲していた段は外した——API が直に呼べるようになり、
 		 * 委譲 (274 ms)より速いうえ、隣に C# 版が要らなくなる。
 		 */
-		return match commands::waiters_cmd(&me, &basis, &def.default_room) {
-			Ok(()) => 0,
+		let outcome = if command == "unwait" {
+			// 止める。0 なのは、最初からいないときと、全部が止まったときだけ
+			commands::unwait_cmd(&me, &basis, &def.default_room)
+		} else {
+			commands::waiters_cmd(&me, &basis, &def.default_room).map(|()| 0)
+		};
+		return match outcome {
+			Ok(code) => code,
 			Err(e) => {
 				eprintln!("プロセスの一覧を取れませんでした。");
 				eprintln!("  {}", e);
@@ -326,7 +339,17 @@ fn run() -> i32 {
 		}
 		// 落とす。1 は異常終了として扱われ 10 秒後に起動し直す。0 は止まったまま
 		"restart" => commands::exit_server(&cli, &me, 1),
-		"stop" => commands::exit_server(&cli, &me, 0),
+		"shutdown" => {
+			// 待受けを止めたつもりで打つ取り違えを防ぐため、承知した印を求める。繋ぐ前に断る
+			if !a.has_flag("yes", None) {
+				eprintln!("サーバーを落とそうとしています。落としません。");
+				eprintln!("  落とすと、winsw の start で起動し直すまで、全員が繋がらなくなります。");
+				eprintln!("  待受けを止めたいのなら、unwait を使ってください。");
+				eprintln!("  承知の上で落とすなら、--yes を付けてください。");
+				return EXIT_USAGE;
+			}
+			commands::exit_server(&cli, &me, 0)
+		}
 		"archives" => commands::archives(&cli),
 		"dump" => {
 			// 既定は tmp/messages.jsonl。ROOT からの相対で決める
@@ -545,14 +568,21 @@ fn warn_if_foreground(limit_sec: i64, from_default: bool) {
 /// 既定を本番にすると、テストのつもりで数えたものが本番の本数として返る。
 /// 「張っているから張らない」と判断して本番の待受けが 1 本も無いまま止まる。
 /// 書き込まないだけで、事故の形は同じ。
-fn basis_of(def: &Definition, a: &Args, base: &Option<client::Base>, room: &str) -> Result<commands::Basis, i32> {
+fn basis_of(
+	def: &Definition,
+	a: &Args,
+	base: &Option<client::Base>,
+	room: &str,
+	command: &str,
+) -> Result<commands::Basis, i32> {
 	let b = match base {
 		Some(b) => b,
 		None => {
 			eprintln!("どこを見ている待受けを数えるかが指定されていません。");
 			eprintln!();
 			eprintln!(
-				"  本番: waiters {w}<自分のID>{w} -p {} -r {}",
+				"  本番: {} {w}<自分のID>{w} -p {} -r {}",
+				command,
 				def.default_port,
 				def.default_room,
 				w = def.id_wrap
@@ -575,10 +605,23 @@ fn basis_of(def: &Definition, a: &Args, base: &Option<client::Base>, room: &str)
 		commands::describe_place(&b.display)
 	};
 
+	let rooms = waiters::rooms_from(Some(room), &def.default_room);
+
+	// サーバーに繋がないので、サーバー側の検証を通らない。ここで弾く。
+	// シングルクォートで囲んで渡すと、cmd は引用符ごと値に含めてしまい、
+	// そのまま割ると不正な文字を含むルーム名が素通りする (node 版と同じ扱い)
+	for r in &rooms {
+		if !id::is_valid(r) {
+			eprintln!("ルーム名に使えない文字が入っています: {}", r);
+			eprintln!("  使えるのは英数字・ハイフン・下線・ピリオドだけです。ピリオドは先頭と末尾には置けません。");
+			return Err(2);
+		}
+	}
+
 	Ok(commands::Basis {
 		label,
 		port: b.port as i64,
-		rooms: waiters::rooms_from(Some(room), &def.default_room),
+		rooms,
 		where_,
 	})
 }

@@ -125,9 +125,10 @@ export const OPTIONS = [
 	{ long: 'yes', short: null, arg: '', cmd: 'archive', desc: '確認を省く。標準入力が無い背面から実行するとき用' },
 	{ long: 'yes', short: null, arg: '', cmd: 'rename', desc: '確認を省く。標準入力が無い背面から実行するとき用' },
 	{ long: 'merge', short: null, arg: '', cmd: 'rename', desc: '新しい ID が既にあれば、そこへまとめる。付けなければ断る' },
+	{ long: 'yes', short: null, arg: '', cmd: 'shutdown', desc: 'サーバーを落とすことを承知した印。付けなければ落とさない' },
 	{ long: 'port', short: 'p', arg: '<ポート>', cmd: null, desc: 'localhost のポートだけを変える' },
 	{ long: 'url', short: 'u', arg: '<URL>', cmd: null, desc: '接続先。ホストごと変える (--port とは併用できない)' },
-	{ long: 'room', short: 'r', arg: '<id[,id]>', cmd: null, desc: 'ルームを変える。カンマ区切りは wait と waiters だけ' },
+	{ long: 'room', short: 'r', arg: '<id[,id]>', cmd: null, desc: 'ルームを変える。カンマ区切りは wait・waiters・unwait だけ' },
 	{ long: 'access-token', short: 'a', arg: '<値>', cmd: null, desc: 'サーバーから求められたときに渡す。ふだんは要らない' },
 	{ long: 'role', short: null, arg: 'ai|human', cmd: 'join', desc: '参加するときの区分' },
 	{ long: 'wait-hour', short: 'w', arg: '<時間>', cmd: 'wait', desc: '最大どれだけ待つか (時)。0 で上限なし' },
@@ -159,6 +160,7 @@ export const COMMANDS = [
 	{ name: 'recent', arg: '', desc: '直近の履歴を出す' },
 	{ name: 'who', arg: '', desc: '参加者と状態を出す' },
 	{ name: 'waiters', arg: ':<id>:', offline: true, desc: '待受けが何本走っているかを数える。サーバーには繋がない' },
+	{ name: 'unwait', arg: ':<id>:', offline: true, desc: '自分の待受けを止める。接続先とルームが -p・-r と完全に一致した分だけ。サーバーには繋がない' },
 	{ name: 'dump', arg: '', desc: '全ルームの発言を JSONL に書き出す (片付けたものも含む)' },
 	{ name: 'leave', arg: ':<id>:', desc: '離脱を知らせる' },
 	{ name: 'archive', arg: ':<id>: <種別> <対象>', desc: '片付ける。種別は message / connector / room。先に件数を出し、対象名の入力を求める (背面からは --yes)' },
@@ -176,7 +178,7 @@ export const COMMANDS = [
  * 人が打つ say や who がその間ずっと固まる。
  *
  *   wait          … どうせ待つのが仕事。長く粘ると張り直しの手間が減る
- *   restart / stop … 止めに行くコマンドが繋がらない＝すでに止まっている
+ *   restart / shutdown … 止めに行くコマンドが繋がらない＝すでに止まっている
  *   それ以外       … 人が打つ。返事が来ないと判断できない
  */
 export const RETRY_INTERVAL_SEC = 10;
@@ -184,7 +186,7 @@ export const RETRY_INTERVAL_SEC = 10;
 export const RETRY_TIMES = {
 	wait: 60, // 10 分
 	restart: 0,
-	stop: 0,
+	shutdown: 0,
 	default: 6, // 60 秒
 };
 
@@ -213,8 +215,20 @@ export const FLAGS = new Set(
 /** サーバーを操作するコマンド。管理者権限は要らない */
 export const ADMIN_COMMANDS = [
 	{ name: 'restart', arg: ':<id>:', desc: '落として起動し直させる (ソース修正の反映に使う)' },
-	{ name: 'stop', arg: ':<id>:', desc: '止める。起動し直すには winsw の start が要る' },
+	{ name: 'shutdown', arg: ':<id>: --yes', desc: 'サーバーを落とす。--yes が無ければ落とさない。起動し直すには winsw の start が要る' },
 ];
+
+/**
+ * 廃止したコマンド。渡されたら何も実行せず、案内を出して終了コード 2 で終わる。
+ *
+ * stop はサーバーを落とすコマンドだった。待受けを止めたつもりで打つ取り違えが起きたため、
+ * 名前を shutdown に変えた (i261115-01 ・ 決定 35-A)。stop と打つ人が探しているのは
+ * たいてい待受けを止める道具なので、案内は unwait だけを出す。サーバーを落とす案内は
+ * 出さない (落とすことを知っている人は、使い方を見て shutdown に気づける)。
+ */
+export const REMOVED_COMMANDS = new Map([
+	['stop', { hint: '待受けを止めるなら unwait を使ってください。例: unwait :<自分のID>: -p 8787 -r public' }],
+]);
 
 /**
  * 廃止したオプション。渡されたら黙って無視せずエラーで止める。

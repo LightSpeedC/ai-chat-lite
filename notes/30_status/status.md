@@ -21,7 +21,7 @@
 | 0 | 設計ドキュメント | ✅ **完了** | 設計・共通 CSS |
 | 1 | 骨組み | ✅ **完了** | `.gitignore`・`etc/c.bat`・`git init -b develop` |
 | 2 | サーバー本体 | ✅ **完了** | `config` / `time` / `log` / `store` / `presence` / `hub` / `server` |
-| 3 | CLI クライアント | ✅ **完了** | `join` / `wait` / `say` / `recent` / `who` / `dump` / `leave` / `restart` / `stop` |
+| 3 | CLI クライアント | ✅ **完了** | `join` / `wait` / `say` / `recent` / `who` / `dump` / `leave` / `restart` / `shutdown` / `waiters` / `unwait` |
 | 4 | ブラウザ UI | ✅ **完了** | SSE 受信・Markdown 描画・在席の色分け・遡り読み込み |
 | 5 | 起動ランチャー | ✅ **完了** | `tools/50_run/`・`tools/40_test/` |
 | 6 | サービス登録 | ✅ **完了** | 登録済みで稼働中。PC 起動時に自動で立ち上がる |

@@ -944,8 +944,8 @@ pub fn rename(client: &Client, me: &str, from: &str, to: &str, yes: bool, merge:
 
 /// 落とす。**再起動されるかどうかは終了コードで決まる。**
 ///
-///   `restart` … 終了コード 1。異常終了として扱われ、10 秒後に起動し直す
-///   `stop`    … 終了コード 0。正常終了として扱われ、止まったまま
+///   `restart`  … 終了コード 1。異常終了として扱われ、10 秒後に起動し直す
+///   `shutdown` … 終了コード 0。正常終了として扱われ、止まったまま (`--yes` が要る)
 ///
 /// サービスの再起動と違い管理者権限が要らないため、ソースを直したあとの反映に使える。
 pub fn exit_server(client: &Client, me: &str, exit_code: i64) -> Result<(), CallError> {
@@ -1025,6 +1025,148 @@ pub fn waiters_cmd(me: &str, basis: &Basis, default_room: &str) -> Result<(), St
 
 	print_waiters(&all, basis, me);
 	Ok(())
+}
+
+/// 走っている待受けを、表に出せる形で集める。自分自身は外す
+fn collect_found(default_room: &str) -> Result<Vec<waiters::Found>, String> {
+	let rows = waiters::list_processes()?;
+	let self_pid = std::process::id() as i64;
+	let picked = waiters::pick_waiters(&rows, &[self_pid]);
+
+	// 親の名前を引けるようにしておく。cmd 越しの node は aichat-node になる
+	let name_of: Vec<(i64, String)> = rows.iter().map(|p| (p.pid, p.name.clone())).collect();
+
+	Ok(picked
+		.iter()
+		.map(|(p, id)| waiters::Found {
+			pid: p.pid,
+			id: id.clone(),
+			via: waiters::via_of(
+				&p.name,
+				name_of.iter().find(|(pid, _)| *pid == p.ppid).map(|(_, n)| n.as_str()),
+			),
+			at: p.at.clone(),
+			target: waiters::target_of(&p.cmd, default_room),
+		})
+		.collect())
+}
+
+/// 自分の待受けを止める。**サーバーには繋がない。**戻り値は終了コード。
+///
+/// 止めるのは、自分の ID で、接続先とルームが `-p` ・ `-r` と完全に一致した分だけ
+/// (決定 37-A。選び方は `waiters::plan_unwait`)。止めたあとで数え直し、
+/// 止めたつもりで残っていることを見逃さない。**0 なのは、最初からいないときと、全部が止まったときだけ。**
+/// node 版 (`cmdUnwait`)と、表示も終了コードも同じにする。
+pub fn unwait_cmd(me: &str, basis: &Basis, default_room: &str) -> Result<i32, String> {
+	let plan = waiters::plan_unwait(&collect_found(default_room)?, me, basis.port, &basis.rooms);
+
+	// 子のプロセスまで止める。親だけを止めても、子は道連れにならない
+	struct Done {
+		h: waiters::Found,
+		killed: bool,
+		note: String,
+		result: &'static str,
+	}
+	let mut rows: Vec<Done> = plan
+		.targets
+		.iter()
+		.map(|h| {
+			let status = std::process::Command::new("taskkill")
+				.args(["/PID", &h.pid.to_string(), "/T", "/F"])
+				.stdout(std::process::Stdio::null())
+				.stderr(std::process::Stdio::null())
+				.status();
+			let code = status.as_ref().ok().and_then(|s| s.code());
+			let killed = code == Some(0);
+			// taskkill の文言は OS の言語で変わり、文字コードも合わないので、終了コードだけを出す
+			let note = if killed {
+				String::new()
+			} else {
+				format!("taskkill が失敗しました (終了コード {})", code.map(|c| c.to_string()).unwrap_or_else(|| "なし".to_string()))
+			};
+			Done { h: h.clone(), killed, note, result: "" }
+		})
+		.collect();
+
+	// 止めたあとで数え直す。強制終了が通っても、残っていることがある
+	if !rows.is_empty() {
+		std::thread::sleep(std::time::Duration::from_millis(300));
+		let alive: Vec<i64> = collect_found(default_room)?.iter().map(|h| h.pid).collect();
+		for row in rows.iter_mut() {
+			row.result = if !row.killed {
+				"止められなかった"
+			} else if alive.contains(&row.h.pid) {
+				"残っている"
+			} else {
+				"止めた"
+			};
+		}
+	}
+
+	println!("  {} の待受けを止めます (ルーム: {})", basis.label, basis.rooms.join(", "));
+	println!();
+
+	if plan.targets.is_empty() {
+		println!("  止める待受けは見つかりませんでした。");
+	}
+
+	let mut lines: Vec<(&waiters::Found, String)> = Vec::new();
+	for row in &rows {
+		let text = if row.note.is_empty() { row.result.to_string() } else { format!("{}: {}", row.result, row.note) };
+		lines.push((&row.h, text));
+	}
+	for (h, reason) in &plan.strays {
+		lines.push((h, format!("止めていない: {}", reason)));
+	}
+
+	if !lines.is_empty() {
+		let rooms_of = |h: &waiters::Found| h.target.rooms.join(", ");
+		let id_w = lines.iter().map(|(h, _)| width(&h.id)).chain(std::iter::once(width("ID"))).max().unwrap_or(2);
+		let via_w = lines.iter().map(|(h, _)| width(&h.via)).chain(std::iter::once(width("張り方"))).max().unwrap_or(6);
+		let room_w = lines
+			.iter()
+			.map(|(h, _)| width(&rooms_of(h)))
+			.chain(std::iter::once(width("ルーム")))
+			.max()
+			.unwrap_or(6);
+
+		println!(
+			"  {}  {}  {}  {}  {}  結果",
+			pad_end("ID", id_w),
+			pad_end("張り方", via_w),
+			pad_end("いつから", 8),
+			pad_end("ルーム", room_w),
+			pad_start("pid", 6)
+		);
+		for (h, text) in &lines {
+			let time = if h.at.len() > 11 { &h.at[11..] } else { "" };
+			println!(
+				"  {}  {}  {}  {}  {}  {}",
+				pad_end(&h.id, id_w),
+				pad_end(&h.via, via_w),
+				time,
+				pad_end(&rooms_of(h), room_w),
+				pad_start(&h.pid.to_string(), 6),
+				text
+			);
+		}
+	}
+
+	let count = |name: &str| rows.iter().filter(|r| r.result == name).count();
+	println!();
+	println!(
+		"  止めた {} 本 / 止められなかった {} 本 / 残っている {} 本 / 止めていない {} 本",
+		count("止めた"),
+		count("止められなかった"),
+		count("残っている"),
+		plan.strays.len()
+	);
+	if plan.others > 0 {
+		println!("  他に {} 本 (他の ID。触っていません)", plan.others);
+	}
+
+	let results: Vec<&str> = rows.iter().map(|r| r.result).collect();
+	Ok(waiters::unwait_exit_code(&results, plan.strays.len()))
 }
 
 /// 一覧を出す

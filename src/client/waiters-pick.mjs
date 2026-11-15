@@ -231,3 +231,57 @@ export function splitRedundant(mine, basis) {
 	}
 	return { keep, stop };
 }
+
+/**
+ * unwait で止める相手を選ぶ。
+ *
+ * 止めるのは、自分の ID で、接続先とルームが基準 (-p ・ -r)と完全に一致した待受けだけ。
+ * 「含む」では止めない。public,dev を見ている待受けを -r public で止めると、dev の
+ * 通知まで一緒に切れる (決定 37-A)。ルームは並びを見ず、集合で比べる。
+ *
+ * 自分の ID でも一致しなかった分は、止めずに理由を添えて返す。何も言わずに残すと、
+ * 「止めたつもりが残っている」ことに気づけない。他の ID の分は件数だけを数える
+ * (止めると、相手は原因不明の exit 255 で落ちる。i260901-07)。
+ *
+ * @typedef {{pid: number, id: string, port: number, target: string, rooms: string[]}} Found
+ * @param {Found[]} found pickWaiters の結果
+ * @param {string} me 自分の ID
+ * @param {{port: number, rooms: string[]}} basis
+ * @returns {{targets: Found[], strays: (Found & {reason: string})[], others: number}}
+ */
+export function planUnwait(found, me, basis) {
+	const wanted = new Set(basis.rooms);
+	const sameRooms = (rooms) => rooms.length === wanted.size && rooms.every((room) => wanted.has(room));
+
+	const targets = [];
+	const strays = [];
+	for (const h of found) {
+		if (h.id !== me) continue;
+		if (h.port !== basis.port) {
+			strays.push({ ...h, reason: `別の場所 (${h.target})` });
+		} else if (!sameRooms(h.rooms)) {
+			strays.push({ ...h, reason: `ルームが違う (${h.rooms.join(', ')})` });
+		} else {
+			targets.push(h);
+		}
+	}
+
+	return { targets, strays, others: found.filter((h) => h.id !== me).length };
+}
+
+/**
+ * unwait の終了コード。正常 (0) は 2 つだけ。それ以外は異常 (1)。
+ *
+ *   最初からいない … 止める待受けも、止めていない待受けも無い
+ *   止められた    … 止める待受けの全部が「止めた」で、止めていない待受けが無い
+ *
+ * 止められなかった・残っている・止めていない (接続先かルームが違う自分の待受け) が
+ * 1 本でもあれば 1。止めたつもりにさせない (利用者の指示)。
+ *
+ * @param {string[]} results 対象 1 本ごとの結果 (止めた / 止められなかった / 残っている)
+ * @param {number} strayCount 止めていない自分の待受けの本数
+ */
+export function unwaitExitCode(results, strayCount) {
+	if (strayCount > 0) return 1;
+	return results.every((r) => r === '止めた') ? 0 : 1;
+}
