@@ -220,8 +220,9 @@ pub fn wait(client: &Client, id: &str, room: &str, opts: &WaitOpts) -> Result<()
 		last = Some(result);
 	}
 
-	let positions = last.as_ref().map(describe_positions).unwrap_or_else(|| "0".to_string());
-	println!("新着なし ({}待機、現在位置 {})", label, positions);
+	// 位置の数は画面に出さない (i261117-02)。待機ログの「現在位置」には残す
+	let rooms_part = last.as_ref().map(describe_rooms).unwrap_or_default();
+	println!("新着なし ({}待機{})", label, rooms_part);
 	log.write("INFO", &format!("新着なし。上限まで待ち切って終わります ({})", label));
 	Ok(())
 }
@@ -618,11 +619,11 @@ pub fn join(client: &Client, id: &str, room: &str, role: &str) -> Result<(), Cal
 
 	let empty: Vec<Json> = Vec::new();
 	let connectors = result.get("connectors").and_then(|v| v.as_arr()).unwrap_or(&empty);
+	// 位置の数は画面に出さない (i261117-02)
 	println!(
-		"{} として {} に参加しました (現在位置 {})",
+		"{} として {} に参加しました",
 		id,
-		result.get("room_id").and_then(|v| v.as_str()).unwrap_or(room),
-		result.get("msg_seq").and_then(|v| v.as_i64()).unwrap_or(0)
+		result.get("room_id").and_then(|v| v.as_str()).unwrap_or(room)
 	);
 	println!("参加者 {} 人:", connectors.len());
 	for c in connectors {
@@ -696,6 +697,18 @@ pub fn describe_positions(result: &Json) -> String {
 		})
 		.collect::<Vec<_>>()
 		.join(" / ")
+}
+
+/// 新着なしの行に添える、待っているルームの名前。1 ルームなら空。
+/// 複数のときは「、ルーム a / b」を返し、どのルームを待って新着なしだったかを残す
+pub fn describe_rooms(result: &Json) -> String {
+	let empty: Vec<Json> = Vec::new();
+	let rooms = result.get("rooms").and_then(|v| v.as_arr()).unwrap_or(&empty);
+	if rooms.len() <= 1 {
+		return String::new();
+	}
+	let names: Vec<&str> = rooms.iter().map(|r| r.get("room_id").and_then(|v| v.as_str()).unwrap_or("")).collect();
+	format!("、ルーム {}", names.join(" / "))
 }
 
 /// 待受けの記録。
@@ -1534,6 +1547,21 @@ mod tests {
 		// 複数なら「ルーム 数」を並べる。1 つの数だとどのルームか分からない
 		let many = json::parse(r#"{"rooms":[{"room_id":"public","msg_seq":42},{"room_id":"ai-chat-lite","msg_seq":7}]}"#).unwrap();
 		assert_eq!(describe_positions(&many), "public 42 / ai-chat-lite 7");
+	}
+
+	#[test]
+	fn 新着なしの行に添えるルーム名() {
+		// 1 ルームなら空。名前は待受けの開始の行に出ている (i261117-02)
+		let one = json::parse(r#"{"msg_seq":42,"rooms":[{"room_id":"public","msg_seq":42}]}"#).unwrap();
+		assert_eq!(describe_rooms(&one), "");
+
+		// 複数なら、どのルームを待って新着なしだったかを残す。位置の数は出さない
+		let many = json::parse(r#"{"rooms":[{"room_id":"public","msg_seq":42},{"room_id":"ai-chat-lite","msg_seq":7}]}"#).unwrap();
+		assert_eq!(describe_rooms(&many), "、ルーム public / ai-chat-lite");
+
+		// 応答に rooms が無くても落ちない
+		let none = json::parse(r#"{}"#).unwrap();
+		assert_eq!(describe_rooms(&none), "");
 	}
 
 	#[test]

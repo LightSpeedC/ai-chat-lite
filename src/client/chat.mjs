@@ -31,6 +31,7 @@ import {
 	roomsArg,
 } from './waiters-pick.mjs';
 import { listProcesses } from './proc-list.mjs';
+import { describePositions, describeRooms } from './positions.mjs';
 
 /**
  * ai-chat-lite の CLI クライアント。
@@ -573,7 +574,7 @@ function printMessages(messages) {
 async function cmdJoin() {
 	const role = option('role', 'ai');
 	const result = await postJson('/api/join', { connector_id: CONNECTOR_ID, connector_role: role, room_id: ROOM });
-	console.log(`${CONNECTOR_ID} として ${result.room_id} に参加しました (現在位置 ${result.msg_seq})`);
+	console.log(`${CONNECTOR_ID} として ${result.room_id} に参加しました`);
 	console.log(`参加者 ${result.connectors.length} 人:`);
 	for (const u of result.connectors) {
 		console.log(`  ${STATUS_MARK[u.status]} ${u.connector_id} (${u.status_label})`);
@@ -833,7 +834,8 @@ async function cmdWait() {
 		}
 	}
 
-	console.log(`新着なし (${label}待機、現在位置 ${describePositions(last)})`);
+	// 位置の数は画面に出さない (i261117-02)。待機ログの「現在位置」には残す
+	console.log(`新着なし (${label}待機${describeRooms(last)})`);
 	writeWaitLog('INFO', `新着なし。上限まで待ち切って終わります (${label})`);
 }
 
@@ -849,18 +851,6 @@ async function ackPending(result) {
 		if (!hasPending) continue;
 		await postJson('/api/ack', { connector_id: CONNECTOR_ID, room_id: room.room_id, msg_seq: room.since });
 	}
-}
-
-/**
- * どこまで読んだかを 1 行で書く。
- *
- * 位置はルームごとに持っている。1 つだけなら数を、複数なら「ルーム 数」を並べる。
- * 複数のときに 1 つの数で出すと、どのルームの位置か分からない。
- */
-function describePositions(result) {
-	const rooms = result.rooms ?? [];
-	if (rooms.length <= 1) return String(result.msg_seq ?? rooms[0]?.msg_seq ?? 0);
-	return rooms.map((r) => `${r.room_id} ${r.msg_seq}`).join(' / ');
 }
 
 /**

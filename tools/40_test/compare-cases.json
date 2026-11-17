@@ -304,6 +304,28 @@
 		"args": [
 			"wait",
 			"{ID}",
+			"-r",
+			"public,sandbox-compare",
+			"--wait-sec",
+			"1"
+		],
+		"mask": true
+	},
+	{
+		"args": [
+			"wait",
+			"{ID}",
+			"-r",
+			"public,sandbox-compare",
+			"--wait-sec",
+			"1"
+		],
+		"mask": true
+	},
+	{
+		"args": [
+			"wait",
+			"{ID}",
 			"--wait-hour",
 			"1",
 			"--wait-min",

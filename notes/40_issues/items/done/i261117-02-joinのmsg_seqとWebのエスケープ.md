@@ -11,4 +11,6 @@ chat-review の指摘 P1: join の出力 (chat.mjs の 563・849-850 行付近) 
 
 ## やること
 - [済] P2: Web の msg_id と返信先の選択子をエスケープする (chat.js)
-- [未] P1: join と wait の出力の msg_seq (現在位置 N) をどうするか、利用者に確認する (影響: wait の出力・tests 4 本・Rust 版・CHAT-USAGE)
+- [済] P1: join と wait の出力の msg_seq (現在位置 N) をどうするか、利用者に確認する (影響: wait の出力・tests 4 本・Rust 版・CHAT-USAGE)
+- [済] S1(レビュー): 画面の試験を「位置の数を出さない」に改め、位置の整形は positions.mjs に出して、本物のサーバーの応答で確かめる試験を足した
+- [済] 後のレビュー (chat-review) の指摘 S1: Rust の describe_rooms の単体テストと、複数ルームの突き合わせ 2 通りを足した。P1: describeRooms の null の守りと tests/positions.test.mjs を足した

@@ -245,21 +245,50 @@ describe('複数のルームを 1 本で待つ', () => {
 	 * その継ぎ目に穴があった (現在位置 0 と出た)。両側を別々に確かめても
 	 * 継ぎ目は見えない。CLI を動かして初めて分かる。
 	 */
-	test('1 ルームなら現在位置は数だけ', async () => {
+	/*
+	 * 画面には位置の数を出さない (i261117-02・決定 d1)。msg_seq の裸の数は、
+	 * 昔の #N と同じ形で、--reply-to に写すと別の発言を指す取り違えが起きる。
+	 * 位置の整形は待機ログ用に残し (src/client/positions.mjs)、継ぎ目は下の 1 本が見る。
+	 */
+	test('1 ルームの新着なしに、位置の数を出さない', async () => {
 		const { stdout } = await chat(['wait', '--wait-sec', '1']);
 
-		assert.match(stdout, /新着なし \(1 秒待機、現在位置 \d+\)/);
+		assert.match(stdout, /新着なし \(1 秒待機\)/, `形が違う: [${stdout}]`);
+		assert.doesNotMatch(stdout, /現在位置/);
 	});
 
-	test('複数ルームなら現在位置をルームごとに出す', async () => {
+	test('複数ルームの新着なしは、待っているルーム名を出し、位置の数は出さない', async () => {
 		// sandbox-multi は初めて見るルームなので、まず案内を出して終わる 1 回を消費する
-		// (i260909-01)。位置の形を見たいのはその次の呼び出し
+		// (i260909-01)。見たいのはその次の呼び出し
 		await chat(['wait', '-r', 'public,sandbox-multi', '--wait-sec', '1']);
 
-		// 1 つの数で出すと、どのルームの位置か分からない
 		const { stdout } = await chat(['wait', '-r', 'public,sandbox-multi', '--wait-sec', '1']);
 
-		assert.match(stdout, /現在位置 public \d+ \/ sandbox-multi \d+/, `形が違う: [${stdout}]`);
+		assert.match(stdout, /新着なし \(1 秒待機、ルーム public \/ sandbox-multi\)/, `形が違う: [${stdout}]`);
+		assert.doesNotMatch(stdout, /現在位置/);
+	});
+
+	test('join の結果に、位置の数を出さない', async () => {
+		const { stdout } = await chat(['join']);
+
+		assert.match(stdout, /として public に参加しました\n/, `形が違う: [${stdout}]`);
+		assert.doesNotMatch(stdout, /現在位置/);
+	});
+
+	test('待機ログ用の位置は、サーバーの応答から 1 ルームは数、複数はルームごとに整形される', async () => {
+		// 待機ログは試験中は書かれない。位置の整形が応答の形を読めているか (以前は 0 と出た) は、
+		// 本物のサーバーの応答を直に渡して確かめる
+		const { describePositions } = await import('../src/client/positions.mjs');
+		const get = async (room) =>
+			(
+				await fetch(`${base}/api/poll?connector_id=test-pos&room_id=${room}&wait=0`, {
+					headers: { 'X-AiChat-Access-Token': TEST_ACCESS_TOKEN },
+				})
+			).json();
+
+		await get('public,sandbox-multi'); // 初めて見るルームの案内を消費する
+		assert.match(describePositions(await get('public')), /^\d+$/);
+		assert.match(describePositions(await get('public,sandbox-multi')), /^public \d+ \/ sandbox-multi \d+$/);
 	});
 
 	test('どちらのルームの新着でも返る', async () => {
