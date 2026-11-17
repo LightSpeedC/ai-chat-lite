@@ -454,7 +454,7 @@ footer a {
 
 <p class="backlink"><a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
 
-<p><strong>対象: ai-chat-lite ／ 入力: <code>src/server/store.mjs</code> ・ <code>server.mjs</code> ・ <code>src/scripts/20_migrate/</code> ・ <code>src/client/</code> ・ <code>src/cli-rs/</code> ・ <code>src/web/</code> ・ <code>CHAT-USAGE.html</code> ／ 出力: 同じファイル、新しい <code>src/server/msg-id.mjs</code> と版 8 の SQL、<code>tests/</code>、設計書。</strong></p>
+<p><strong>対象: ai-chat-lite ／ 入力: <code>src/server/store.mjs</code> ・ <code>server.mjs</code> ・ <code>src/scripts/20_migrate/</code> ・ <code>src/client/</code> ・ <code>src/cli-rs/</code> ・ <code>src/web/</code> ・ <code>CHAT-USAGE.html</code> ／ 出力: 同じファイル、新しい <code>src/server/msg-id.mjs</code> と版 8 ・ 9 の SQL、<code>tests/</code>、設計書。</strong></p>
 
 <p>課題 i261110-03 の移行計画。利用者の指示 (2026-11-17) で、番号の形を変える案 (38-B) を採った。<strong>暫定として、共通ルールに「発言番号はコードスパンで囲んで書く」を足し、周知した (2026-11-17。発言 2032)。この計画で恒久の形に置き換える。</strong>以前の決定 31-A (今は見送る) は、38-B で置き換えた。</p>
 
@@ -484,12 +484,14 @@ footer a {
 			<tr><td class="nowrap">40-A</td><td>文字 <code>l</code> の扱い</td><td><code>l</code> を使わない (35 進)</td></tr>
 			<tr><td class="nowrap">41-A</td><td>DB での持ち方</td><td><code>msg_seq</code> を残し、<code>msg_id</code> (TEXT ・ 一意) の列を足す。表示と入力だけを <code>msg_id</code> に変える</td></tr>
 			<tr><td class="nowrap">42-A</td><td>今までの番号 (1,673 件) の対応</td><td>全件に新しい番号を付ける。日付は <code>sent_at</code> の日 (JST)、日内の連番は <code>msg_seq</code> の順。入力では今までの <code>#2031</code> と <code>2031</code> も受けつづけ、表示には旧番号を出さない</td></tr>
+			<tr><td class="nowrap">44-A</td><td><code>msg_id</code> を <code>NOT NULL</code> にする方法</td><td>2 つの版に分ける。<code>ver_000008</code> で NULL 可の列を足して全件を埋め、<code>ver_000009</code> で表を作り直して <code>NOT NULL</code> ・ 形の <code>CHECK</code> ・ <code>UNIQUE</code> を付ける</td></tr>
+			<tr><td class="nowrap">45-A</td><td>番号の作り方</td><td>保存する列で持つ。生成列は、日ごとの連番に部分クエリが要り禁止のため、決めた形を変えてしまう</td></tr>
 			<tr><td class="nowrap">43-B</td><td>暫定の書き方 (完了)</td><td>コードスパンで囲む。共通ルールに反映し、周知した</td></tr>
 		</tbody>
 	</table>
 	</div>
 
-	<p>決定の記録は <code>notes/40_issues/decisions/</code> の i261110-03-d2〜d6。</p>
+	<p>決定の記録は <code>notes/40_issues/decisions/</code> の i261110-03-d2〜d8。</p>
 </section>
 
 <!-- ================= 02 ================= -->
@@ -551,24 +553,42 @@ footer a {
 <section class="ch04" id="ch04">
 	<h1>DB の変更</h1>
 
-	<p>新しい版 (<code>ver_000008</code>) を足す。当て済みの版は書き換えない。<strong>起動時に自動で当たり、版を上げる前の控えは <code>migrate.mjs</code> が自動で取る。</strong>下りは持たない (戻すときは控えから)。</p>
+	<p>新しい版を <strong>2 つ</strong> (<code>ver_000008</code> ・ <code>ver_000009</code>) 足す (44-A)。当て済みの版は書き換えない。<strong>起動時に順に自動で当たり、版を上げる前の控えは <code>migrate.mjs</code> が自動で取る。</strong>下りは持たない (戻すときは控えから)。</p>
+	<p><code>ver_000008</code> は列を足して全件を埋める。<code>ver_000009</code> は表を作り直して、<code>NOT NULL</code> ・ 形の <code>CHECK</code> ・ <code>UNIQUE</code> を付ける。<strong>2 つは続けて当たるので、本番に「番号の無い行」が見える状態は無い。</strong></p>
+
+	<h2>ver_000008 (列を足して全件を埋める)</h2>
 
 	<div class="tablewrap">
 	<table>
 		<thead><tr><th class="nowrap">順</th><th>内容</th><th>理由</th></tr></thead>
 		<tbody>
-			<tr><td class="num">1</td><td><code>messages</code> に <code>msg_id TEXT</code> を足す。<code>CHECK (msg_id IS NULL OR length(msg_id) BETWEEN 10 AND 32)</code></td><td>人に見せる番号。<code>msg_seq</code> は内部の並びと読み位置のために残す (41-A)</td></tr>
+			<tr><td class="num">1</td><td><code>messages</code> に <code>msg_id TEXT</code> を足す (NULL 可)</td><td>人に見せる番号。<code>msg_seq</code> は内部の並びと読み位置のために残す (41-A)。ここでは NULL 可。足したあとに埋めるため (<code>NOT NULL</code> は <code>ver_000009</code>)</td></tr>
 			<tr><td class="num">2</td><td>日ごとの連番の台帳 <code>message_day_counters</code> を作る (<code>message_day</code> = <code>yymmdd</code> が主キー、<code>last_count</code>)。<code>STRICT</code></td><td>行を数えて 1 を足すと、行が無くなったときに番号が重なる。台帳なら、増える一方で重ならない</td></tr>
 			<tr><td class="num">3</td><td>今ある全行に <code>msg_id</code> を振る。<code>ROW_NUMBER() OVER (PARTITION BY substr(sent_at, 1, 10) ORDER BY msg_seq)</code> を、35 字の並びから 2 桁に直す</td><td>42-A。<strong>SQL だけで書く</strong> (版の仕組みは <code>.sql</code> しか当てない)。今ある日の最多は 70 件なので 2 桁で足りる</td></tr>
 			<tr><td class="num">4</td><td>2 桁 (1,189 件) を超える日があれば、版ごと失敗させる。<code>CHECK (rn &lt;= 1189)</code> を付けた一時テーブルへ先に写して確かめる</td><td>黙って欠ける番号を作らない。超えた日が出たら、そのとき計画を見直す</td></tr>
 			<tr><td class="num">5</td><td><code>message_day_counters</code> に、日ごとの件数を入れる</td><td>起動後の最初の発言が、続きの番号から始まるように</td></tr>
-			<tr><td class="num">6</td><td>一意索引 <code>messages_ix_msg_id</code> (<code>msg_id</code>)</td><td>重なりを DB が止める。<code>UNIQUE</code> は <code>ALTER</code> では付けられないので、索引で付ける</td></tr>
+			<tr><td class="num">6</td><td>一意索引 <code>messages_ix_msg_id</code> (<code>msg_id</code>)</td><td>埋めたあとに張る。重なりを DB が止める (<code>ver_000009</code> で作り直すときも張り直す)</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<h2>ver_000009 (表を作り直して NOT NULL にする)</h2>
+	<p>44-A。<code>ALTER</code> では、あとから <code>NOT NULL</code> にも形の <code>CHECK</code> にも変えられない。<code>ver_000002</code> と同じく、新しい定義の別名の表を作り、写し、元を消して名前を変える (共通ルール「SQLite の大原則」の「変えられないものはテーブルを作り直す」)。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">順</th><th>内容</th><th>理由</th></tr></thead>
+		<tbody>
+			<tr><td class="num">1</td><td>新しい <code>messages</code> を、今の定義 (<code>sqlite_master</code> から取り出して写す。手で書き写さない) に <code>msg_id TEXT NOT NULL CHECK (…)</code> を足して別名で作る。<code>STRICT</code> にできるかは、今の列の型で確かめる</td><td>形の <code>CHECK</code> は、<code>m</code> ・ 数字 6 桁 ・ <code>-</code> ・ 2 字以上の形に限る</td></tr>
+			<tr><td class="num">2</td><td>全行を <code>msg_seq</code> の値のまま写す。<code>sqlite_sequence</code> も写す</td><td>読み位置 (<code>cursors</code>) と片付けの印 (<code>archived_seq</code>) が <code>msg_seq</code> を指す。値が変わると壊れる</td></tr>
+			<tr><td class="num">3</td><td>元を消して名前を変え、索引 (<code>messages_ix_msg_id</code> を含む全部) を張り直す</td><td>索引は表と一緒に消える</td></tr>
+			<tr><td class="num">4</td><td>行数と <code>msg_seq</code> の最大値が写す前と同じかを確かめ、違えば版ごと失敗させる</td><td>黙って欠けた表を残さない</td></tr>
 		</tbody>
 	</table>
 	</div>
 
 	<div class="callout callout-important">
-		<p><strong>NOT NULL にできない。</strong>既存の表に列を足すとき、<code>NOT NULL</code> は既定値が要る。表を作り直せば付けられるが、1,673 行の写しと索引の張り直しが要り、リスクのほうが大きい。<strong>代わりに、発言を足す処理 (<code>store.mjs</code> の <code>insertMessage</code> の 1 か所) が必ず <code>msg_id</code> を書き、「<code>msg_id</code> が NULL の行が 0 件」を試験で守る。</strong></p>
+		<p><strong>DB が番号の無い行を弾く。</strong>発言を足す処理が <code>msg_id</code> を書き忘れると、書き込みが失敗する。試験の「NULL が 0 件」に頼らなくてよい。<strong>作り直しの危険は、(1) 控えを版の前に自動で取る、(2) 同じ版の中で行数を確かめる、(3) 控えのコピーで先に試験する、で抑える。</strong>写す行は 1,673 件で小さい。</p>
 	</div>
 
 	<h2>発言を足す処理</h2>
@@ -576,7 +596,8 @@ footer a {
 
 	<h2>版を当てたあとの確かめ (試験。本番の控えのコピーで流す)</h2>
 	<ul>
-		<li>行数が変わらない。<code>msg_id</code> が NULL の行が 0 件。<code>msg_id</code> が一意</li>
+		<li>行数と <code>msg_seq</code> の最大値が変わらない。<code>msg_id</code> が NULL の行が 0 件。<code>msg_id</code> が一意。<code>msg_id</code> を書かない書き込みが失敗する (<code>NOT NULL</code>)。形に合わない <code>msg_id</code> が弾かれる (<code>CHECK</code>)</li>
+		<li><code>cursors</code> ・ <code>archived_seq</code> ・ <code>reply_to_msg_seq</code> の値が、版の前後で同じ</li>
 		<li>日ごとに、<code>msg_seq</code> の順と <code>msg_id</code> の順が同じ</li>
 		<li>台帳の <code>last_count</code> が、日ごとの件数と一致する</li>
 		<li>起動後の最初の発言が、その日の続きの番号になる。日が変われば <code>01</code> から始まる</li>
@@ -615,12 +636,12 @@ footer a {
 	<table>
 		<thead><tr><th class="nowrap">順</th><th>すること</th><th class="nowrap">指示</th></tr></thead>
 		<tbody>
-			<tr><td class="num">1</td><td>落ちる試験を先に書き、❌Red を確かめる (nn の総当たり ・ 版 8 の移行を控えのコピーで ・ API ・ CLI の出力と入力 ・ 突き合わせ)</td><td class="nowrap">承認後</td></tr>
-			<tr><td class="num">2</td><td><code>msg-id.mjs</code> ・ <code>ver_000008</code> ・ <code>store.mjs</code> ・ <code>server.mjs</code> を作る</td><td class="nowrap">承認後</td></tr>
+			<tr><td class="num">1</td><td>落ちる試験を先に書き、❌Red を確かめる (nn の総当たり ・ 版 8 ・ 9 の移行を控えのコピーで ・ API ・ CLI の出力と入力 ・ 突き合わせ)</td><td class="nowrap">承認後</td></tr>
+			<tr><td class="num">2</td><td><code>msg-id.mjs</code> ・ <code>ver_000008</code> ・ <code>ver_000009</code> ・ <code>store.mjs</code> ・ <code>server.mjs</code> を作る</td><td class="nowrap">承認後</td></tr>
 			<tr><td class="num">3</td><td>CLI を node 版 ・ Rust 版に入れ、突き合わせる。Web を直す</td><td class="nowrap">承認後</td></tr>
 			<tr><td class="num">4</td><td>資料を直す。全件の試験 (<code>psh</code> 経由の node と、bun) を流す</td><td class="nowrap">承認後</td></tr>
 			<tr><td class="num">5</td><td><strong>周知の予告案を出す</strong> (表示が変わる日と、出力の <code>#番号</code> を読んでいる道具の申告のお願い)</td><td class="nowrap">「送って」</td></tr>
-			<tr><td class="num">6</td><td>サーバーを起動し直す (版 8 が当たる。控えは自動)。確かめ: 本番の <code>dump</code> で、<code>msg_id</code> が NULL の行が 0 件、日ごとの順が同じ</td><td class="nowrap">「起動し直して」</td></tr>
+			<tr><td class="num">6</td><td>サーバーを起動し直す (版 8 ・ 9 が当たる。控えは自動)。確かめ: 本番の <code>dump</code> で、<code>msg_id</code> が NULL の行が 0 件、日ごとの順が同じ</td><td class="nowrap">「起動し直して」</td></tr>
 			<tr><td class="num">7</td><td>Rust 版を作り直し、既定の <code>aichat.exe</code> へ写す。写した瞬間から、全プロジェクトの出力が新しい形になる</td><td class="nowrap">「写して」</td></tr>
 			<tr><td class="num">8</td><td>共通ルールの差し替え案 (暫定の行 → <code>msg_id</code> の書き方) を差分で出し、周知案を続けて出す</td><td class="nowrap">「反映して」「送って」</td></tr>
 			<tr><td class="num">9</td><td>ai-agent-tools へ <code>issue --refs</code> の依頼を出す。課題 i261110-03 を、依頼元の確認が取れたら済にする</td><td class="nowrap">「送って」</td></tr>
@@ -640,7 +661,7 @@ footer a {
 			<tr><td><strong>全セッションの出力が一斉に変わる</strong> (既定の exe を写した瞬間)</td><td>写す前に周知する (手順 5)。写しは指示を待つ。サーバーが先に新しくなっているので、写す前の古い CLI も動く</td></tr>
 			<tr><td>出力の <code>#番号</code> を正規表現で読んでいる道具が、読めなくなる</td><td>周知で申告を求める。他プロジェクトの中身は、こちらから見ない (ai-agent-tools への依頼は、<code>issue --refs</code> だけ)</td></tr>
 			<tr><td><code>msg_seq</code> と <code>msg_id</code> の取り違え</td><td>入力の判定は形で決める (<code>m</code> + 6 桁 + <code>-</code> + nn なら <code>msg_id</code>、数字だけなら <code>msg_seq</code>)。試験で、両方と、どちらでもない値を確かめる</td></tr>
-			<tr><td>本番の DB を変える</td><td>版を上げる前の控えは自動。控えのコピーで、版 8 を先に流して確かめる。<code>-wal</code> ・ <code>-shm</code> は 3 つ一組で扱い、元の置き場を増やさない</td></tr>
+			<tr><td>本番の DB を変える</td><td>版を上げる前の控えは自動。控えのコピーで、版 8 ・ 9 を先に流して確かめる (9 は表を作り直すので、行数と <code>msg_seq</code> の最大値を前後で比べる)。<code>-wal</code> ・ <code>-shm</code> は 3 つ一組で扱い、元の置き場を増やさない</td></tr>
 			<tr><td>日をまたぐ時刻 (JST 0 時)</td><td>日付は <code>sent_at</code> の日で決める。台帳の日と、行の日が食い違わないよう、同じ値から作る</td></tr>
 			<tr><td>1 日が 1,189 件を超える</td><td>4 桁に自動で伸びる (<code>z000</code>〜)。今の最多は 70 件。版 8 の移行だけは、超えると失敗する (手順 4 の確かめ)</td></tr>
 			<tr><td>今までの発言の本文にある <code>#番号</code></td><td>書き換えない (履歴は残す)。入力で受けるので、引用された旧番号を貼っても通る</td></tr>
