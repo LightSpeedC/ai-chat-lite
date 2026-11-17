@@ -310,6 +310,25 @@ describe('発言 1 件を片付ける', () => {
 	});
 });
 
+describe('発言の片付けは msg_id でも指せる (i261110-03)', () => {
+	test('msg_id でも msg_seq でも片付けられる', () => {
+		const a = say('sandbox-byid', 'test-byid', 'msg_id で片付ける');
+		const b = say('sandbox-byid', 'test-byid', 'msg_seq で片付ける');
+
+		store.archive({ kind: 'message', id: a.msg_id, byConnectorId: 'test-byid', description: 'x' });
+		store.archive({ kind: 'message', id: b.msg_seq, byConnectorId: 'test-byid', description: 'y' });
+
+		assert.equal(store.getSince('sandbox-byid', 0).length, 0);
+		assert.equal(store.previewArchive('message', a.msg_id).messages, 0, '片付け済みは数えない');
+	});
+
+	test('片付ける前の数え上げも msg_id で行える', () => {
+		const a = say('sandbox-byid2', 'test-byid', '数える');
+		assert.equal(store.previewArchive('message', a.msg_id).messages, 1);
+		assert.equal(store.previewArchive('message', 'm000101-01').messages, 0);
+	});
+});
+
 describe('戻す', () => {
 	test('同じ番号のものがまとめて戻る', () => {
 		const m1 = say('sandbox-back', 'test-connector1', '戻る 1');

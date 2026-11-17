@@ -105,8 +105,8 @@ describe('room_id は sandbox- と test- の両方が目印になる (i260907-04
 		{
 			const db = new DatabaseSync(dbPath);
 			try {
-				db.prepare('INSERT INTO messages (room_id, sent_at, from_connector_id, msg_kind, msg_body) VALUES (?, ?, ?, ?, ?)')
-					.run('test-room-i260907-04', '2026/09/22 00:00:00.000', 'human', 'say', '本文');
+				db.prepare('INSERT INTO messages (room_id, sent_at, from_connector_id, msg_kind, msg_body, msg_id) VALUES (?, ?, ?, ?, ?, ?)')
+					.run('test-room-i260907-04', '2026/09/22 00:00:00.000', 'human', 'say', '本文', 'm260922-01');
 			} finally {
 				db.close();
 			}
@@ -151,8 +151,8 @@ describe('片付けの記録も消す', () => {
 				db.prepare('INSERT INTO archives (archived_at, archived_connector_id, archive_kind, archive_id, description) VALUES (?, ?, ?, ?, ?)')
 					.run('2026/09/12 00:00:00.000', 'human', 'connector', 'test-purge-me', 'テストの参加者を片付けた');
 				const seq = Number(db.prepare('SELECT MAX(archived_seq) AS n FROM archives').get().n);
-				db.prepare('INSERT INTO messages (room_id, sent_at, from_connector_id, msg_kind, msg_body, ref_archived_seq) VALUES (?, ?, ?, ?, ?, ?)')
-					.run('public', '2026/09/12 00:00:01.000', 'human', 'archive', 'test-purge-me を片付けた', seq);
+				db.prepare('INSERT INTO messages (room_id, sent_at, from_connector_id, msg_kind, msg_body, ref_archived_seq, msg_id) VALUES (?, ?, ?, ?, ?, ?, ?)')
+					.run('public', '2026/09/12 00:00:01.000', 'human', 'archive', 'test-purge-me を片付けた', seq, 'm260912-01');
 				db.exec('COMMIT');
 			} finally {
 				db.close();

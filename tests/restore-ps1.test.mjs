@@ -79,8 +79,8 @@ async function makeMarkedDb(dbPath, bodyMark) {
 	const db = new DatabaseSync(dbPath);
 	try {
 		db.prepare(
-			`INSERT INTO messages (room_id, sent_at, from_connector_id, msg_kind, msg_body)
-			 VALUES ('public', ?, 'test-fixture', 'say', ?)`
+			`INSERT INTO messages (room_id, sent_at, from_connector_id, msg_kind, msg_body, msg_id)
+			 VALUES ('public', ?, 'test-fixture', 'say', ?, 'm261117-01')`
 		).run(nowJst(), bodyMark);
 	} finally {
 		db.close();
