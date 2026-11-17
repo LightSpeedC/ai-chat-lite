@@ -82,7 +82,7 @@ function replyQuote(m) {
 	// 指す先の行が無いとき (まだ採番されていない番号など) は、渡された msg_seq をそのまま出す
 	const ref = m.reply_to_msg_id ?? String(m.reply_to_msg_seq);
 	const parent = m.reply_to_msg_id
-		? el.log.querySelector(`.msg[data-msg-id="${m.reply_to_msg_id}"] .body`)
+		? el.log.querySelector(`.msg[data-msg-id="${CSS.escape(m.reply_to_msg_id)}"] .body`)
 		: null;
 	if (!parent) return `<div class="reply-to">↳ ${escapeText(ref)}</div>`;
 
@@ -123,7 +123,7 @@ function messageElement(m) {
 		 * 画面から読み取れず、日時が無いといつの出来事か分からない。
 		 */
 		wrap.innerHTML =
-			`<div class="meta">${escapeText(m.sent_at)} ・ <span class="seq">${m.msg_id}</span></div>` +
+			`<div class="meta">${escapeText(m.sent_at)} ・ <span class="seq">${escapeText(m.msg_id)}</span></div>` +
 			`<div class="body">${renderBody(m.msg_body)}</div>`;
 
 		/*
@@ -172,7 +172,7 @@ function messageElement(m) {
 
 	wrap.innerHTML =
 		`<div class="meta">${mark}<span class="who">${escapeText(m.from_connector_id)}</span>${to}` +
-		` ・ ${escapeText(m.sent_at)} ・ <span class="seq">${m.msg_id}</span></div>` +
+		` ・ ${escapeText(m.sent_at)} ・ <span class="seq">${escapeText(m.msg_id)}</span></div>` +
 		reply +
 		`<div class="body">${renderBody(m.msg_body)}</div>`;
 	return wrap;
