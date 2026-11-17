@@ -309,23 +309,37 @@ function optionalFlexibleId(name) {
 	process.exit(2);
 }
 
-/**
- * --reply-to の値を読む。渡されなければ null。
- *
- * 先頭の # は落とす。出力には #474 と出るので、画面から写した人が
- * そのまま貼っても通るようにする。# は表示のためのもので、値の一部ではない。
- */
-function replyToMsgSeq() {
-	const raw = option('reply-to');
-	if (raw === null) return null;
+/** 発言番号 msg_id の形 (m + yymmdd + - + nn)。作り方は src/server/msg-id.mjs */
+const MSG_ID_RE = /^m\d{6}-[0-9a-km-z]{2,}$/;
 
-	const value = raw.replace(/^#/, '');
-	if (!/^\d+$/.test(value) || Number(value) < 1) {
-		console.error(`--reply-to には 1 以上の数を渡してください: ${raw}`);
-		console.error('  番号は出力の先頭に #474 の形で出ています。');
+/**
+ * 発言の指し方を読む。msg_id (m261117-0c) か、今までの msg_seq (#2031 と 2031)。
+ * 先頭の # は落とす。今までの出力に #2031 と出ていたので、貼られても通るようにする。
+ * どちらでもなければ null。
+ * @returns {{msg_id: string} | {msg_seq: number} | null}
+ */
+function parseMsgRef(raw) {
+	const value = String(raw).replace(/^#/, '');
+	if (MSG_ID_RE.test(value)) return { msg_id: value };
+	if (/^\d+$/.test(value) && Number(value) >= 1) return { msg_seq: Number(value) };
+	return null;
+}
+
+/**
+ * --reply-to の値を読む。渡されなければ空のオブジェクト。
+ * 返すのは API にそのまま足す項目 (reply_to_msg_id か reply_to_msg_seq)。
+ */
+function replyToFields() {
+	const raw = option('reply-to');
+	if (raw === null) return {};
+
+	const ref = parseMsgRef(raw);
+	if (!ref) {
+		console.error(`--reply-to には発言番号を渡してください: ${raw}`);
+		console.error('  番号は出力の見出しに m261117-0c の形で出ています。');
 		process.exit(2);
 	}
-	return Number(value);
+	return ref.msg_id ? { reply_to_msg_id: ref.msg_id } : { reply_to_msg_seq: ref.msg_seq };
 }
 
 const ROOM = option('room', DEFAULT_ROOM);
@@ -504,9 +518,9 @@ const postJson = (path, body) =>
 /**
  * 発言を 1 行にする。
  *
- * 先頭に #<msg_seq> を 6 桁右詰めで出す。これが無いと、受け取った発言に
- * 返信しようにも指す先を書けない。# を付けるのは、付けないと
- * 「474 2026/09/04」と数が 2 つ並び、境目を読み手が判断することになるため。
+ * 見出しに msg_id (m261117-0c) を出す。これが無いと、受け取った発言に
+ * 返信しようにも指す先を書けない。# は付けない (#1234 は GitHub の issue 番号に
+ * 自動でリンクされ、誤読されるため。i261110-03)。m で始まるので、日付との境目も明らか。
  *
  * 仕組みからの発言 (join / leave / archive / notice)にも番号を出す。
  * 種別で出し分けると、読み手が「番号が無い行は何か」を考えることになる。
@@ -520,15 +534,17 @@ const SEPARATOR = '────────';
  * 頭にルームを出すのは、1 本の待受けが複数のルームを見られるようになったため。
  * 1 つしか見ていなくても出す。出し分けると、読み手が「無い行は何か」を考えることになる。
  *
- * 番号 (#msg_seq)が要るのは、受け取った発言へ返信するときに指す先を書くためである。
+ * 番号 (msg_id)が要るのは、受け取った発言へ返信するときに指す先を書くためである。
  * 仕組みからの発言 (join / leave / archive / notice)にも同じ形で出す。
  */
 function formatMessage(m) {
-	const head = `${SEPARATOR} [${m.room_id}] #${m.msg_seq} ${m.sent_at}`;
+	const head = `${SEPARATOR} [${m.room_id}] ${m.msg_id} ${m.sent_at}`;
 	if (m.msg_kind !== 'say') return `${head}\n${m.msg_body}`;
 
 	const to = m.to_connector_id ? ` @${m.to_connector_id}` : '';
-	const reply = m.reply_to_msg_seq ? ` ↳#${m.reply_to_msg_seq}` : '';
+	// 指す先の行が無いとき (まだ採番されていない番号など) は、渡された msg_seq をそのまま出す
+	const replyRef = m.reply_to_msg_id ?? m.reply_to_msg_seq;
+	const reply = replyRef ? ` ↳${replyRef}` : '';
 	return `${head} ${m.from_connector_id}${to}${reply}\n${m.msg_body}`;
 }
 
@@ -554,7 +570,7 @@ async function cmdJoin() {
 async function cmdSay() {
 	const body = positional();
 	if (!body) {
-		console.error(`本文を指定してください: say ${ID_WRAP}<自分のID>${ID_WRAP} "本文" [--to ${ID_WRAP}<相手>${ID_WRAP}] [--reply-to <msg_seq>]`);
+		console.error(`本文を指定してください: say ${ID_WRAP}<自分のID>${ID_WRAP} "本文" [--to ${ID_WRAP}<相手>${ID_WRAP}] [--reply-to <発言番号>]`);
 		// 書き忘れは使い方の誤りなので 2。ここだけ 1 を返していて C# 版と食い違っていた
 		process.exit(2);
 	}
@@ -562,10 +578,10 @@ async function cmdSay() {
 		from_connector_id: CONNECTOR_ID,
 		room_id: ROOM,
 		to_connector_id: optionalWrappedId('to'),
-		reply_to_msg_seq: replyToMsgSeq(),
+		...replyToFields(),
 		msg_body: body,
 	});
-	console.log(`送信しました (${message.msg_seq})`);
+	console.log(`送信しました (${message.msg_id})`);
 }
 
 /*
@@ -1517,7 +1533,18 @@ async function cmdArchive() {
 	 * 参加者を片付けるときだけ、対象も参加者の ID なのでコロンで囲む。
 	 * 発言は番号、ルームはルーム ID なので囲まない。囲みの対象は参加者の ID だけ。
 	 */
-	const id = kind === 'connector' ? unwrapId(rawId, 'archive connector の対象') : rawId;
+	let id = kind === 'connector' ? unwrapId(rawId, 'archive connector の対象') : rawId;
+
+	// 発言は msg_id (m261117-0c) か、今までの番号 (#2031 と 2031)。# は落として、形で確かめる
+	if (kind === 'message') {
+		const ref = parseMsgRef(rawId);
+		if (!ref) {
+			console.error(`archive message の対象には発言番号を渡してください: ${rawId}`);
+			console.error('  番号は出力の見出しに m261117-0c の形で出ています。');
+			process.exit(2);
+		}
+		id = ref.msg_id ?? String(ref.msg_seq);
+	}
 
 	/*
 	 * 既定のルームはサーバー側でも弾くが、ここでも先に弾く。

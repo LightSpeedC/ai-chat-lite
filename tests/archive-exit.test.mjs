@@ -110,9 +110,9 @@ async function makeMessage(runner, text) {
 		null
 	);
 	assert.equal(res.finished, true, `say が終わらなかった: ${res.out}`);
-	const m = res.out.match(/\((\d+)\)/);
+	const m = res.out.match(/\((m\d{6}-[0-9a-km-z]{2,})\)/);
 	assert.ok(m, `送った番号が読み取れない: ${res.out}`);
-	return Number(m[1]);
+	return m[1];
 }
 
 /**

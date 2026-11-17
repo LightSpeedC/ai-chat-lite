@@ -136,7 +136,7 @@ export const OPTIONS = [
 	{ long: 'wait-sec', short: null, arg: '<秒>', cmd: 'wait', desc: '同じ意味を秒で。確認用' },
 	{ long: 'with-joins', short: null, arg: '', cmd: 'wait', desc: '参加・離脱でも起こす。既定では起こさない' },
 	{ long: 'to', short: null, arg: ':<id>:', cmd: 'say', desc: '名指しの相手。ID はコロンで囲む' },
-	{ long: 'reply-to', short: null, arg: '<msg_seq>', cmd: 'say', desc: 'どの発言への返答か。番号は出力の # を見る' },
+	{ long: 'reply-to', short: null, arg: '<発言番号>', cmd: 'say', desc: 'どの発言への返答か。番号は出力の見出しの m261117-0c の形 (今までの #2031 と 2031 も受ける)' },
 	{ long: 'n', short: 'n', arg: '<件数>', cmd: 'recent', desc: '直近の履歴を何件出すか' },
 	{ long: 'since', short: null, arg: '<日時>', cmd: 'recent', desc: 'この日時以降。書式は --help を参照' },
 	{ long: 'since-day', short: null, arg: '<N>', cmd: 'recent', desc: 'N 日前以降 (--since / --since-hour とは併用不可)' },

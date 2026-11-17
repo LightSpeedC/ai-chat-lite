@@ -78,27 +78,31 @@ const liveArchives = new Map();
  * 片付けられた発言や、まだ読み込んでいない古い発言を指すことがあるためで、
  * そこで問い合わせると 1 件ごとに往復が増える。
  */
-function replyQuote(seq) {
-	const parent = el.log.querySelector(`.msg[data-msg-seq="${seq}"] .body`);
-	if (!parent) return `<div class="reply-to">↳ #${seq}</div>`;
+function replyQuote(m) {
+	// 指す先の行が無いとき (まだ採番されていない番号など) は、渡された msg_seq をそのまま出す
+	const ref = m.reply_to_msg_id ?? String(m.reply_to_msg_seq);
+	const parent = m.reply_to_msg_id
+		? el.log.querySelector(`.msg[data-msg-id="${m.reply_to_msg_id}"] .body`)
+		: null;
+	if (!parent) return `<div class="reply-to">↳ ${escapeText(ref)}</div>`;
 
 	// 引用は 1 行に切る。長い本文をそのまま重ねると読みづらい
 	const text = parent.textContent.replace(/\s+/g, ' ').trim();
 	const short = text.length > 60 ? `${text.slice(0, 60)}…` : text;
-	return `<div class="reply-to">↳ #${seq} ${escapeText(short)}</div>`;
+	return `<div class="reply-to">↳ ${escapeText(ref)} ${escapeText(short)}</div>`;
 }
 
 /**
- * 返信先の入力を数にする。空なら null。
+ * 返信先の入力を API に足す項目にする。空や読めない値は空のオブジェクト。
  *
- * 先頭の # は落とす。画面には #474 と出るので、そのまま写して貼れるようにする。
- * 数でなければ null にする (送信そのものは止めない)。
+ * msg_id (m261117-0c) か、今までの番号 (#2031 と 2031)。先頭の # は落とす。
+ * 読めない値でも送信そのものは止めない。
  */
-function replyToValue() {
+function replyToFields() {
 	const raw = el.replyTo.value.trim().replace(/^#/, '');
-	if (!/^\d+$/.test(raw)) return null;
-	const n = Number(raw);
-	return n >= 1 ? n : null;
+	if (/^m\d{6}-[0-9a-km-z]{2,}$/.test(raw)) return { reply_to_msg_id: raw };
+	if (/^\d+$/.test(raw) && Number(raw) >= 1) return { reply_to_msg_seq: Number(raw) };
+	return {};
 }
 
 function messageElement(m) {
@@ -106,6 +110,7 @@ function messageElement(m) {
 
 	// 返信元を引くための目印。replyQuote がこれで探す
 	wrap.dataset.msgSeq = String(m.msg_seq);
+	wrap.dataset.msgId = m.msg_id;
 
 	if (m.msg_kind !== 'say') {
 		wrap.className = 'msg system';
@@ -115,7 +120,7 @@ function messageElement(m) {
 		 * 画面から読み取れず、日時が無いといつの出来事か分からない。
 		 */
 		wrap.innerHTML =
-			`<div class="meta">${escapeText(m.sent_at)} ・ <span class="seq">#${m.msg_seq}</span></div>` +
+			`<div class="meta">${escapeText(m.sent_at)} ・ <span class="seq">${m.msg_id}</span></div>` +
 			`<div class="body">${renderBody(m.msg_body)}</div>`;
 
 		/*
@@ -160,11 +165,11 @@ function messageElement(m) {
 	 * サーバーに問い合わせず、持っている範囲だけで出す。無ければ番号だけ出す。
 	 * 存在を強いると、返信が付いた発言を片付けられなくなるため。
 	 */
-	const reply = m.reply_to_msg_seq ? replyQuote(m.reply_to_msg_seq) : '';
+	const reply = m.reply_to_msg_seq ? replyQuote(m) : '';
 
 	wrap.innerHTML =
 		`<div class="meta">${mark}<span class="who">${escapeText(m.from_connector_id)}</span>${to}` +
-		` ・ ${escapeText(m.sent_at)} ・ <span class="seq">#${m.msg_seq}</span></div>` +
+		` ・ ${escapeText(m.sent_at)} ・ <span class="seq">${m.msg_id}</span></div>` +
 		reply +
 		`<div class="body">${renderBody(m.msg_body)}</div>`;
 	return wrap;
@@ -550,7 +555,7 @@ el.form.addEventListener('submit', async (e) => {
 				from_connector_id: connectorId,
 				room_id: room,
 				to_connector_id: el.to.value.trim() || null,
-				reply_to_msg_seq: replyToValue(),
+				...replyToFields(),
 				msg_body: body,
 			}),
 		});
