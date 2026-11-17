@@ -299,8 +299,8 @@ const SEPARATOR: &str = "────────";
 /// 「誰が離脱したか」は本文に入っている。
 pub fn format_message(m: &Json) -> String {
 	let get = |key: &str| m.get(key).and_then(|v| v.as_str()).unwrap_or("");
-	let seq = m.get("msg_seq").and_then(|v| v.as_i64()).unwrap_or(0);
-	let head = format!("{} [{}] #{} {}", SEPARATOR, get("room_id"), seq, get("sent_at"));
+	// 見出しの番号は msg_id (m261117-0c)。# は付けない (#1234 は GitHub の issue 番号に誤読される)
+	let head = format!("{} [{}] {} {}", SEPARATOR, get("room_id"), get("msg_id"), get("sent_at"));
 
 	if get("msg_kind") != "say" {
 		return format!("{}\n{}", head, get("msg_body"));
@@ -310,8 +310,15 @@ pub fn format_message(m: &Json) -> String {
 		Some(id) if !id.is_empty() => format!(" @{}", id),
 		_ => String::new(),
 	};
-	let reply = match m.get("reply_to_msg_seq").and_then(|v| v.as_i64()) {
-		Some(n) if n > 0 => format!(" ↳#{}", n),
+	// 指す先の行が無いとき (まだ採番されていない番号など) は、渡された msg_seq をそのまま出す
+		let reply_ref = m
+			.get("reply_to_msg_id")
+			.and_then(|v| v.as_str())
+			.filter(|s| !s.is_empty())
+			.map(|s| s.to_string())
+			.or_else(|| m.get("reply_to_msg_seq").and_then(|v| v.as_i64()).filter(|n| *n > 0).map(|n| n.to_string()));
+		let reply = match reply_ref {
+		Some(r) => format!(" ↳{}", r),
 		_ => String::new(),
 	};
 	format!("{} {}{}{}\n{}", head, get("from_connector_id"), to, reply, get("msg_body"))
@@ -526,6 +533,39 @@ pub fn archives(client: &Client) -> Result<(), CallError> {
 	Ok(())
 }
 
+/// 発言の指し方。msg_id (m261117-0c) か、今までの msg_seq (#2031 と 2031)
+#[derive(Debug, PartialEq)]
+pub enum MsgRef {
+	Id(String),
+	Seq(i64),
+}
+
+/// msg_id の形か (m + 日付 6 桁 + - + nn。nn は 2 字以上で、l を除く数字と小文字)。
+/// node 版の `MSG_ID_RE` と同じ。作り方は src/server/msg-id.mjs
+pub fn is_msg_id(s: &str) -> bool {
+	let b = s.as_bytes();
+	b.len() >= 10
+		&& b[0] == b'm'
+		&& b[1..7].iter().all(|c| c.is_ascii_digit())
+		&& b[7] == b'-'
+		&& b[8..].iter().all(|c| c.is_ascii_digit() || (c.is_ascii_lowercase() && *c != b'l'))
+}
+
+/// 発言の指し方を読む。先頭の # は落とす。どちらでもなければ None
+pub fn parse_msg_ref(raw: &str) -> Option<MsgRef> {
+	let value = raw.strip_prefix('#').unwrap_or(raw);
+	if is_msg_id(value) {
+		return Some(MsgRef::Id(value.to_string()));
+	}
+	if !value.is_empty() && value.bytes().all(|b| b.is_ascii_digit()) {
+		let n = value.parse::<i64>().unwrap_or(0);
+		if n >= 1 {
+			return Some(MsgRef::Seq(n));
+		}
+	}
+	None
+}
+
 /// 投稿する
 pub fn say(
 	client: &Client,
@@ -533,7 +573,7 @@ pub fn say(
 	room: &str,
 	body: &str,
 	to: Option<&str>,
-	reply_to: Option<i64>,
+	reply_to: Option<MsgRef>,
 ) -> Result<(), CallError> {
 	let mut fields = vec![
 		("from_connector_id".to_string(), Json::Str(from.to_string())),
@@ -545,20 +585,18 @@ pub fn say(
 				None => Json::Null,
 			},
 		),
-		(
-			"reply_to_msg_seq".to_string(),
-			match reply_to {
-				Some(n) => Json::Num(n as f64),
-				None => Json::Null,
-			},
-		),
 	];
+	match reply_to {
+		Some(MsgRef::Id(id)) => fields.push(("reply_to_msg_id".to_string(), Json::Str(id))),
+		Some(MsgRef::Seq(n)) => fields.push(("reply_to_msg_seq".to_string(), Json::Num(n as f64))),
+		None => {}
+	}
 	fields.push(("msg_body".to_string(), Json::Str(body.to_string())));
 
 	let message = client.call("POST", "/api/say", Some(&Json::Obj(fields).to_string()), None)?;
 	println!(
 		"送信しました ({})",
-		message.get("msg_seq").and_then(|v| v.as_i64()).unwrap_or(0)
+		message.get("msg_id").and_then(|v| v.as_str()).unwrap_or("")
 	);
 	Ok(())
 }
@@ -1365,26 +1403,53 @@ mod tests {
 
 	#[test]
 	fn 発言は差出人つきで整える() {
-		let m = msg(r#"{"room_id":"public","msg_seq":12,"sent_at":"2026/09/13 10:00:00.000","msg_kind":"say","from_connector_id":"me","msg_body":"本文"}"#);
+		let m = msg(r#"{"room_id":"public","msg_id":"m260913-0c","msg_seq":12,"sent_at":"2026/09/13 10:00:00.000","msg_kind":"say","from_connector_id":"me","msg_body":"本文"}"#);
 		assert_eq!(
 			format_message(&m),
-			"──────── [public] #12 2026/09/13 10:00:00.000 me\n本文"
+			"──────── [public] m260913-0c 2026/09/13 10:00:00.000 me\n本文"
 		);
 	}
 
 	#[test]
 	fn 名指しと返信の印を足す() {
-		let m = msg(r#"{"room_id":"public","msg_seq":12,"sent_at":"2026/09/13 10:00:00.000","msg_kind":"say","from_connector_id":"me","to_connector_id":"you","reply_to_msg_seq":5,"msg_body":"本文"}"#);
-		assert!(format_message(&m).contains("me @you ↳#5"), "{}", format_message(&m));
+		let m = msg(r#"{"room_id":"public","msg_id":"m260913-0c","msg_seq":12,"sent_at":"2026/09/13 10:00:00.000","msg_kind":"say","from_connector_id":"me","to_connector_id":"you","reply_to_msg_seq":5,"reply_to_msg_id":"m260913-05","msg_body":"本文"}"#);
+		assert!(format_message(&m).contains("me @you ↳m260913-05"), "{}", format_message(&m));
+	}
+
+	#[test]
+	fn 返信先の行が無いときは渡された番号をそのまま出す() {
+		let m = msg(r#"{"room_id":"public","msg_id":"m260913-0c","msg_seq":12,"sent_at":"2026/09/13 10:00:00.000","msg_kind":"say","from_connector_id":"me","reply_to_msg_seq":999999,"reply_to_msg_id":null,"msg_body":"本文"}"#);
+		let out = format_message(&m);
+		assert!(out.contains("me ↳999999"), "{}", out);
+		assert!(!out.contains('#'), "# が残っている: {}", out);
+	}
+
+	#[test]
+	fn 発言番号の形を判定する() {
+		assert!(is_msg_id("m261117-0c"));
+		assert!(is_msg_id("m261117-z000"));
+		for bad in ["", "2031", "#2031", "m26-0c", "m261117-0", "m261117-0l", "M261117-0c", "m261117-0C", "m261117-0c "] {
+			assert!(!is_msg_id(bad), "{}", bad);
+		}
+	}
+
+	#[test]
+	fn 発言の指し方は_msg_id_と今までの番号を受ける() {
+		assert_eq!(parse_msg_ref("m261117-0c"), Some(MsgRef::Id("m261117-0c".to_string())));
+		assert_eq!(parse_msg_ref("#2031"), Some(MsgRef::Seq(2031)));
+		assert_eq!(parse_msg_ref("2031"), Some(MsgRef::Seq(2031)));
+		for bad in ["", "0", "-1", "あ", "m26-0c", "#"] {
+			assert_eq!(parse_msg_ref(bad), None, "{}", bad);
+		}
 	}
 
 	#[test]
 	fn 参加や離脱は差出人を出さない() {
 		// 本文だけで意味が通る。「誰が離脱したか」は本文に入っている
-		let m = msg(r#"{"room_id":"public","msg_seq":3,"sent_at":"2026/09/13 10:00:00.000","msg_kind":"join","from_connector_id":"me","msg_body":"me が参加しました"}"#);
+		let m = msg(r#"{"room_id":"public","msg_id":"m260913-03","msg_seq":3,"sent_at":"2026/09/13 10:00:00.000","msg_kind":"join","from_connector_id":"me","msg_body":"me が参加しました"}"#);
 		assert_eq!(
 			format_message(&m),
-			"──────── [public] #3 2026/09/13 10:00:00.000\nme が参加しました"
+			"──────── [public] m260913-03 2026/09/13 10:00:00.000\nme が参加しました"
 		);
 	}
 
