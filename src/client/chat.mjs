@@ -316,7 +316,7 @@ const MSG_ID_RE = /^m\d{6}-[0-9a-km-z]{2,}$/;
  * 発言の指し方を読む。msg_id (m261117-0c) か、今までの msg_seq (#2031 と 2031)。
  * 先頭の # は落とす。今までの出力に #2031 と出ていたので、貼られても通るようにする。
  * どちらでもなければ null。
- * @returns {{msg_id: string} | {msg_seq: number} | null}
+ * @returns {{msg_id?: string, msg_seq?: number} | null}
  */
 function parseMsgRef(raw) {
 	const value = String(raw).replace(/^#/, '');
