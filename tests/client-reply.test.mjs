@@ -183,6 +183,23 @@ describe('誤りは断る', () => {
 		assert.equal(code, 1);
 	});
 
+	test('nn の桁数が合わない番号は、サーバーへ送らず終了コード 2 で止まる (i261117-01)', async () => {
+		// サーバーの parseMsgId は、桁数が「先頭の z の数 × 2 + 2」に合うかまで見る。クライアントも同じに見る
+		for (const bad of ['m261117-000', 'm261117-z00', 'm261117-zz00', 'm261117-z0000']) {
+			const { code, stderr } = await failing(['say', wrapId('test-a'), '本文', '--reply-to', bad]);
+
+			assert.equal(code, 2, bad);
+			assert.match(stderr, /発言番号/);
+		}
+	});
+
+	test('桁があふれる数字は、精度が落ちた数を送らず終了コード 2 で止まる (i261117-01)', async () => {
+		for (const bad of ['99999999999999999999', '9007199254740993']) {
+			const { code } = await failing(['say', wrapId('test-a'), '本文', '--reply-to', bad]);
+			assert.equal(code, 2, `${bad} が断られていない`);
+		}
+	});
+
 	test('0 以下は断る', async () => {
 		for (const bad of ['0', '-1']) {
 			const { code } = await failing(['say', wrapId('test-a'), '本文', '--reply-to', bad]);

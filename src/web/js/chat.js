@@ -100,8 +100,11 @@ function replyQuote(m) {
  */
 function replyToFields() {
 	const raw = el.replyTo.value.trim().replace(/^#/, '');
-	if (/^m\d{6}-[0-9a-km-z]{2,}$/.test(raw)) return { reply_to_msg_id: raw };
-	if (/^\d+$/.test(raw) && Number(raw) >= 1) return { reply_to_msg_seq: Number(raw) };
+	// nn の桁数は、先頭の z の数 k に対して 2 + 2k 桁 (サーバーの nnToCount と同じ見方)
+	if (/^m\d{6}-[0-9a-km-z]{2,}$/.test(raw) && /^z*/.exec(raw.slice(8))[0].length * 2 + 2 === raw.length - 8) {
+		return { reply_to_msg_id: raw };
+	}
+	if (/^\d+$/.test(raw) && Number.isSafeInteger(Number(raw)) && Number(raw) >= 1) return { reply_to_msg_seq: Number(raw) };
 	return {};
 }
 

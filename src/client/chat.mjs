@@ -320,9 +320,22 @@ const MSG_ID_RE = /^m\d{6}-[0-9a-km-z]{2,}$/;
  */
 function parseMsgRef(raw) {
 	const value = String(raw).replace(/^#/, '');
-	if (MSG_ID_RE.test(value)) return { msg_id: value };
-	if (/^\d+$/.test(value) && Number(value) >= 1) return { msg_seq: Number(value) };
+	if (MSG_ID_RE.test(value) && nnLengthFits(value.slice(8))) return { msg_id: value };
+	// 精度が落ちる大きさの数は送らない (Rust 版は i64 に収まらない数を止める)
+	if (/^\d+$/.test(value) && Number.isSafeInteger(Number(value)) && Number(value) >= 1) {
+		return { msg_seq: Number(value) };
+	}
 	return null;
+}
+
+/**
+ * nn の桁数が、先頭の z の数 k に合うか (全体で 2 + 2k 桁、z を除いた残りが 2 + k 桁)。
+ * サーバーの nnToCount (src/server/msg-id.mjs) と同じ見方。
+ */
+function nnLengthFits(nn) {
+	let k = 0;
+	while (nn[k] === 'z') k++;
+	return nn.length === 2 + 2 * k;
 }
 
 /**

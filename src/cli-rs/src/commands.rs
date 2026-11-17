@@ -540,15 +540,21 @@ pub enum MsgRef {
 	Seq(i64),
 }
 
-/// msg_id の形か (m + 日付 6 桁 + - + nn。nn は 2 字以上で、l を除く数字と小文字)。
-/// node 版の `MSG_ID_RE` と同じ。作り方は src/server/msg-id.mjs
+/// msg_id の形か (m + 日付 6 桁 + - + nn。nn は l を除く数字と小文字)。
+/// nn の桁数は、先頭の z の数 k に対して 2 + 2k 桁。node 版の `parseMsgRef` と同じ。作り方は src/server/msg-id.mjs
 pub fn is_msg_id(s: &str) -> bool {
 	let b = s.as_bytes();
-	b.len() >= 10
+	if !(b.len() >= 10
 		&& b[0] == b'm'
 		&& b[1..7].iter().all(|c| c.is_ascii_digit())
 		&& b[7] == b'-'
-		&& b[8..].iter().all(|c| c.is_ascii_digit() || (c.is_ascii_lowercase() && *c != b'l'))
+		&& b[8..].iter().all(|c| c.is_ascii_digit() || (c.is_ascii_lowercase() && *c != b'l')))
+	{
+		return false;
+	}
+	let nn = &b[8..];
+	let k = nn.iter().take_while(|c| **c == b'z').count();
+	nn.len() == 2 + 2 * k
 }
 
 /// 発言の指し方を読む。先頭の # は落とす。どちらでもなければ None
@@ -1428,6 +1434,11 @@ mod tests {
 	fn 発言番号の形を判定する() {
 		assert!(is_msg_id("m261117-0c"));
 		assert!(is_msg_id("m261117-z000"));
+		assert!(is_msg_id("m261117-zz0000"));
+		// nn の桁数が、先頭の z の数に合わない (i261117-01)
+		for bad in ["m261117-000", "m261117-z00", "m261117-zz00", "m261117-z0000"] {
+			assert!(!is_msg_id(bad), "{}", bad);
+		}
 		for bad in ["", "2031", "#2031", "m26-0c", "m261117-0", "m261117-0l", "M261117-0c", "m261117-0C", "m261117-0c "] {
 			assert!(!is_msg_id(bad), "{}", bad);
 		}
