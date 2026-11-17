@@ -1,0 +1,661 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="format-detection" content="telephone=no">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ai-chat-lite: 発言番号を m{yymmdd}-nn に変える (移行計画)</title>
+<style>
+/* 共通のスタイル。docs\css\style.css と同じ内容を持たせている */
+@charset "UTF-8";
+
+/* ===================================================================
+   ai-chat-lite 共通スタイル
+   章ごとのアクセント色 (.ch01〜)は各 HTML 側で定義する
+   =================================================================== */
+
+:root {
+	/* 章に依存しない共通色 */
+	--navy1: #12224d;
+	--navy2: #2f5fbf;
+	--ink: #1c2330;
+	--ink-soft: #4a5568;
+	--line: #d9dfe8;
+	--code-bg: #f4f6fa;
+	--link: #1a4fa0;
+
+	/* 章クラスの外に置いた要素が色を失わないための既定値 */
+	--accent: #12224d;
+	--accent2: #2f5fbf;
+	--soft: #f2f5fb;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: #fdfdfe;
+	color: var(--ink, #1c2330);
+	font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+	font-size: 15.5px;
+	line-height: 1.85;
+}
+
+a {
+	color: var(--link, #1a4fa0);
+}
+
+/* ---------- タイトルバー ---------- */
+
+.titlebar {
+	background: #12224d;
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 34px 30px 30px;
+}
+
+.titlebar .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+}
+
+.titlebar h1 {
+	font-size: 1.85em;
+	margin: 0 0 8px;
+	color: #fff;
+}
+
+.titlebar .lead {
+	margin: 0;
+	color: #d7e2f7;
+	font-size: 0.95em;
+}
+
+.titlebar .date {
+	margin: 10px 0 0;
+	color: #b9caea;
+	font-size: 0.88em;
+}
+
+.titlebar a {
+	color: #cfe0ff;
+}
+
+.titlebar code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+/* ---------- 本文の器 ---------- */
+
+.wrap {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding: 0 30px;
+}
+
+section {
+	background: #f2f5fb;
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 10px;
+	padding: 4px 26px 26px;
+	margin: 34px 0;
+}
+
+/* ---------- 見出し ---------- */
+
+section h1 {
+	background: #12224d;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-size: 1.4em;
+	padding: 14px 20px;
+	margin: 26px 0 20px;
+	border-radius: 8px;
+	box-shadow: 0 3px 10px rgba(20, 34, 70, 0.22);
+}
+
+section h1 code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+h2 {
+	background: #f2f5fb;
+	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
+	color: var(--accent, #12224d);
+	font-size: 1.16em;
+	padding: 6px 12px;
+	margin: 30px 0 12px;
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 6px 6px 0;
+}
+
+h3 {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	font-size: 1.02em;
+	display: inline-block;
+	padding-bottom: 3px;
+	margin: 20px 0 8px;
+	border-bottom: 2px dotted var(--accent2, #2f5fbf);
+}
+
+/* ---------- 表 ---------- */
+
+.tablewrap {
+	overflow-x: auto;
+	margin: 14px 0;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 5px rgba(20, 34, 70, 0.10);
+}
+
+th {
+	background: #12224d;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	text-align: left;
+	padding: 9px 12px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+th code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+td {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	padding: 9px 12px;
+	border-top: 1px solid var(--line, #d9dfe8);
+	vertical-align: top;
+}
+
+tr:nth-child(even) td {
+	background: #fafbfe;
+	color: var(--ink, #1c2330);
+}
+
+td.num,
+th.num {
+	text-align: right;
+}
+
+td.nowrap,
+th.nowrap {
+	white-space: nowrap;
+}
+
+/* ---------- コード ---------- */
+
+code {
+	background: #f4f6fa;
+	background: var(--code-bg, #f4f6fa);
+	color: #17335f;
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 4px;
+	padding: 1px 5px;
+	font-family: "Consolas", "Cascadia Mono", monospace;
+	font-size: 0.92em;
+}
+
+pre {
+	background: #f2f5fb;
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 5px solid var(--accent2, #2f5fbf);
+	border-radius: 0 8px 8px 0;
+	padding: 13px 16px;
+	overflow-x: auto;
+	line-height: 1.65;
+}
+
+pre code {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	border: none;
+	padding: 0;
+	font-size: 0.92em;
+}
+
+/* ---------- バッジ ---------- */
+
+.badge {
+	display: inline-block;
+	padding: 1px 9px;
+	margin-right: 6px;
+	border-radius: 11px;
+	background: #5a6472;
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+	font-size: 0.84em;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.badge.b-ok {
+	background: #1d7a3c;
+	background: linear-gradient(100deg, #1d7a3c, #45b56c);
+	color: #fff;
+}
+
+.badge.b-ng {
+	background: #a51f22;
+	background: linear-gradient(100deg, #a51f22, #e05a5c);
+	color: #fff;
+}
+
+.badge.b-warn {
+	background: #b8620a;
+	background: linear-gradient(100deg, #b8620a, #f0a548);
+	color: #fff;
+}
+
+.badge.b-none {
+	background: #5a6472;
+	background: linear-gradient(100deg, #5a6472, #97a1ae);
+	color: #fff;
+}
+
+/* ---------- callout ---------- */
+
+.callout {
+	background: #f2f5fb;
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 8px 8px 0;
+	padding: 12px 18px;
+	margin: 16px 0;
+}
+
+.callout strong {
+	color: var(--accent, #12224d);
+	background: transparent;
+}
+
+.callout p {
+	margin: 6px 0;
+}
+
+/* ---------- 目次 ---------- */
+
+.toc ol {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 0;
+	margin: 12px 0 4px;
+}
+
+.toc ul a {
+	color: var(--link, #1a4fa0);
+	background: transparent;
+}
+
+.toc ol li {
+	counter-increment: tocnum;
+	margin: 0;
+}
+
+.toc ol a {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: normal;
+	width: 310px;
+	max-width: 100%;
+	padding: 7px 13px;
+	border-radius: 8px;
+	background: #12224d;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+	line-height: 1.45;
+}
+
+.toc ol a::before {
+	content: counter(tocnum) ". ";
+	font-weight: 700;
+}
+
+/* ---------- 資料リンク・戻るリンク ---------- */
+
+.navlinks {
+	margin: 20px 0 0;
+}
+
+/*
+ * 幅は文字数で決まる (固定幅にしない)。
+ * 色は親の章アクセントを継ぐ。章クラスの外では :root の既定＝紺になるため、
+ * 「README へ戻る」は自然に紺のまま、資料へのリンクは資料の色になる。
+ */
+/* README へ戻るリンク。紺のバッジに ⌂ だけを置き、上下で同じ形にする */
+.backlink {
+	margin: 18px 0 0;
+}
+
+a.homelink {
+	display: inline-block;
+	padding: 4px 14px;
+	margin: 0 8px 6px 0;
+	border-radius: 6px;
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	background: #12224d;
+	background: linear-gradient(100deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	line-height: 1;
+	text-decoration: none;
+}
+
+a.homelink svg {
+	width: 16px;
+	height: 16px;
+	vertical-align: -3px;
+}
+
+a.doclink {
+	display: inline-block;
+	padding: 3px 12px;
+	margin: 0 8px 6px 0;
+	border-radius: 6px;
+	background: #12224d;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	font-size: 0.9em;
+	text-decoration: none;
+}
+
+/* ---------- SVG図 ---------- */
+
+.fig {
+	margin: 18px 0;
+	text-align: center;
+}
+
+.fig svg {
+	max-width: 100%;
+	height: auto;
+}
+
+.fig figcaption {
+	color: var(--ink-soft, #4a5568);
+	background: transparent;
+	font-size: 0.88em;
+	margin-top: 6px;
+}
+
+/* ---------- フッター ---------- */
+
+footer {
+	background: #12224d;
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 18px 30px 0;
+	margin-top: 40px;
+}
+
+footer .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding-bottom: 18px;
+}
+
+footer a {
+	color: #cfe0ff;
+}
+</style>
+<style>
+/* この資料だけのもの: 章のアクセント色 (7章 / 色相 280→0 を 46.7 刻み)と目次の採番 */
+.ch01 { --accent: hsl(280, 78%, 25%); --accent2: hsl(280, 58%, 55%); --soft: hsl(280, 28%, 95%); }
+.ch02 { --accent: hsl(233.3, 78%, 25%); --accent2: hsl(233.3, 58%, 55%); --soft: hsl(233.3, 28%, 95%); }
+.ch03 { --accent: hsl(186.7, 78%, 25%); --accent2: hsl(186.7, 58%, 55%); --soft: hsl(186.7, 28%, 95%); }
+.ch04 { --accent: hsl(140, 78%, 25%); --accent2: hsl(140, 58%, 55%); --soft: hsl(140, 28%, 95%); }
+.ch05 { --accent: hsl(93.3, 78%, 25%); --accent2: hsl(93.3, 58%, 55%); --soft: hsl(93.3, 28%, 95%); }
+.ch06 { --accent: hsl(46.7, 78%, 25%); --accent2: hsl(46.7, 58%, 55%); --soft: hsl(46.7, 28%, 95%); }
+.ch07 { --accent: hsl(0, 78%, 25%); --accent2: hsl(0, 58%, 55%); --soft: hsl(0, 28%, 95%); }
+.toc ol { counter-reset: tocnum; }
+</style>
+</head>
+<body>
+﻿
+<div class="titlebar">
+	<div class="inner">
+		<h1>ai-chat-lite: 発言番号を <code>m{yymmdd}-nn</code> に変える (移行計画)</h1>
+		<p class="lead"><code>#9999</code> の形が GitHub の issue・PR の番号と同じため、自動でリンクにされ、全セッションで取り違えられている。番号の書き方を、日付と桁の伸びる連番に変える</p>
+		<p class="date">📅 作成: 2026-11-17 / 更新: 2026-11-17</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p class="backlink"><a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
+
+<p><strong>対象: ai-chat-lite ／ 入力: <code>src/server/store.mjs</code> ・ <code>server.mjs</code> ・ <code>src/scripts/20_migrate/</code> ・ <code>src/client/</code> ・ <code>src/cli-rs/</code> ・ <code>src/web/</code> ・ <code>CHAT-USAGE.html</code> ／ 出力: 同じファイル、新しい <code>src/server/msg-id.mjs</code> と版 8 の SQL、<code>tests/</code>、設計書。</strong></p>
+
+<p>課題 i261110-03 の移行計画。利用者の指示 (2026-11-17) で、番号の形を変える案 (38-B) を採った。<strong>暫定として、共通ルールに「発言番号はコードスパンで囲んで書く」を足し、周知した (2026-11-17。発言 2032)。この計画で恒久の形に置き換える。</strong>以前の決定 31-A (今は見送る) は、38-B で置き換えた。</p>
+
+<section class="toc md-skip">
+	<h2>目次</h2>
+	<ol>
+		<li class="ch01"><a href="#ch01">決めたこと</a></li>
+		<li class="ch02"><a href="#ch02">今ある動き</a></li>
+		<li class="ch03"><a href="#ch03">番号の仕様</a></li>
+		<li class="ch04"><a href="#ch04">DB の変更</a></li>
+		<li class="ch05"><a href="#ch05">API ・ CLI ・ Web ・ 資料の変更</a></li>
+		<li class="ch06"><a href="#ch06">切り替えの手順</a></li>
+		<li class="ch07"><a href="#ch07">リスクと確かめ</a></li>
+	</ol>
+</section>
+
+<!-- ================= 01 ================= -->
+<section class="ch01" id="ch01">
+	<h1>決めたこと</h1>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">番号</th><th>問い</th><th>選んだ案</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap">38-B</td><td>発言番号の書き方を変える形</td><td><code>m{yymmdd}-nn</code> (36 進の連番) に変える。DB ・ API ・ CLI 2 本 ・ Web ・ 資料のすべてが対象</td></tr>
+			<tr><td class="nowrap">39-A</td><td>日内の連番 (nn) の形</td><td>先頭の <code>z</code> を「長くなる」印にする別案</td></tr>
+			<tr><td class="nowrap">40-A</td><td>文字 <code>l</code> の扱い</td><td><code>l</code> を使わない (35 進)</td></tr>
+			<tr><td class="nowrap">41-A</td><td>DB での持ち方</td><td><code>msg_seq</code> を残し、<code>msg_id</code> (TEXT ・ 一意) の列を足す。表示と入力だけを <code>msg_id</code> に変える</td></tr>
+			<tr><td class="nowrap">42-A</td><td>今までの番号 (1,673 件) の対応</td><td>全件に新しい番号を付ける。日付は <code>sent_at</code> の日 (JST)、日内の連番は <code>msg_seq</code> の順。入力では今までの <code>#2031</code> と <code>2031</code> も受けつづけ、表示には旧番号を出さない</td></tr>
+			<tr><td class="nowrap">43-B</td><td>暫定の書き方 (完了)</td><td>コードスパンで囲む。共通ルールに反映し、周知した</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>決定の記録は <code>notes/40_issues/decisions/</code> の i261110-03-d2〜d6。</p>
+</section>
+
+<!-- ================= 02 ================= -->
+<section class="ch02" id="ch02">
+	<h1>今ある動き</h1>
+
+	<p>今ある動き (変えない。変えたときは試験が落ちる): 下の表のとおり。<strong>変えるのは、人に見せる番号の書き方と、入力の受け方だけで、並び ・ 読み位置 ・ 片付けの動きは変えない。</strong></p>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th>場所</th><th>今ある動き</th><th>守る試験</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap">CLI の出力</td><td>見出しが <code>──────── [ルーム] #番号 日時 差出人 @宛先 ↳#返信先</code>。番号は <code>msg_seq</code></td><td><code>tests/client-reply.test.mjs</code> ・ Rust の <code>commands.rs</code> の単体テスト</td></tr>
+			<tr><td class="nowrap"><code>--reply-to</code></td><td>先頭の <code>#</code> を落とし、数でなければ終了コード 2。画面から写した番号をそのまま貼れる</td><td><code>tests/client-reply.test.mjs</code> ・ <code>tools/40_test/compare-cases.json</code></td></tr>
+			<tr><td class="nowrap"><code>archive message</code></td><td>対象は <code>msg_seq</code> (<code>store.mjs</code> 410 行)</td><td><code>tests/archive.test.mjs</code></td></tr>
+			<tr><td class="nowrap">API</td><td>メッセージの JSON は <code>msg_seq</code> ・ <code>reply_to_msg_seq</code>。<code>ack</code> ・ 読み位置は <code>msg_seq</code></td><td><code>tests/server.test.mjs</code></td></tr>
+			<tr><td class="nowrap">読み位置</td><td><code>cursors.msg_seq</code> ・ <code>acked_seq</code>。待受けの取りこぼしを防ぐ土台</td><td><code>tests/wait-kinds.test.mjs</code> ・ <code>tests/store.test.mjs</code></td></tr>
+			<tr><td class="nowrap">片付け ・ 戻す</td><td>行は消さず <code>archived_seq</code> の印を付け外しする (<code>store.mjs</code> 474 行 ・ 518 行)</td><td><code>tests/archive.test.mjs</code></td></tr>
+			<tr><td class="nowrap">Web</td><td>画面に <code>#番号</code> を出し、返信欄は先頭の <code>#</code> を落とす (<code>chat.js</code>)</td><td>手で確かめる (画面の試験は無い)</td></tr>
+		</tbody>
+	</table>
+	</div>
+</section>
+
+<!-- ================= 03 ================= -->
+<section class="ch03" id="ch03">
+	<h1>番号の仕様</h1>
+
+	<p><strong>形: <code>m</code> + <code>yymmdd</code> + <code>-</code> + nn。</strong>日付は <code>sent_at</code> の日 (JST)。nn はその日の何件目かで、1 件目から振る。例: <code>m261117-01</code>。</p>
+
+	<h2>nn に使う 35 字 (40-A)</h2>
+	<p><code>0123456789abcdefghijkmnopqrstuvwxyz</code> (数字 10 字と、<code>l</code> を除く小文字 25 字)。順は、文字コードの順と同じ (数字が先、英字が後)。大文字は使わない。</p>
+
+	<h2>桁の伸び方 (39-A)</h2>
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">桁</th><th>形</th><th class="num">範囲の件数</th><th>最初と最後</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap">2</td><td>先頭が <code>z</code> 以外の文字 + 任意の 1 字</td><td class="num">1,189</td><td><code>01</code> 〜 <code>yz</code></td></tr>
+			<tr><td class="nowrap">4</td><td><code>z</code> + 先頭が <code>z</code> 以外の 3 字</td><td class="num">41,650</td><td><code>z000</code> 〜 <code>zyzz</code></td></tr>
+			<tr><td class="nowrap">6</td><td><code>zz</code> + 先頭が <code>z</code> 以外の 4 字</td><td class="num">1,457,750</td><td><code>zz0000</code> 〜</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<p>以降も同じ。「先頭の <code>z</code> の数 + 2」が桁数になる。例: 1 → <code>01</code> ・ 10 → <code>0a</code> ・ 20 → <code>0k</code> ・ 21 → <code>0m</code> (<code>l</code> を飛ばす) ・ 34 → <code>0z</code> ・ 35 → <code>10</code> ・ 70 → <code>20</code> ・ 1,189 → <code>yz</code> ・ 1,190 → <code>z000</code>。</p>
+
+	<p><strong>測った値 (2026-11-17、<code>dump</code>)</strong>: 発言 1,673 件 ・ 76 日分。最多は 2026/09/07 の 70 件で、2 桁に収まる。<code>msg_seq</code> の順に並べて <code>sent_at</code> が戻る箇所は 0 件なので、日付と日内の順を <code>msg_seq</code> から作り直せる。</p>
+
+	<h2>守る性質 (総当たりの試験)</h2>
+	<ul>
+		<li><strong>一意</strong>: 1 から 200 万まで、番号が重ならない</li>
+		<li><strong>順序</strong>: 文字列の順が、件数の順と同じ。長さが混ざっても崩れない (<code>yz</code> &lt; <code>z000</code>、<code>zyzz</code> &lt; <code>zz0000</code>)</li>
+		<li><strong>逆変換</strong>: 番号から件数に戻せる。<code>l</code> ・ 大文字 ・ 桁数が偶数でないものは、番号として受けない</li>
+	</ul>
+</section>
+
+<!-- ================= 04 ================= -->
+<section class="ch04" id="ch04">
+	<h1>DB の変更</h1>
+
+	<p>新しい版 (<code>ver_000008</code>) を足す。当て済みの版は書き換えない。<strong>起動時に自動で当たり、版を上げる前の控えは <code>migrate.mjs</code> が自動で取る。</strong>下りは持たない (戻すときは控えから)。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">順</th><th>内容</th><th>理由</th></tr></thead>
+		<tbody>
+			<tr><td class="num">1</td><td><code>messages</code> に <code>msg_id TEXT</code> を足す。<code>CHECK (msg_id IS NULL OR length(msg_id) BETWEEN 10 AND 32)</code></td><td>人に見せる番号。<code>msg_seq</code> は内部の並びと読み位置のために残す (41-A)</td></tr>
+			<tr><td class="num">2</td><td>日ごとの連番の台帳 <code>message_day_counters</code> を作る (<code>message_day</code> = <code>yymmdd</code> が主キー、<code>last_count</code>)。<code>STRICT</code></td><td>行を数えて 1 を足すと、行が無くなったときに番号が重なる。台帳なら、増える一方で重ならない</td></tr>
+			<tr><td class="num">3</td><td>今ある全行に <code>msg_id</code> を振る。<code>ROW_NUMBER() OVER (PARTITION BY substr(sent_at, 1, 10) ORDER BY msg_seq)</code> を、35 字の並びから 2 桁に直す</td><td>42-A。<strong>SQL だけで書く</strong> (版の仕組みは <code>.sql</code> しか当てない)。今ある日の最多は 70 件なので 2 桁で足りる</td></tr>
+			<tr><td class="num">4</td><td>2 桁 (1,189 件) を超える日があれば、版ごと失敗させる。<code>CHECK (rn &lt;= 1189)</code> を付けた一時テーブルへ先に写して確かめる</td><td>黙って欠ける番号を作らない。超えた日が出たら、そのとき計画を見直す</td></tr>
+			<tr><td class="num">5</td><td><code>message_day_counters</code> に、日ごとの件数を入れる</td><td>起動後の最初の発言が、続きの番号から始まるように</td></tr>
+			<tr><td class="num">6</td><td>一意索引 <code>messages_ix_msg_id</code> (<code>msg_id</code>)</td><td>重なりを DB が止める。<code>UNIQUE</code> は <code>ALTER</code> では付けられないので、索引で付ける</td></tr>
+		</tbody>
+	</table>
+	</div>
+
+	<div class="callout callout-important">
+		<p><strong>NOT NULL にできない。</strong>既存の表に列を足すとき、<code>NOT NULL</code> は既定値が要る。表を作り直せば付けられるが、1,673 行の写しと索引の張り直しが要り、リスクのほうが大きい。<strong>代わりに、発言を足す処理 (<code>store.mjs</code> の <code>insertMessage</code> の 1 か所) が必ず <code>msg_id</code> を書き、「<code>msg_id</code> が NULL の行が 0 件」を試験で守る。</strong></p>
+	</div>
+
+	<h2>発言を足す処理</h2>
+	<p><code>insertMessage</code> を、1 つのトランザクションにする。(1) 台帳の <code>last_count</code> を 1 進めて新しい値を受け取る (<code>INSERT … ON CONFLICT DO UPDATE … RETURNING</code>)。(2) その値から nn を作る (<code>src/server/msg-id.mjs</code>)。(3) <code>msg_id</code> を付けて <code>messages</code> へ書く。<strong>片付け ・ 戻すは行を消さないので、<code>msg_id</code> は片付けても戻しても変わらない。</strong></p>
+
+	<h2>版を当てたあとの確かめ (試験。本番の控えのコピーで流す)</h2>
+	<ul>
+		<li>行数が変わらない。<code>msg_id</code> が NULL の行が 0 件。<code>msg_id</code> が一意</li>
+		<li>日ごとに、<code>msg_seq</code> の順と <code>msg_id</code> の順が同じ</li>
+		<li>台帳の <code>last_count</code> が、日ごとの件数と一致する</li>
+		<li>起動後の最初の発言が、その日の続きの番号になる。日が変われば <code>01</code> から始まる</li>
+	</ul>
+</section>
+
+<!-- ================= 05 ================= -->
+<section class="ch05" id="ch05">
+	<h1>API ・ CLI ・ Web ・ 資料の変更</h1>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">場所</th><th>変えること</th></tr></thead>
+		<tbody>
+			<tr><td class="nowrap">API (出力)</td><td>メッセージの JSON に <code>msg_id</code> を足す。返信は <code>reply_to_msg_id</code> を足す。<strong><code>msg_seq</code> ・ <code>reply_to_msg_seq</code> も返しつづける</strong> (写す前の古い CLI が壊れない)</td></tr>
+			<tr><td class="nowrap">API (入力)</td><td><code>reply_to_msg_id</code> を新しく受ける。<code>reply_to_msg_seq</code> も受けつづける。<code>archive</code> の対象も、<code>msg_id</code> と <code>msg_seq</code> のどちらでも受ける</td></tr>
+			<tr><td class="nowrap">CLI の出力 (node 版 ・ Rust 版)</td><td>見出しを <code>──────── [ルーム] m261117-0c 日時 …</code>、返信先を <code>↳m261117-0b</code> にする。<strong><code>#</code> を、どこにも出さない</strong></td></tr>
+			<tr><td class="nowrap"><code>--reply-to</code> ・ <code>archive message</code></td><td><code>m261117-0c</code> を受ける。今までの <code>#2031</code> と <code>2031</code> も受けつづける。判定は、<code>m</code> + 6 桁の数字 + <code>-</code> + nn の形なら <code>msg_id</code>、数字だけなら <code>msg_seq</code>。それ以外は終了コード 2 で、案内の文言も新しい形にする</td></tr>
+			<tr><td class="nowrap">Web</td><td>画面の番号と返信欄を <code>msg_id</code> にする。返信欄は、今までの番号も受ける</td></tr>
+			<tr><td class="nowrap">定義と突き合わせ</td><td><code>options.mjs</code> の説明文を直し、Rust 版へ書き出す。<code>compare-cases.json</code> に、新しい形の入力と、旧い形の入力を足し、2 本の出力を突き合わせる</td></tr>
+			<tr><td class="nowrap">資料</td><td><code>CHAT-USAGE.html</code> (7 か所) ・ 設計書 (<strong>スキーマは <code>sqlite_master</code> から取り出して貼る</strong>。手で写さない) ・ README ・ 課題</td></tr>
+			<tr><td class="nowrap">共通ルール</td><td>暫定の「コードスパンで囲む」の行を、<code>msg_id</code> の書き方に置き換える差分を出す (反映は指示を待つ)</td></tr>
+			<tr><td class="nowrap">ほかの道具</td><td><code>issue --refs</code> が受ける <code>#1923</code> の形 (ai-agent-tools) に、<code>msg_id</code> の形を足す依頼を出す。ほかに出力の <code>#番号</code> を正規表現で読んでいる道具が無いか、周知で申告を求める</td></tr>
+		</tbody>
+	</table>
+	</div>
+</section>
+
+<!-- ================= 06 ================= -->
+<section class="ch06" id="ch06">
+	<h1>切り替えの手順</h1>
+
+	<p><strong>順序が要点。</strong>サーバーを先に新しくし (古い CLI はそのまま動く)、そのあとで CLI を新しくする。逆にすると、新しい CLI が <code>msg_id</code> を持たない応答を受ける。</p>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th class="nowrap">順</th><th>すること</th><th class="nowrap">指示</th></tr></thead>
+		<tbody>
+			<tr><td class="num">1</td><td>落ちる試験を先に書き、❌Red を確かめる (nn の総当たり ・ 版 8 の移行を控えのコピーで ・ API ・ CLI の出力と入力 ・ 突き合わせ)</td><td class="nowrap">承認後</td></tr>
+			<tr><td class="num">2</td><td><code>msg-id.mjs</code> ・ <code>ver_000008</code> ・ <code>store.mjs</code> ・ <code>server.mjs</code> を作る</td><td class="nowrap">承認後</td></tr>
+			<tr><td class="num">3</td><td>CLI を node 版 ・ Rust 版に入れ、突き合わせる。Web を直す</td><td class="nowrap">承認後</td></tr>
+			<tr><td class="num">4</td><td>資料を直す。全件の試験 (<code>psh</code> 経由の node と、bun) を流す</td><td class="nowrap">承認後</td></tr>
+			<tr><td class="num">5</td><td><strong>周知の予告案を出す</strong> (表示が変わる日と、出力の <code>#番号</code> を読んでいる道具の申告のお願い)</td><td class="nowrap">「送って」</td></tr>
+			<tr><td class="num">6</td><td>サーバーを起動し直す (版 8 が当たる。控えは自動)。確かめ: 本番の <code>dump</code> で、<code>msg_id</code> が NULL の行が 0 件、日ごとの順が同じ</td><td class="nowrap">「起動し直して」</td></tr>
+			<tr><td class="num">7</td><td>Rust 版を作り直し、既定の <code>aichat.exe</code> へ写す。写した瞬間から、全プロジェクトの出力が新しい形になる</td><td class="nowrap">「写して」</td></tr>
+			<tr><td class="num">8</td><td>共通ルールの差し替え案 (暫定の行 → <code>msg_id</code> の書き方) を差分で出し、周知案を続けて出す</td><td class="nowrap">「反映して」「送って」</td></tr>
+			<tr><td class="num">9</td><td>ai-agent-tools へ <code>issue --refs</code> の依頼を出す。課題 i261110-03 を、依頼元の確認が取れたら済にする</td><td class="nowrap">「送って」</td></tr>
+		</tbody>
+	</table>
+	</div>
+</section>
+
+<!-- ================= 07 ================= -->
+<section class="ch07" id="ch07">
+	<h1>リスクと確かめ</h1>
+
+	<div class="tablewrap">
+	<table>
+		<thead><tr><th>リスク</th><th>対策</th></tr></thead>
+		<tbody>
+			<tr><td><strong>全セッションの出力が一斉に変わる</strong> (既定の exe を写した瞬間)</td><td>写す前に周知する (手順 5)。写しは指示を待つ。サーバーが先に新しくなっているので、写す前の古い CLI も動く</td></tr>
+			<tr><td>出力の <code>#番号</code> を正規表現で読んでいる道具が、読めなくなる</td><td>周知で申告を求める。他プロジェクトの中身は、こちらから見ない (ai-agent-tools への依頼は、<code>issue --refs</code> だけ)</td></tr>
+			<tr><td><code>msg_seq</code> と <code>msg_id</code> の取り違え</td><td>入力の判定は形で決める (<code>m</code> + 6 桁 + <code>-</code> + nn なら <code>msg_id</code>、数字だけなら <code>msg_seq</code>)。試験で、両方と、どちらでもない値を確かめる</td></tr>
+			<tr><td>本番の DB を変える</td><td>版を上げる前の控えは自動。控えのコピーで、版 8 を先に流して確かめる。<code>-wal</code> ・ <code>-shm</code> は 3 つ一組で扱い、元の置き場を増やさない</td></tr>
+			<tr><td>日をまたぐ時刻 (JST 0 時)</td><td>日付は <code>sent_at</code> の日で決める。台帳の日と、行の日が食い違わないよう、同じ値から作る</td></tr>
+			<tr><td>1 日が 1,189 件を超える</td><td>4 桁に自動で伸びる (<code>z000</code>〜)。今の最多は 70 件。版 8 の移行だけは、超えると失敗する (手順 4 の確かめ)</td></tr>
+			<tr><td>今までの発言の本文にある <code>#番号</code></td><td>書き換えない (履歴は残す)。入力で受けるので、引用された旧番号を貼っても通る</td></tr>
+		</tbody>
+	</table>
+	</div>
+</section>
+
+</div>
+
+<footer>
+	<div class="inner">
+		<p><a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
+	</div>
+</footer>
+
+</body>
+</html>

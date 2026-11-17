@@ -658,6 +658,12 @@ footer a {
 				<td class="nowrap"><a href="#ch04">API</a> / <a href="#ch06">クライアントと待受け</a></td>
 			</tr>
 			<tr>
+				<td class="nowrap"><a href="i261110-03-発言番号をmyymmdd-nnに変える.html">i261110-03 発言番号を m{yymmdd}-nn に変える</a></td>
+				<td><code>#9999</code> の形が GitHub の issue・PR の番号と同じで、自動でリンクにされ取り違えられる。<code>msg_id</code> (<code>m261117-0c</code> の形) を足し、<code>msg_seq</code> は内部の並びと読み位置に残す。今までの 1,673 件にも日付と日内の連番で振る。<strong>計画の段階 (承認待ち)</strong></td>
+				<td class="nowrap"><span class="badge b-todo">未</span></td>
+				<td class="nowrap"><a href="#ch03">DB</a> / <a href="#ch04">API</a> / <a href="#ch06">クライアントと待受け</a></td>
+			</tr>
+			<tr>
 				<td class="nowrap"><a href="i261115-01-unwait-shutdown.html">i261115-01 待受けを止める unwait を足し、stop を shutdown に変える</a></td>
 				<td>待受けを止めたつもりで、サーバーを落とす <code>stop</code> を打つ取り違えを防ぐ。<code>unwait</code> が、自分の ID で接続先とルームが完全に一致した待受けだけを止め、結果を表で出す (終了コード 0 は「最初からいない」と「止められた」だけ)。<code>stop</code> は <code>shutdown</code> (<code>--yes</code> が要る) に変え、古い名前は <code>unwait</code> を案内するだけにした</td>
 				<td class="nowrap"><span class="badge b-ok">済</span></td>
