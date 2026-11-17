@@ -136,7 +136,7 @@ describe('版 8・9 (発言番号 msg_id)', () => {
 					.run(id);
 			assert.throws(() => ins(null), /NOT NULL/);
 			assert.throws(() => db.prepare("INSERT INTO messages (room_id, sent_at, from_connector_id, msg_kind, msg_body) VALUES ('public','2026/10/01 00:00:00.000','test-a','say','x')").run(), /NOT NULL/);
-			for (const bad of ['#12', 'm261001-0', 'm26101-01', 'M261001-01', 'm261001-0l', 'm261001-', '2031']) {
+			for (const bad of ['#12', 'm261001-0', 'm26101-01', 'M261001-01', 'm261001-0l', 'm261001-', '2031', 'm261001-0-', 'm261001-0-1', 'm261001-000', 'm261001-z00']) {
 				assert.throws(() => ins(bad), /CHECK/, bad);
 			}
 			ins('m261001-01');

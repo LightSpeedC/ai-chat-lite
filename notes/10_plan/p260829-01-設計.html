@@ -884,9 +884,12 @@ export const DB_PATH = join(DATA_DIR, 'chat.db');</code></pre>
   ref_archived_seq  INTEGER,
   reply_to_msg_seq  INTEGER,
   msg_id            TEXT    NOT NULL UNIQUE
-                      CHECK (length(msg_id) &gt;= 9
+                      -- 全体の長さは 8 + (2 + 2k) で必ず偶数。- は 8 字目だけ (nn に - は入らない)。
+                      -- z の数 k と桁数の突き合わせまでは SQL に書かず、makeMsgId が作る (src/server/msg-id.mjs)
+                      CHECK (length(msg_id) &gt;= 10
+                             AND length(msg_id) % 2 = 0
                              AND msg_id GLOB 'm[0-9][0-9][0-9][0-9][0-9][0-9]-[0-9a-km-z][0-9a-km-z]*'
-                             AND msg_id NOT GLOB '*[^0-9a-km-z-]*')
+                             AND substr(msg_id, 9) NOT GLOB '*[^0-9a-km-z]*')
 ) STRICT;
 
 CREATE TABLE message_day_counters (
