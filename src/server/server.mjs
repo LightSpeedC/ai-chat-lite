@@ -9,6 +9,7 @@ import {
 import { log } from './log.mjs';
 import { nowJst, jstTodayMidnight, jstBefore } from './time.mjs';
 import {
+	resolveMessageRef,
 	addMessage, getSince, getLatest, getBefore, getFiltered, getMaxSeq, getSeqBefore,
 	joinConnector, touchConnector, addConnection, removeConnection, listRooms,
 	getCursor, setCursor, getAckedSeq, setAcked, getRange, closeDb, getConnector,
@@ -17,6 +18,7 @@ import {
 } from './store.mjs';
 import { listPresence, getPresence, STATUS } from './presence.mjs';
 import { ID_PATTERN } from '../client/options.mjs';
+import { parseMsgId } from './msg-id.mjs';
 import { rejectionReason } from './names.mjs';
 import {
 	waitForMessages, publish, publishPresence,
@@ -110,6 +112,24 @@ function optionalMsgSeq(value) {
 		throw new BadRequest(`reply_to_msg_seq は 1 以上の整数です: ${value}`);
 	}
 	return n;
+}
+
+/**
+ * 返信先を msg_seq にして返す。渡されなければ null。
+ *
+ * reply_to_msg_id (m{yymmdd}-nn) を優先し、無ければ今までの reply_to_msg_seq を読む
+ * (写す前の古い CLI が壊れないように)。msg_id は引いて msg_seq にする。
+ * 形の違う値と、行の無い値は断る (msg_seq と違い、引けないものは指す先が決まらない)。
+ */
+function replyToOf(input) {
+	const id = input.reply_to_msg_id;
+	if (id === undefined || id === null || id === '') return optionalMsgSeq(input.reply_to_msg_seq);
+	if (!parseMsgId(String(id))) {
+		throw new BadRequest(`reply_to_msg_id は m{yymmdd}-nn の形です (例 m261117-0c): ${id}`);
+	}
+	const seq = resolveMessageRef(id);
+	if (seq === null) throw new BadRequest(`reply_to_msg_id の発言がありません: ${id}`);
+	return seq;
 }
 
 function requireBody(value) {
@@ -300,7 +320,7 @@ async function handleSay(req, res) {
 	const toConnectorId = optionalId(input.to_connector_id, 'to_connector_id');
 	rejectTestNames(fromConnectorId, roomId);
 	const body = requireBody(input.msg_body);
-	const replyToMsgSeq = optionalMsgSeq(input.reply_to_msg_seq);
+	const replyToMsgSeq = replyToOf(input);
 
 	touchConnector(fromConnectorId);
 	const message = addMessage({ roomId, fromConnectorId, kind: 'say', toConnectorId, body, replyToMsgSeq });
@@ -681,7 +701,7 @@ function describeArchive(kind, id, counts, byConnectorId) {
 	const label = { message: '発言', connector: '参加者', room: 'ルーム' }[kind];
 	const detail =
 		kind === 'message'
-			? `(msg_seq ${id})`
+			? '(発言 1 件)'
 			: kind === 'room'
 				? `(発言 ${counts.messages} 件 / 読んだ位置 ${counts.cursors} 件)`
 				: counts.messages > 0
