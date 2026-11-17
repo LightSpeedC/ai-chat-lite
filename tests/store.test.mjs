@@ -183,6 +183,51 @@ test('WAL の掃除は、読み取りが開いたままなら失敗を返し、�
 	}
 });
 
+// --- 発言番号 msg_id (i261110-03) ---
+
+test('addMessage は msg_id (m{yymmdd}-nn) を付け、日ごとに 1 から連番になる', async () => {
+	const { makeMsgId, dayOfSentAt } = await import('../src/server/msg-id.mjs');
+	const count = {};
+	for (const m of [m1, m2, m3, other]) {
+		const day = dayOfSentAt(m.sent_at);
+		count[day] = (count[day] ?? 0) + 1;
+		assert.equal(m.msg_id, makeMsgId(day, count[day]), `msg_seq ${m.msg_seq}`);
+	}
+});
+
+test('行を消しても msg_id は重ならない (台帳は増える一方)', () => {
+	const a = store.addMessage({ roomId: 'public', fromConnectorId: 'test-ledger', body: '台帳 1' });
+	const reader = store.openReaderForTest();
+	try {
+		reader.prepare('DELETE FROM messages WHERE msg_seq = ?').run(a.msg_seq);
+	} finally {
+		reader.close();
+	}
+	const b = store.addMessage({ roomId: 'public', fromConnectorId: 'test-ledger', body: '台帳 2' });
+	assert.notEqual(b.msg_id, a.msg_id, '消した行の番号が使い回された');
+	assert.ok(b.msg_id > a.msg_id, '番号が戻った');
+});
+
+test('返信は reply_to_msg_id を返す (追加時も取得時も)', () => {
+	const r = store.addMessage({ roomId: 'public', fromConnectorId: 'test-human', body: '返信', replyToMsgSeq: m1.msg_seq });
+	assert.equal(r.reply_to_msg_seq, m1.msg_seq);
+	assert.equal(r.reply_to_msg_id, m1.msg_id);
+	const got = store.getSince('public', r.msg_seq - 1).find((x) => x.msg_seq === r.msg_seq);
+	assert.equal(got.reply_to_msg_id, m1.msg_id);
+	assert.equal(got.msg_id, r.msg_id);
+	const plain = store.getSince('public', 0).find((x) => x.msg_seq === m2.msg_seq);
+	assert.equal(plain.reply_to_msg_id, null);
+});
+
+test('resolveMessageRef: msg_id と msg_seq のどちらでも msg_seq にする', () => {
+	assert.equal(store.resolveMessageRef(m2.msg_id), m2.msg_seq);
+	assert.equal(store.resolveMessageRef(String(m2.msg_seq)), m2.msg_seq);
+	assert.equal(store.resolveMessageRef(m2.msg_seq), m2.msg_seq);
+	assert.equal(store.resolveMessageRef('m000101-01'), null, '無い msg_id');
+	assert.equal(store.resolveMessageRef('#2'), null, '#付きは受けない (呼ぶ側が落とす)');
+	assert.equal(store.resolveMessageRef('abc'), null);
+});
+
 test('検索がインデックスを使う', () => {
 	// (room_id, msg_seq) でレンジスキャンできていること。テーブル全体を舐めていない
 	const plan = store.explainSince();

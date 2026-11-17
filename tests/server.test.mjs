@@ -1106,3 +1106,60 @@ describe('recent の絞り込み', () => {
 		assert.ok(json.messages.every((m) => m.msg_seq < secondSeq), 'before (msg_seq)で絞れていない');
 	});
 });
+
+describe('発言番号 msg_id (i261110-03)', () => {
+	const ROOM = 'test-msg-id';
+
+	async function say(body, extra = {}) {
+		return post('/api/say', { from_connector_id: 'test-msgid-a', room_id: ROOM, msg_body: body, ...extra });
+	}
+
+	test('say の応答に msg_id と msg_seq の両方が入る', async () => {
+		const { status, json } = await say('1 件目');
+		assert.equal(status, 200);
+		assert.match(json.msg_id, /^m\d{6}-[0-9a-km-z]{2,}$/);
+		assert.ok(json.msg_seq >= 1, 'msg_seq も返しつづける');
+		assert.equal(json.reply_to_msg_id, null);
+	});
+
+	test('reply_to_msg_id で返信でき、応答と履歴に reply_to_msg_id と reply_to_msg_seq が入る', async () => {
+		const { json: first } = await say('返信される側');
+		const { status, json } = await say('返信する側', { reply_to_msg_id: first.msg_id });
+		assert.equal(status, 200);
+		assert.equal(json.reply_to_msg_id, first.msg_id);
+		assert.equal(json.reply_to_msg_seq, first.msg_seq);
+		const { json: h } = await get(`/api/history?room_id=${ROOM}&limit=50`);
+		const got = h.messages.find((m) => m.msg_id === json.msg_id);
+		assert.equal(got.reply_to_msg_id, first.msg_id);
+	});
+
+	test('今までの reply_to_msg_seq でも返信できる (古い CLI が壊れない)', async () => {
+		const { json: first } = await say('旧形式の返信先');
+		const { status, json } = await say('旧形式', { reply_to_msg_seq: first.msg_seq });
+		assert.equal(status, 200);
+		assert.equal(json.reply_to_msg_id, first.msg_id);
+	});
+
+	test('無い msg_id・形の違う値は 400', async () => {
+		for (const bad of ['m000101-01', '#12', 'm26-0c', 'abc']) {
+			const { status } = await say('x', { reply_to_msg_id: bad });
+			assert.equal(status, 400, bad);
+		}
+	});
+
+	test('archive は msg_id でも msg_seq でも指せる', async () => {
+		const { json: a } = await say('片付ける 1');
+		const { json: b } = await say('片付ける 2');
+		const r1 = await post('/api/admin/archive', { kind: 'message', id: a.msg_id, connector_id: 'test-msgid-a', confirm: a.msg_id });
+		assert.equal(r1.status, 200, JSON.stringify(r1.json));
+		const r2 = await post('/api/admin/archive', { kind: 'message', id: String(b.msg_seq), connector_id: 'test-msgid-a', confirm: String(b.msg_seq) });
+		assert.equal(r2.status, 200, JSON.stringify(r2.json));
+		const { json: h } = await get(`/api/history?room_id=${ROOM}&limit=100`);
+		assert.ok(!h.messages.some((m) => m.msg_id === a.msg_id || m.msg_id === b.msg_id));
+	});
+
+	test('無い msg_id の archive は 400', async () => {
+		const { status } = await post('/api/admin/archive', { kind: 'message', id: 'm000101-01', connector_id: 'test-msgid-a', confirm: 'm000101-01' });
+		assert.equal(status, 400);
+	});
+});

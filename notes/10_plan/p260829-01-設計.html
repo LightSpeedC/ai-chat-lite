@@ -447,7 +447,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 設計</h1>
 		<p class="lead">ローカルPC内で AI セッションと人間が同席する簡易チャットの設計</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-11-11</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-11-17</p>
 	</div>
 </div>
 
@@ -659,7 +659,7 @@ footer a {
 			</tr>
 			<tr>
 				<td class="nowrap"><a href="i261110-03-発言番号をmyymmdd-nnに変える.html">i261110-03 発言番号を m{yymmdd}-nn に変える</a></td>
-				<td><code>#9999</code> の形が GitHub の issue・PR の番号と同じで、自動でリンクにされ取り違えられる。<code>msg_id</code> (<code>m261117-0c</code> の形) を足し、<code>msg_seq</code> は内部の並びと読み位置に残す。今までの 1,673 件にも日付と日内の連番で振る。<strong>計画の段階 (承認待ち)</strong></td>
+				<td><code>#9999</code> の形が GitHub の issue・PR の番号と同じで、自動でリンクにされ取り違えられる。<code>msg_id</code> (<code>m261117-0c</code> の形) を足し、<code>msg_seq</code> は内部の並びと読み位置に残す。今までの 1,673 件にも日付と日内の連番で振る。<strong>node 版 CLI ・ Web ・ サーバー ・ 版 8 と 9 を実装した (merge と起動し直し待ち。Rust 版は merge の前に直す)</strong></td>
 				<td class="nowrap"><span class="badge b-todo">未</span></td>
 				<td class="nowrap"><a href="#ch03">DB</a> / <a href="#ch04">API</a> / <a href="#ch06">クライアントと待受け</a></td>
 			</tr>
@@ -882,8 +882,19 @@ export const DB_PATH = join(DATA_DIR, 'chat.db');</code></pre>
                       CHECK (length(msg_body) BETWEEN 1 AND 32000),
   archived_seq      INTEGER,
   ref_archived_seq  INTEGER,
-  reply_to_msg_seq  INTEGER
-);
+  reply_to_msg_seq  INTEGER,
+  msg_id            TEXT    NOT NULL UNIQUE
+                      CHECK (length(msg_id) &gt;= 9
+                             AND msg_id GLOB 'm[0-9][0-9][0-9][0-9][0-9][0-9]-[0-9a-km-z][0-9a-km-z]*'
+                             AND msg_id NOT GLOB '*[^0-9a-km-z-]*')
+) STRICT;
+
+CREATE TABLE message_day_counters (
+  message_day TEXT    PRIMARY KEY
+                CHECK (length(message_day) = 6),
+  last_count  INTEGER NOT NULL
+                CHECK (last_count &gt;= 0)
+) STRICT;
 
 CREATE TABLE connectors (
   connector_id            TEXT    PRIMARY KEY
@@ -908,7 +919,7 @@ CREATE TABLE cursors (
                  CHECK (msg_seq &gt;= 0),
   updated_at   TEXT    NOT NULL
                  CHECK (length(updated_at) = 23),
-  archived_seq INTEGER,
+  archived_seq INTEGER, acked_seq INTEGER,
   PRIMARY KEY (connector_id, room_id)
 );
 
@@ -954,7 +965,12 @@ CREATE INDEX connectors_ix_archived_seq  ON connectors(archived_seq);</code></pr
 			<tr>
 				<td class="nowrap"><code>msg_seq</code></td><td class="nowrap">INTEGER</td><td class="nowrap">不可</td>
 				<td class="nowrap">1 〜 9223372036854775807</td>
-				<td>全参加者に共通の通し番号。受信カーソル</td>
+				<td>全参加者に共通の通し番号。<strong>内部の並びと読み位置 (受信カーソル) に使う。人に見せる番号は <code>msg_id</code></strong></td>
+			</tr>
+			<tr>
+				<td class="nowrap"><code>msg_id</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可</td>
+				<td class="nowrap"><code>m{yymmdd}-nn</code>・一意</td>
+				<td>人に見せる発言番号 (<code>m261117-0c</code>)。日付は <code>sent_at</code> の日 (JST)、nn はその日の何件目か (35 字・<code>l</code> を除く。2 桁を超えると先頭に <code>z</code> が付く)。保存する列で持つ。作り方は <code>src/server/msg-id.mjs</code>、日ごとの連番は台帳 <code>message_day_counters</code> (行を消しても重ならない)</td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>room_id</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可</td>
@@ -1745,6 +1761,7 @@ LIMIT ?;</code></pre>
 	<p>API のキー名を DB の列名と同じにしておくと、サーバー側で SQL の結果をそのまま JSON にできる。名前を短くする案もあったが、対応表を持つ手間と読み替えのコストのほうが大きい。</p>
 
 	<pre><code class="language-json">{
+  "msg_id": "m260829-0c",
   "msg_seq": 12,
   "room_id": "public",
   "sent_at": "2026/08/29 12:34:56.789",
@@ -1754,8 +1771,11 @@ LIMIT ?;</code></pre>
   "msg_body": "テストが通りました",
   "archived_seq": null,
   "ref_archived_seq": null,
-  "reply_to_msg_seq": null
+  "reply_to_msg_seq": null,
+  "reply_to_msg_id": null
 }</code></pre>
+
+	<p><code>msg_id</code> が人に見せる番号。<code>msg_seq</code> ・ <code>reply_to_msg_seq</code> は古い CLI が壊れないよう返しつづける。<code>reply_to_msg_id</code> は列ではなく、返信先の行の <code>msg_id</code> を引いて足す。入力は <code>say</code> の <code>reply_to_msg_id</code> (<code>reply_to_msg_seq</code> も可) と、<code>archive</code> の <code>id</code> (<code>msg_id</code> でも <code>msg_seq</code> でも可)。</p>
 
 	<p><code>msg_kind</code> が <code>say</code> 以外のもの (<code>join</code> / <code>leave</code> / <code>archive</code> / <code>notice</code>)はサーバーが自動で積むシステム通知。<strong>既定の <code>wait</code> が起きるのは <code>archive</code> と <code>notice</code> まで</strong>で、参加・離脱では起きない (<code>--with-joins</code> を付けたときだけ受け取る)。</p>
 
@@ -2387,6 +2407,8 @@ let s = src.replace(/&amp;/g, '&amp;amp;')
 			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000003/</code></td><td><code>archives</code> テーブルと <code>archived_seq</code> の索引</td></tr>
 			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000004/</code></td><td><code>messages.ref_archived_seq</code>。片付けの知らせが指す番号</td></tr>
 			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000005/</code></td><td><code>messages.reply_to_msg_seq</code>。返信元の番号。あわせて日時の区切りを <code>/</code> に変え、既存の行も書き換える</tr>
+			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000009/</code></td><td><code>messages</code> を作り直し、<code>msg_id</code> を <code>NOT NULL</code> ・ 形の <code>CHECK</code> ・ <code>UNIQUE</code> に (<code>STRICT</code>)。msg_seq ・ 採番 ・ 索引はそのまま (<a href="i261110-03-発言番号をmyymmdd-nnに変える.html">i261110-03</a>)</td></tr>
+			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000008/</code></td><td><code>messages.msg_id</code> (NULL 可) と台帳 <code>message_day_counters</code>。今ある全行に <code>m{yymmdd}-nn</code> を振る (<a href="i261110-03-発言番号をmyymmdd-nnに変える.html">i261110-03</a>)</td></tr>
 			<tr><td class="nowrap"><code>src/scripts/20_migrate/ver_000006/</code></td><td><code>messages_ix_room_id_sent_at</code>。<code>recent --since</code> / <code>--before</code> の絞り込みが効くようにする (<a href="../40_issues/issues-archive.html#i260830-03">i260830-03</a>)</td></tr>
 			<tr><td class="nowrap"><code>src/server/migrate.mjs</code></td><td>版を当てる処理。<strong><code>store.mjs</code> とは別の接続で開く</strong></td></tr>
 		</tbody>

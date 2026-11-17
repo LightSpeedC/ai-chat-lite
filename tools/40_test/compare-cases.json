@@ -6,6 +6,59 @@
 	},
 	{
 		"args": [
+			"say",
+			":rust-check:",
+			"発言番号の返信 (無い msg_id はサーバーが断る)",
+			"--reply-to",
+			"m000101-01"
+		],
+		"mask": true
+	},
+	{
+		"args": [
+			"say",
+			":rust-check:",
+			"誤り",
+			"--reply-to",
+			"m261117-0l"
+		]
+	},
+	{
+		"args": [
+			"say",
+			":rust-check:",
+			"誤り",
+			"--reply-to",
+			"M261117-0c"
+		]
+	},
+	{
+		"args": [
+			"say",
+			":rust-check:",
+			"誤り",
+			"--reply-to",
+			"m26-0c"
+		]
+	},
+	{
+		"args": [
+			"archive",
+			":rust-check:",
+			"message",
+			"abc"
+		]
+	},
+	{
+		"args": [
+			"archive",
+			":rust-check:",
+			"message",
+			"m261117-0l"
+		]
+	},
+	{
+		"args": [
 			"recent"
 		]
 	},

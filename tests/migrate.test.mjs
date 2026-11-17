@@ -230,7 +230,7 @@ describe('実際に置いてある版', () => {
 		const result = migrate({ dbPath, dir: REAL_DIR });
 
 		assert.ok(result.to >= 4, `版が上がっていない (${result.to})`);
-		assert.deepEqual(tables(dbPath), ['archives', 'connectors', 'cursors', 'messages', 'versions']);
+		assert.deepEqual(tables(dbPath), ['archives', 'connectors', 'cursors', 'message_day_counters', 'messages', 'versions']);
 	});
 
 	test('改名後の列名になっている', () => {
@@ -278,7 +278,7 @@ describe('実際に置いてある版', () => {
 		const db = new DatabaseSync(dbPath);
 		try {
 			db.prepare(
-				"INSERT INTO messages (room_id, sent_at, from_connector_id, msg_kind, msg_body) VALUES ('public','2026-09-01 00:00:00.000','ai-chat-lite','notice','案内')"
+				"INSERT INTO messages (room_id, sent_at, from_connector_id, msg_kind, msg_body, msg_id) VALUES ('public','2026-09-01 00:00:00.000','ai-chat-lite','notice','案内','m260901-01')"
 			).run();
 			assert.equal(db.prepare("SELECT COUNT(*) AS n FROM messages WHERE msg_kind = 'notice'").get().n, 1);
 		} finally {

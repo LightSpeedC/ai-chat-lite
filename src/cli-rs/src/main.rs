@@ -203,7 +203,7 @@ fn run() -> i32 {
 			let body = positionals.get(1).copied().unwrap_or("");
 			if body.is_empty() {
 				eprintln!(
-					"本文を指定してください: say {w}<自分のID>{w} \"本文\" [--to {w}<相手>{w}] [--reply-to <msg_seq>]",
+					"本文を指定してください: say {w}<自分のID>{w} \"本文\" [--to {w}<相手>{w}] [--reply-to <発言番号>]",
 					w = def.id_wrap
 				);
 				// 書き忘れは使い方の誤りなので 2
@@ -219,7 +219,7 @@ fn run() -> i32 {
 				},
 				None => None,
 			};
-			let reply_to = match reply_to_seq(&a) {
+			let reply_to = match reply_to_ref(&a) {
 				Ok(v) => v,
 				Err(e) => {
 					eprintln!("{}", e);
@@ -269,7 +269,18 @@ fn run() -> i32 {
 				return EXIT_USAGE;
 			}
 			// 参加者を片付けるときだけ、対象も参加者の ID なので囲みを剥がす
-			let target = if kind == "connector" {
+			let target = if kind == "message" {
+					// 発言は msg_id か、今までの番号 (#2031 と 2031)。# は落として、形で確かめる
+					match commands::parse_msg_ref(raw_id) {
+						Some(commands::MsgRef::Id(id)) => id,
+						Some(commands::MsgRef::Seq(n)) => n.to_string(),
+						None => {
+							eprintln!("archive message の対象には発言番号を渡してください: {}", raw_id);
+							eprintln!("  番号は出力の見出しに m261117-0c の形で出ています。");
+							return EXIT_USAGE;
+						}
+					}
+				} else if kind == "connector" {
 				match id::unwrap(raw_id, &def.id_wrap, "archive connector の対象") {
 					Ok(v) => v,
 					Err(e) => {
@@ -491,22 +502,19 @@ fn require_id(def: &Definition, resolved: &Option<String>, positionals: &[&str])
 	}
 }
 
-/// `--reply-to` を読む。先頭の # は付けても付けなくてもよい
-fn reply_to_seq(a: &Args) -> Result<Option<i64>, String> {
+/// `--reply-to` を読む。msg_id (m261117-0c) か、今までの番号 (#2031 と 2031)
+fn reply_to_ref(a: &Args) -> Result<Option<commands::MsgRef>, String> {
 	let raw = match a.option("reply-to", None) {
 		Some(v) => v,
 		None => return Ok(None),
 	};
-	let value = raw.strip_prefix('#').unwrap_or(raw);
-	let ok = !value.is_empty() && value.bytes().all(|b| b.is_ascii_digit());
-	let num = if ok { value.parse::<i64>().unwrap_or(0) } else { 0 };
-	if !ok || num < 1 {
-		return Err(format!(
-			"--reply-to には 1 以上の数を渡してください: {}\n  番号は出力の先頭に #474 の形で出ています。",
+	match commands::parse_msg_ref(raw) {
+		Some(r) => Ok(Some(r)),
+		None => Err(format!(
+			"--reply-to には発言番号を渡してください: {}\n  番号は出力の見出しに m261117-0c の形で出ています。",
 			raw
-		));
+		)),
 	}
-	Ok(Some(num))
 }
 
 /// 最大どれだけ待つかを秒で返す。0 は上限なし。

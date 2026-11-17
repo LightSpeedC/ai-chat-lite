@@ -61,30 +61,38 @@ async function failing(args) {
 	}
 }
 
-/** say して、採番された msg_seq を返す */
+/** say して、採番された msg_id (m{yymmdd}-nn) を返す */
 async function say(id, body, extra = []) {
 	const { stdout } = await cli(['say', wrapId(id), body, ...extra]);
-	const m = /送信しました \((\d+)\)/.exec(stdout);
-	assert.ok(m, `msg_seq が読めない: ${stdout}`);
-	return Number(m[1]);
+	const m = /送信しました \((m\d{6}-[0-9a-km-z]{2,})\)/.exec(stdout);
+	assert.ok(m, `msg_id が読めない: ${stdout}`);
+	return m[1];
+}
+
+/** 今までの番号 (msg_seq) が要る試験のために、msg_id から msg_seq を引く */
+async function seqOf(msgId) {
+	const res = await fetch(`${base}/api/history?room_id=public&limit=200`, { headers: { 'X-AiChat-Access-Token': TEST_ACCESS_TOKEN } });
+	const { messages } = await res.json();
+	return messages.find((m) => m.msg_id === msgId).msg_seq;
 }
 
 describe('出力に番号が出る', () => {
-	test('先頭に # つきの msg_seq が出る', async () => {
-		const seq = await say('test-a', '親の発言');
+	test('見出しに msg_id が出て、# はどこにも出ない', async () => {
+		const id = await say('test-a', '親の発言');
 		const { stdout } = await cli(['recent', '-n', '1']);
 
-		assert.match(stdout, new RegExp(`#${seq} `), '番号が出ていない');
+		assert.match(stdout, new RegExp(`\\] ${id} `), '番号が出ていない');
+		assert.doesNotMatch(stdout, /#\d/, '# つきの番号が残っている');
 	});
 
 	test('見出しの行に区切り・ルーム・番号・日時が並ぶ', async () => {
 		// 本文が何十行あっても切れ目が分かるように、頭を 1 行にまとめてある
 		const { stdout } = await cli(['recent', '-n', '1']);
-		const line = stdout.split(/\r?\n/).find((l) => l.includes('#'));
+		const line = stdout.split(/\r?\n/).find((l) => l.startsWith('────────'));
 
 		assert.match(
 			line,
-			/^──────── \[[A-Za-z0-9_-]+\] #\d+ \d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}\.\d{3}/,
+			/^──────── \[[A-Za-z0-9_-]+\] m\d{6}-[0-9a-km-z]{2,} \d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}\.\d{3}/,
 			`形が違う: [${line}]`
 		);
 	});
@@ -102,37 +110,39 @@ describe('出力に番号が出る', () => {
 		assert.ok(at > 0, '仕組みからの発言が無い');
 		assert.match(
 			lines[at - 1],
-			/^──────── \[[A-Za-z0-9_-]+\] #\d+ \d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/,
+			/^──────── \[[A-Za-z0-9_-]+\] m\d{6}-[0-9a-km-z]{2,} \d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/,
 			`形が違う: [${lines[at - 1]}]`
 		);
 	});
 });
 
 describe('返信', () => {
-	test('--reply-to で親の番号が残る', async () => {
+	test('--reply-to に msg_id を渡すと親の番号が残る', async () => {
 		const parent = await say('test-a', '親の発言');
-		await say('test-b', '返答です', ['--reply-to', String(parent)]);
+		await say('test-b', '返答です', ['--reply-to', parent]);
 
 		const { stdout } = await cli(['recent', '-n', '1']);
-		assert.match(stdout, new RegExp(`↳#${parent}`), '返信先が出ていない');
+		assert.match(stdout, new RegExp(`↳${parent}`), '返信先が出ていない');
+		assert.doesNotMatch(stdout, /↳#/);
 	});
 
-	test('先頭の # を付けても通る', async () => {
-		// 出力には #474 と出るので、画面から写した人がそのまま貼れる
+	test('今までの番号 (#2031 と 2031) も受けつづけ、表示は msg_id になる', async () => {
 		const parent = await say('test-a', 'もう 1 つの親');
-		await say('test-b', '写して貼った', ['--reply-to', `#${parent}`]);
-
-		const { stdout } = await cli(['recent', '-n', '1']);
-		assert.match(stdout, new RegExp(`↳#${parent}`));
+		const seq = await seqOf(parent);
+		for (const form of [`#${seq}`, String(seq)]) {
+			await say('test-b', `旧形式 ${form}`, ['--reply-to', form]);
+			const { stdout } = await cli(['recent', '-n', '1']);
+			assert.match(stdout, new RegExp(`↳${parent}`), form);
+		}
 	});
 
 	test('--to と併用できる', async () => {
 		// 誰に・どれへ、の両方を持てる
 		const parent = await say('test-a', '名指しの親');
-		await say('test-b', '名指しの返答', ['--to', wrapId('test-a'), '--reply-to', String(parent)]);
+		await say('test-b', '名指しの返答', ['--to', wrapId('test-a'), '--reply-to', parent]);
 
 		const { stdout } = await cli(['recent', '-n', '1']);
-		assert.match(stdout, new RegExp(`test-b @test-a ↳#${parent}\\r?\\n名指しの返答`));
+		assert.match(stdout, new RegExp(`test-b @test-a ↳${parent}\\r?\\n名指しの返答`));
 	});
 
 	test('渡さなければ ↳ が出ない', async () => {
@@ -151,17 +161,26 @@ describe('返信', () => {
 		await say('test-b', '未来の番号を指す', ['--reply-to', String(notYet)]);
 
 		const { stdout } = await cli(['recent', '-n', '1']);
-		assert.match(stdout, new RegExp(`↳#${notYet}`));
+		assert.match(stdout, new RegExp(`↳${notYet}`));
+		assert.doesNotMatch(stdout, /↳#/);
 	});
 });
 
 describe('誤りは断る', () => {
-	test('数でなければ終了コード 2 で止まる', async () => {
-		const { code, stderr } = await failing(['say', wrapId('test-a'), '本文', '--reply-to', 'あ']);
+	test('発言番号の形でなければ終了コード 2 で止まり、新しい形を案内する', async () => {
+		for (const bad of ['あ', 'm26-0c', 'm261117-0l', 'M261117-0c']) {
+			const { code, stderr } = await failing(['say', wrapId('test-a'), '本文', '--reply-to', bad]);
 
-		assert.equal(code, 2);
-		assert.match(stderr, /1 以上の数を渡してください/);
-		assert.match(stderr, /#474 の形で出ています/);
+			assert.equal(code, 2, bad);
+			assert.match(stderr, /発言番号/);
+			assert.match(stderr, /m261117-0c の形で出ています/);
+			assert.doesNotMatch(stderr, /#474/);
+		}
+	});
+
+	test('無い msg_id はサーバーが断り、終了コード 1 になる', async () => {
+		const { code } = await failing(['say', wrapId('test-a'), '本文', '--reply-to', 'm000101-01']);
+		assert.equal(code, 1);
 	});
 
 	test('0 以下は断る', async () => {

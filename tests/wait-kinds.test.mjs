@@ -156,7 +156,7 @@ describe('除くのは join と leave だけ', () => {
 		 * (子プロセスにすると標準入力を待って止まる)。
 		 */
 		const said = await chat(['say', 'これを片付けます']);
-		const seq = Number(/送信しました \((\d+)\)/.exec(said.stdout)[1]);
+		const seq = /送信しました \((m\d{6}-[0-9a-km-z]{2,})\)/.exec(said.stdout)[1];
 
 		// 位置を最新にしてから片付ける。archive の知らせだけを見たい
 		await api('/api/poll?connector_id=test-arch&room_id=public&wait=0').then((r) => r.json());

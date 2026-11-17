@@ -41,7 +41,7 @@ function testServer() {
 }
 
 /** 数字を伏せる。投稿のたびに増える値を「違い」と数えないため */
-const maskNumbers = (text) => text.replace(/\d+/g, 'N');
+const maskNumbers = (text) => text.replace(/m\d{6}-[0-9a-km-z]{2,}/g, 'MSGID').replace(/\d+/g, 'N');
 
 /**
  * 状態を変えるコマンド用に、両者へ別々の ID を割り当てる。

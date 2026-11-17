@@ -274,7 +274,7 @@ describe('複数のルームを 1 本で待つ', () => {
 		await chat(['say', 'ルームの印'], 'test-connector2');
 		const { stdout } = await chat(['wait', '--wait-sec', '5']);
 
-		assert.match(stdout, /^──────── \[public\] #\d+ /m, `形が違う: [${stdout}]`);
+		assert.match(stdout, /^──────── \[public\] m\d{6}-[0-9a-km-z]{2,} /m, `形が違う: [${stdout}]`);
 	});
 
 	/*

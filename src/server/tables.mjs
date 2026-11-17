@@ -11,4 +11,4 @@
  * migrate.mjs 自身が CREATE TABLE IF NOT EXISTS で作る。store.mjs が開くのは版を当てた後
  * なので、確かめても必ず在る。
  */
-export const REQUIRED_TABLES = ['messages', 'cursors', 'connectors', 'archives'];
+export const REQUIRED_TABLES = ['messages', 'cursors', 'connectors', 'archives', 'message_day_counters'];

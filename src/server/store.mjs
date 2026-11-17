@@ -5,6 +5,7 @@ import { dirname } from 'node:path';
 import { DB_PATH, MAX_HISTORY_LIMIT, DEFAULT_ROOM } from './config.mjs';
 import { REQUIRED_TABLES } from './tables.mjs';
 import { nowJst } from './time.mjs';
+import { makeMsgId, dayOfSentAt, parseMsgId } from './msg-id.mjs';
 import { log } from './log.mjs';
 
 mkdirSync(dirname(DB_PATH), { recursive: true });
@@ -75,8 +76,17 @@ db.exec('UPDATE connectors SET active_connection_count = 0');
 
 const stmt = {
 	insertMessage: db.prepare(`
-		INSERT INTO messages (room_id, sent_at, from_connector_id, msg_kind, to_connector_id, msg_body, ref_archived_seq, reply_to_msg_seq)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO messages (room_id, sent_at, from_connector_id, msg_kind, to_connector_id, msg_body, ref_archived_seq, reply_to_msg_seq, msg_id)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`),
+	/*
+	 * 日ごとの連番を 1 進めて、新しい値を受け取る。台帳は増える一方なので、行を消しても
+	 * 番号は重ならない (行を数えて 1 を足す方式は、行が無くなると重なる)
+	 */
+	nextDayCount: db.prepare(`
+		INSERT INTO message_day_counters (message_day, last_count) VALUES (?, 1)
+		ON CONFLICT(message_day) DO UPDATE SET last_count = last_count + 1
+		RETURNING last_count
 	`),
 	selectSince: db.prepare(`
 		SELECT * FROM messages
@@ -183,14 +193,56 @@ function clampLimit(limit, fallback) {
 	return Math.min(Math.max(Math.trunc(n), 1), MAX_HISTORY_LIMIT);
 }
 
+/*
+ * 返信先の msg_id。返信先は片付けられていても行が残るので、archived_seq では絞らない
+ * (stmt の外に置く。stmt の読み出しは archived_seq IS NULL を持つ決まりで、試験が見ている)
+ */
+const selectMsgIdBySeq = db.prepare('SELECT msg_id FROM messages WHERE msg_seq = ?');
+const selectSeqByMsgId = db.prepare('SELECT msg_seq FROM messages WHERE msg_id = ?');
+
+/** 行に reply_to_msg_id を足す (返信でなければ null)。行そのものを書き換えて返す */
+function withReplyId(row) {
+	row.reply_to_msg_id =
+		row.reply_to_msg_seq == null ? null : (selectMsgIdBySeq.get(row.reply_to_msg_seq)?.msg_id ?? null);
+	return row;
+}
+
+/**
+ * 発言の指し方 (msg_id か msg_seq) を msg_seq にする。無ければ null。
+ * 形で決める: m + 6 桁 + - + nn なら msg_id、数字だけなら msg_seq。ほかは null。
+ * 片付け済みの発言も引く (行は消えないため)。
+ */
+export function resolveMessageRef(ref) {
+	const text = String(ref ?? '').trim();
+	if (parseMsgId(text)) return selectSeqByMsgId.get(text)?.msg_seq ?? null;
+	if (/^\d+$/.test(text)) {
+		const seq = Number(text);
+		return selectMsgIdBySeq.get(seq) ? seq : null;
+	}
+	return null;
+}
+
 /**
  * メッセージを 1 件積む。積んだ行をそのまま返す。
- * @returns {object} 採番された msg_seq を含む行
+ * 台帳の更新と書き込みは 1 つのトランザクション。msg_id は台帳の値から作る。
+ * @returns {object} 採番された msg_seq・msg_id を含む行
  */
 export function addMessage({ roomId, fromConnectorId, kind = 'say', toConnectorId = null, body, refArchivedSeq = null, replyToMsgSeq = null }) {
 	const sentAt = nowJst();
-	const result = stmt.insertMessage.run(roomId, sentAt, fromConnectorId, kind, toConnectorId, body, refArchivedSeq, replyToMsgSeq);
-	return {
+	const day = dayOfSentAt(sentAt);
+	let result;
+	let msgId;
+	db.exec('BEGIN IMMEDIATE');
+	try {
+		msgId = makeMsgId(day, Number(stmt.nextDayCount.get(day).last_count));
+		result = stmt.insertMessage.run(roomId, sentAt, fromConnectorId, kind, toConnectorId, body, refArchivedSeq, replyToMsgSeq, msgId);
+		db.exec('COMMIT');
+	} catch (err) {
+		db.exec('ROLLBACK');
+		throw err;
+	}
+	return withReplyId({
+		msg_id: msgId,
 		msg_seq: Number(result.lastInsertRowid),
 		room_id: roomId,
 		sent_at: sentAt,
@@ -201,22 +253,22 @@ export function addMessage({ roomId, fromConnectorId, kind = 'say', toConnectorI
 		archived_seq: null,
 		ref_archived_seq: refArchivedSeq,
 		reply_to_msg_seq: replyToMsgSeq,
-	};
+	});
 }
 
 /** since より新しいメッセージを古い順で返す */
 export function getSince(roomId, since, limit) {
-	return stmt.selectSince.all(roomId, Number(since) || 0, clampLimit(limit, MAX_HISTORY_LIMIT));
+	return stmt.selectSince.all(roomId, Number(since) || 0, clampLimit(limit, MAX_HISTORY_LIMIT)).map(withReplyId);
 }
 
 /** 直近 limit 件を古い順で返す \(画面の初期表示に使う\) */
 export function getLatest(roomId, limit) {
-	return stmt.selectLatest.all(roomId, clampLimit(limit, 50)).reverse();
+	return stmt.selectLatest.all(roomId, clampLimit(limit, 50)).reverse().map(withReplyId);
 }
 
 /** before より古いメッセージを古い順で返す \(遡りに使う\) */
 export function getBefore(roomId, before, limit) {
-	return stmt.selectBefore.all(roomId, Number(before), clampLimit(limit, 50)).reverse();
+	return stmt.selectBefore.all(roomId, Number(before), clampLimit(limit, 50)).reverse().map(withReplyId);
 }
 
 /**
@@ -271,12 +323,13 @@ export function getFiltered(roomId, { sinceTs, beforeTs, find, from, limit } = {
 	return db
 		.prepare(`SELECT * FROM messages WHERE ${clauses.join(' AND ')} ORDER BY msg_seq DESC LIMIT ?`)
 		.all(...params)
-		.reverse();
+		.reverse()
+		.map(withReplyId);
 }
 
 /** 全メッセージ。dump 用 */
 export function getAllMessages() {
-	return stmt.selectAll.all();
+	return stmt.selectAll.all().map(withReplyId);
 }
 
 /** そのルームの現在位置。1 件も無ければ 0 */
@@ -380,7 +433,7 @@ export function setAcked(connectorId, roomId, msgSeq) {
  */
 export function getRange(roomId, sinceSeq, uptoSeq) {
 	if (sinceSeq >= uptoSeq) return [];
-	return stmt.selectRange.all(roomId, sinceSeq, uptoSeq);
+	return stmt.selectRange.all(roomId, sinceSeq, uptoSeq).map(withReplyId);
 }
 
 /** その参加者の全ルーム分の位置。診断用 */
@@ -401,14 +454,14 @@ export function getConnector(connectorId) {
  * 先に見せてから確かめさせるため。件数が思っていたより多ければ、そこで気づける。
  *
  * @param {'message'|'connector'|'room'} kind
- * @param {string} id 対象。message なら msg_seq、connector なら ID、room ならルーム名
+ * @param {string} id 対象。message なら msg_id か msg_seq、connector なら ID、room ならルーム名
  * @param {boolean} withMessages connector のとき、その参加者の発言も含めるか
  */
 export function previewArchive(kind, id, withMessages = false) {
 	if (kind === 'message') {
 		const row = db
 			.prepare('SELECT * FROM messages WHERE archived_seq IS NULL AND msg_seq = ?')
-			.get(Number(id));
+			.get(resolveMessageRef(id) ?? 0);
 		return { messages: row ? 1 : 0, cursors: 0, connectors: 0, first: row?.sent_at ?? null, last: row?.sent_at ?? null };
 	}
 
@@ -473,7 +526,7 @@ export function archive({ kind, id, withMessages = false, byConnectorId, descrip
 		if (kind === 'message') {
 			db.prepare('UPDATE messages SET archived_seq = ? WHERE archived_seq IS NULL AND msg_seq = ?').run(
 				seq,
-				Number(id)
+				resolveMessageRef(id) ?? 0
 			);
 		} else if (kind === 'room') {
 			db.prepare('UPDATE messages SET archived_seq = ? WHERE archived_seq IS NULL AND room_id = ?').run(seq, id);
