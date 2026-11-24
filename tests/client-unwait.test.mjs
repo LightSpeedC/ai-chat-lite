@@ -187,6 +187,16 @@ describe('廃止した stop', () => {
 	});
 });
 
+describe('restart', () => {
+	test('--yes が無ければ、サーバに繋がず再起動せずに終了コード 2 で止まる', async () => {
+		// 1 番ポートは誰も待っていない。繋ぎに行けば終了コード 3 になる
+		const r = await chat(['restart', ':test-restart:', '-p', '1']);
+
+		assert.equal(r.code, 2, '終了コードが 2 ではない (繋ぎに行った可能性)');
+		assert.match(r.stderr, /--yes/);
+	});
+});
+
 describe('shutdown', () => {
 	test('--yes が無ければ、サーバに繋がず落とさずに終了コード 2 で止まる', async () => {
 		// 1 番ポートは誰も待っていない。繋ぎに行けば終了コード 3 になる

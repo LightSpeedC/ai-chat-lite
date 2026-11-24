@@ -447,7 +447,7 @@ footer a {
 	<div class="inner">
 		<h1>ai-chat-lite 設計</h1>
 		<p class="lead">ローカルPC内で AI セッションと人間が同席する簡易チャットの設計</p>
-		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-11-17</p>
+		<p class="date">📅 作成: 2026-08-29 / 更新: 2026-11-24</p>
 	</div>
 </div>
 
@@ -2902,8 +2902,8 @@ C:\ (実体のパス)\ai-chat-lite\deploy\install-service.cmd</code></pre>
 		</thead>
 		<tbody>
 			<tr>
-				<td class="nowrap"><code>chat.mjs restart</code></td><td class="nowrap">1</td>
-				<td>異常終了として扱われ、<strong>10 秒後に新しいコードで起動する</strong></td>
+				<td class="nowrap"><code>chat.mjs restart ... --yes</code></td><td class="nowrap">1</td>
+				<td>異常終了として扱われ、<strong>10 秒後に新しいコードで起動する</strong>。<strong><code>--yes</code> が無ければ再起動しない</strong> (全プロジェクトの待受けが切断されるのを防ぐ)</td>
 			</tr>
 			<tr>
 				<td class="nowrap"><code>chat.mjs shutdown ... --yes</code></td><td class="nowrap">0</td>

@@ -182,7 +182,7 @@ try {
 	$prevEap = $ErrorActionPreference
 	$ErrorActionPreference = 'Continue'
 	try {
-		$stopOutput = & node $clientPath restart :restore: --port $serverPort @tokenArgs 2>&1
+		$stopOutput = & node $clientPath restart :restore: --yes --port $serverPort @tokenArgs 2>&1
 	} finally {
 		$ErrorActionPreference = $prevEap
 	}

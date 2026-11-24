@@ -1320,19 +1320,37 @@ async function cmdLeave() {
 }
 
 /**
+ * サーバーを再起動する。--yes が無ければ再起動しない。
+ *
+ * 全プロジェクトの待受けが一時的に切れるため、承知した印を求める (i261124-01)。
+ * 繋ぎに行く前に断る。
+ */
+async function cmdRestart() {
+	requireBase();
+	if (!hasFlag('yes')) {
+		console.error('サーバーを再起動しようとしています。再起動しません。');
+		console.error('  再起動すると、全プロジェクトの通信が一時的に切断され、待受け中のプロセスが停止します。');
+		console.error('  待受けを張り直したいだけなら、再起動ではなく unwait と wait を使ってください。');
+		console.error('  影響を理解し、ユーザーの承認を得た上で本当に再起動する場合は --yes を付けてください。');
+		process.exit(2);
+	}
+	await cmdExit(1);
+}
+
+/**
  * サーバーを落とす。--yes が無ければ落とさない。
  *
- * 待受けを止めたつもりで打つ取り違えを防ぐため、承知した印を求める (決定 35-A)。
+ * 待受けを止めたつもりで打つ取り違えを防ぐため、承知した印を求める (決定 35-A、i261124-01)。
  * 繋ぎに行く前に断る。
  */
 async function cmdShutdown() {
 	// 接続先が無いときの案内を、Rust 版と同じ順にする (接続先 → 承知の印)
 	requireBase();
 	if (!hasFlag('yes')) {
-		console.error('サーバーを落とそうとしています。落としません。');
-		console.error('  落とすと、winsw の start で起動し直すまで、全員が繋がらなくなります。');
-		console.error('  待受けを止めたいのなら、unwait を使ってください。');
-		console.error('  承知の上で落とすなら、--yes を付けてください。');
+		console.error('サーバーを完全に停止しようとしています。停止しません。');
+		console.error('  停止すると、Windows サービスから手動で起動し直すまで全プロジェクトが完全に通信不能になります。');
+		console.error('  待受けを終了したいだけなら、shutdown ではなく unwait を使ってください。');
+		console.error('  影響を理解し、ユーザーの承認を得た上で本当に停止する場合は --yes を付けてください。');
 		process.exit(2);
 	}
 	await cmdExit(0);
@@ -1739,7 +1757,7 @@ const commands = {
 	archives: cmdArchives,
 	restore: cmdRestore,
 	rename: cmdRename,
-	restart: () => cmdExit(1),
+	restart: cmdRestart,
 	shutdown: cmdShutdown,
 };
 

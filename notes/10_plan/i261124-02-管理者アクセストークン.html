@@ -1,0 +1,401 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="format-detection" content="telephone=no">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>計画: shutdown と restart にアクセストークンを必須にする (i261124-02)</title>
+<style>
+@charset "UTF-8";
+
+:root {
+	--navy1: #12224d;
+	--navy2: #2f5fbf;
+	--ink: #1c2330;
+	--ink-soft: #4a5568;
+	--line: #d9dfe8;
+	--code-bg: #f4f6fa;
+	--link: #1a4fa0;
+
+	--accent: #12224d;
+	--accent2: #2f5fbf;
+	--soft: #f2f5fb;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: #fdfdfe;
+	color: var(--ink, #1c2330);
+	font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+	font-size: 15.5px;
+	line-height: 1.85;
+}
+
+a {
+	color: var(--link, #1a4fa0);
+}
+
+.titlebar {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 34px 30px 30px;
+}
+
+.titlebar .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+}
+
+.titlebar h1 {
+	font-size: 1.85em;
+	margin: 0 0 8px;
+	color: #fff;
+}
+
+.titlebar .lead {
+	margin: 0;
+	color: #d7e2f7;
+	font-size: 0.95em;
+}
+
+.titlebar .date {
+	margin: 10px 0 0;
+	color: #b9caea;
+	font-size: 0.88em;
+}
+
+.titlebar a {
+	color: #cfe0ff;
+}
+
+.wrap {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding: 0 30px;
+}
+
+section {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff 62%);
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 10px;
+	padding: 4px 26px 26px;
+	margin: 34px 0;
+}
+
+section h1 {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-size: 1.4em;
+	padding: 14px 20px;
+	margin: 26px 0 20px;
+	border-radius: 8px;
+	box-shadow: 0 3px 10px rgba(20, 34, 70, 0.22);
+}
+
+section h1 code {
+	background: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	border: none;
+}
+
+h2 {
+	background: linear-gradient(90deg, var(--soft, #f2f5fb), #fff);
+	color: var(--accent, #12224d);
+	font-size: 1.16em;
+	padding: 6px 12px;
+	margin: 30px 0 12px;
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 6px 6px 0;
+}
+
+h3 {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	font-size: 1.02em;
+	display: inline-block;
+	padding-bottom: 3px;
+	margin: 20px 0 8px;
+	border-bottom: 2px dotted var(--accent2, #2f5fbf);
+}
+
+.tablewrap {
+	overflow-x: auto;
+	margin: 14px 0;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	background: #fff;
+	color: var(--ink, #1c2330);
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 5px rgba(20, 34, 70, 0.10);
+}
+
+th {
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	text-align: left;
+	padding: 9px 12px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+td {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	padding: 9px 12px;
+	border-top: 1px solid var(--line, #d9dfe8);
+	vertical-align: top;
+}
+
+tr:nth-child(even) td {
+	background: #fafbfe;
+	color: var(--ink, #1c2330);
+}
+
+td.nowrap, th.nowrap {
+	white-space: nowrap;
+}
+
+code {
+	background: var(--code-bg, #f4f6fa);
+	color: #17335f;
+	border: 1px solid var(--line, #d9dfe8);
+	border-radius: 4px;
+	padding: 1px 5px;
+	font-family: "Consolas", "Cascadia Mono", monospace;
+	font-size: 0.92em;
+}
+
+pre {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 5px solid var(--accent2, #2f5fbf);
+	border-radius: 0 8px 8px 0;
+	padding: 13px 16px;
+	overflow-x: auto;
+	line-height: 1.65;
+}
+
+pre code {
+	background: transparent;
+	color: var(--ink, #1c2330);
+	border: none;
+	padding: 0;
+	font-size: 0.92em;
+}
+
+.callout {
+	background: linear-gradient(180deg, var(--soft, #f2f5fb), #fff);
+	color: var(--ink, #1c2330);
+	border: 1px solid var(--line, #d9dfe8);
+	border-left: 6px solid var(--accent, #12224d);
+	border-radius: 0 8px 8px 0;
+	padding: 12px 18px;
+	margin: 16px 0;
+}
+
+.callout strong {
+	color: var(--accent, #12224d);
+	background: transparent;
+}
+
+.callout p {
+	margin: 6px 0;
+}
+
+.toc ol {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 0;
+	margin: 12px 0 4px;
+}
+
+.toc ol li {
+	counter-increment: tocnum;
+	margin: 0;
+}
+
+.toc ol a {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: normal;
+	width: 310px;
+	max-width: 100%;
+	padding: 7px 13px;
+	border-radius: 8px;
+	background: linear-gradient(100deg, var(--accent, #12224d), var(--accent2, #2f5fbf));
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+	line-height: 1.45;
+}
+
+.toc ol a::before {
+	content: counter(tocnum) ". ";
+	font-weight: 700;
+}
+
+.backlink {
+	margin: 18px 0 0;
+}
+
+a.homelink {
+	display: inline-block;
+	padding: 4px 14px;
+	margin: 0 8px 6px 0;
+	border-radius: 6px;
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	background: linear-gradient(100deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	line-height: 1;
+	text-decoration: none;
+}
+
+a.homelink svg {
+	width: 16px;
+	height: 16px;
+	vertical-align: -3px;
+}
+
+footer {
+	background: linear-gradient(135deg, var(--navy1, #12224d), var(--navy2, #2f5fbf));
+	color: #fff;
+	padding: 18px 30px 0;
+	margin-top: 40px;
+}
+
+footer .inner {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding-bottom: 18px;
+}
+
+footer a {
+	color: #cfe0ff;
+}
+</style>
+<style>
+/* 4章構成: 280°から約 93.3°刻みで 0°まで減算 */
+.ch01 { --accent: hsl(280.0, 78%, 25%); --accent2: hsl(280.0, 58%, 55%); --soft: hsl(280.0, 28%, 95%); }
+.ch02 { --accent: hsl(186.7, 78%, 25%); --accent2: hsl(186.7, 58%, 55%); --soft: hsl(186.7, 28%, 95%); }
+.ch03 { --accent: hsl( 93.3, 78%, 25%); --accent2: hsl( 93.3, 58%, 55%); --soft: hsl( 93.3, 28%, 95%); }
+.ch04 { --accent: hsl(  0.0, 78%, 25%); --accent2: hsl(  0.0, 58%, 55%); --soft: hsl(  0.0, 28%, 95%); }
+.toc ol { counter-reset: tocnum; }
+</style>
+</head>
+
+<body>
+
+<div class="titlebar">
+	<div class="inner">
+		<h1>計画: shutdown と restart にアクセストークンを必須にする (i261124-02)</h1>
+		<p class="lead">サーバー停止・再起動エンドポイント (/api/admin/exit) を管理者アクセストークンで保護する設計計画</p>
+		<p class="date">📅 作成: 2026-11-24 / 更新: 2026-11-24</p>
+	</div>
+</div>
+
+<div class="wrap">
+
+<p class="backlink"><a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
+
+<p>課題 i261124-02 に基づき、<code>aichat shutdown</code> および <code>aichat restart</code> の実行時に管理者アクセストークンの照合を必須化する設計計画である。</p>
+
+<section class="toc md-skip">
+	<h2>目次</h2>
+	<ol>
+		<li class="ch01"><a href="#ch01">背景と目的</a></li>
+		<li class="ch02"><a href="#ch02">管理者トークンの設計と受渡し方式</a></li>
+		<li class="ch03"><a href="#ch03">各コンポーネントの変更詳細</a></li>
+		<li class="ch04"><a href="#ch04">既存運用への影響と移行計画</a></li>
+	</ol>
+</section>
+
+<section class="ch01" id="ch01">
+	<h1>背景と目的</h1>
+	<p>現在、本番環境のサーバーはローカル通信の利便性のために認証を要求しておらず、<code>/api/admin/exit</code> は POST リクエストであれば誰でも呼び出せる状態にある。</p>
+	<p>課題 i261124-01 で CLI 側に <code>--yes</code> の確認フラグを必須化したが、API エンドポイント自体が開放されているため、外部スクリプトの直接呼び出しや AI エージェントの誤動作により、全プロジェクトの待受けを巻き込んでサーバーが停止・再起動されるリスクが残る。</p>
+	<div class="callout">
+		<p><strong>目的:</strong></p>
+		<p>サーバー停止および再起動の実行権限を、あらかじめ管理者トークン（シークレット）を保有している管理者および正規運用スクリプトに限定し、偶発的・不正なサーバー中断を根本遮断する。</p>
+	</div>
+</section>
+
+<section class="ch02" id="ch02">
+	<h1>管理者トークンの設計と受渡し方式</h1>
+
+	<h2>1. トークンの生成・保持方式</h2>
+	<ul>
+		<li><strong>環境変数 <code>AICHAT_ADMIN_TOKEN</code></strong>: サーバー起動時に環境変数から取得する。</li>
+		<li><strong>自動生成とファイル保持</strong>: 環境変数が未指定の場合、初回起動時にランダムなトークン (UUID v4) を生成し、Git 管理外の <code>_secrets/admin.token</code> (権限制限フォルダ) に保存する。以降の起動ではこのファイルを再利用する。</li>
+	</ul>
+
+	<h2>2. API 照合方式</h2>
+	<ul>
+		<li>エンドポイント: <code>POST /api/admin/exit</code></li>
+		<li>照合方法: ヘッダ <code>x-aichat-access-token</code> またはリクエスト JSON 本文内の <code>access_token</code> フィールドを検査。</li>
+		<li>不一致時: HTTP <code>403 Forbidden</code> を返し、サーバーを停止・再起動しない。</li>
+	</ul>
+
+	<h2>3. CLI からの受渡し</h2>
+	<ul>
+		<li>オプション <code>--access-token &lt;値&gt;</code> (短縮 <code>-a</code>) による明示的指定。</li>
+		<li>環境変数 <code>AICHAT_ADMIN_TOKEN</code> が存在する場合は自動参照。</li>
+	</ul>
+</section>
+
+<section class="ch03" id="ch03">
+	<h1>各コンポーネントの変更詳細</h1>
+	<div class="tablewrap">
+		<table>
+			<thead>
+				<tr><th>コンポーネント</th><th>変更箇所</th><th>変更内容</th></tr>
+			</thead>
+			<tbody>
+				<tr><td class="nowrap">サーバー (Node)</td><td><code>src/server/config.mjs</code><br><code>src/server/server.mjs</code></td><td><code>ADMIN_TOKEN</code> のロード機構追加。<br><code>handleExit()</code> 内でトークン照合を追加し、不一致なら 403 応答。</td></tr>
+				<tr><td class="nowrap">CLI (Node)</td><td><code>src/client/chat.mjs</code></td><td><code>cmdExit()</code> のリクエスト本文にトークンを付与。トークンが無い場合は警告を出して中断。</td></tr>
+				<tr><td class="nowrap">CLI (Rust)</td><td><code>src/cli-rs/src/commands.rs</code></td><td><code>exit_server()</code> のリクエスト本文に <code>access_token</code> を付与。</td></tr>
+				<tr><td class="nowrap">運用スクリプト</td><td><code>tools/80_ops/restore.ps1</code></td><td><code>restore.ps1</code> の <code>restart</code> 呼び出し時にトークンを引数または環境変数で渡す。</td></tr>
+			</tbody>
+		</table>
+	</div>
+</section>
+
+<section class="ch04" id="ch04">
+	<h1>既存運用への影響と移行計画</h1>
+	<ul>
+		<li><strong>一般コマンドへの影響</strong>: <code>join</code>, <code>wait</code>, <code>say</code>, <code>recent</code>, <code>who</code> 等の一般利用には一切影響しない（トークン不要のまま）。</li>
+		<li><strong>移行手順</strong>:
+			<ol>
+				<li>サーバー側に管理者トークン生成・照合機能を実装（未設定時は警告ログを出して素通りさせる移行期間を設けることも可能）。</li>
+				<li>CLI（Node / Rust）にトークン受渡しを実装。</li>
+				<li><code>restore.ps1</code> を更新。</li>
+				<li>テストスイートの全件通過を確認後、本番へ展開。</li>
+			</ol>
+		</li>
+	</ul>
+</section>
+
+</div>
+
+<footer>
+	<div class="inner">
+		<p><a class="homelink" href="../../README.html" aria-label="README へ戻る"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.3 0.8 7.4h2.1V14h3.4v-4.1h3.4V14h3.4V7.4h2.1z" fill="currentColor"/></svg></a></p>
+		<p>ai-chat-lite — ローカル AI 間チャット</p>
+	</div>
+</footer>
+
+</body>
+</html>

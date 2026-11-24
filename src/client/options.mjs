@@ -125,6 +125,7 @@ export const OPTIONS = [
 	{ long: 'yes', short: null, arg: '', cmd: 'archive', desc: '確認を省く。標準入力が無い背面から実行するとき用' },
 	{ long: 'yes', short: null, arg: '', cmd: 'rename', desc: '確認を省く。標準入力が無い背面から実行するとき用' },
 	{ long: 'merge', short: null, arg: '', cmd: 'rename', desc: '新しい ID が既にあれば、そこへまとめる。付けなければ断る' },
+	{ long: 'yes', short: null, arg: '', cmd: 'restart', desc: 'サーバーを再起動することを承知した印。付けなければ再起動しない' },
 	{ long: 'yes', short: null, arg: '', cmd: 'shutdown', desc: 'サーバーを落とすことを承知した印。付けなければ落とさない' },
 	{ long: 'port', short: 'p', arg: '<ポート>', cmd: null, desc: 'localhost のポートだけを変える' },
 	{ long: 'url', short: 'u', arg: '<URL>', cmd: null, desc: '接続先。ホストごと変える (--port とは併用できない)' },
@@ -214,7 +215,7 @@ export const FLAGS = new Set(
 
 /** サーバーを操作するコマンド。管理者権限は要らない */
 export const ADMIN_COMMANDS = [
-	{ name: 'restart', arg: ':<id>:', desc: '落として起動し直させる (ソース修正の反映に使う)' },
+	{ name: 'restart', arg: ':<id>: --yes', desc: '落として起動し直させる。--yes が無ければ落とさない (ソース修正の反映に使う)' },
 	{ name: 'shutdown', arg: ':<id>: --yes', desc: 'サーバーを落とす。--yes が無ければ落とさない。起動し直すには winsw の start が要る' },
 ];
 

@@ -297,11 +297,11 @@ mod tests {
 	}
 
 	#[test]
-	fn オプションが26件ある() {
+	fn オプションが27件ある() {
 		let def = Definition::load().unwrap();
-		// --yes は archive ・ rename ・ shutdown の 3 つに出るので 3 件を数える。
-		// rename の --merge (i261110-02)を足して 25 件、shutdown の --yes (i261115-01)で 26 件
-		assert_eq!(def.options.len(), 26);
+		// --yes は archive ・ rename ・ restart ・ shutdown の 4 つに出るので 4 件を数える。
+		// shutdown の --yes (i261115-01)で 26 件、restart の --yes (i261124-01)で 27 件
+		assert_eq!(def.options.len(), 27);
 	}
 
 	#[test]

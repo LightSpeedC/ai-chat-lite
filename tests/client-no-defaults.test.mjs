@@ -58,8 +58,8 @@ const MINIMUM = {
 	archives: [],
 	restore: [wrapId(ME), '1'],
 	rename: [wrapId(ME), 'connector', wrapId('test-from'), wrapId('test-to')],
-	restart: [wrapId(ME)],
-	// --yes を付けないと、接続先より先に「落とさない」で止まる。確かめたいのは接続先の不足
+	restart: [wrapId(ME), '--yes'],
+	// --yes を付けないと、接続先より先に「落とさない/再起動しない」で止まる。確かめたいのは接続先の不足
 	shutdown: [wrapId(ME), '--yes'],
 };
 

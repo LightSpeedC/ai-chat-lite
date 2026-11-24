@@ -465,6 +465,20 @@
 	},
 	{
 		"args": [
+			"restart",
+			":rust-check:"
+		]
+	},
+	{
+		"args": [
+			"restart",
+			":rust-check:",
+			"-p",
+			"1"
+		]
+	},
+	{
+		"args": [
 			"stop"
 		]
 	},

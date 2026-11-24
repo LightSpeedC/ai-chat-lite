@@ -349,14 +349,23 @@ fn run() -> i32 {
 			}
 		}
 		// 落とす。1 は異常終了として扱われ 10 秒後に起動し直す。0 は止まったまま
-		"restart" => commands::exit_server(&cli, &me, 1),
+		"restart" => {
+			if !a.has_flag("yes", None) {
+				eprintln!("サーバーを再起動しようとしています。再起動しません。");
+				eprintln!("  再起動すると、全プロジェクトの通信が一時的に切断され、待受け中のプロセスが停止します。");
+				eprintln!("  待受けを張り直したいだけなら、再起動ではなく unwait と wait を使ってください。");
+				eprintln!("  影響を理解し、ユーザーの承認を得た上で本当に再起動する場合は --yes を付けてください。");
+				return EXIT_USAGE;
+			}
+			commands::exit_server(&cli, &me, 1)
+		}
 		"shutdown" => {
 			// 待受けを止めたつもりで打つ取り違えを防ぐため、承知した印を求める。繋ぐ前に断る
 			if !a.has_flag("yes", None) {
-				eprintln!("サーバーを落とそうとしています。落としません。");
-				eprintln!("  落とすと、winsw の start で起動し直すまで、全員が繋がらなくなります。");
-				eprintln!("  待受けを止めたいのなら、unwait を使ってください。");
-				eprintln!("  承知の上で落とすなら、--yes を付けてください。");
+				eprintln!("サーバーを完全に停止しようとしています。停止しません。");
+				eprintln!("  停止すると、Windows サービスから手動で起動し直すまで全プロジェクトが完全に通信不能になります。");
+				eprintln!("  待受けを終了したいだけなら、shutdown ではなく unwait を使ってください。");
+				eprintln!("  影響を理解し、ユーザーの承認を得た上で本当に停止する場合は --yes を付けてください。");
 				return EXIT_USAGE;
 			}
 			commands::exit_server(&cli, &me, 0)
