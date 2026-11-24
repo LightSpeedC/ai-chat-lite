@@ -55,9 +55,45 @@ test('既定なら本番、差し替えたらテスト', async () => {
 	assert.equal(t.IS_TEST, true);
 });
 
-test('待ち受けは ::1 と 127.0.0.1 の両方', async () => {
-	const { HOSTS } = await loadConfig();
-	assert.deepEqual(HOSTS, ['::1', '127.0.0.1']);
+test('待ち受けは ::1 と 127.0.0.1 の両方を含み、VMnet があればそれも含む', async () => {
+	const { HOSTS, detectVmnetHosts } = await loadConfig();
+	assert.deepEqual(HOSTS, [...new Set(['::1', '127.0.0.1', ...detectVmnetHosts()])]);
+});
+
+test('detectVmnetHosts は VMnet アダプタの IPv4 のみを取り出し、重複排除して昇順ソートする', async () => {
+	const { detectVmnetHosts } = await loadConfig();
+
+	const mockNets = {
+		'VMware Network Adapter VMnet1': [
+			{ address: 'fe80::1', family: 'IPv6', internal: false },
+			{ address: '192.168.225.1', family: 'IPv4', internal: false },
+			{ address: '192.168.225.1', family: 'IPv4', internal: false }, // 重複
+		],
+		'VMware Network Adapter VMnet8': [
+			{ address: '192.168.47.1', family: 'IPv4', internal: false },
+			{ address: '127.0.0.1', family: 'IPv4', internal: true }, // internal
+		],
+		'Wi-Fi': [
+			{ address: '192.168.1.65', family: 'IPv4', internal: false },
+		],
+		'Loopback Pseudo-Interface 1': [
+			{ address: '127.0.0.1', family: 'IPv4', internal: true },
+		],
+	};
+
+	const result = detectVmnetHosts(mockNets);
+	assert.deepEqual(result, ['192.168.225.1', '192.168.47.1'].sort());
+});
+
+test('detectVmnetHosts は VMnet が無い環境や null でも安全に空配列を返す', async () => {
+	const { detectVmnetHosts } = await loadConfig();
+
+	assert.deepEqual(detectVmnetHosts({}), []);
+	assert.deepEqual(detectVmnetHosts(null), []);
+	assert.deepEqual(detectVmnetHosts(undefined), detectVmnetHosts());
+	assert.deepEqual(detectVmnetHosts({
+		'Ethernet': [{ address: '10.0.0.1', family: 'IPv4', internal: false }],
+	}), []);
 });
 
 test('long-poll の上限は PowerShell ツールの 600 秒制限の内側', async () => {

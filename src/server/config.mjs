@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { dirname, join } from 'node:path';
+import { networkInterfaces } from 'node:os';
 
 import { nowJst } from './time.mjs';
 
@@ -66,11 +67,39 @@ export const WEB_DIR = join(ROOT, 'src', 'web');
 export const PORT = Number(process.env.AICHAT_PORT ?? 8787);
 
 /**
+ * VMware の仮想ネットワークアダプタ (VMnet) の IPv4 アドレスを自動検出する。
+ *
+ * 仮想マシン (ゲスト OS) からホスト上のチャットサーバーへアクセスできるようにする。
+ * 0.0.0.0 で全開放すると物理 LAN (Wi-Fi やイーサネット) に露出してしまうため、
+ * ループバックに加えて VMnet アダプタのアドレスのみを個別に待ち受け対象とする。
+ *
+ * Windows のリンクローカル IPv6 はゾーン ID がないと bind できない場合があるため、
+ * IPv4 かつループバック以外に限定する。同一 IP の重複バインド (EADDRINUSE) を避けるため Set で一意化する。
+ *
+ * @param {import('node:os').NetworkInterfaceInfoIPv4[] | Record<string, import('node:os').NetworkInterfaceInfo[]>} [nets]
+ * @returns {string[]}
+ */
+export function detectVmnetHosts(nets = networkInterfaces()) {
+	const hosts = new Set();
+	for (const [name, addrs] of Object.entries(nets ?? {})) {
+		if (!addrs || !/vmnet/i.test(name)) continue;
+		for (const addr of addrs) {
+			if ((addr.family === 'IPv4' || addr.family === 4) && !addr.internal && addr.address) {
+				hosts.add(addr.address);
+			}
+		}
+	}
+	return [...hosts].sort();
+}
+
+/**
  * 待ち受けアドレス。
  * localhost は ::1 と 127.0.0.1 の両方を指すため、両方で listen する。
  * 片方だけに bind すると、もう一方から来た接続が拒否される。
+ *
+ * また、VMware 仮想マシンからのアクセスを受け付けるため、VMnet アダプタのアドレスも自動で含める。
  */
-export const HOSTS = ['::1', '127.0.0.1'];
+export const HOSTS = [...new Set(['::1', '127.0.0.1', ...detectVmnetHosts()])];
 
 /** ルームを省略したときの既定値 */
 export const DEFAULT_ROOM = 'public';
